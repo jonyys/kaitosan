@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Robot Face</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        /* Fondo negro */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #000;
+            width: 480px;
+            height: 480px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Contenedor de los ojos */
+        .face {
+            display: flex;
+            gap: 60px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Ojo base */
+        .eye {
+            width: 120px;
+            height: 120px;
+            background: white;
+            border-radius: 50%;
+            position: relative;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Pupila */
+        .pupil {
+            width: 50px;
+            height: 50px;
+            background: #0096ff;
+            border-radius: 50%;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        /* Punto brillante */
+        .pupil::after {
+            content: '';
+            width: 12px;
+            height: 12px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 8px;
+            left: 8px;
+        }
+
+        /* ── ESTADOS ── */
+
+        /* IDLE — parpadeo automático */
+        .idle .eye {
+            animation: parpadeo 4s infinite;
+        }
+
+        @keyframes parpadeo {
+            0%, 90%, 100% { transform: scaleY(1); }
+            95%            { transform: scaleY(0.05); }
+        }
+
+        /* ESCUCHANDO — ojos más grandes y brillantes */
+        .listening .eye {
+            width: 140px;
+            height: 140px;
+            background: white;
+            box-shadow: 0 0 30px #0096ff,
+                        0 0 60px #0096ff;
+            animation: pulso 1s infinite;
+        }
+
+        @keyframes pulso {
+            0%, 100% { box-shadow: 0 0 20px #0096ff; }
+            50%       { box-shadow: 0 0 50px #0096ff,
+                                    0 0 80px #0096ff; }
+        }
+
+        /* PENSANDO — ojos mirando arriba y parpadeando */
+        .thinking .eye {
+            animation: pensar 1.5s infinite;
+        }
+
+        .thinking .pupil {
+            transform: translateY(-15px);
+            background: #ffaa00;
+        }
+
+        @keyframes pensar {
+            0%, 100% { transform: scaleY(1); }
+            50%       { transform: scaleY(0.6); }
+        }
+
+        /* HABLANDO — ojos normales, boca animada */
+        .speaking .eye {
+            animation: hablar_ojos 0.3s infinite;
+        }
+
+        @keyframes hablar_ojos {
+            0%, 100% { transform: scaleY(1); }
+            50%       { transform: scaleY(0.85); }
+        }
+
+        .speaking .pupil {
+            background: #00cc44;
+            animation: pupila_hablar 0.3s infinite;
+        }
+
+        @keyframes pupila_hablar {
+            0%, 100% { transform: scale(1); }
+            50%       { transform: scale(1.2); }
+        }
+
+        /* FELIZ — ojos curvados hacia arriba */
+        .happy .eye {
+            border-radius: 50% 50% 0 0;
+            height: 70px;
+            margin-top: 50px;
+            background: white;
+            box-shadow: 0 0 40px #ffdd00,
+                        0 0 80px #ffaa00;
+            animation: feliz 0.5s ease;
+        }
+
+        .happy .pupil {
+            background: #ffdd00;
+            transform: translateY(-10px);
+        }
+
+        @keyframes feliz {
+            0%   { transform: scale(0.8); }
+            50%  { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        /* ERROR — ojos rojos */
+        .error .eye {
+            background: #ff3333;
+            animation: error_anim 0.5s infinite;
+        }
+
+        @keyframes error_anim {
+            0%, 100% { transform: scale(1); }
+            50%       { transform: scale(0.9); }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="face idle" id="face">
+        <div class="eye">
+            <div class="pupil"></div>
+        </div>
+        <div class="eye">
+            <div class="pupil"></div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        const face = document.getElementById('face');
+
+        // Estados disponibles
+        const estados = [
+            'idle',
+            'listening',
+            'thinking',
+            'speaking',
+            'happy',
+            'error'
+        ];
+
+        // Recibe el estado desde Python
+        socket.on('estado', function(data) {
+            console.log('Estado recibido:', data.estado);
+
+            // Quita todas las clases de estado
+            estados.forEach(e => face.classList.remove(e));
+
+            // Añade la nueva clase de estado
+            face.classList.add(data.estado);
+        });
+    </script>
+</body>
+</html>
