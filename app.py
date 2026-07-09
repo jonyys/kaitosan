@@ -1,46 +1,104 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request, jsonify
 from flask_socketio import SocketIO
+from groq import Groq
+from dotenv import load_dotenv
 import threading
-import time
+import os
+
+# Cargar variables de entorno
+load_dotenv()
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
+# Cliente Groq
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
+# Historial de conversación
+historial = [
+    {
+        "role": "system",
+        "content": """Eres Kaitosan, un robot asistente de 
+        escritorio simpático, cercano y conciso. 
+        Respondes siempre en español.
+        Tus respuestas son cortas y naturales,
+        como en una conversación normal."""
+    }
+]
+
+# Estado actual del robot
 estado_robot = {"estado": "idle"}
+
+def cambiar_estado(nuevo_estado):
+    """Cambia el estado de la cara del robot"""
+    estado_robot["estado"] = nuevo_estado
+    socketio.emit("estado", {"estado": nuevo_estado})
 
 @app.route("/")
 def index():
     return render_template("face.html")
 
-def cambiar_estado(nuevo_estado):
-    estado_robot["estado"] = nuevo_estado
-    socketio.emit("estado", {"estado": nuevo_estado})
+@app.route("/chat", methods=["POST"])
+def chat():
+    try:
+        # Obtener mensaje del usuario
+        data = request.get_json()
+        mensaje = data.get("mensaje", "")
 
-def demo_estados():
-    time.sleep(3)
-    while True:
-        print("→ IDLE")
-        cambiar_estado("idle")
-        time.sleep(4)
+        if not mensaje:
+            return jsonify({"error": "Mensaje vacío"}), 400
 
-        print("→ ESCUCHANDO")
+        # Cara en modo escuchando
         cambiar_estado("listening")
-        time.sleep(3)
 
-        print("→ PENSANDO")
+        # Añadir mensaje al historial
+        historial.append({
+            "role": "user",
+            "content": mensaje
+        })
+
+        # Cara en modo pensando
         cambiar_estado("thinking")
-        time.sleep(3)
 
-        print("→ HABLANDO")
+        # Llamar a Groq
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=historial,
+            max_tokens=200
+        )
+
+        # Obtener respuesta
+        respuesta = response.choices[0].message.content
+
+        # Añadir respuesta al historial
+        historial.append({
+            "role": "assistant",
+            "content": respuesta
+        })
+
+        # Cara en modo hablando
         cambiar_estado("speaking")
-        time.sleep(3)
 
-        print("→ FELIZ")
-        cambiar_estado("happy")
-        time.sleep(3)
+        # Volver a idle después de la respuesta
+        def volver_idle():
+            import time
+            time.sleep(3)
+            cambiar_estado("idle")
+
+        hilo = threading.Thread(target=volver_idle)
+        hilo.daemon = True
+        hilo.start()
+
+        return jsonify({
+            "respuesta": respuesta,
+            "estado": "ok"
+        })
+
+    except Exception as e:
+        cambiar_estado("error")
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    hilo = threading.Thread(target=demo_estados)
-    hilo.daemon = True
-    hilo.start()
-    socketio.run(app, host="0.0.0.0", port=5000)
+    print("🤖 Kaitosan arrancando...")
+    cambiar_estado("idle")
+    socketio.run(app, host="0.0.0.0", port=5000, debug=True)

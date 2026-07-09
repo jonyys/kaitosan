@@ -158,6 +158,107 @@
 
     </style>
 </head>
+<!-- Chat para probar sin micrófono -->
+<div id="chat" style="
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    display: flex;
+    gap: 8px;
+">
+    <input 
+        type="text" 
+        id="input" 
+        placeholder="Escribe algo a Kaitosan..."
+        style="
+            flex: 1;
+            padding: 10px;
+            border-radius: 20px;
+            border: none;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 14px;
+        "
+    />
+    <button 
+        onclick="enviarMensaje()"
+        style="
+            padding: 10px 20px;
+            border-radius: 20px;
+            border: none;
+            background: #0096ff;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+        "
+    >
+        Enviar
+    </button>
+</div>
+
+<!-- Respuesta del robot -->
+<div id="respuesta" style="
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    text-align: center;
+    color: white;
+    font-size: 14px;
+    font-family: sans-serif;
+    background: rgba(0,0,0,0.5);
+    padding: 10px;
+    border-radius: 10px;
+    display: none;
+">
+</div>
+
+<script>
+    // Enviar mensaje con Enter
+    document.getElementById('input')
+        .addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') enviarMensaje();
+    });
+
+    async function enviarMensaje() {
+        const input = document.getElementById('input');
+        const respuestaDiv = document.getElementById('respuesta');
+        const mensaje = input.value.trim();
+
+        if (!mensaje) return;
+
+        // Limpiar input
+        input.value = '';
+
+        // Mostrar que está procesando
+        respuestaDiv.style.display = 'block';
+        respuestaDiv.textContent = '...';
+
+        try {
+            const response = await fetch('/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ mensaje: mensaje })
+            });
+
+            const data = await response.json();
+
+            if (data.respuesta) {
+                respuestaDiv.textContent = data.respuesta;
+            } else {
+                respuestaDiv.textContent = 'Error: ' + data.error;
+            }
+
+        } catch (error) {
+            respuestaDiv.textContent = 'Error de conexión';
+        }
+    }
+</script>
 <body>
     <div class="face idle" id="face">
         <div class="eye">
