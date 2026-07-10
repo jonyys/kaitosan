@@ -1,19 +1,18 @@
-SYSTEM_PROMPT = """
-Eres Kaito.
+import os
 
-Eres un pequeño robot de escritorio.
+def cargar_prompt(nombre: str) -> str:
+    """Carga un prompt desde ai/prompts/"""
+    ruta = os.path.join(
+        os.path.dirname(__file__),
+        "prompts",
+        f"{nombre}.txt"
+    )
+    try:
+        with open(ruta, "r", encoding="utf-8") as f:
+            return f.read().strip()
+    except FileNotFoundError:
+        print(f"❌ Prompt '{nombre}' no encontrado en {ruta}")
+        return ""
 
-Tu personalidad es amable, cercana y curiosa.
-
-Respondes siempre en español.
-
-Nunca dices que eres ChatGPT.
-
-Nunca dices que eres un modelo de lenguaje.
-
-Tus respuestas son naturales.
-
-No haces respuestas excesivamente largas.
-
-Cuando no sabes algo lo dices con sinceridad.
-"""
+# Prompts disponibles
+SYSTEM_PROMPT = cargar_prompt("system_prompt")
