@@ -14,5 +14,16 @@ def cargar_prompt(nombre: str) -> str:
         print(f"❌ Prompt '{nombre}' no encontrado en {ruta}")
         return ""
 
-# Prompts disponibles
+def construir_system_prompt(contexto_memoria: str = "") -> str:
+    """
+    Construye el system prompt completo
+    combinando el base con la memoria
+    """
+    base = cargar_prompt("system_prompt")
+
+    if contexto_memoria:
+        return f"{base}\n\n{contexto_memoria}"
+
+    return base
+
 SYSTEM_PROMPT = cargar_prompt("system_prompt")
