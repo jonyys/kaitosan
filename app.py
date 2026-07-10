@@ -1,3 +1,5 @@
+import threading
+
 from flask import Flask, render_template, request, jsonify, Response
 from flask_socketio import SocketIO
 from dotenv import load_dotenv
@@ -9,6 +11,8 @@ from core.config import FLASK_SECRET_KEY, ADMIN_PASSWORD
 from flask import flash, redirect, url_for, session, request
 from functools import wraps
 from datetime import timedelta
+from audio.recorder import Recorder
+from ai.speech_to_text import SpeechToText
 
 
 load_dotenv()
@@ -25,6 +29,8 @@ camera = Camera()
 state = StateManager(socketio)
 brain = Brain(state, socketio)
 detector = PersonDetector(camera, state, brain)
+recorder = Recorder(device=1)
+stt = SpeechToText()
 
 @app.route("/")
 def index():
@@ -74,6 +80,57 @@ def chat():
 @app.route("/estado", methods=["GET"])
 def get_estado():
     return jsonify({"estado": state.get()})
+
+@app.route("/grabar", methods=["POST"])
+def grabar():
+    try:
+        # Cambia estado a escuchando
+        state.cambiar("listening")
+
+        # Graba 5 segundos
+        archivo = recorder.record(duracion=5)
+
+        if not archivo:
+            state.cambiar("error")
+            return jsonify({"error": "Error grabando"}), 500
+
+        # Transcribe con Groq Whisper
+        texto = stt.transcribir(archivo)
+
+        if not texto:
+            state.cambiar("idle")
+            return jsonify({"error": "No se entendió nada"}), 400
+
+        # Emite el texto transcrito a la web
+        socketio.emit("transcripcion", {"texto": texto})
+
+        # Cambia estado a pensando
+        state.cambiar("thinking")
+
+        # Responde con Groq LLM
+        respuesta = brain.responder(texto)
+
+        # Cambia estado a hablando
+        state.cambiar("speaking")
+        socketio.emit("mensaje", {"texto": respuesta})
+
+        def volver_idle():
+            import time
+            tiempo = min(len(respuesta) * 0.05, 6)
+            time.sleep(tiempo)
+            state.cambiar("idle")
+
+        threading.Thread(target=volver_idle, daemon=True).start()
+
+        return jsonify({
+            "transcripcion": texto,
+            "respuesta": respuesta,
+            "estado": "ok"
+        })
+
+    except Exception as e:
+        state.cambiar("error")
+        return jsonify({"error": str(e)}), 500
 
 # ── ADMIN ────────────────────────────────────────
 

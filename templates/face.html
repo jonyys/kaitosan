@@ -196,7 +196,26 @@
     >
         Enviar
     </button>
+
+    <!-- Botón de voz -->
+    <button
+        id="btn-voz"
+        onclick="grabarVoz()"
+        style="
+            padding: 10px 16px;
+            border-radius: 20px;
+            border: none;
+            background: #00cc44;
+            color: white;
+            cursor: pointer;
+            font-size: 18px;
+        "
+    >
+        🎤
+    </button>
 </div>
+
+
 
 <!-- Respuesta del robot -->
 <div id="respuesta" style="
@@ -258,6 +277,57 @@
             respuestaDiv.textContent = 'Error de conexión';
         }
     }
+
+    // Estado del botón de voz
+    let grabando = false;
+
+    async function grabarVoz() {
+        if (grabando) return;
+
+        const btn = document.getElementById('btn-voz');
+        const respuestaDiv = document.getElementById('respuesta');
+
+        grabando = true;
+
+        // Cambia aspecto del botón
+        btn.style.background = '#ff3333';
+        btn.textContent = '⏺️';
+
+        respuestaDiv.style.display = 'block';
+        respuestaDiv.textContent = '🎤 Grabando 5 segundos...';
+
+        try {
+            const response = await fetch('/grabar', {
+                method: 'POST'
+            });
+
+            const data = await response.json();
+
+            if (data.transcripcion) {
+                respuestaDiv.textContent =
+                    `📝 "${data.transcripcion}"`;
+            }
+
+            if (data.error) {
+                respuestaDiv.textContent = '❌ ' + data.error;
+            }
+
+        } catch (error) {
+            respuestaDiv.textContent = '❌ Error de conexión';
+        } finally {
+            // Restaura el botón
+            grabando = false;
+            btn.style.background = '#00cc44';
+            btn.textContent = '🎤';
+        }
+    }
+
+    // Muestra la transcripción cuando llega por WebSocket
+    socket.on('transcripcion', function(data) {
+        const respuestaDiv = document.getElementById('respuesta');
+        respuestaDiv.style.display = 'block';
+        respuestaDiv.textContent = `📝 "${data.texto}"`;
+    });
 </script>
 <body>
     <div class="face idle" id="face">
