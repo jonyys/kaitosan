@@ -7,6 +7,14 @@
     <style>
         /* Fondo negro */
         * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --iris-light: #964e1e;
+            --iris-dark: #32170D;
+            --lid-color: #1a0d08;
+            --sclera-color: #fdfdfb;
+        }
+
         body {
             background: #000;
             width: 480px;
@@ -20,140 +28,181 @@
         /* Contenedor de los ojos */
         .face {
             display: flex;
-            gap: 60px;
+            gap: 50px;
             align-items: center;
             justify-content: center;
+            transition: transform 0.3s ease;
         }
 
-        /* Ojo base */
+        /* ── OJO (SVG) ── */
         .eye {
-            width: 120px;
-            height: 120px;
-            background: white;
-            border-radius: 50%;
-            position: relative;
-            transition: all 0.3s ease;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            width: 168px;
+            height: 128px;
+            overflow: visible;
+            transition: transform 0.3s ease, filter 0.3s ease;
         }
 
-        /* Pupila */
+        .eye-right { transform: scaleX(-1); }
+
+        .eyeball {
+            transform-origin: 100px 76px;
+            transition: transform 0.2s ease;
+        }
+
+        .pupil-cluster {
+            transform-origin: 100px 76px;
+            transition: transform 0.25s ease;
+        }
+
+        .iris {
+            fill: url(#irisGrad);
+        }
+
+        .iris-rim {
+            fill: none;
+            stroke: var(--lid-color);
+            stroke-width: 3;
+        }
+
         .pupil {
-            width: 50px;
-            height: 50px;
-            background: #0096ff;
-            border-radius: 50%;
-            position: relative;
-            transition: all 0.3s ease;
+            fill: #0a0604;
         }
 
-        /* Punto brillante */
-        .pupil::after {
-            content: '';
-            width: 12px;
-            height: 12px;
-            background: white;
-            border-radius: 50%;
-            position: absolute;
-            top: 8px;
-            left: 8px;
+        .highlight-main,
+        .highlight-2,
+        .highlight-3 {
+            fill: #ffffff;
+        }
+
+        .lid-shadow {
+            fill: url(#lidShadowGrad);
+            opacity: 0.3;
+        }
+
+        .lid-upper {
+            fill: none;
+            stroke: var(--lid-color);
+            stroke-width: 8;
+            stroke-linecap: round;
+        }
+
+        .lid-lower {
+            fill: none;
+            stroke: var(--lid-color);
+            stroke-width: 2;
+            stroke-linecap: round;
+            opacity: 0.55;
+        }
+
+        .lash {
+            stroke: var(--lid-color);
+            stroke-width: 3;
+            stroke-linecap: round;
+        }
+
+        .happy-arc {
+            fill: none;
+            stroke: url(#irisGrad);
+            stroke-width: 11;
+            stroke-linecap: round;
+            opacity: 0;
+            transition: opacity 0.25s ease;
         }
 
         /* ── ESTADOS ── */
 
         /* IDLE — parpadeo automático */
-        .idle .eye {
-            animation: parpadeo 4s infinite;
+        .idle .eyeball {
+            animation: parpadeo 4.5s infinite;
         }
 
         @keyframes parpadeo {
             0%, 90%, 100% { transform: scaleY(1); }
-            95%            { transform: scaleY(0.05); }
+            95%            { transform: scaleY(0.06); }
         }
 
         /* ESCUCHANDO — ojos más grandes y brillantes */
         .listening .eye {
-            width: 140px;
-            height: 140px;
-            background: white;
-            box-shadow: 0 0 30px #0096ff,
-                        0 0 60px #0096ff;
+            transform: scale(1.12);
             animation: pulso 1s infinite;
         }
+        .listening .eye-right { transform: scaleX(-1.12); }
 
         @keyframes pulso {
-            0%, 100% { box-shadow: 0 0 20px #0096ff; }
-            50%       { box-shadow: 0 0 50px #0096ff,
-                                    0 0 80px #0096ff; }
+            0%, 100% { filter: drop-shadow(0 0 10px #2596BE); }
+            50%       { filter: drop-shadow(0 0 26px #2596BE) drop-shadow(0 0 40px #2596BE); }
         }
 
-        /* PENSANDO — ojos mirando arriba y parpadeando */
-        .thinking .eye {
-            animation: pensar 1.5s infinite;
+        /* PENSANDO — mirada hacia arriba */
+        .thinking .pupil-cluster {
+            transform: translateY(-16px);
         }
 
-        .thinking .pupil {
-            transform: translateY(-15px);
-            background: #ffaa00;
+        .thinking .eyeball {
+            animation: pensar 1.6s infinite;
         }
 
         @keyframes pensar {
             0%, 100% { transform: scaleY(1); }
-            50%       { transform: scaleY(0.6); }
+            50%       { transform: scaleY(0.75); }
         }
 
-        /* HABLANDO — ojos normales, boca animada */
-        .speaking .eye {
-            animation: hablar_ojos 0.3s infinite;
+        /* HABLANDO — pupila pulsando ligeramente */
+        .speaking .pupil-cluster {
+            animation: hablar_pupila 0.35s infinite;
         }
 
-        @keyframes hablar_ojos {
-            0%, 100% { transform: scaleY(1); }
-            50%       { transform: scaleY(0.85); }
-        }
-
-        .speaking .pupil {
-            background: #00cc44;
-            animation: pupila_hablar 0.3s infinite;
-        }
-
-        @keyframes pupila_hablar {
+        @keyframes hablar_pupila {
             0%, 100% { transform: scale(1); }
-            50%       { transform: scale(1.2); }
+            50%       { transform: scale(1.08); }
         }
 
-        /* FELIZ — ojos curvados hacia arriba */
+        /* FELIZ — arcos curvados hacia arriba, iris oculto */
+        .happy .eyeball {
+            opacity: 0;
+        }
+        .happy .lid-upper,
+        .happy .lid-lower {
+            opacity: 0;
+        }
+        .happy .happy-arc {
+            opacity: 1;
+        }
         .happy .eye {
-            border-radius: 50% 50% 0 0;
-            height: 70px;
-            margin-top: 50px;
-            background: white;
-            box-shadow: 0 0 40px #ffdd00,
-                        0 0 80px #ffaa00;
             animation: feliz 0.5s ease;
-        }
-
-        .happy .pupil {
-            background: #ffdd00;
-            transform: translateY(-10px);
+            filter: drop-shadow(0 0 18px #ffcc55);
         }
 
         @keyframes feliz {
-            0%   { transform: scale(0.8); }
-            50%  { transform: scale(1.1); }
+            0%   { transform: scale(0.85); }
+            50%  { transform: scale(1.08); }
             100% { transform: scale(1); }
         }
+        .happy .eye-right { transform: scaleX(-1); }
 
-        /* ERROR — ojos rojos */
+        /* ERROR — iris en tono rojo, ligero temblor */
+        .error {
+            --iris-light: #ff6b5b;
+            --iris-dark: #4a0a06;
+        }
         .error .eye {
-            background: #ff3333;
-            animation: error_anim 0.5s infinite;
+            animation: error_anim 0.4s infinite;
+        }
+        .error .lid-upper,
+        .error .lid-lower {
+            stroke: #7a1a12;
         }
 
         @keyframes error_anim {
-            0%, 100% { transform: scale(1); }
-            50%       { transform: scale(0.9); }
+            0%, 100% { transform: translateX(0); }
+            25%       { transform: translateX(-3px); }
+            75%       { transform: translateX(3px); }
+        }
+        .error .eye-right { animation: error_anim_r 0.4s infinite; }
+        @keyframes error_anim_r {
+            0%, 100% { transform: scaleX(-1) translateX(0); }
+            25%       { transform: scaleX(-1) translateX(-3px); }
+            75%       { transform: scaleX(-1) translateX(3px); }
         }
 
     </style>
@@ -331,12 +380,87 @@
 </script>
 <body>
     <div class="face idle" id="face">
-        <div class="eye">
-            <div class="pupil"></div>
-        </div>
-        <div class="eye">
-            <div class="pupil"></div>
-        </div>
+
+        <!-- OJO IZQUIERDO -->
+        <svg class="eye eye-left" viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <radialGradient id="irisGrad" cx="38%" cy="32%" r="72%">
+                    <stop offset="0%" stop-color="var(--iris-light)"/>
+                    <stop offset="100%" stop-color="var(--iris-dark)"/>
+                </radialGradient>
+                <linearGradient id="lidShadowGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#000000" stop-opacity="0.55"/>
+                    <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+                </linearGradient>
+                <clipPath id="lidClip">
+                    <path d="M15,82 C30,25 75,12 100,12 C125,12 170,20 185,66 C170,110 125,132 100,132 C75,132 30,118 15,82 Z"/>
+                </clipPath>
+            </defs>
+
+            <g transform="rotate(180 100 75)">
+                <g class="eyeball" clip-path="url(#lidClip)">
+                    <rect x="0" y="0" width="200" height="150" fill="var(--sclera-color)"/>
+                    <g class="pupil-cluster">
+                        <circle class="iris" cx="100" cy="76" r="33"/>
+                        <circle class="iris-rim" cx="100" cy="76" r="33"/>
+                        <circle class="pupil" cx="100" cy="76" r="16"/>
+                        <circle class="highlight-main" cx="88" cy="60" r="10"/>
+                        <circle class="highlight-2" cx="113" cy="88" r="4"/>
+                        <circle class="highlight-3" cx="101" cy="96" r="2.5"/>
+                    </g>
+                    <rect class="lid-shadow" x="0" y="0" width="200" height="46"/>
+                </g>
+
+                <path class="happy-arc" d="M18,88 Q100,38 182,88"/>
+
+                <path class="lid-upper" d="M15,82 C30,25 75,12 100,12 C125,12 170,20 185,66"/>
+                <path class="lid-lower" d="M17,84 C32,110 72,124 100,126 C124,124 165,108 183,68"/>
+
+                <path class="lash" d="M183,64 L196,52"/>
+                <path class="lash" d="M180,72 L191,64"/>
+            </g>
+        </svg>
+
+        <!-- OJO DERECHO (misma plantilla, se voltea con CSS) -->
+        <svg class="eye eye-right" viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <radialGradient id="irisGrad2" cx="38%" cy="32%" r="72%">
+                    <stop offset="0%" stop-color="var(--iris-light)"/>
+                    <stop offset="100%" stop-color="var(--iris-dark)"/>
+                </radialGradient>
+                <linearGradient id="lidShadowGrad2" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#000000" stop-opacity="0.55"/>
+                    <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+                </linearGradient>
+                <clipPath id="lidClip2">
+                    <path d="M15,82 C30,25 75,12 100,12 C125,12 170,20 185,66 C170,110 125,132 100,132 C75,132 30,118 15,82 Z"/>
+                </clipPath>
+            </defs>
+
+            <g transform="rotate(180 100 75)">
+                <g class="eyeball" clip-path="url(#lidClip2)">
+                    <rect x="0" y="0" width="200" height="150" fill="var(--sclera-color)"/>
+                    <g class="pupil-cluster">
+                        <circle class="iris" cx="100" cy="76" r="33" fill="url(#irisGrad2)"/>
+                        <circle class="iris-rim" cx="100" cy="76" r="33"/>
+                        <circle class="pupil" cx="100" cy="76" r="16"/>
+                        <circle class="highlight-main" cx="88" cy="60" r="10"/>
+                        <circle class="highlight-2" cx="113" cy="88" r="4"/>
+                        <circle class="highlight-3" cx="101" cy="96" r="2.5"/>
+                    </g>
+                    <rect class="lid-shadow" x="0" y="0" width="200" height="46" fill="url(#lidShadowGrad2)"/>
+                </g>
+
+                <path class="happy-arc" d="M18,88 Q100,38 182,88" stroke="url(#irisGrad2)"/>
+
+                <path class="lid-upper" d="M15,82 C30,25 75,12 100,12 C125,12 170,20 185,66"/>
+                <path class="lid-lower" d="M17,84 C32,110 72,124 100,126 C124,124 165,108 183,68"/>
+
+                <path class="lash" d="M183,64 L196,52"/>
+                <path class="lash" d="M180,72 L191,64"/>
+            </g>
+        </svg>
+
     </div>
 
     <script>
