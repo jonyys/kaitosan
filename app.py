@@ -1,5 +1,4 @@
 import threading
-
 from flask import Flask, render_template, request, jsonify, Response
 from flask_socketio import SocketIO
 from dotenv import load_dotenv
@@ -13,6 +12,7 @@ from functools import wraps
 from datetime import timedelta
 from audio.recorder import Recorder
 from ai.speech_to_text import SpeechToText
+from ai.text_to_speech import TextToSpeech
 
 
 load_dotenv()
@@ -31,6 +31,7 @@ brain = Brain(state, socketio)
 detector = PersonDetector(camera, state, brain)
 recorder = Recorder(device=1)
 stt = SpeechToText()
+tts = TextToSpeech(device=1)
 
 @app.route("/")
 def index():
@@ -60,13 +61,15 @@ def chat():
         state.cambiar("speaking")
         socketio.emit("mensaje", {"texto": respuesta})
 
-        import threading, time
-        def volver_idle():
-            tiempo = min(len(respuesta) * 0.05, 6)
-            time.sleep(tiempo)
+        # Habla la respuesta en hilo separado
+        def hablar_y_volver():
+            tts.hablar(respuesta)
             state.cambiar("idle")
 
-        threading.Thread(target=volver_idle, daemon=True).start()
+        threading.Thread(
+            target=hablar_y_volver,
+            daemon=True
+        ).start()
 
         return jsonify({
             "respuesta": respuesta,
@@ -84,43 +87,43 @@ def get_estado():
 @app.route("/grabar", methods=["POST"])
 def grabar():
     try:
-        # Cambia estado a escuchando
+        # Escuchando
         state.cambiar("listening")
 
-        # Graba 5 segundos
+        # Graba
         archivo = recorder.record(duracion=5)
-
         if not archivo:
             state.cambiar("error")
             return jsonify({"error": "Error grabando"}), 500
 
-        # Transcribe con Groq Whisper
+        # Transcribe
         texto = stt.transcribir(archivo)
-
         if not texto:
             state.cambiar("idle")
             return jsonify({"error": "No se entendió nada"}), 400
 
-        # Emite el texto transcrito a la web
+        # Emite transcripción a la web
         socketio.emit("transcripcion", {"texto": texto})
 
-        # Cambia estado a pensando
+        # Pensando
         state.cambiar("thinking")
 
-        # Responde con Groq LLM
+        # Responde con Groq
         respuesta = brain.responder(texto)
 
-        # Cambia estado a hablando
+        # Hablando
         state.cambiar("speaking")
         socketio.emit("mensaje", {"texto": respuesta})
 
-        def volver_idle():
-            import time
-            tiempo = min(len(respuesta) * 0.05, 6)
-            time.sleep(tiempo)
+        # Habla la respuesta en hilo separado
+        def hablar_y_volver():
+            tts.hablar(respuesta)
             state.cambiar("idle")
 
-        threading.Thread(target=volver_idle, daemon=True).start()
+        threading.Thread(
+            target=hablar_y_volver,
+            daemon=True
+        ).start()
 
         return jsonify({
             "transcripcion": texto,
