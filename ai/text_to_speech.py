@@ -10,7 +10,7 @@ class TextToSpeech:
     def __init__(self, device=1):
         self.device = device
         self.sample_rate_device = 48000
-        self.voice = "es-ES-ElviraNeural"
+        self.voice = "es-ES-AlvaroNeural"
 
     async def _generar_audio(self, texto: str,
                               tmp_path: str):
