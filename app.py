@@ -4,9 +4,9 @@ from groq import Groq
 from dotenv import load_dotenv
 from picamera2 import Picamera2
 import cv2
-import numpy as np
 import threading
 import os
+import time
 
 # Cargar variables de entorno
 load_dotenv()
@@ -32,8 +32,19 @@ historial = [
 # Estado actual del robot
 estado_robot = {"estado": "idle"}
 
+# Estado de detección de persona
+deteccion = {
+    "hay_persona": False,
+    "activo": True
+}
+
 # Instancia global de la cámara
 picam = None
+
+# Detector de caras preentrenado
+detector_caras = cv2.CascadeClassifier(
+    cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
+)
 
 # ── CÁMARA ──────────────────────────────────────
 
@@ -60,10 +71,7 @@ def generar_frames():
 
             # Captura frame
             frame = picam.capture_array()
-
-            # Convierte de XBGR a BGR para OpenCV
             frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGBA2BGR)
-
 
             # Codifica como JPEG
             ret, buffer = cv2.imencode('.jpg', frame_bgr)
@@ -79,6 +87,102 @@ def generar_frames():
         except Exception as e:
             print(f"❌ Error generando frame: {e}")
             break
+
+# ── DETECCIÓN DE PERSONAS ────────────────────────
+
+def detectar_personas():
+    """Hilo que detecta personas continuamente"""
+    global picam
+
+    print("👁️ Detección de personas iniciada")
+
+    while deteccion["activo"]:
+        try:
+            if picam is None:
+                time.sleep(1)
+                continue
+
+            # Captura frame
+            frame = picam.capture_array()
+            frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGBA2BGR)
+
+            # Escala de grises para el detector
+            gris = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2GRAY)
+
+            # Detecta caras
+            caras = detector_caras.detectMultiScale(
+                gris,
+                scaleFactor=1.1,
+                minNeighbors=5,
+                minSize=(30, 30)
+            )
+
+            hay_persona_ahora = len(caras) > 0
+
+            # ¿Alguien se ha sentado?
+            if hay_persona_ahora and not deteccion["hay_persona"]:
+                print("✅ ¡Persona detectada!")
+                deteccion["hay_persona"] = True
+
+                # Solo reacciona si está idle
+                if estado_robot["estado"] == "idle":
+                    cambiar_estado("happy")
+
+                    # Saluda con Groq
+                    threading.Thread(
+                        target=saludar_persona,
+                        daemon=True
+                    ).start()
+
+            # ¿La persona se ha ido?
+            elif not hay_persona_ahora and deteccion["hay_persona"]:
+                print("👋 Persona se ha ido")
+                deteccion["hay_persona"] = False
+
+                # Vuelve a idle
+                if estado_robot["estado"] not in ["thinking", "speaking"]:
+                    cambiar_estado("idle")
+
+        except Exception as e:
+            print(f"❌ Error en detección: {e}")
+
+        time.sleep(0.5)
+
+def saludar_persona():
+    """Groq genera un saludo cuando detecta una persona"""
+    try:
+        cambiar_estado("thinking")
+
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {
+                    "role": "system",
+                    "content": """Eres Kaitosan, un robot asistente 
+                    simpático. Respondes en español."""
+                },
+                {
+                    "role": "user",
+                    "content": "Acabo de sentarme delante de ti, salúdame de forma breve y simpática"
+                }
+            ],
+            max_tokens=100
+        )
+
+        saludo = response.choices[0].message.content
+        print(f"🤖 Kaitosan: {saludo}")
+
+        cambiar_estado("speaking")
+
+        # Emite el saludo a la pantalla
+        socketio.emit("mensaje", {"texto": saludo})
+
+        time.sleep(3)
+        cambiar_estado("idle")
+
+    except Exception as e:
+        print(f"❌ Error saludando: {e}")
+        cambiar_estado("idle")
 
 # ── ESTADO ──────────────────────────────────────
 
@@ -96,7 +200,6 @@ def index():
 
 @app.route("/video")
 def video():
-    """Stream en directo de la cámara"""
     return Response(
         generar_frames(),
         mimetype='multipart/x-mixed-replace; boundary=frame'
@@ -105,53 +208,43 @@ def video():
 @app.route("/chat", methods=["POST"])
 def chat():
     try:
-        # Obtener mensaje del usuario
         data = request.get_json()
         mensaje = data.get("mensaje", "")
 
         if not mensaje:
             return jsonify({"error": "Mensaje vacío"}), 400
 
-        # Cara en modo escuchando
         cambiar_estado("listening")
 
-        # Añadir mensaje al historial
         historial.append({
             "role": "user",
             "content": mensaje
         })
 
-        # Cara en modo pensando
         cambiar_estado("thinking")
 
-        # Llamar a Groq
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=historial,
             max_tokens=200
         )
 
-        # Obtener respuesta
         respuesta = response.choices[0].message.content
 
-        # Añadir respuesta al historial
         historial.append({
             "role": "assistant",
             "content": respuesta
         })
 
-        # Cara en modo hablando
         cambiar_estado("speaking")
 
-        # Volver a idle después de la respuesta
+        socketio.emit("mensaje", {"texto": respuesta})
+
         def volver_idle():
-            import time
             time.sleep(3)
             cambiar_estado("idle")
 
-        hilo = threading.Thread(target=volver_idle)
-        hilo.daemon = True
-        hilo.start()
+        threading.Thread(target=volver_idle, daemon=True).start()
 
         return jsonify({
             "respuesta": respuesta,
@@ -164,7 +257,6 @@ def chat():
 
 @app.route("/estado", methods=["GET"])
 def get_estado():
-    """Devuelve el estado actual del robot"""
     return jsonify(estado_robot)
 
 # ── MAIN ────────────────────────────────────────
@@ -172,5 +264,13 @@ def get_estado():
 if __name__ == "__main__":
     print("🤖 Kaitosan arrancando...")
     iniciar_camara()
+
+    # Lanza detección de personas en hilo separado
+    hilo_deteccion = threading.Thread(
+        target=detectar_personas,
+        daemon=True
+    )
+    hilo_deteccion.start()
+
     cambiar_estado("idle")
     socketio.run(app, host="0.0.0.0", port=5000, debug=False)
