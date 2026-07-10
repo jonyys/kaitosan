@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kaito — Panel de Control</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #0a0a0a;
+            color: #fff;
+            font-family: 'Segoe UI', sans-serif;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #0096ff;
+            margin-bottom: 30px;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        h2 {
+            color: #0096ff;
+            margin-bottom: 15px;
+            font-size: 18px;
+            border-bottom: 1px solid #222;
+            padding-bottom: 8px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: #111;
+            border: 1px solid #222;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .card.full {
+            grid-column: 1 / -1;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th {
+            background: #1a1a2e;
+            color: #0096ff;
+            padding: 10px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #1a1a1a;
+            vertical-align: top;
+            max-width: 400px;
+            word-wrap: break-word;
+        }
+
+        tr:hover td {
+            background: #1a1a1a;
+        }
+
+        .btn {
+            padding: 6px 14px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover { opacity: 0.8; }
+
+        .btn-red {
+            background: #ff3333;
+            color: white;
+        }
+
+        .btn-blue {
+            background: #0096ff;
+            color: white;
+        }
+
+        .btn-green {
+            background: #00cc44;
+            color: white;
+        }
+
+        .btn-yellow {
+            background: #ffaa00;
+            color: black;
+        }
+
+        input[type="text"], textarea {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 6px;
+            color: white;
+            padding: 8px 12px;
+            font-size: 13px;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+
+        textarea { height: 80px; resize: vertical; }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            background: #1a1a2e;
+            color: #0096ff;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .alert {
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 13px;
+        }
+
+        .alert-success { background: #0d3320; border: 1px solid #00cc44; color: #00cc44; }
+        .alert-error { background: #330d0d; border: 1px solid #ff3333; color: #ff3333; }
+
+        .empty {
+            color: #444;
+            font-style: italic;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 2fr auto;
+            gap: 8px;
+            align-items: start;
+            margin-bottom: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .grid { grid-template-columns: 1fr; }
+            .card.full { grid-column: 1; }
+            .form-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<h1 style="display:flex; justify-content:space-between; align-items:center">
+    <span>🤖 Kaito — Panel de Control</span>
+    <a href="/admin/logout">
+        <button class="btn btn-red" style="font-size:13px">
+            🔒 Cerrar sesión
+        </button>
+    </a>
+</h1>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+    {% endfor %}
+{% endwith %}
+
+<div class="grid">
+
+    <!-- ── PERFIL DE LAURA ── -->
+    <div class="card">
+        <h2>👤 Perfil de Laura</h2>
+
+        <div class="actions">
+            <form method="POST" action="/admin/perfil/borrar-todo"
+                  onsubmit="return confirm('¿Borrar todo el perfil?')">
+                <button class="btn btn-red">🗑️ Borrar todo</button>
+            </form>
+        </div>
+
+        {% if perfil %}
+        <table>
+            <tr>
+                <th>Clave</th>
+                <th>Valor</th>
+                <th></th>
+            </tr>
+            {% for item in perfil %}
+            <tr>
+                <td><strong>{{ item.key }}</strong></td>
+                <td>{{ item.value }}</td>
+                <td>
+                    <form method="POST"
+                          action="/admin/perfil/borrar/{{ item.id }}"
+                          onsubmit="return confirm('¿Borrar este dato?')">
+                        <button class="btn btn-red">🗑️</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <p class="empty">No hay datos en el perfil</p>
+        {% endif %}
+
+        <!-- Formulario añadir dato -->
+        <h2 style="margin-top:20px">➕ Añadir / Editar dato</h2>
+        <form method="POST" action="/admin/perfil/añadir">
+            <div class="form-row">
+                <input type="text" name="key"
+                       placeholder="clave (ej: hobby)">
+                <input type="text" name="value"
+                       placeholder="valor (ej: le gusta el café)">
+                <button class="btn btn-green">Guardar</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- ── SESIONES ── -->
+    <div class="card">
+        <h2>📅 Sesiones <span class="badge">{{ sesiones|length }}</span></h2>
+
+        <div class="actions">
+            <form method="POST" action="/admin/sesiones/borrar-todo"
+                  onsubmit="return confirm('¿Borrar todas las sesiones y mensajes?')">
+                <button class="btn btn-red">🗑️ Borrar todo</button>
+            </form>
+        </div>
+
+        {% if sesiones %}
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Inicio</th>
+                <th>Mensajes</th>
+                <th></th>
+            </tr>
+            {% for s in sesiones %}
+            <tr>
+                <td>#{{ s.id }}</td>
+                <td>{{ s.started_at }}</td>
+                <td><span class="badge">{{ s.messages }}</span></td>
+                <td>
+                    <form method="POST"
+                          action="/admin/sesiones/borrar/{{ s.id }}"
+                          onsubmit="return confirm('¿Borrar esta sesión?')">
+                        <button class="btn btn-red">🗑️</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <p class="empty">No hay sesiones guardadas</p>
+        {% endif %}
+    </div>
+
+    <!-- ── MENSAJES ── -->
+    <div class="card full">
+        <h2>💬 Conversaciones</h2>
+
+        <!-- Filtro por sesión -->
+        <form method="GET" action="/admin" style="margin-bottom:15px">
+            <div style="display:flex; gap:8px; align-items:center">
+                <select name="sesion_id"
+                        style="background:#1a1a1a; border:1px solid #333;
+                               color:white; padding:8px; border-radius:6px">
+                    <option value="">Todas las sesiones</option>
+                    {% for s in sesiones %}
+                    <option value="{{ s.id }}"
+                        {% if sesion_filtro == s.id|string %}selected{% endif %}>
+                        Sesión #{{ s.id }} — {{ s.started_at }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <button class="btn btn-blue">Filtrar</button>
+                <a href="/admin">
+                    <button type="button" class="btn btn-yellow">
+                        Ver todas
+                    </button>
+                </a>
+            </div>
+        </form>
+
+        {% if mensajes %}
+        <table>
+            <tr>
+                <th>Sesión</th>
+                <th>Rol</th>
+                <th>Mensaje</th>
+                <th>Fecha</th>
+                <th></th>
+            </tr>
+            {% for m in mensajes %}
+            <tr>
+                <td><span class="badge">#{{ m.session_id }}</span></td>
+                <td>
+                    {% if m.role == 'user' %}
+                        👤 Laura
+                    {% else %}
+                        🤖 Kaito
+                    {% endif %}
+                </td>
+                <td>{{ m.content }}</td>
+                <td style="white-space:nowrap">{{ m.created_at }}</td>
+                <td>
+                    <form method="POST"
+                          action="/admin/mensajes/borrar/{{ m.id }}"
+                          onsubmit="return confirm('¿Borrar este mensaje?')">
+                        <button class="btn btn-red">🗑️</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <p class="empty">No hay mensajes guardados</p>
+        {% endif %}
+    </div>
+
+</div>
+
+</body>
+</html>

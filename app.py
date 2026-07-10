@@ -5,11 +5,20 @@ from core.camera import Camera
 from core.state import StateManager
 from core.brain import Brain
 from core.detection import PersonDetector
+from core.config import FLASK_SECRET_KEY, ADMIN_PASSWORD
+from flask import flash, redirect, url_for, session, request
+from functools import wraps
+from datetime import timedelta
+
 
 load_dotenv()
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
+
+app.secret_key = FLASK_SECRET_KEY
+# Sesión caduca después de 30 minutos de inactividad
+app.permanent_session_lifetime = timedelta(minutes=30)
 
 # Inicializar módulos
 camera = Camera()
@@ -65,6 +74,153 @@ def chat():
 @app.route("/estado", methods=["GET"])
 def get_estado():
     return jsonify({"estado": state.get()})
+
+# ── ADMIN ────────────────────────────────────────
+
+def login_requerido(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not session.get("admin_logged_in"):
+            return redirect(url_for("admin_login"))
+        return f(*args, **kwargs)
+    return decorated
+
+@app.route("/admin/login", methods=["GET", "POST"])
+def admin_login():
+    if request.method == "POST":
+        if request.form.get("password") == ADMIN_PASSWORD:
+            session.permanent = True
+            session["admin_logged_in"] = True
+            return redirect(url_for("admin"))
+        return render_template("admin_login.html",
+                               error="Contraseña incorrecta")
+    return render_template("admin_login.html")
+
+@app.route("/admin/logout")
+def admin_logout():
+    session.pop("admin_logged_in", None)
+    return redirect(url_for("admin_login"))
+
+@app.route("/admin")
+@login_requerido
+def admin():
+    db = brain.memory._conectar()
+    sesion_filtro = request.args.get("sesion_id", "")
+
+    perfil = db.execute("""
+        SELECT id, key, value FROM user_profile
+        ORDER BY id ASC
+    """).fetchall()
+
+    perfil = [{"id": r[0], "key": r[1], "value": r[2]}
+              for r in perfil]
+
+    sesiones = db.execute("""
+        SELECT id, started_at, ended_at, messages
+        FROM sessions ORDER BY started_at DESC
+    """).fetchall()
+
+    sesiones = [{"id": r[0], "started_at": r[1],
+                 "ended_at": r[2], "messages": r[3]}
+                for r in sesiones]
+
+    if sesion_filtro:
+        mensajes = db.execute("""
+            SELECT id, session_id, role, content, created_at
+            FROM messages WHERE session_id = ?
+            AND role != 'system'
+            ORDER BY created_at ASC
+        """, (sesion_filtro,)).fetchall()
+    else:
+        mensajes = db.execute("""
+            SELECT id, session_id, role, content, created_at
+            FROM messages WHERE role != 'system'
+            ORDER BY created_at DESC LIMIT 100
+        """).fetchall()
+
+    mensajes = [{"id": r[0], "session_id": r[1],
+                 "role": r[2], "content": r[3],
+                 "created_at": r[4]}
+                for r in mensajes]
+
+    db.close()
+
+    return render_template("admin.html",
+                           perfil=perfil,
+                           sesiones=sesiones,
+                           mensajes=mensajes,
+                           sesion_filtro=sesion_filtro)
+
+@app.route("/admin/perfil/añadir", methods=["POST"])
+@login_requerido
+def admin_perfil_añadir():
+    key = request.form.get("key", "").strip()
+    value = request.form.get("value", "").strip()
+    if key and value:
+        brain.memory.actualizar_perfil(key, value)
+        flash("✅ Dato guardado correctamente", "success")
+    else:
+        flash("❌ Clave y valor son obligatorios", "error")
+    return redirect(url_for("admin"))
+
+@app.route("/admin/perfil/borrar/<int:item_id>",
+           methods=["POST"])
+@login_requerido
+def admin_perfil_borrar(item_id):
+    db = brain.memory._conectar()
+    db.execute("DELETE FROM user_profile WHERE id = ?",
+               (item_id,))
+    db.commit()
+    db.close()
+    flash("✅ Dato borrado", "success")
+    return redirect(url_for("admin"))
+
+@app.route("/admin/perfil/borrar-todo", methods=["POST"])
+@login_requerido
+def admin_perfil_borrar_todo():
+    db = brain.memory._conectar()
+    db.execute("DELETE FROM user_profile")
+    db.commit()
+    db.close()
+    flash("✅ Perfil borrado completamente", "success")
+    return redirect(url_for("admin"))
+
+@app.route("/admin/sesiones/borrar/<int:sesion_id>",
+           methods=["POST"])
+@login_requerido
+def admin_sesion_borrar(sesion_id):
+    db = brain.memory._conectar()
+    db.execute("DELETE FROM messages WHERE session_id = ?",
+               (sesion_id,))
+    db.execute("DELETE FROM sessions WHERE id = ?",
+               (sesion_id,))
+    db.commit()
+    db.close()
+    flash("✅ Sesión borrada", "success")
+    return redirect(url_for("admin"))
+
+@app.route("/admin/sesiones/borrar-todo", methods=["POST"])
+@login_requerido
+def admin_sesiones_borrar_todo():
+    db = brain.memory._conectar()
+    db.execute("DELETE FROM messages")
+    db.execute("DELETE FROM sessions")
+    db.commit()
+    db.close()
+    flash("✅ Todas las sesiones borradas", "success")
+    return redirect(url_for("admin"))
+
+@app.route("/admin/mensajes/borrar/<int:mensaje_id>",
+           methods=["POST"])
+@login_requerido
+def admin_mensaje_borrar(mensaje_id):
+    db = brain.memory._conectar()
+    db.execute("DELETE FROM messages WHERE id = ?",
+               (mensaje_id,))
+    db.commit()
+    db.close()
+    flash("✅ Mensaje borrado", "success")
+    return redirect(url_for("admin"))
 
 if __name__ == "__main__":
     print("🤖 Kaitosan arrancando...")

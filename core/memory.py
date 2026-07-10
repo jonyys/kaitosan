@@ -56,7 +56,7 @@ class Memory:
             "hermana": "Una",
             "padre": "José",
             "madre": "Marisa",
-            "trabajo": "Programadora frontend en Net Data para el cliente Iberdrola",
+            "trabajo": "Programadora frontend en Ntt Data para el cliente Iberdrola",
             "gustos": "Anime, Japón, está aprendiendo japonés",
             "viajes": "Fuimos a Japón juntos este año",
             "nombre_robot": "Kaito, porque su primer crush fue Kaito de Pichi Pichi Pitch",
