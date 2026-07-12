@@ -1,5 +1,7 @@
 from groq import Groq
 from core.config import GROQ_API_KEY, DEFAULT_MODEL, MAX_TOKENS
+from core.token_tracker import TokenTracker
+
 
 class GroqProvider:
     def __init__(self, model=DEFAULT_MODEL):
@@ -10,6 +12,7 @@ class GroqProvider:
             "gemma2-9b-it",
             "mixtral-8x7b-32768"
         ]
+        self.tracker = TokenTracker()
 
     def completar(self, mensajes: list) -> str:
         """Intenta con el modelo principal y alternativos si hay rate limit."""
@@ -24,6 +27,9 @@ class GroqProvider:
                     messages=mensajes,
                     max_tokens=MAX_TOKENS
                 )
+                tokens_usados = response.usage.total_tokens
+                total_hoy = self.tracker.añadir_tokens(tokens_usados)
+                print(f"📊 Tokens usados en esta llamada: {tokens_usados} (total hoy: {total_hoy})")
                 if modelo != self.model:
                     print(f"⚠️ Usando modelo alternativo: {modelo}")
                 return response.choices[0].message.content
