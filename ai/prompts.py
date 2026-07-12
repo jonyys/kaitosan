@@ -16,4 +16,3 @@ def cargar_prompt(nombre: str) -> str:
 
 
 SYSTEM_PROMPT = cargar_prompt("system_prompt")
-ROUTER_PROMPT = cargar_prompt("router_prompt")

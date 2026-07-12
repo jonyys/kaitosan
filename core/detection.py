@@ -20,8 +20,8 @@ class PersonDetector:
             target=self._detectar,
             daemon=True
         )
-        hilo.start()
-        print("👁️ Detección de personas iniciada")
+        #hilo.start()
+        print("👁️ Detección de personas  NO iniciada")
 
     def _detectar(self):
         while self.activo:

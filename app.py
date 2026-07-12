@@ -13,6 +13,8 @@ from datetime import timedelta
 from audio.recorder import Recorder
 from ai.speech_to_text import SpeechToText
 from ai.text_to_speech import TextToSpeech
+from ai.pronunciation import comparar_pronunciacion
+
 
 
 load_dotenv()
@@ -104,6 +106,15 @@ def grabar():
 
         # Emite transcripción a la web
         socketio.emit("transcripcion", {"texto": texto})
+
+        # ── Evaluar pronunciación si hay frase objetivo ──
+        if brain.ultima_frase_objetivo:
+            evaluacion = comparar_pronunciacion(
+                brain.ultima_frase_objetivo, texto
+            )
+            print(f"🎌 Evaluación: {evaluacion['precision']}% - {evaluacion['feedback']}")
+            # Limpiar para no evaluar mensajes posteriores
+            brain.ultima_frase_objetivo = None
 
         # Pensando
         state.cambiar("thinking")

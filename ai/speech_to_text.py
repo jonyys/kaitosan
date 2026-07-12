@@ -7,11 +7,7 @@ class SpeechToText:
         self.client = Groq(api_key=GROQ_API_KEY)
         self.modelo = "whisper-large-v3-turbo"
 
-    def transcribir(self, archivo_audio: str) -> str:
-        """
-        Transcribe un archivo de audio usando Groq Whisper.
-        Mucho más rápido que local y no consume RAM de la Pi.
-        """
+    def transcribir(self, archivo_audio: str, idioma: str = None) -> str:
         try:
             if not os.path.exists(archivo_audio):
                 print(f"❌ Archivo no encontrado: {archivo_audio}")
@@ -20,11 +16,13 @@ class SpeechToText:
             print("🔄 Transcribiendo con Groq Whisper...")
 
             with open(archivo_audio, "rb") as audio:
-                transcripcion = self.client.audio.transcriptions.create(
-                    model=self.modelo,
-                    file=audio,
-                    language="es"
-                )
+                params = {
+                    "model": self.modelo,
+                    "file": audio,
+                }
+                if idioma:
+                    params["language"] = idioma
+                transcripcion = self.client.audio.transcriptions.create(**params)
 
             texto = transcripcion.text.strip()
             print(f"✅ Transcripción: {texto}")

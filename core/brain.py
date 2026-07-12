@@ -6,6 +6,7 @@ from core.japanese_memory import JapaneseMemory
 from core.memory import DB_PATH, Memory
 import time
 from datetime import datetime
+import re as regex
 
 # Palabras que indican que Laura pregunta por el pasado
 PALABRAS_MEMORIA = [
@@ -25,6 +26,7 @@ class Brain:
         self.session_id = None
         self._iniciar_sesion()
         self.ultimo_agente = "general"
+        self.ultima_frase_objetivo = None
 
     def _iniciar_sesion(self):
         """
@@ -54,7 +56,10 @@ class Brain:
         if ultimo_asistente:
             contexto = f"Último mensaje del asistente: \"{ultimo_asistente}\"\n"
 
-        prompt = f"""Eres un clasificador avanzado. Analiza el mensaje y el contexto y devuelve EXCLUSIVAMENTE un JSON con este formato exacto:
+        prompt = f"""Eres un clasificador avanzado. Analiza el mensaje y esponde EXCLUSIVAMENTE con un JSON en el formato indicado.
+            No escribas explicaciones, análisis ni ningún otro texto. Solo el JSON.
+
+            Formato exacto requerido:
 
             {{
             "agente": "general" | "tarea" | "japones",
@@ -229,15 +234,44 @@ class Brain:
         prompt_japones = cargar_prompt("profesor_japones")
         self.historial.append({"role": "system", "content": prompt_japones})
         try:
+            # Si hay frase objetivo guardada, evaluamos pronunciación
+            if self.ultima_frase_objetivo:
+                from ai.pronunciation import comparar_pronunciacion
+                evaluacion = comparar_pronunciacion(
+                    self.ultima_frase_objetivo, mensaje
+                )
+                # Añadir contexto de evaluación al historial
+                self.historial.append({
+                    "role": "system",
+                    "content": f"La pronunciación de Laura obtuvo {evaluacion['precision']}%. "
+                               f"IPA objetivo: {evaluacion['ipa_objetivo']}. "
+                               f"IPA hablado: {evaluacion['ipa_hablado']}. "
+                               f"Incluye este feedback en tu respuesta: {evaluacion['feedback']}"
+                })
+                self.ultima_frase_objetivo = None
+
             respuesta = self.provider.completar(self.historial)
+
+            # Dar ritmo natural a las frases de práctica
+            if "repite" in respuesta.lower() or "di" in respuesta.lower():
+                # Insertar pausas con puntos suspensivos
+                respuesta = respuesta.replace(
+                    "Repite conmigo",
+                    "Repite conmigo... despacio..."
+                )
+            
+            # Extraer nueva frase objetivo si la hay
+            frase = self._extraer_frase_objetivo(respuesta)
+            if frase:
+                self.ultima_frase_objetivo = frase
             
             # ── Extraer y guardar progreso ──
-            if "---JSON---" in respuesta:
-                partes = respuesta.split("---JSON---")
-                texto_respuesta = partes[0].strip()
-                json_str = partes[1].strip()
+            # Busca "---JSON---" o solo "---" seguido de posible JSON
+            match = regex.split(r'---\s*(?:JSON)?\s*---', respuesta, maxsplit=1)
+            if len(match) >= 2:
+                texto_respuesta = match[0].strip()
+                json_str = match[-1].strip()
                 try:
-                    # Limpiar posible bloque de código
                     if json_str.startswith("```"):
                         json_str = json_str.split("```")[1]
                         if json_str.startswith("json"):
@@ -320,3 +354,20 @@ class Brain:
             if msg["role"] == "assistant":
                 return msg["content"]
         return ""
+
+    def _extraer_frase_objetivo(self, respuesta: str) -> str | None:
+        """
+        Si la respuesta contiene una frase para repetir,
+        la extrae y la guarda.
+        Busca patrones como 'Repite conmigo: X' o 'Di: X'
+        """
+        import re
+        patrones = [
+            r"(?:repit[ea]|di|pronuncia)\s+(?:conmigo\s*)?(?::|,)?\s*[「「]([^」」]+)[」」]",
+            r"(?:repit[ea]|di|pronuncia)\s+(?:conmigo\s*)?(?::|,)?\s*([\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]+)",
+        ]
+        for patron in patrones:
+            match = re.search(patron, respuesta, re.IGNORECASE)
+            if match:
+                return match.group(1).strip()
+        return None
