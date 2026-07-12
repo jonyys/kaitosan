@@ -6,34 +6,42 @@ import numpy as np
 import os
 import tempfile
 import re
+import subprocess
 
 
 class TextToSpeech:
     def __init__(self, device=1):
         self.device = device
         self.sample_rate_device = 48000
-        self.voice = "es-ES-AlvaroNeural"
+        self.voice_es = "es-ES-AlvaroNeural"
+        self.voice_ja = "ja-JP-KeitaNeural"
+
+    def _contiene_japones(self, texto: str) -> bool:
+        """Detecta si hay kana/kanji o bloques 【】 en el texto."""
+        if re.search(r'【[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]+】', texto):
+            return True
+        if re.search(r'[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]', texto):
+            return True
+        return False
 
     def _limpiar_para_voz(self, texto: str) -> str:
         """
-        Prepara el texto para que la voz española lo lea bien:
-        - Elimina fragmentos en kana/kanji entre paréntesis.
-        - Normaliza romaji (desu→des, masu→mas, etc.).
+        Normaliza el texto en español para que la voz española
+        pronuncie aproximado al japonés real.
         """
-        # Quitar paréntesis con contenido japonés: (です) o （です）
-        texto = re.sub(r'[（(][\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]+[）)]', '', texto)
+        # Quitar corchetes 【】 (ya los procesamos aparte)
+        texto = re.sub(r'【[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]+】', '', texto)
 
-        # Quitar fragmentos sueltos de kana/kanji sin paréntesis (opcional, cuidado)
-        # texto = re.sub(r'[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]+', '', texto)
+        # Eliminar restos de kana/kanji sueltos (no deberían aparecer)
+        texto = re.sub(r'[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]+', '', texto)
 
-        # ── Normalización fonética japonés real ──
+        # Normalización fonética
         reemplazos = [
             (r'arigatou', 'arigató'),
             (r'konnichiwa', 'konnichiwa'),
             (r'ohayou', 'ohayó'),
             (r'sayounara', 'sayonara'),
             (r'konbanwa', 'konbanwa'),
-            # Terminaciones formales (ensordecimiento de u)
             (r'\bdesu\b', 'des'),
             (r'\bmasu\b', 'mas'),
             (r'\bdeshita\b', 'deshta'),
@@ -41,78 +49,126 @@ class TextToSpeech:
             (r'\bshimasu\b', 'shimas'),
             (r'\bgozaimasu\b', 'gozaimas'),
             (r'\bonegaishimasu\b', 'onegaishimas'),
-            # Vocales ensordecidas entre sordas
-            (r'\bikimasu\b', 'ikimas'),
-            (r'\bkimasu\b', 'kimas'),
-            (r'\bhanashimasu\b', 'hanashimas'),
-            (r'\btabemasu\b', 'tabemas'),
-            (r'\bnomimasu\b', 'nomimas'),
-            (r'\bmimasu\b', 'mimas'),
-            (r'\bkaerimasu\b', 'kaerimas'),
-            # Forma te (て) → suena como "te" o "de"
-            # Forma ta (た) → "ta", pero en pasado a menudo se contrae
             (r'\bshita\b', 'shta'),
             (r'\bshite\b', 'shte'),
-            (r'\btsuite\b', 'tsuite'),
-            (r'\bmotte\b', 'motte'),
-            (r'\batte\b', 'atte'),
-            (r'\bitte\b', 'itte'),
-            # Contracciones típicas
-            (r'\bwatashi wa\b', 'watashi wa'),
-            (r'\bwatashi\b', 'watashi'),
-            # Ashita / ashta
             (r'\bashita\b', 'ashta'),
-            # Palabras con hi → suena casi como shi en boca de hispanohablante
-            (r'\bhitotsu\b', 'shtotsu'),
-            (r'\bfutatsu\b', 'futatsu'),
-            # Alargamientos (ー) → no se leen como letra
             (r'[ー一]', ''),
-            # Pequeñas pausas con punto o coma añadimos espacio extra
-            # Las comas y puntos ya las gestiona el TTS
         ]
         for patron, reemplazo in reemplazos:
-                    texto = re.sub(patron, reemplazo, texto, flags=re.IGNORECASE)
-
-        # Añadir pausas sutiles entre frases japonesas y español
-        # Insertar una coma antes de cambiar de idioma
-        texto = re.sub(
-            r'([a-záéíóúñ]+)\s+([a-záéíóúñ]+)',
-            r'\1 \2', texto
-        )
-        # Añadir pausa después de palabra japonesa seguida de español
-        texto = re.sub(
-            r'\b(des|mas|shta|ashta|ne|yo|ka|wa|ga|no|ni|de|wo|e|to|mo)\b\s+([A-ZÁÉÍÓÚÑa-záéíóúñ])',
-            r'\1, \2', texto
-        )
-
+            texto = re.sub(patron, reemplazo, texto, flags=re.IGNORECASE)
         return texto.strip()
 
-    async def _generar_audio(self, texto: str, tmp_path: str):
-        texto_limpio = self._limpiar_para_voz(texto)
-        print(f"🎙️ Texto enviado a TTS: {texto_limpio}")
-        tts = edge_tts.Communicate(texto_limpio, voice=self.voice)
+    def _dividir_texto(self, texto: str) -> list:
+        """
+        Divide el texto en segmentos (texto, voz).
+        - Los bloques 【japonés】 se envían a la voz japonesa.
+        - El resto se envía a la voz española.
+        """
+        # Separar por bloques 【...】
+        partes = re.split(r'(【[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]+】)', texto)
+        segmentos = []
+
+        for parte in partes:
+            if not parte.strip():
+                continue
+
+            # Bloque japonés entre 【】
+            if parte.startswith('【') and parte.endswith('】'):
+                contenido = parte[1:-1]  # quitar los corchetes
+                if contenido.strip():
+                    print(f"🎌 Segmento japonés: '{contenido}'")
+                    segmentos.append((contenido, self.voice_ja))
+            else:
+                # Texto en español (puede contener restos de kana sueltos)
+                # Por si acaso, volvemos a dividir por kana/kanji sueltos
+                subpartes = re.split(
+                    r'([\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]+)', parte
+                )
+                for sp in subpartes:
+                    if not sp.strip():
+                        continue
+                    if re.match(r'[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]+', sp):
+                        print(f"🎌 Segmento japonés suelto: '{sp}'")
+                        segmentos.append((sp, self.voice_ja))
+                    else:
+                        limpio = self._limpiar_para_voz(sp)
+                        if limpio.strip():
+                            print(f"🎙️ Segmento español: '{limpio}'")
+                            segmentos.append((limpio, self.voice_es))
+        return segmentos
+
+    async def _generar_audio_segmento(self, texto: str, voz: str, tmp_path: str):
+        """Genera un mp3 para un segmento con una voz específica."""
+        tts = edge_tts.Communicate(texto, voice=voz)
         await tts.save(tmp_path)
 
+    async def _generar_audio_completo(self, texto: str, tmp_path: str):
+        """
+        Genera el audio final uniendo los segmentos español y japonés.
+        """
+        segmentos = self._dividir_texto(texto)
+
+        if not segmentos:
+            return
+
+        # Si solo hay un segmento, lo generamos directamente
+        if len(segmentos) == 1:
+            txt, voz = segmentos[0]
+            await self._generar_audio_segmento(txt, voz, tmp_path)
+            return
+
+        # Generar cada segmento por separado
+        seg_paths = []
+        for i, (txt, voz) in enumerate(segmentos):
+            seg_path = tmp_path.replace(".mp3", f"_seg{i}.mp3")
+            await self._generar_audio_segmento(txt, voz, seg_path)
+            seg_paths.append(seg_path)
+
+        # Crear archivo de lista para ffmpeg concat
+        list_path = tmp_path.replace(".mp3", "_list.txt")
+        with open(list_path, "w") as f:
+            for sp in seg_paths:
+                f.write(f"file '{sp}'\n")
+
+        # Concatenar con ffmpeg
+        subprocess.run(
+            [
+                "ffmpeg", "-y", "-f", "concat", "-safe", "0",
+                "-i", list_path, "-c", "copy", tmp_path
+            ],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+
+        # Limpiar temporales
+        for sp in seg_paths:
+            if os.path.exists(sp):
+                os.unlink(sp)
+        if os.path.exists(list_path):
+            os.unlink(list_path)
+
     def hablar(self, texto: str):
+        """Convierte texto a voz y reproduce por el dispositivo de audio."""
         try:
             print(f"🔊 Hablando: {texto}")
 
             with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as tmp:
                 tmp_path = tmp.name
 
-            asyncio.run(self._generar_audio(texto, tmp_path))
+            asyncio.run(self._generar_audio_completo(texto, tmp_path))
 
+            # Leer mp3 con soundfile
             data, fs = sf.read(tmp_path)
             os.unlink(tmp_path)
 
             if data.dtype != np.float32:
                 data = data.astype(np.float32)
-
             if len(data.shape) > 1:
                 data = data.mean(axis=1)
-
             if fs != self.sample_rate_device:
-                data = self._convertir_sample_rate(data, orig_sr=fs, target_sr=self.sample_rate_device)
+                data = self._convertir_sample_rate(
+                    data, orig_sr=fs, target_sr=self.sample_rate_device
+                )
 
             sd.play(data, self.sample_rate_device, device=self.device)
             sd.wait()
@@ -122,6 +178,7 @@ class TextToSpeech:
             print(f"❌ Error en TTS: {e}")
 
     def _convertir_sample_rate(self, audio, orig_sr, target_sr) -> np.ndarray:
+        """Convierte sample rate sin librosa."""
         ratio = target_sr / orig_sr
         target_length = int(len(audio) * ratio)
         if target_length == 0:
