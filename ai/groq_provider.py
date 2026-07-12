@@ -27,9 +27,16 @@ class GroqProvider:
                     messages=mensajes,
                     max_tokens=MAX_TOKENS
                 )
-                tokens_usados = response.usage.total_tokens
-                total_hoy = self.tracker.añadir_tokens(tokens_usados)
-                print(f"📊 Tokens usados en esta llamada: {tokens_usados} (total hoy: {total_hoy})")
+
+                try:
+                    tokens_usados = response.usage.total_tokens
+                    datos = self.tracker.añadir_tokens(modelo, tokens_usados)
+                    total_modelo = datos["tokens"].get(modelo, 0)
+                    total_hoy = sum(datos["tokens"].values())
+                    print(f"📊 Tokens {modelo}: {tokens_usados} (hoy: {total_modelo} este modelo, {total_hoy} total)")
+                except Exception as e:
+                    print(f"⚠️ Error guardando tokens: {e}")
+                    
                 if modelo != self.model:
                     print(f"⚠️ Usando modelo alternativo: {modelo}")
                 return response.choices[0].message.content

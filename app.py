@@ -14,6 +14,7 @@ from audio.recorder import Recorder
 from ai.speech_to_text import SpeechToText
 from ai.text_to_speech import TextToSpeech
 from ai.pronunciation import comparar_pronunciacion
+from core.token_tracker import TokenTracker
 
 
 
@@ -239,12 +240,19 @@ def admin():
         })
     jap_db.close()
 
+    tracker = TokenTracker()
+    uso = tracker.consultar()
+    tokens = uso.get("tokens", {})
+    audio = uso.get("total_audio_seconds", 0)
+
     return render_template("admin.html",
                            perfil=perfil,
                            sesiones=sesiones,
                            mensajes=mensajes,
                            sesion_filtro=sesion_filtro,
-                           japones_progreso=japones_progreso)
+                           japones_progreso=japones_progreso,
+                           uso_tokens=tokens,
+                           uso_audio=audio)
 
 @app.route("/admin/perfil/añadir", methods=["POST"])
 @login_requerido

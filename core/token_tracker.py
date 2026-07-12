@@ -15,11 +15,11 @@ class TokenTracker:
             with open(TRACKER_FILE, "r") as f:
                 data = json.load(f)
         else:
-            data = {"date": "", "total_tokens": 0, "total_audio_seconds": 0}
+            data = {"date": "", "tokens": {}, "total_audio_seconds": 0}
 
         hoy = datetime.now().strftime("%Y-%m-%d")
-        if data["date"] != hoy:
-            data = {"date": hoy, "total_tokens": 0, "total_audio_seconds": 0}
+        if data.get("date") != hoy:
+            data = {"date": hoy, "tokens": {}, "total_audio_seconds": 0}
 
         self.data = data
 
@@ -27,14 +27,18 @@ class TokenTracker:
         with open(TRACKER_FILE, "w") as f:
             json.dump(self.data, f)
 
-    def añadir_tokens(self, tokens: int) -> int:
+    def añadir_tokens(self, modelo: str, tokens: int) -> dict:
         self._cargar()
-        self.data["total_tokens"] += tokens
+        if "tokens" not in self.data:
+            self.data["tokens"] = {}
+        self.data["tokens"][modelo] = self.data["tokens"].get(modelo, 0) + tokens
         self._guardar()
-        return self.data["total_tokens"]
+        return self.data
 
     def añadir_audio(self, segundos: int) -> int:
         self._cargar()
+        if "total_audio_seconds" not in self.data:
+            self.data["total_audio_seconds"] = 0
         self.data["total_audio_seconds"] += segundos
         self._guardar()
         return self.data["total_audio_seconds"]

@@ -187,6 +187,32 @@
 
 <div class="grid">
 
+    
+    <!-- ── USO DE TOKENS ── -->
+    <div class="card">
+        <h2>📊 Consumo diario de tokens</h2>
+
+        {% if uso_tokens %}
+        <table>
+            <tr>
+                <th>Modelo</th>
+                <th>Tokens gastados</th>
+            </tr>
+            {% for modelo, cantidad in uso_tokens.items() %}
+            <tr>
+                <td><strong>{{ modelo }}</strong></td>
+                <td>{{ cantidad }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <p class="empty">Aún no se han consumido tokens hoy</p>
+        {% endif %}
+
+        <h2 style="margin-top:20px">🎤 Audio transcrito hoy</h2>
+        <p style="font-size:24px; color:#0096ff">{{ uso_audio }} segundos</p>
+    </div>
+
     <!-- ── PERFIL DE LAURA ── -->
     <div class="card">
         <h2>👤 Perfil de Laura</h2>
