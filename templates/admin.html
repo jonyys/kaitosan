@@ -338,6 +338,68 @@
         {% endif %}
     </div>
 
+    <div class="card full">
+        <h2>🎌 Progreso de Japonés</h2>
+
+        <div class="actions">
+            <form method="POST" action="/admin/japones/borrar-todo"
+                  onsubmit="return confirm('¿Borrar todo el progreso?')">
+                <button class="btn btn-red">🗑️ Borrar todo</button>
+            </form>
+        </div>
+
+        {% if japones_progreso %}
+        <table>
+            <tr>
+                <th>Categoría</th>
+                <th>Elemento</th>
+                <th>Detalle</th>
+                <th>Añadido</th>
+                <th>Última revisión</th>
+                <th>Repasos</th>
+                <th>Precisión</th>
+                <th></th>
+            </tr>
+            {% for item in japones_progreso %}
+            <tr>
+                <td><span class="badge">{{ item.category }}</span></td>
+                <td><strong>{{ item.item }}</strong></td>
+                <td>{{ item.detail or '' }}</td>
+                <td>{{ item.added_at }}</td>
+                <td>{{ item.last_reviewed or '-' }}</td>
+                <td>{{ item.times_reviewed }}</td>
+                <td>
+                    {% if item.accuracy is not none %}
+                        {{ "%.1f"|format(item.accuracy) }}%
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>
+                    <form method="POST"
+                          action="/admin/japones/borrar/{{ item.id }}"
+                          onsubmit="return confirm('¿Borrar este registro?')">
+                        <button class="btn btn-red">🗑️</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <p class="empty">No hay progreso de japonés registrado</p>
+        {% endif %}
+
+        <!-- Opcional: añadir ítem manualmente -->
+        <h2 style="margin-top:20px">➕ Añadir ítem</h2>
+        <form method="POST" action="/admin/japones/añadir">
+            <div class="form-row">
+                <input type="text" name="category" placeholder="categoría (kanji, vocabulario...)" required>
+                <input type="text" name="item" placeholder="elemento (ej: 犬)" required>
+                <input type="text" name="detail" placeholder="detalle (ej: perro - kun: いぬ)">
+                <button class="btn btn-green">Guardar</button>
+            </div>
+        </form>
+    </div>
 </div>
 
 </body>

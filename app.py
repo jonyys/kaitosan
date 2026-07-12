@@ -205,11 +205,35 @@ def admin():
 
     db.close()
 
+    # --- consultar progreso de japonés ---
+    jap_db = brain.jap_memory._conectar()
+    jap_progreso = jap_db.execute("""
+        SELECT id, category, item, detail, added_at,
+               last_reviewed, times_reviewed, accuracy
+        FROM japanese_progress
+        ORDER BY added_at DESC
+    """).fetchall()
+
+    japones_progreso = []
+    for r in jap_progreso:
+        japones_progreso.append({
+            "id": r[0],
+            "category": r[1],
+            "item": r[2],
+            "detail": r[3],
+            "added_at": r[4],
+            "last_reviewed": r[5],
+            "times_reviewed": r[6],
+            "accuracy": r[7]
+        })
+    jap_db.close()
+
     return render_template("admin.html",
                            perfil=perfil,
                            sesiones=sesiones,
                            mensajes=mensajes,
-                           sesion_filtro=sesion_filtro)
+                           sesion_filtro=sesion_filtro,
+                           japones_progreso=japones_progreso)
 
 @app.route("/admin/perfil/añadir", methods=["POST"])
 @login_requerido
@@ -280,6 +304,40 @@ def admin_mensaje_borrar(mensaje_id):
     db.commit()
     db.close()
     flash("✅ Mensaje borrado", "success")
+    return redirect(url_for("admin"))
+
+@app.route("/admin/japones/añadir", methods=["POST"])
+@login_requerido
+def admin_japones_añadir():
+    category = request.form.get("category", "").strip()
+    item = request.form.get("item", "").strip()
+    detail = request.form.get("detail", "").strip()
+    if category and item:
+        brain.jap_memory.registrar_item(category, item, detail)
+        flash("✅ Ítem añadido al progreso de japonés", "success")
+    else:
+        flash("❌ Categoría y elemento son obligatorios", "error")
+    return redirect(url_for("admin"))
+
+@app.route("/admin/japones/borrar/<int:item_id>", methods=["POST"])
+@login_requerido
+def admin_japones_borrar(item_id):
+    db = brain.jap_memory._conectar()
+    db.execute("DELETE FROM japanese_progress WHERE id = ?", (item_id,))
+    db.commit()
+    db.close()
+    flash("✅ Ítem borrado", "success")
+    return redirect(url_for("admin"))
+
+@app.route("/admin/japones/borrar-todo", methods=["POST"])
+@login_requerido
+def admin_japones_borrar_todo():
+    db = brain.jap_memory._conectar()
+    db.execute("DELETE FROM japanese_progress")
+    db.execute("DELETE FROM japanese_goals")
+    db.commit()
+    db.close()
+    flash("✅ Todo el progreso de japonés ha sido borrado", "success")
     return redirect(url_for("admin"))
 
 if __name__ == "__main__":

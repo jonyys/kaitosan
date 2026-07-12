@@ -53,7 +53,7 @@ class Memory:
             "apodo": "Laurius, así la llaman sus amigas de Collado Mediano",
             "edad": "26 años",
             "fecha_nacimiento": "10 de mayo del 2000",
-            "hermana": "Una",
+            "hermana": "Ana",
             "padre": "José",
             "madre": "Marisa",
             "trabajo": "Programadora frontend en Ntt Data para el cliente Iberdrola",

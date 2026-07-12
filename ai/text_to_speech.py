@@ -27,7 +27,7 @@ class TextToSpeech:
         por el dispositivo de audio.
         """
         try:
-            print(f"🔊 Hablando: {texto[:50]}...")
+            print(f"🔊 Hablando: {texto}")
 
             # Archivo temporal mp3
             with tempfile.NamedTemporaryFile(
