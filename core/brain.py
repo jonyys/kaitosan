@@ -10,13 +10,6 @@ import time
 from datetime import datetime
 import re as regex
 
-# Palabras que indican que Laura pregunta por el pasado
-PALABRAS_MEMORIA = [
-    "recuerdas", "acuerdas", "dijiste", "hablamos",
-    "comenté", "mencioné", "ayer", "semana pasada",
-    "última vez", "antes", "anteriormente", "te dije"
-]
-
 # Limitar tamaño del historial para sesiones largas
 MAX_MENSAJES = 20
 
@@ -126,53 +119,6 @@ class Brain:
                 "terminos_memoria": [],
                 "consultar_progreso": False
             }
-
-    def _necesita_memoria(self, mensaje: str) -> bool:
-        """
-        Detecta si Laura está preguntando
-        por conversaciones pasadas
-        """
-        mensaje_lower = mensaje.lower()
-        return any(
-            palabra in mensaje_lower
-            for palabra in PALABRAS_MEMORIA
-        )
-
-    def _añadir_contexto_historico(self):
-        """
-        Añade el historial de conversaciones
-        al contexto solo cuando es necesario
-        """
-        historial_texto = self.memory.obtener_historial_reciente()
-        if historial_texto:
-            self.historial.append({
-                "role": "system",
-                "content": f"Contexto de conversaciones anteriores:\n{historial_texto}"
-            })
-            print("📚 Contexto histórico añadido")
-
-    def _extraer_terminos(self, mensaje: str) -> list:
-        """
-        Extrae palabras clave del mensaje
-        para buscar en la BD
-        """
-        # Palabras a ignorar
-        stopwords = {
-            "que", "de", "la", "el", "en", "y", "a",
-            "los", "las", "un", "una", "es", "se", "no",
-            "me", "te", "le", "lo", "con", "por", "para",
-            "como", "cuando", "donde", "quien", "cual",
-            "tengo", "tienes", "tiene", "hay", "hola",
-            "qué", "cuál", "cuándo", "dónde", "cómo"
-        }
-
-        palabras = mensaje.lower().split()
-        terminos = [
-            p for p in palabras
-            if len(p) > 3 and p not in stopwords
-        ]
-
-        return terminos[:5]  # Máximo 5 términos
 
     def responder(self, mensaje: str) -> str:
         decision = self._detectar_intencion(mensaje)
