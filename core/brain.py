@@ -2,6 +2,8 @@ import json
 
 from ai.groq_provider import GroqProvider
 from ai.prompts import cargar_prompt
+from ai.fallback_provider import FallbackProvider
+
 from core.japanese_memory import JapaneseMemory
 from core.memory import DB_PATH, Memory
 import time
@@ -19,7 +21,7 @@ class Brain:
     def __init__(self, state_manager, socketio):
         self.state = state_manager
         self.socketio = socketio
-        self.provider = GroqProvider() # modelo principal (DEFAULT_MODEL)
+        self.provider = FallbackProvider(model="llama-3.3-70b-versatile")
         self.router_provider = GroqProvider(model="llama-3.1-8b-instant") # modelo ligero para enrutar
         self.memory = Memory()
         self.jap_memory = JapaneseMemory(DB_PATH)    
