@@ -1,5 +1,6 @@
 from core.token_tracker import TokenTracker
 import soundfile as sf
+from groq import Groq
 
 class SpeechToText:
     def __init__(self):

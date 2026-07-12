@@ -10,10 +10,9 @@ class PersonDetector:
         self.hay_persona = False
         self.activo = True
 
-        self.detector = cv2.CascadeClassifier(
-            cv2.data.haarcascades +
-            'haarcascade_frontalface_default.xml'
-        )
+        # Ruta explícita al haarcascade del sistema
+        cascade_path = "/usr/share/opencv4/haarcascades/haarcascade_frontalface_default.xml"
+        self.detector = cv2.CascadeClassifier(cascade_path)
 
     def iniciar(self):
         hilo = threading.Thread(
