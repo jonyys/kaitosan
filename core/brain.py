@@ -72,11 +72,17 @@ class Brain:
             Reglas:
             - agente "general": conversación normal, preguntas personales, saludos, recuerdos.
             - agente "tarea": crear/modificar/consultar recordatorios, alarmas, calendario, hora/fecha.
-            - agente "japones": aprender japonés, traducir, gramática, vocabulario, ejercicios.
-            - usar_memoria: true si necesita información personal de Laura (gustos, trabajo, familia...) o hechos pasados.
-            - buscar_historial: true solo si la frase pide explícitamente recordar algo ("recuerdas...", "dijiste...").
-            - terminos_memoria: solo si buscar_historial es true; extrae 1-3 palabras clave relevantes.
-            - consultar_progreso: true solo si el agente es "japones" y la petición se beneficiaría de conocer el nivel, vocabulario ya visto, errores frecuentes, etc.
+            - agente "japones": aprender japonés, traducir, gramática, vocabulario, ejercicios, practicar conversación en japonés, repasar.
+            - usar_memoria: true si necesita información personal de Laura (gustos, trabajo, familia, perfil). NO lo uses para vocabulario de japonés.
+            - buscar_historial: true crees que debes recordar una conversación pasada ("recuerdas...", "dijiste...", "ayer", "la última vez","lo que hablamos", "lo que dijimos", "el otro dia").
+            - terminos_memoria: 1-3 palabras clave SOLO si buscar_historial es true. Si no, array vacío [].
+            - consultar_progreso: true si el agente es "japones" y la petición implica recordar o usar lo ya aprendido. Ejemplos donde DEBE ser true:
+            - "practicar lo que hemos aprendido"
+            - "repasar", "repaso"
+            - "lo que me enseñaste", "lo que vimos"
+            - "examen", "ejercicios", "practicar"
+            - "hablar en japonés", "conversar en japonés"
+            - "usa lo que sé", "con lo que ya sé"
 
             Importante: Si el mensaje actual es una respuesta directa a lo que el asistente acaba de preguntar o proponer (por ejemplo, "sí",
             "practicar esa misma frase", "otra vez", "dime más"), mantén el mismo agente que se deduce del contexto.
