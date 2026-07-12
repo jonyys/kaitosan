@@ -17,6 +17,9 @@ PALABRAS_MEMORIA = [
     "última vez", "antes", "anteriormente", "te dije"
 ]
 
+# Limitar tamaño del historial para sesiones largas
+MAX_MENSAJES = 20
+
 class Brain:
     def __init__(self, state_manager, socketio):
         self.state = state_manager
@@ -213,6 +216,10 @@ class Brain:
         self.ultimo_agente = agente
 
         print(f"🤖 Kaito [{agente}]: {respuesta}")
+
+        if len(self.historial) > MAX_MENSAJES + 1:
+            self.historial = [self.historial[0]] + self.historial[-(MAX_MENSAJES):]
+            print(f"🧹 Historial truncado a {MAX_MENSAJES} mensajes")
 
         return respuesta
 
