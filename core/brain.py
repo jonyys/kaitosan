@@ -142,12 +142,12 @@ class Brain:
     def responder(self, mensaje: str) -> str:
 
         # Detectar comandos de modo sensei
-        if any(frase in mensaje.lower() for frase in ["sensei", "entrar en modo", "entra en modo", "modo sensei on", "activar modo sensei", "activar modo"]):
+        if any(frase in mensaje.lower() for frase in ["sensei", "entrar en modo", "entra en modo", "modo sensei on", "activar modo sensei", "activar modo", "en modo"]):
             if not self.modo_sensei:
                 self.entrar_modo_sensei()
                 return random.choice(self.SALUDOS_SENSEI)
 
-        if any(frase in mensaje.lower() for frase in ["salir del modo sensei", "sal del modo sensei", "modo sensei off", "salir del modo", "sal del modo", "desactivar modo", "desactivar modo"]):
+        if any(frase in mensaje.lower() for frase in ["salir del modo sensei", "sal del modo sensei", "modo sensei off", "salir del modo", "sal del modo", "desactivar modo", "desactivar modo", "desctivar", "desactiva"]):
             if self.modo_sensei:
                 self.salir_modo_sensei()
                 return random.choice(self.DESPEDIDAS_SENSEI)

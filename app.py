@@ -100,7 +100,9 @@ def grabar():
             return jsonify({"error": "Error grabando"}), 500
 
         # Transcribe
-        texto = stt.transcribir(archivo)
+        # Usar japonés si estamos en modo sensei, español en caso contrario
+        idioma_stt = None if brain.modo_sensei else "es"
+        texto = stt.transcribir(archivo, idioma=idioma_stt)
         
         if not texto:
             state.cambiar("idle")

@@ -28,7 +28,6 @@ class SpeechToText:
                 params = {
                     "model": self.modelo,
                     "file": audio,
-                    "language": "es"
                 }
                 if idioma:
                     params["language"] = idioma
