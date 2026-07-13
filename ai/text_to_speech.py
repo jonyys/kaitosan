@@ -92,7 +92,7 @@ class TextToSpeech:
                         segmentos.append((sp, self.voice_ja))
                     else:
                         limpio = self._limpiar_para_voz(sp)
-                        if limpio.strip():
+                        if limpio.strip() and len(limpio.strip()) > 2:
                             print(f"🎙️ Segmento español: '{limpio}'")
                             segmentos.append((limpio, self.voice_es))
         return segmentos

@@ -1,5 +1,5 @@
 import json
-
+import threading
 from ai.groq_provider import GroqProvider
 from ai.prompts import cargar_prompt
 from ai.fallback_provider import FallbackProvider
@@ -27,6 +27,9 @@ class Brain:
         self.ultimo_agente = "general"
         self.ultima_frase_objetivo = None
         self.search = SearchProvider()
+        self.modo_sensei = False
+        self.timer_sensei = None
+        self.inicio_sesion_sensei = False
 
     def _iniciar_sesion(self):
         """
@@ -49,7 +52,6 @@ class Brain:
         print(f"✅ Sesión {self.session_id} iniciada")
 
     def _detectar_intencion(self, mensaje: str) -> dict:
-        # Heurística rápida primero (opcional, la mantienes)
 
         ultimo_asistente = self._ultimo_contexto_asistente()
         contexto = ""
@@ -62,7 +64,7 @@ class Brain:
             Formato exacto requerido:
 
             {{
-            "agente": "general" | "tarea" | "japones",
+            "agente": "general" | "tarea",
             "usar_memoria": true/false,
             "buscar_historial": true/false,
             "terminos_memoria": ["..."],
@@ -71,23 +73,14 @@ class Brain:
             }}
 
             Reglas:
-            - agente "general": conversación normal, preguntas personales, saludos, recuerdos.
-            - agente "tarea": crear/modificar/consultar recordatorios, alarmas, calendario, hora/fecha.
-            - agente "japones": aprender japonés, traducir, gramática, vocabulario, ejercicios, practicar conversación en japonés, repasar.
-            - usar_memoria: true si necesita información personal de Laura (gustos, trabajo, familia, perfil). NO lo uses para vocabulario de japonés.
-            - buscar_historial: true crees que debes recordar una conversación pasada ("recuerdas...", "dijiste...", "ayer", "la última vez","lo que hablamos", "lo que dijimos", "el otro dia").
-            - terminos_memoria: 1-3 palabras clave SOLO si buscar_historial es true. Si no, array vacío [].
-            - consultar_progreso: true si el agente es "japones" y la petición implica recordar o usar lo ya aprendido. Ejemplos donde DEBE ser true:
-                - "practicar lo que hemos aprendido"
-                - "repasar", "repaso"
-                - "lo que me enseñaste", "lo que vimos"
-                - "examen", "ejercicios", "practicar"
-                - "hablar en japonés", "conversar en japonés"
-                - "usa lo que sé", "con lo que ya sé"
-            - buscar_internet: true si la pregunta requiere información factual, actual o local
-            que el modelo no puede saber sin acceso a internet (restaurantes, direcciones,
-            noticias, clima, eventos actuales, datos muy específicos). false para conocimientos
-            generales, matemáticas, traducciones, conversación casual, recuerdos personales.
+                - agente: "general" para conversación normal, preguntas, saludos, peticiones de traducción, significado de palabras, etc. 
+                    "tarea" SOLO para crear/modificar/consultar recordatorios, alarmas, hora/fecha, temporizadores.
+                - usar_memoria: true si necesita datos personales de Laura (gustos, trabajo, familia, perfil).
+                - buscar_historial: true crees que debes recordar una conversación pasada sobre algo que ya hablasteis.
+                - terminos_memoria: 1-3 palabras clave SOLO si buscar_historial es true. Si no, array vacío [].
+                - consultar_progreso: true si la pregunta es sobre japonés (traducciones, vocabulario, gramática) y podría beneficiarse de conocer el progreso de Laura. Esto ayuda al agente general a responder mejor.
+                - buscar_internet: true si la pregunta requiere información factual, actual o local que el modelo no puede saber sin acceso a internet (restaurantes, direcciones, noticias, clima). NUNCA lo actives para preguntas de japonés o traducciones.
+
 
             Importante: Si el mensaje actual es una respuesta directa a lo que el asistente acaba de preguntar o proponer (por ejemplo, "sí",
             "practicar esa misma frase", "otra vez", "dime más"), mantén el mismo agente que se deduce del contexto.
@@ -129,8 +122,35 @@ class Brain:
             }
 
     def responder(self, mensaje: str) -> str:
+
+        # Detectar comandos de modo sensei
+        if any(frase in mensaje.lower() for frase in ["entrar en modo sensei", "entra en modo sensei", "modo sensei on"]):
+            self.entrar_modo_sensei()
+            return "¡Modo Sensei activado! Ahora podemos practicar japonés. ¿Por dónde quieres empezar?"
+
+        if any(frase in mensaje.lower() for frase in ["salir del modo sensei", "sal del modo sensei", "modo sensei off"]):
+            self.salir_modo_sensei()
+            return "He salido del modo Sensei. Puedes seguir preguntándome lo que quieras."
+
+         # ── Si ya estamos en modo sensei, saltamos el enrutador ──
+        if self.modo_sensei:
+            self._renovar_timer_sensei()
+            self.historial.append({"role": "user", "content": mensaje})
+            respuesta = self._responder_profesor_japones(mensaje)
+            self.historial.append({"role": "assistant", "content": respuesta})
+            self.memory.guardar_mensaje(self.session_id, "user", mensaje)
+            self.memory.guardar_mensaje(self.session_id, "assistant", respuesta)
+            print(f"🤖 Kaito [sensei]: {respuesta}")
+            return respuesta
+
+        # ── Flujo normal con enrutador ──
         decision = self._detectar_intencion(mensaje)
         agente = decision["agente"]
+
+        # Si estamos en modo sensei, forzar agente japones
+        if self.modo_sensei and agente != "japones":
+            agente = "japones"
+            decision["consultar_progreso"] = True
 
         # Memoria conversacional (general)
         if decision["usar_memoria"]:
@@ -146,14 +166,14 @@ class Brain:
 
         # Memoria de japonés
         if decision["consultar_progreso"]:
-            progreso = self.jap_memory.obtener_progreso()
+            progreso = self.jap_memory.obtener_perfil_completo()
             self.historial.append({
                 "role": "system",
                 "content": f"Progreso actual de japonés:\n{progreso}"
             })
 
-        # Búsqueda en internet
-        if decision.get("buscar_internet"):
+        # Búsqueda en internet (nunca para el profesor de japonés)
+        if decision.get("buscar_internet") and agente != "japones":
             print(f"🌐 Buscando en internet: {mensaje}")
             resultados = self.search.buscar(mensaje)
             self.historial.append({
@@ -213,6 +233,31 @@ class Brain:
     def _responder_profesor_japones(self, mensaje: str) -> str:
         prompt_japones = cargar_prompt("profesor_japones")
         self.historial.append({"role": "system", "content": prompt_japones})
+
+        # Inyectar perfil actualizado de Laura (si no está ya)
+        if not any("=== PERFIL ACTUAL DE LAURA" in m.get("content","") for m in self.historial if m["role"]=="system"):
+            perfil = self.jap_memory.obtener_perfil_completo()
+            self.historial.insert(1, {"role": "system", "content": perfil})
+            print("🎌 Perfil de japonés inyectado")
+
+        # Determinar modo según el mensaje de Laura
+        modo = self._detectar_modo_japones(mensaje)  # simple heurística o el enrutador
+        
+        # Inyectar estado de la sesión
+        estado = self._generar_estado_japones(modo)
+        self.historial.insert(1, {"role": "system", "content": estado})
+
+        # ── Saludo inicial de sesión ──
+        if self.inicio_sesion_sensei:
+            self.inicio_sesion_sensei = False
+            self.historial.append({
+                "role": "system",
+                "content": "Es el INICIO de una nueva sesión de japonés con Laura. "
+                           "Salúdala en japonés, pregúntale qué tal está y dale la bienvenida. "
+                           "Usa un tono cálido y motivador. Ejemplo: 【こんにちは、ラウラさん。おげんきですか。】"
+            })
+        # ─────────────────────────────
+
         try:
             # Si hay frase objetivo guardada, evaluamos pronunciación
             if self.ultima_frase_objetivo:
@@ -257,12 +302,22 @@ class Brain:
                         if json_str.startswith("json"):
                             json_str = json_str[4:]
                     progreso = json.loads(json_str)
+                    
+                    # NUEVO: guardar en las nuevas tablas
                     for item in progreso.get("items", []):
-                        self.jap_memory.registrar_item(
-                            item.get("category", "general"),
-                            item.get("item", ""),
-                            item.get("detail", "")
-                        )
+                        cat = item.get("category", "vocabulario")
+                        if cat in ("vocabulario", "frase"):
+                            self.jap_memory.registrar_vocabulario(
+                                word=item.get("jp", item.get("item", "")),
+                                reading=item.get("jp", ""),
+                                meaning=item.get("es", item.get("detail", "")),
+                                word_type=cat
+                            )
+                        elif cat == "gramatica":
+                            self.jap_memory.registrar_gramatica(
+                                grammar_point=item.get("jp", item.get("item", "")),
+                                description=item.get("es", item.get("detail", ""))
+                            )
                         print(f"🎌 Progreso guardado: {item}")
                 except Exception as e:
                     print(f"⚠️ Error guardando progreso: {e}")
@@ -271,6 +326,39 @@ class Brain:
             return respuesta
         finally:
             self.historial.pop()
+
+    def _generar_estado_japones(self, modo: str) -> str:
+        """
+        Genera un bloque de contexto para el profesor de japonés
+        con el progreso real de Laura y el modo actual.
+        """
+        perfil = self.jap_memory.obtener_perfil_completo()  # ya tienes este método
+        
+        # Determinar objetivo según el modo
+        objetivos = {
+            "conversacion": "Practicar conversación natural usando vocabulario y gramática ya dominados.",
+            "traduccion": "Traducir palabras o frases solicitadas por Laura.",
+            "practica": "Reforzar estructuras gramaticales con ejercicios guiados."
+        }
+        objetivo = objetivos.get(modo, objetivos["conversacion"])
+        
+        estado = f"""ESTADO DE LA SESIÓN
+
+            Modo: {modo.capitalize()}
+
+            Objetivo: {objetivo}
+
+            {perfil}
+
+            Reglas importantes:
+            - NO enseñes palabras que ya aparezcan como dominadas, salvo que Laura pida repasarlas explícitamente.
+            - Introduce como máximo UNA palabra o estructura nueva por respuesta.
+            - Prioriza que Laura gane confianza. No interrumpas para corregir errores menores.
+            - Si un error no impide entender el mensaje, continúa y coméntalo después.
+            - Reutiliza vocabulario ya aprendido para reforzar la memoria.
+            - Alterna entre enseñar, preguntar y conversar.
+            """
+        return estado
 
     def cerrar_sesion(self):
         """Cierra la sesión actual en la BD"""
@@ -327,6 +415,7 @@ class Brain:
     def _responder_conversacion(self, mensaje: str) -> str:
         # Asume que el mensaje ya está añadido al historial antes de llamar
         respuesta = self.provider.completar(self.historial)
+        self._procesar_json_progreso(respuesta)   # por si acaso trae JSON
         return respuesta
 
     def _ultimo_contexto_asistente(self) -> str:
@@ -351,3 +440,69 @@ class Brain:
             if match:
                 return match.group(1).strip()
         return None
+
+    def _detectar_modo_japones(self, mensaje: str) -> str:
+        """Detecta el modo de interacción según el mensaje de Laura."""
+        m = mensaje.lower()
+        if any(p in m for p in ["cómo se dice", "traduce", "significa", "cómo digo"]):
+            return "traduccion"
+        if any(p in m for p in ["practicar", "ejercicio", "examen", "repasar", "practiquemos"]):
+            return "practica"
+        if any(p in m for p in ["hablar", "conversar", "hablemos", "charlemos", " conversación"]):
+            return "conversacion"
+        return "conversacion"  # por defecto
+
+    def entrar_modo_sensei(self):
+        self.modo_sensei = True
+        self.inicio_sesion_sensei = True
+        print("🎌 Modo Sensei activado")
+        # Cancelar timer de salida si existía
+        if self.timer_sensei:
+            self.timer_sensei.cancel()
+
+    def salir_modo_sensei(self):
+        self.modo_sensei = False
+        self.inicio_sesion_sensei = False
+        print("🎌 Modo Sensei desactivado")
+        # Cancelar timer
+        if self.timer_sensei:
+            self.timer_sensei.cancel()
+            self.timer_sensei = None
+
+    def _renovar_timer_sensei(self):
+        """Reinicia el contador de inactividad de 20 minutos."""
+        if self.timer_sensei:
+            self.timer_sensei.cancel()
+        self.timer_sensei = threading.Timer(20 * 60, self.salir_modo_sensei)
+        self.timer_sensei.daemon = True
+        self.timer_sensei.start()
+
+    def _procesar_json_progreso(self, respuesta: str):
+        """Extrae y guarda el progreso si la respuesta contiene JSON."""
+        import re as regex
+        match = regex.split(r'---\s*(?:JSON)?\s*---', respuesta, maxsplit=1)
+        if len(match) >= 2:
+            json_str = match[-1].strip()
+            try:
+                if json_str.startswith("```"):
+                    json_str = json_str.split("```")[1]
+                    if json_str.startswith("json"):
+                        json_str = json_str[4:]
+                progreso = json.loads(json_str)
+                for item in progreso.get("items", []):
+                    cat = item.get("category", "vocabulario")
+                    if cat in ("vocabulario", "frase"):
+                        self.jap_memory.registrar_vocabulario(
+                            word=item.get("jp", item.get("item", "")),
+                            reading=item.get("jp", ""),
+                            meaning=item.get("es", item.get("detail", "")),
+                            word_type=cat
+                        )
+                    elif cat == "gramatica":
+                        self.jap_memory.registrar_gramatica(
+                            grammar_point=item.get("jp", item.get("item", "")),
+                            description=item.get("es", item.get("detail", ""))
+                        )
+                    print(f"🎌 Progreso guardado: {item}")
+            except Exception as e:
+                print(f"⚠️ Error guardando progreso: {e}")

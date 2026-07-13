@@ -101,6 +101,7 @@ def grabar():
 
         # Transcribe
         texto = stt.transcribir(archivo)
+        
         if not texto:
             state.cambiar("idle")
             return jsonify({"error": "No se entendió nada"}), 400
@@ -217,27 +218,71 @@ def admin():
 
     db.close()
 
-    # --- consultar progreso de japonés ---
+    # --- Consultar progreso de japonés ---
     jap_db = brain.jap_memory._conectar()
-    jap_progreso = jap_db.execute("""
-        SELECT id, category, item, detail, added_at,
-               last_reviewed, times_reviewed, accuracy
-        FROM japanese_progress
-        ORDER BY added_at DESC
+    
+    # Skills
+    skills = jap_db.execute("""
+        SELECT skill, percentage FROM japanese_skills ORDER BY skill
     """).fetchall()
+    jap_skills = [{"skill": r[0], "percentage": r[1]} for r in skills]
 
-    japones_progreso = []
-    for r in jap_progreso:
-        japones_progreso.append({
-            "id": r[0],
-            "category": r[1],
-            "item": r[2],
-            "detail": r[3],
-            "added_at": r[4],
-            "last_reviewed": r[5],
-            "times_reviewed": r[6],
-            "accuracy": r[7]
+    # Vocabulario
+    vocab = jap_db.execute("""
+        SELECT word, reading, meaning, type, status, confidence, errors,
+               last_reviewed, times_reviewed
+        FROM japanese_vocabulary
+        ORDER BY status, word
+    """).fetchall()
+    jap_vocab = []
+    for r in vocab:
+        jap_vocab.append({
+            "word": r[0], "reading": r[1], "meaning": r[2], "type": r[3],
+            "status": r[4], "confidence": r[5], "errors": r[6],
+            "last_reviewed": r[7], "times_reviewed": r[8]
         })
+
+    # Gramática
+    grammar = jap_db.execute("""
+        SELECT grammar_point, description, mastery, errors, last_used
+        FROM japanese_grammar ORDER BY mastery DESC
+    """).fetchall()
+    jap_grammar = []
+    for r in grammar:
+        jap_grammar.append({
+            "point": r[0], "description": r[1], "mastery": r[2],
+            "errors": r[3], "last_used": r[4]
+        })
+
+    # Temas
+    topics = jap_db.execute("""
+        SELECT topic, can_handle FROM japanese_topics ORDER BY topic
+    """).fetchall()
+    jap_topics = [{"topic": r[0], "can_handle": bool(r[1])} for r in topics]
+
+    # Sesiones de japonés
+    sessions_jap = jap_db.execute("""
+        SELECT id, started_at, ended_at, words_learned, grammar_practiced,
+               errors_noted, summary
+        FROM japanese_sessions ORDER BY started_at DESC
+    """).fetchall()
+    jap_sessions = []
+    for r in sessions_jap:
+        jap_sessions.append({
+            "id": r[0], "started_at": r[1], "ended_at": r[2],
+            "words_learned": r[3], "grammar_practiced": r[4],
+            "errors_noted": r[5], "summary": r[6]
+        })
+
+    # Perfil generado más reciente
+    perfil_jap = jap_db.execute("""
+        SELECT summary_text, generated_at FROM japanese_profile
+        ORDER BY generated_at DESC LIMIT 1
+    """).fetchone()
+    jap_profile = None
+    if perfil_jap:
+        jap_profile = {"text": perfil_jap[0], "date": perfil_jap[1]}
+
     jap_db.close()
 
     tracker = TokenTracker()
@@ -246,13 +291,16 @@ def admin():
     audio = uso.get("total_audio_seconds", 0)
 
     return render_template("admin.html",
-                           perfil=perfil,
-                           sesiones=sesiones,
-                           mensajes=mensajes,
-                           sesion_filtro=sesion_filtro,
-                           japones_progreso=japones_progreso,
-                           uso_tokens=tokens,
-                           uso_audio=audio)
+                            perfil=perfil,
+                            sesiones=sesiones,
+                            mensajes=mensajes,
+                            sesion_filtro=sesion_filtro,
+                            jap_skills=jap_skills,
+                            jap_vocab=jap_vocab,
+                            jap_grammar=jap_grammar,
+                            jap_topics=jap_topics,
+                            jap_sessions=jap_sessions,
+                            jap_profile=jap_profile)
 
 @app.route("/admin/perfil/añadir", methods=["POST"])
 @login_requerido

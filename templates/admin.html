@@ -364,67 +364,100 @@
         {% endif %}
     </div>
 
+        <!-- ── PROGRESO DE JAPONÉS (NUEVO) ── -->
     <div class="card full">
-        <h2>🎌 Progreso de Japonés</h2>
+        <h2>🎌 Japonés – Perfil actual</h2>
+        {% if jap_profile %}
+            <pre style="white-space:pre-wrap; background:#1a1a1a; padding:10px; border-radius:6px;">{{ jap_profile.text }}</pre>
+            <small>Generado: {{ jap_profile.date }}</small>
+        {% else %}
+            <p class="empty">Aún no hay perfil generado</p>
+        {% endif %}
 
-        <div class="actions">
-            <form method="POST" action="/admin/japones/borrar-todo"
-                  onsubmit="return confirm('¿Borrar todo el progreso?')">
-                <button class="btn btn-red">🗑️ Borrar todo</button>
-            </form>
-        </div>
-
-        {% if japones_progreso %}
+        <h2 style="margin-top:20px">📊 Competencias</h2>
+        {% if jap_skills %}
         <table>
+            <tr><th>Habilidad</th><th>Porcentaje</th></tr>
+            {% for s in jap_skills %}
+            <tr><td>{{ s.skill }}</td><td>{{ s.percentage }}%</td></tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <p class="empty">Sin datos</p>
+        {% endif %}
+
+        <h2 style="margin-top:20px">📚 Vocabulario</h2>
+        {% if jap_vocab %}
+        <table>
+            <tr><th>Palabra</th><th>Lectura</th><th>Significado</th><th>Tipo</th><th>Estado</th><th>Confianza</th><th>Errores</th><th>Último repaso</th></tr>
+            {% for v in jap_vocab %}
             <tr>
-                <th>Categoría</th>
-                <th>Elemento</th>
-                <th>Detalle</th>
-                <th>Añadido</th>
-                <th>Última revisión</th>
-                <th>Repasos</th>
-                <th>Precisión</th>
-                <th></th>
-            </tr>
-            {% for item in japones_progreso %}
-            <tr>
-                <td><span class="badge">{{ item.category }}</span></td>
-                <td><strong>{{ item.item }}</strong></td>
-                <td>{{ item.detail or '' }}</td>
-                <td>{{ item.added_at }}</td>
-                <td>{{ item.last_reviewed or '-' }}</td>
-                <td>{{ item.times_reviewed }}</td>
-                <td>
-                    {% if item.accuracy is not none %}
-                        {{ "%.1f"|format(item.accuracy) }}%
-                    {% else %}
-                        -
-                    {% endif %}
-                </td>
-                <td>
-                    <form method="POST"
-                          action="/admin/japones/borrar/{{ item.id }}"
-                          onsubmit="return confirm('¿Borrar este registro?')">
-                        <button class="btn btn-red">🗑️</button>
-                    </form>
-                </td>
+                <td><strong>{{ v.word }}</strong></td>
+                <td>{{ v.reading or '' }}</td>
+                <td>{{ v.meaning or '' }}</td>
+                <td>{{ v.type or '' }}</td>
+                <td><span class="badge">{{ v.status }}</span></td>
+                <td>{{ v.confidence }}%</td>
+                <td>{{ v.errors }}</td>
+                <td>{{ v.last_reviewed or '-' }}</td>
             </tr>
             {% endfor %}
         </table>
         {% else %}
-        <p class="empty">No hay progreso de japonés registrado</p>
+        <p class="empty">Sin vocabulario registrado</p>
         {% endif %}
 
-        <!-- Opcional: añadir ítem manualmente -->
-        <h2 style="margin-top:20px">➕ Añadir ítem</h2>
-        <form method="POST" action="/admin/japones/añadir">
-            <div class="form-row">
-                <input type="text" name="category" placeholder="categoría (kanji, vocabulario...)" required>
-                <input type="text" name="item" placeholder="elemento (ej: 犬)" required>
-                <input type="text" name="detail" placeholder="detalle (ej: perro - kun: いぬ)">
-                <button class="btn btn-green">Guardar</button>
-            </div>
-        </form>
+        <h2 style="margin-top:20px">🧩 Gramática</h2>
+        {% if jap_grammar %}
+        <table>
+            <tr><th>Punto gramatical</th><th>Descripción</th><th>Dominio</th><th>Errores</th><th>Último uso</th></tr>
+            {% for g in jap_grammar %}
+            <tr>
+                <td><strong>{{ g.point }}</strong></td>
+                <td>{{ g.description or '' }}</td>
+                <td>{{ g.mastery }}%</td>
+                <td>{{ g.errors }}</td>
+                <td>{{ g.last_used or '-' }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <p class="empty">Sin gramática registrada</p>
+        {% endif %}
+
+        <h2 style="margin-top:20px">💬 Temas de conversación</h2>
+        {% if jap_topics %}
+        <table>
+            <tr><th>Tema</th><th>¿Lo maneja?</th></tr>
+            {% for t in jap_topics %}
+            <tr>
+                <td>{{ t.topic }}</td>
+                <td>{% if t.can_handle %}✔️{% else %}❌{% endif %}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <p class="empty">Sin temas registrados</p>
+        {% endif %}
+
+        <h2 style="margin-top:20px">📅 Sesiones de japonés</h2>
+        {% if jap_sessions %}
+        <table>
+            <tr><th>ID</th><th>Inicio</th><th>Fin</th><th>Palabras aprendidas</th><th>Gramática practicada</th><th>Errores</th></tr>
+            {% for s in jap_sessions %}
+            <tr>
+                <td>#{{ s.id }}</td>
+                <td>{{ s.started_at }}</td>
+                <td>{{ s.ended_at or 'Activa' }}</td>
+                <td>{{ s.words_learned }}</td>
+                <td>{{ s.grammar_practiced or '-' }}</td>
+                <td>{{ s.errors_noted or '-' }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <p class="empty">Sin sesiones registradas</p>
+        {% endif %}
     </div>
 </div>
 
