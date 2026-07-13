@@ -66,7 +66,7 @@ def chat():
 
         # Habla la respuesta en hilo separado
         def hablar_y_volver():
-            tts.hablar(respuesta)
+            tts.hablar(respuesta, lento=brain.sensei_lento)
             state.cambiar("idle")
 
         threading.Thread(
@@ -124,13 +124,22 @@ def grabar():
         # Responde con Groq
         respuesta = brain.responder(texto)
 
+        # Desempaquetar si es modo sensei con orden de velocidad
+        if isinstance(respuesta, tuple):
+            respuesta, lento_extra = respuesta
+        else:
+            lento_extra = False
+
+        state.cambiar("speaking")
+        socketio.emit("mensaje", {"texto": respuesta})
+
         # Hablando
         state.cambiar("speaking")
         socketio.emit("mensaje", {"texto": respuesta})
 
         # Habla la respuesta en hilo separado
         def hablar_y_volver():
-            tts.hablar(respuesta)
+            tts.hablar(respuesta, lento_extra=lento_extra)
             state.cambiar("idle")
 
         threading.Thread(

@@ -30,6 +30,7 @@ class Brain:
         self.modo_sensei = False
         self.timer_sensei = None
         self.inicio_sesion_sensei = False
+        self.sensei_lento = False
 
     def _iniciar_sesion(self):
         """
@@ -124,16 +125,21 @@ class Brain:
     def responder(self, mensaje: str) -> str:
 
         # Detectar comandos de modo sensei
-        if any(frase in mensaje.lower() for frase in ["entrar en modo sensei", "entra en modo sensei", "modo sensei on"]):
+        if any(frase in mensaje.lower() for frase in ["entrar en modo", "entra en modo", "modo sensei on", "activar modo sensei", "sensei"]):
             self.entrar_modo_sensei()
             return "¡Modo Sensei activado! Ahora podemos practicar japonés. ¿Por dónde quieres empezar?"
 
-        if any(frase in mensaje.lower() for frase in ["salir del modo sensei", "sal del modo sensei", "modo sensei off"]):
+        if any(frase in mensaje.lower() for frase in ["salir del modo sensei", "sal del modo sensei", "modo sensei off", "salir del modo", "sal del modo"]):
             self.salir_modo_sensei()
             return "He salido del modo Sensei. Puedes seguir preguntándome lo que quieras."
 
          # ── Si ya estamos en modo sensei, saltamos el enrutador ──
         if self.modo_sensei:
+            # Detectar si Laura pide más lento (solo para esta respuesta)
+            lento_extra = any(
+                p in mensaje.lower() for p in ["más lento", "despacio", "lentamente", "despacito"]
+            )
+
             self._renovar_timer_sensei()
             self.historial.append({"role": "user", "content": mensaje})
             respuesta = self._responder_profesor_japones(mensaje)
@@ -141,16 +147,21 @@ class Brain:
             self.memory.guardar_mensaje(self.session_id, "user", mensaje)
             self.memory.guardar_mensaje(self.session_id, "assistant", respuesta)
             print(f"🤖 Kaito [sensei]: {respuesta}")
-            return respuesta
-
-        # ── Flujo normal con enrutador ──
-        decision = self._detectar_intencion(mensaje)
-        agente = decision["agente"]
+            return respuesta, lento_extra
 
         # Si estamos en modo sensei, forzar agente japones
         if self.modo_sensei and agente != "japones":
             agente = "japones"
             decision["consultar_progreso"] = True
+
+        if self.modo_sensei and any(p in mensaje.lower() for p in ["más lento", " mas despacio", "lentamente", "despacito"]):
+            self.sensei_lento = True
+        else:
+            self.sensei_lento = False
+
+        # ── Flujo normal con enrutador ──
+        decision = self._detectar_intencion(mensaje)
+        agente = decision["agente"]
 
         # Memoria conversacional (general)
         if decision["usar_memoria"]:

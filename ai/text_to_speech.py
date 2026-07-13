@@ -122,6 +122,19 @@ class TextToSpeech:
         for i, (txt, voz) in enumerate(segmentos):
             seg_path = tmp_path.replace(".mp3", f"_seg{i}.mp3")
             await self._generar_audio_segmento(txt, voz, seg_path)
+            
+            # Ralentizar voz japonesa con ffmpeg
+            if voz == self.voice_ja:
+                    velocidad = "0.7" if self._lento else "0.85"
+                    slowed_path = seg_path.replace(".mp3", "_slow.mp3")
+                    subprocess.run([
+                        "ffmpeg", "-y", "-i", seg_path,
+                        "-filter:a", f"atempo={velocidad}",
+                        "-vn", slowed_path
+                    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    os.unlink(seg_path)
+                    seg_path = slowed_path
+
             seg_paths.append(seg_path)
 
         # Crear archivo de lista para ffmpeg concat
@@ -147,8 +160,10 @@ class TextToSpeech:
         if os.path.exists(list_path):
             os.unlink(list_path)
 
-    def hablar(self, texto: str):
+    def hablar(self, texto: str, lento_extra: bool = False):
         """Convierte texto a voz y reproduce por el dispositivo de audio."""
+        self._lento = lento_extra
+
         try:
             print(f"🔊 Hablando: {texto}")
 
