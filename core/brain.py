@@ -271,7 +271,7 @@ class Brain:
             print("🎌 Perfil de japonés inyectado")
 
         # Determinar modo según el mensaje de Laura
-        modo = self._detectar_modo_japones(mensaje)  # simple heurística o el enrutador
+        modo = "conversacion"
         
         # Inyectar estado de la sesión
         estado = self._generar_estado_japones(modo)
@@ -460,23 +460,13 @@ class Brain:
                 return match.group(1).strip()
         return None
 
-    def _detectar_modo_japones(self, mensaje: str) -> str:
-        """Detecta el modo de interacción según el mensaje de Laura."""
-        m = mensaje.lower()
-        if any(p in m for p in ["cómo se dice", "traduce", "significa", "cómo digo"]):
-            return "traduccion"
-        if any(p in m for p in ["practicar", "ejercicio", "examen", "repasar", "practiquemos"]):
-            return "practica"
-        if any(p in m for p in ["hablar", "conversar", "hablemos", "charlemos", " conversación"]):
-            return "conversacion"
-        return "conversacion"  # por defecto
-
     def entrar_modo_sensei(self):
         self.modo_sensei = True
         print("🎌 Modo Sensei activado")
         # Cancelar timer de salida si existía
         if self.timer_sensei:
             self.timer_sensei.cancel()
+        self.socketio.emit("modo_sensei", {"activo": True})
 
     def salir_modo_sensei(self):
         self.modo_sensei = False
@@ -485,6 +475,7 @@ class Brain:
         if self.timer_sensei:
             self.timer_sensei.cancel()
             self.timer_sensei = None
+        self.socketio.emit("modo_sensei", {"activo": False})
 
     def _renovar_timer_sensei(self):
         """Reinicia el contador de inactividad de 20 minutos."""

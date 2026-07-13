@@ -364,6 +364,23 @@
 
         }
 
+        /* ===================================================== */
+        /* SENSEI */
+        /* ===================================================== */
+
+        .sensei .eye{
+            /* Ojos más estrechos y rasgados */
+            transform: scaleY(0.45) scaleX(1.12);
+            transition: transform 0.5s ease;
+        }
+
+        /* Para que el efecto se vea bien, anulamos los transforms de idle/listening etc.
+           cuando la cara tenga también la clase sensei */
+        .sensei .eye-left,
+        .sensei .eye-right{
+            transform: scaleY(0.45) scaleX(1.12) !important;
+        }
+
     </style>
 </head>
 <!-- Chat para probar sin micrófono -->
@@ -667,6 +684,15 @@
             detenerParpadeo();
 
         }
+
+        // Modo Sensei (ojos achinados)
+        socket.on("modo_sensei", function(data){
+            if (data.activo) {
+                face.classList.add("sensei");
+            } else {
+                face.classList.remove("sensei");
+            }
+        });
 
     });
     iniciarParpadeo();
