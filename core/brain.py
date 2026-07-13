@@ -3,6 +3,7 @@ import json
 from ai.groq_provider import GroqProvider
 from ai.prompts import cargar_prompt
 from ai.fallback_provider import FallbackProvider
+from ai.search_provider import SearchProvider
 
 from core.japanese_memory import JapaneseMemory
 from core.memory import DB_PATH, Memory
@@ -25,6 +26,7 @@ class Brain:
         self._iniciar_sesion()
         self.ultimo_agente = "general"
         self.ultima_frase_objetivo = None
+        self.search = SearchProvider()
 
     def _iniciar_sesion(self):
         """
@@ -64,7 +66,8 @@ class Brain:
             "usar_memoria": true/false,
             "buscar_historial": true/false,
             "terminos_memoria": ["..."],
-            "consultar_progreso": true/false
+            "consultar_progreso": true/false,
+            "buscar_internet": false
             }}
 
             Reglas:
@@ -75,12 +78,16 @@ class Brain:
             - buscar_historial: true crees que debes recordar una conversación pasada ("recuerdas...", "dijiste...", "ayer", "la última vez","lo que hablamos", "lo que dijimos", "el otro dia").
             - terminos_memoria: 1-3 palabras clave SOLO si buscar_historial es true. Si no, array vacío [].
             - consultar_progreso: true si el agente es "japones" y la petición implica recordar o usar lo ya aprendido. Ejemplos donde DEBE ser true:
-            - "practicar lo que hemos aprendido"
-            - "repasar", "repaso"
-            - "lo que me enseñaste", "lo que vimos"
-            - "examen", "ejercicios", "practicar"
-            - "hablar en japonés", "conversar en japonés"
-            - "usa lo que sé", "con lo que ya sé"
+                - "practicar lo que hemos aprendido"
+                - "repasar", "repaso"
+                - "lo que me enseñaste", "lo que vimos"
+                - "examen", "ejercicios", "practicar"
+                - "hablar en japonés", "conversar en japonés"
+                - "usa lo que sé", "con lo que ya sé"
+            - buscar_internet: true si la pregunta requiere información factual, actual o local
+            que el modelo no puede saber sin acceso a internet (restaurantes, direcciones,
+            noticias, clima, eventos actuales, datos muy específicos). false para conocimientos
+            generales, matemáticas, traducciones, conversación casual, recuerdos personales.
 
             Importante: Si el mensaje actual es una respuesta directa a lo que el asistente acaba de preguntar o proponer (por ejemplo, "sí",
             "practicar esa misma frase", "otra vez", "dime más"), mantén el mismo agente que se deduce del contexto.
@@ -117,7 +124,8 @@ class Brain:
                 "usar_memoria": False,
                 "buscar_historial": False,
                 "terminos_memoria": [],
-                "consultar_progreso": False
+                "consultar_progreso": False,
+                "buscar_internet": False
             }
 
     def responder(self, mensaje: str) -> str:
@@ -142,6 +150,17 @@ class Brain:
             self.historial.append({
                 "role": "system",
                 "content": f"Progreso actual de japonés:\n{progreso}"
+            })
+
+        # Búsqueda en internet
+        if decision.get("buscar_internet"):
+            print(f"🌐 Buscando en internet: {mensaje}")
+            resultados = self.search.buscar(mensaje)
+            self.historial.append({
+                "role": "system",
+                "content": f"Resultados de búsqueda en internet:\n{resultados}\n\n"
+                           "Usa esta información para responder. Si no encuentras "
+                           "la respuesta, dilo con sinceridad."
             })
 
         # Añadir mensaje del usuario
