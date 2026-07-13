@@ -1,5 +1,6 @@
 import json
 import threading
+import random
 from ai.groq_provider import GroqProvider
 from ai.prompts import cargar_prompt
 from ai.fallback_provider import FallbackProvider
@@ -15,6 +16,23 @@ import re as regex
 MAX_MENSAJES = 20
 
 class Brain:
+
+    SALUDOS_SENSEI = [
+            "Modo Sensei activado! 【こんにちは、ラウラさん。おげんきですか。】",
+            "Modo Sensei activado! 【おはようございます、ラウラさん。きょうはなにをしたいですか。】",
+            "Modo Sensei activado! 【こんばんは、ラウラさん。げんきですか。】",
+            "Modo Sensei activado! 【やあ、ラウラさん。ちょうしはどうですか。】",
+            "Modo Sensei activado! 【ラウラさん、こんにちは。にほんごをべんきょうしましょう。】"
+    ]
+
+    DESPEDIDAS_SENSEI = [
+        "【またね、ラウラさん】",
+        "【じゃあね、ラウラさん。また会いましょう】",
+        "【おつかれさまでした。またね】",
+        "【さようなら、ラウラさん。また今度】",
+        "【バイバイ、ラウラさん。気をつけてね】"
+    ]
+
     def __init__(self, state_manager, socketio):
         self.state = state_manager
         self.socketio = socketio
@@ -29,7 +47,6 @@ class Brain:
         self.search = SearchProvider()
         self.modo_sensei = False
         self.timer_sensei = None
-        self.inicio_sesion_sensei = False
         self.sensei_lento = False
 
     def _iniciar_sesion(self):
@@ -125,13 +142,15 @@ class Brain:
     def responder(self, mensaje: str) -> str:
 
         # Detectar comandos de modo sensei
-        if any(frase in mensaje.lower() for frase in ["entrar en modo", "entra en modo", "modo sensei on", "activar modo sensei", "sensei"]):
-            self.entrar_modo_sensei()
-            return "¡Modo Sensei activado! Ahora podemos practicar japonés. ¿Por dónde quieres empezar?"
+        if any(frase in mensaje.lower() for frase in ["sensei", "entrar en modo", "entra en modo", "modo sensei on", "activar modo sensei", "activar modo"]):
+            if not self.modo_sensei:
+                self.entrar_modo_sensei()
+                return random.choice(self.SALUDOS_SENSEI)
 
-        if any(frase in mensaje.lower() for frase in ["salir del modo sensei", "sal del modo sensei", "modo sensei off", "salir del modo", "sal del modo"]):
-            self.salir_modo_sensei()
-            return "He salido del modo Sensei. Puedes seguir preguntándome lo que quieras."
+        if any(frase in mensaje.lower() for frase in ["salir del modo sensei", "sal del modo sensei", "modo sensei off", "salir del modo", "sal del modo", "desactivar modo", "desactivar modo"]):
+            if self.modo_sensei:
+                self.salir_modo_sensei()
+                return random.choice(self.DESPEDIDAS_SENSEI)
 
          # ── Si ya estamos en modo sensei, saltamos el enrutador ──
         if self.modo_sensei:
@@ -257,17 +276,6 @@ class Brain:
         # Inyectar estado de la sesión
         estado = self._generar_estado_japones(modo)
         self.historial.insert(1, {"role": "system", "content": estado})
-
-        # ── Saludo inicial de sesión ──
-        if self.inicio_sesion_sensei:
-            self.inicio_sesion_sensei = False
-            self.historial.append({
-                "role": "system",
-                "content": "Es el INICIO de una nueva sesión de japonés con Laura. "
-                           "Salúdala en japonés, pregúntale qué tal está y dale la bienvenida. "
-                           "Usa un tono cálido y motivador. Ejemplo: 【こんにちは、ラウラさん。おげんきですか。】"
-            })
-        # ─────────────────────────────
 
         try:
             # Si hay frase objetivo guardada, evaluamos pronunciación
@@ -465,7 +473,6 @@ class Brain:
 
     def entrar_modo_sensei(self):
         self.modo_sensei = True
-        self.inicio_sesion_sensei = True
         print("🎌 Modo Sensei activado")
         # Cancelar timer de salida si existía
         if self.timer_sensei:
@@ -473,7 +480,6 @@ class Brain:
 
     def salir_modo_sensei(self):
         self.modo_sensei = False
-        self.inicio_sesion_sensei = False
         print("🎌 Modo Sensei desactivado")
         # Cancelar timer
         if self.timer_sensei:
