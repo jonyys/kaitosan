@@ -5,9 +5,10 @@
         box-sizing:border-box;
     }
     body{
+        margin:0;
         background:#000;
-        width:480px;
-        height:480px;
+        width:100vw;
+        height:100vh;
         overflow:hidden;
         display:flex;
         justify-content:center;
@@ -15,12 +16,11 @@
     }
     /* CARA */
     .face{
+        width:100%;
         display:flex;
         justify-content:center;
         align-items:center;
-        gap:90px;
-        transition:.35s;
-        animation:breathing 5s ease-in-out infinite;
+        gap:120px;
     }
     @keyframes breathing{
         0%,100%{transform:translateY(0);}
@@ -28,10 +28,11 @@
     }
     /* OJOS */
     .eye{
-        width: 200px;
-        height:auto;
-        transition:.35s;
-        transform-origin:center center;
+        width:28vw;
+        max-width:260px;
+        height: auto;
+        transition: .35s;
+        transform-origin: center center;
     }
     .eye-left{transform:rotate(-6deg);}
     .eye-right{transform:rotate(6deg);}
@@ -73,14 +74,14 @@
         0%,100%{transform:translateY(0) scaleY(.82) scaleX(1);}
         50%{transform:translateY(-3px) scaleY(.72) scaleX(1.08);}
     }
-    /* HAPPY */
+        /* HAPPY */
     .happy .eye{
         animation:happyAnim .45s infinite ease-in-out;
         fill:#ffb347;
     }
     @keyframes happyAnim{
-        0%,100%{transform:scaleY(.28) translateY(-6px);}
-        50%{transform:scaleY(.18) translateY(-9px);}
+        0%,100%{transform: scaleY(.28) translateY(-6%);}
+        50%{transform: scaleY(.18) translateY(-12%);}
     }
     /* ERROR */
     .error .eye{
@@ -88,9 +89,9 @@
         animation:errorAnim .18s infinite;
     }
     @keyframes errorAnim{
-        0%{transform:translateX(-2px);}
-        50%{transform:translateX(2px);}
-        100%{transform:translateX(-2px);}
+        0%{transform:translateX(-1%);}
+        50%{transform:translateX(1%);}
+        100%{transform:translateX(-1%);}
     }
     /* SENSEI */
     .sensei .eye{
