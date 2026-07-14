@@ -6,3 +6,7 @@ Formatos admitidos:
 - Para recordatorio: {"tipo": "recordatorio", "hora": "HH:MM", "fecha": "YYYY-MM-DD opcional", "texto": "..."}
 - Para consulta hora/fecha: {"tipo": "hora"} o {"tipo": "fecha"}
 - Para calendario: {"tipo": "calendario", "accion": "agregar|consultar|eliminar", "datos": {...}}
+- Para consulta del clima:
+  {"tipo": "clima", "ciudad": "nombre o null", "cuando": "ahora/hoy/mañana/pasado mañana/finde/esta noche"}
+  Si Laura no especifica ciudad, usar nulllo.
+  Si no especifica cuándo, usar "ahora".

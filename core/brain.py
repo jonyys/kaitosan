@@ -5,6 +5,7 @@ from ai.groq_provider import GroqProvider
 from ai.prompts import cargar_prompt
 from ai.fallback_provider import FallbackProvider
 from ai.search_provider import SearchProvider
+from ai.skills.weather import WeatherSkill
 
 from core.japanese_memory import JapaneseMemory
 from core.memory import DB_PATH, Memory
@@ -48,6 +49,8 @@ class Brain:
         self.modo_sensei = False
         self.timer_sensei = None
         self.sensei_lento = False
+        self.weather = WeatherSkill()
+        self.provider_ligero = FallbackProvider(model="llama-3.1-8b-instant")
 
     def _iniciar_sesion(self):
         """
@@ -92,12 +95,17 @@ class Brain:
 
             Reglas:
                 - agente: "general" para conversación normal, preguntas, saludos, peticiones de traducción, significado de palabras, etc. 
-                    "tarea" SOLO para crear/modificar/consultar recordatorios, alarmas, hora/fecha, temporizadores.
+                    "tarea" para crear/modificar/consultar recordatorios, alarmas, hora/fecha, temporizadores, tiempo, clima, etc.
                 - usar_memoria: true si necesita datos personales de Laura (gustos, trabajo, familia, perfil).
                 - buscar_historial: true crees que debes recordar una conversación pasada sobre algo que ya hablasteis.
                 - terminos_memoria: 1-3 palabras clave SOLO si buscar_historial es true. Si no, array vacío [].
                 - consultar_progreso: true si la pregunta es sobre japonés (traducciones, vocabulario, gramática) y podría beneficiarse de conocer el progreso de Laura. Esto ayuda al agente general a responder mejor.
-                - buscar_internet: true si la pregunta requiere información factual, actual o local que el modelo no puede saber sin acceso a internet (restaurantes, direcciones, noticias, clima). NUNCA lo actives para preguntas de japonés o traducciones.
+                - buscar_internet: true si la pregunta requiere información factual, actual o local
+                    que el modelo no puede saber sin acceso a internet (restaurantes, direcciones,
+                    noticias, eventos actuales, datos muy específicos).
+                    NUNCA actives buscar_internet para preguntas de TRADUCCIÓN, GRAMÁTICA, VOCABULARIO
+                    JAPONÉS, CLIMA, TIEMPO METEOROLÓGICO o HORA/FECHA.
+                    Esas las manejan los agentes "japones" o "tarea" sin internet.
 
 
             Importante: Si el mensaje actual es una respuesta directa a lo que el asistente acaba de preguntar o proponer (por ejemplo, "sí",
@@ -220,6 +228,8 @@ class Brain:
         if agente == "japones":
             respuesta = self._responder_profesor_japones(mensaje)   # ya con contexto
         elif agente == "tarea":
+            # Si agente es "tarea", siempre sin busqueda en internet
+            self.provider.buscar_internet = False
             respuesta = self._procesar_tarea(mensaje)
         else:
             respuesta = self.provider.completar(self.historial)
@@ -409,10 +419,15 @@ class Brain:
         tipo = accion.get("tipo")
         if tipo == "hora":
             ahora = datetime.now().strftime("%H:%M")
-            return f"Son las {ahora}."
+            return self._responder_tarea_amable(f"Son las {ahora}.")
         elif tipo == "fecha":
             hoy = datetime.now().strftime("%d de %B de %Y")
-            return f"Hoy es {hoy}."
+            return self._responder_tarea_amable(f"Hoy es {hoy}.")
+        elif tipo == "clima":
+            ciudad = accion.get("ciudad", None)
+            cuando = accion.get("cuando", "ahora")
+            datos_clima = self.weather.describir_clima(ciudad=ciudad, cuando=cuando)
+            return self._responder_tarea_amable(datos_clima)     
         elif tipo == "recordatorio":
             # Aquí guardarías en BD de recordatorios (otra tabla o servicio)
             texto = accion.get("texto", "")
@@ -421,7 +436,19 @@ class Brain:
             return f"¡Listo! Te recordaré '{texto}' a las {hora}."
         # ... otros casos ...
         else:
-            return self._responder_conversacion("Esa tarea aún no sé hacerla, pero estoy aprendiendo.")
+            return self._responder_tarea_amable("Esa tarea aún no sé hacerla, pero estoy aprendiendo.")
+
+    def _responder_tarea_amable(self, datos: str) -> str:
+        prompt_respuesta = cargar_prompt("responde_tarea")
+        self.historial.append({"role": "system", "content": f"{prompt_respuesta}\n\nDatos: {datos}"})
+
+        # Usamos el proveedor ligero para que no gaste tokens del modelo grande
+        respuesta = self.provider_ligero.completar(self.historial)
+
+        # Quitamos el mensaje system que acabamos de añadir para no ensuciar el historial
+        self.historial.pop()
+
+        return respuesta
 
     def _inyectar_perfil_si_falta(self):
         """Añade el perfil al historial si aún no está presente"""
@@ -430,12 +457,6 @@ class Brain:
         if not any("=== INFORMACIÓN SOBRE LAURA ===" in msg["content"] for msg in self.historial if msg["role"] == "system"):
             perfil = self.memory.obtener_perfil()
             self.historial.insert(1, {"role": "system", "content": perfil})  # justo después del system prompt base
-
-    def _responder_conversacion(self, mensaje: str) -> str:
-        # Asume que el mensaje ya está añadido al historial antes de llamar
-        respuesta = self.provider.completar(self.historial)
-        self._procesar_json_progreso(respuesta)   # por si acaso trae JSON
-        return respuesta
 
     def _ultimo_contexto_asistente(self) -> str:
         for msg in reversed(self.historial):
