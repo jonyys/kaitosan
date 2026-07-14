@@ -24,6 +24,50 @@
         animation: breathing 5s ease-in-out infinite;
     }
 
+    /* Halo azul detrás de la cara */
+    .face::before{
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 48%;
+        transform: translate(-50%, -50%);
+        z-index: -1;
+        pointer-events: none;
+
+        width: 1000px;
+        height: 1000px;
+        border-radius: 50%;
+
+        background: radial-gradient(
+            circle,
+            rgba(120,230,255,.30) 0%,
+            rgba(80,190,255,.22) 20%,
+            rgba(50,150,255,.14) 40%,
+            rgba(40,120,255,.08) 60%,
+            rgba(80,180,255,.04) 75%,
+            rgba(120,220,255,.02) 88%,
+            transparent 100%
+        );
+
+        filter: blur(65px);
+
+        animation: faceGlow 5.5s ease-in-out infinite;
+    }
+
+    @keyframes faceGlow{
+        0%,100%{
+            transform: translate(-50%, -50%) scale(0.97);
+            opacity: .85;
+            filter: blur(60px);
+        }
+
+        50%{
+            transform: translate(-50%, -50%) scale(1.05);
+            opacity: 1;
+            filter: blur(75px);
+        }
+    }
+
     /* CEJAS */
     .eyebrows {
         display: flex;
