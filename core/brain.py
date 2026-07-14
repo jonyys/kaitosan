@@ -7,6 +7,7 @@ from ai.fallback_provider import FallbackProvider
 from ai.search_provider import SearchProvider
 from ai.skills.weather import WeatherSkill
 from ai.skills.alarm import AlarmSkill
+from ai.skills.reminder import ReminderSkill
 
 from core.japanese_memory import JapaneseMemory
 from core.memory import DB_PATH, Memory
@@ -53,6 +54,7 @@ class Brain:
         self.sensei_lento = False
         self.weather = WeatherSkill()
         self.alarm = AlarmSkill()
+        self.reminder = ReminderSkill()
 
     def _iniciar_sesion(self):
         """
@@ -442,11 +444,12 @@ class Brain:
             datos_clima = self.weather.describir_clima(ciudad=ciudad, cuando=cuando)
             return self._responder_tarea_amable(datos_clima)     
         elif tipo == "recordatorio":
-            # Aquí guardarías en BD de recordatorios (otra tabla o servicio)
-            texto = accion.get("texto", "")
-            hora = accion.get("hora", "")
-            print(f"⏰ Recordatorio creado: {texto} a las {hora}")
-            return f"¡Listo! Te recordaré '{texto}' a las {hora}."
+            texto = accion.get("texto", "Recordatorio")
+            cuando = accion.get("cuando", "en 5 minutos")
+            print(f"📌 DEBUG _procesar_tarea: texto='{texto}', cuando='{cuando}'")
+            return self._responder_tarea_amable(
+                self.reminder.crear_recordatorio(texto, cuando)
+            )
         # ... otros casos ...
         else:
             return self._responder_tarea_amable("Esa tarea aún no sé hacerla, pero estoy aprendiendo.")

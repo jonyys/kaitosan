@@ -296,6 +296,24 @@ def admin():
 
     jap_db.close()
 
+    # --- Recordatorios ---
+    rem_db = brain.reminder._conectar()
+    recordatorios = rem_db.execute("""
+        SELECT id, texto, fecha_hora, creado, completado
+        FROM reminders
+        ORDER BY completado ASC, fecha_hora DESC
+    """).fetchall()
+    lista_recordatorios = []
+    for r in recordatorios:
+        lista_recordatorios.append({
+            "id": r[0],
+            "texto": r[1],
+            "fecha_hora": r[2],
+            "creado": r[3],
+            "completado": bool(r[4])
+        })
+    rem_db.close()
+
     tracker = TokenTracker()
     uso = tracker.consultar()
     tokens = uso.get("tokens", {})
@@ -311,7 +329,8 @@ def admin():
                             jap_grammar=jap_grammar,
                             jap_topics=jap_topics,
                             jap_sessions=jap_sessions,
-                            jap_profile=jap_profile)
+                            jap_profile=jap_profile,
+                            lista_recordatorios=lista_recordatorios)
 
 @app.route("/admin/perfil/añadir", methods=["POST"])
 @login_requerido
@@ -416,6 +435,26 @@ def admin_japones_borrar_todo():
     db.commit()
     db.close()
     flash("✅ Todo el progreso de japonés ha sido borrado", "success")
+    return redirect(url_for("admin"))
+
+@app.route("/admin/recordatorios/borrar/<int:rem_id>", methods=["POST"])
+@login_requerido
+def admin_rem_borrar(rem_id):
+    db = brain.reminder._conectar()
+    db.execute("DELETE FROM reminders WHERE id = ?", (rem_id,))
+    db.commit()
+    db.close()
+    flash("✅ Recordatorio borrado", "success")
+    return redirect(url_for("admin"))
+
+@app.route("/admin/recordatorios/borrar-todo", methods=["POST"])
+@login_requerido
+def admin_rem_borrar_todo():
+    db = brain.reminder._conectar()
+    db.execute("DELETE FROM reminders")
+    db.commit()
+    db.close()
+    flash("✅ Todos los recordatorios borrados", "success")
     return redirect(url_for("admin"))
 
 if __name__ == "__main__":
