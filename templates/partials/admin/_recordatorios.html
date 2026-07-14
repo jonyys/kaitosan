@@ -1,0 +1,31 @@
+<div class="card full">
+    <h2>📌 Recordatorios</h2>
+    <div class="actions">
+        <form method="POST" action="/admin/recordatorios/borrar-todo"
+              onsubmit="return confirm('¿Borrar todos los recordatorios?')">
+            <button class="btn btn-red">🗑️ Borrar todos</button>
+        </form>
+    </div>
+    {% if lista_recordatorios %}
+    <table>
+        <tr><th>ID</th><th>Texto</th><th>Fecha/Hora</th><th>Creado</th><th>Estado</th><th></th></tr>
+        {% for r in lista_recordatorios %}
+        <tr>
+            <td>#{{ r.id }}</td>
+            <td>{{ r.texto }}</td>
+            <td>{{ r.fecha_hora }}</td>
+            <td>{{ r.creado }}</td>
+            <td>{% if r.completado %}✅ Completado{% else %}⏳ Pendiente{% endif %}</td>
+            <td>
+                <form method="POST" action="/admin/recordatorios/borrar/{{ r.id }}"
+                      onsubmit="return confirm('¿Borrar este recordatorio?')">
+                    <button class="btn btn-red">🗑️</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p class="empty">No hay recordatorios guardados</p>
+    {% endif %}
+</div>

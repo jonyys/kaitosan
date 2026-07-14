@@ -1,0 +1,104 @@
+<style>
+    *{
+        margin:0;
+        padding:0;
+        box-sizing:border-box;
+    }
+    body{
+        background:#000;
+        width:480px;
+        height:480px;
+        overflow:hidden;
+        display:flex;
+        justify-content:center;
+        align-items:center;
+    }
+    /* CARA */
+    .face{
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        gap:90px;
+        transition:.35s;
+        animation:breathing 5s ease-in-out infinite;
+    }
+    @keyframes breathing{
+        0%,100%{transform:translateY(0);}
+        50%{transform:translateY(-2px);}
+    }
+    /* OJOS */
+    .eye{
+        width: 200px;
+        height:auto;
+        transition:.35s;
+        transform-origin:center center;
+    }
+    .eye-left{transform:rotate(-6deg);}
+    .eye-right{transform:rotate(6deg);}
+    /* IDLE */
+    .idle .eye-left{animation:idleLeft 5s infinite ease-in-out;}
+    .idle .eye-right{animation:idleRight 5s infinite ease-in-out;}
+    @keyframes idleLeft{
+        0%,100%{transform:rotate(-6deg) translateX(0);}
+        18%{transform:rotate(-6deg) translateX(-4px);}
+        37%{transform:rotate(-6deg) translateX(3px);}
+        63%{transform:rotate(-6deg) translateX(-2px);}
+        82%{transform:rotate(-6deg) translateX(2px);}
+    }
+    @keyframes idleRight{
+        0%,100%{transform:rotate(6deg) translateX(0);}
+        18%{transform:rotate(6deg) translateX(-4px);}
+        37%{transform:rotate(6deg) translateX(3px);}
+        63%{transform:rotate(6deg) translateX(-2px);}
+        82%{transform:rotate(6deg) translateX(2px);}
+    }
+    /* LISTENING */
+    .listening .eye{
+        animation:listeningPulse .9s infinite ease-in-out;
+        filter:drop-shadow(0 0 10px #00aaff) drop-shadow(0 0 20px #00aaff);
+    }
+    @keyframes listeningPulse{
+        0%,100%{transform:scale(1);}
+        50%{transform:scale(1.12);}
+    }
+    /* THINKING */
+    .thinking .eye{animation:thinkingAnim .85s infinite ease-in-out;}
+    @keyframes thinkingAnim{
+        0%,100%{transform:scaleY(1) scaleX(1);}
+        50%{transform:translateY(-6px) scaleY(.72) scaleX(1.08);}
+    }
+    /* SPEAKING */
+    .speaking .eye{animation:speakingAnim .35s infinite ease-in-out;}
+    @keyframes speakingAnim{
+        0%,100%{transform:translateY(0) scaleY(.82) scaleX(1);}
+        50%{transform:translateY(-3px) scaleY(.72) scaleX(1.08);}
+    }
+    /* HAPPY */
+    .happy .eye{
+        animation:happyAnim .45s infinite ease-in-out;
+        fill:#ffb347;
+    }
+    @keyframes happyAnim{
+        0%,100%{transform:scaleY(.28) translateY(-6px);}
+        50%{transform:scaleY(.18) translateY(-9px);}
+    }
+    /* ERROR */
+    .error .eye{
+        fill:#ff3a3a;
+        animation:errorAnim .18s infinite;
+    }
+    @keyframes errorAnim{
+        0%{transform:translateX(-2px);}
+        50%{transform:translateX(2px);}
+        100%{transform:translateX(-2px);}
+    }
+    /* SENSEI */
+    .sensei .eye{
+        transform: scaleY(0.45) scaleX(1.12);
+        transition: transform 0.5s ease;
+    }
+    .sensei .eye-left,
+    .sensei .eye-right{
+        transform: scaleY(0.45) scaleX(1.12) !important;
+    }
+</style>

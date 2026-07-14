@@ -1,0 +1,81 @@
+<div class="card full">
+    <h2>🎌 Japonés – Perfil actual</h2>
+    {% if jap_profile %}
+        <pre style="white-space:pre-wrap; background:#1a1a1a; padding:10px; border-radius:6px;">{{ jap_profile.text }}</pre>
+        <small>Generado: {{ jap_profile.date }}</small>
+    {% else %}
+        <p class="empty">Aún no hay perfil generado</p>
+    {% endif %}
+
+    <h2 style="margin-top:20px">📊 Competencias</h2>
+    {% if jap_skills %}
+    <table>
+        <tr><th>Habilidad</th><th>Porcentaje</th></tr>
+        {% for s in jap_skills %}
+        <tr><td>{{ s.skill }}</td><td>{{ s.percentage }}%</td></tr>
+        {% endfor %}
+    </table>
+    {% else %}<p class="empty">Sin datos</p>{% endif %}
+
+    <h2 style="margin-top:20px">📚 Vocabulario</h2>
+    {% if jap_vocab %}
+    <table>
+        <tr><th>Palabra</th><th>Lectura</th><th>Significado</th><th>Tipo</th><th>Estado</th><th>Confianza</th><th>Errores</th><th>Último repaso</th></tr>
+        {% for v in jap_vocab %}
+        <tr>
+            <td><strong>{{ v.word }}</strong></td>
+            <td>{{ v.reading or '' }}</td>
+            <td>{{ v.meaning or '' }}</td>
+            <td>{{ v.type or '' }}</td>
+            <td><span class="badge">{{ v.status }}</span></td>
+            <td>{{ v.confidence }}%</td>
+            <td>{{ v.errors }}</td>
+            <td>{{ v.last_reviewed or '-' }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}<p class="empty">Sin vocabulario registrado</p>{% endif %}
+
+    <h2 style="margin-top:20px">🧩 Gramática</h2>
+    {% if jap_grammar %}
+    <table>
+        <tr><th>Punto gramatical</th><th>Descripción</th><th>Dominio</th><th>Errores</th><th>Último uso</th></tr>
+        {% for g in jap_grammar %}
+        <tr>
+            <td><strong>{{ g.point }}</strong></td>
+            <td>{{ g.description or '' }}</td>
+            <td>{{ g.mastery }}%</td>
+            <td>{{ g.errors }}</td>
+            <td>{{ g.last_used or '-' }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}<p class="empty">Sin gramática registrada</p>{% endif %}
+
+    <h2 style="margin-top:20px">💬 Temas de conversación</h2>
+    {% if jap_topics %}
+    <table>
+        <tr><th>Tema</th><th>¿Lo maneja?</th></tr>
+        {% for t in jap_topics %}
+        <tr><td>{{ t.topic }}</td><td>{% if t.can_handle %}✔️{% else %}❌{% endif %}</td></tr>
+        {% endfor %}
+    </table>
+    {% else %}<p class="empty">Sin temas registrados</p>{% endif %}
+
+    <h2 style="margin-top:20px">📅 Sesiones de japonés</h2>
+    {% if jap_sessions %}
+    <table>
+        <tr><th>ID</th><th>Inicio</th><th>Fin</th><th>Palabras aprendidas</th><th>Gramática practicada</th><th>Errores</th></tr>
+        {% for s in jap_sessions %}
+        <tr>
+            <td>#{{ s.id }}</td>
+            <td>{{ s.started_at }}</td>
+            <td>{{ s.ended_at or 'Activa' }}</td>
+            <td>{{ s.words_learned }}</td>
+            <td>{{ s.grammar_practiced or '-' }}</td>
+            <td>{{ s.errors_noted or '-' }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}<p class="empty">Sin sesiones registradas</p>{% endif %}
+</div>

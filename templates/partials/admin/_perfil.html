@@ -1,0 +1,36 @@
+<div class="card">
+    <h2>👤 Perfil de Laura</h2>
+    <div class="actions">
+        <form method="POST" action="/admin/perfil/borrar-todo"
+              onsubmit="return confirm('¿Borrar todo el perfil?')">
+            <button class="btn btn-red">🗑️ Borrar todo</button>
+        </form>
+    </div>
+    {% if perfil %}
+    <table>
+        <tr><th>Clave</th><th>Valor</th><th></th></tr>
+        {% for item in perfil %}
+        <tr>
+            <td><strong>{{ item.key }}</strong></td>
+            <td>{{ item.value }}</td>
+            <td>
+                <form method="POST" action="/admin/perfil/borrar/{{ item.id }}"
+                      onsubmit="return confirm('¿Borrar este dato?')">
+                    <button class="btn btn-red">🗑️</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p class="empty">No hay datos en el perfil</p>
+    {% endif %}
+    <h2 style="margin-top:20px">➕ Añadir / Editar dato</h2>
+    <form method="POST" action="/admin/perfil/añadir">
+        <div class="form-row">
+            <input type="text" name="key" placeholder="clave (ej: hobby)">
+            <input type="text" name="value" placeholder="valor (ej: le gusta el café)">
+            <button class="btn btn-green">Guardar</button>
+        </div>
+    </form>
+</div>

@@ -1,0 +1,29 @@
+<div class="card">
+    <h2>📅 Sesiones <span class="badge">{{ sesiones|length }}</span></h2>
+    <div class="actions">
+        <form method="POST" action="/admin/sesiones/borrar-todo"
+              onsubmit="return confirm('¿Borrar todas las sesiones y mensajes?')">
+            <button class="btn btn-red">🗑️ Borrar todo</button>
+        </form>
+    </div>
+    {% if sesiones %}
+    <table>
+        <tr><th>ID</th><th>Inicio</th><th>Mensajes</th><th></th></tr>
+        {% for s in sesiones %}
+        <tr>
+            <td>#{{ s.id }}</td>
+            <td>{{ s.started_at }}</td>
+            <td><span class="badge">{{ s.messages }}</span></td>
+            <td>
+                <form method="POST" action="/admin/sesiones/borrar/{{ s.id }}"
+                      onsubmit="return confirm('¿Borrar esta sesión?')">
+                    <button class="btn btn-red">🗑️</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p class="empty">No hay sesiones guardadas</p>
+    {% endif %}
+</div>

@@ -1,0 +1,40 @@
+<div class="card full">
+    <h2>💬 Conversaciones</h2>
+    <form method="GET" action="/admin" style="margin-bottom:15px">
+        <div style="display:flex; gap:8px; align-items:center">
+            <select name="sesion_id"
+                    style="background:#1a1a1a; border:1px solid #333;
+                           color:white; padding:8px; border-radius:6px">
+                <option value="">Todas las sesiones</option>
+                {% for s in sesiones %}
+                <option value="{{ s.id }}" {% if sesion_filtro == s.id|string %}selected{% endif %}>
+                    Sesión #{{ s.id }} — {{ s.started_at }}
+                </option>
+                {% endfor %}
+            </select>
+            <button class="btn btn-blue">Filtrar</button>
+            <a href="/admin"><button type="button" class="btn btn-yellow">Ver todas</button></a>
+        </div>
+    </form>
+    {% if mensajes %}
+    <table>
+        <tr><th>Sesión</th><th>Rol</th><th>Mensaje</th><th>Fecha</th><th></th></tr>
+        {% for m in mensajes %}
+        <tr>
+            <td><span class="badge">#{{ m.session_id }}</span></td>
+            <td>{% if m.role == 'user' %}👤 Laura{% else %}🤖 Kaito{% endif %}</td>
+            <td>{{ m.content }}</td>
+            <td style="white-space:nowrap">{{ m.created_at }}</td>
+            <td>
+                <form method="POST" action="/admin/mensajes/borrar/{{ m.id }}"
+                      onsubmit="return confirm('¿Borrar este mensaje?')">
+                    <button class="btn btn-red">🗑️</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p class="empty">No hay mensajes guardados</p>
+    {% endif %}
+</div>

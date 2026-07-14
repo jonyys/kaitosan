@@ -1,0 +1,70 @@
+<div id="chat" style="
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    display: flex;
+    gap: 8px;
+">
+    <input 
+        type="text" 
+        id="input" 
+        placeholder="Escribe algo a Kaitosan..."
+        style="
+            flex: 1;
+            padding: 10px;
+            border-radius: 20px;
+            border: none;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 14px;
+        "
+    />
+    <button 
+        onclick="enviarMensaje()"
+        style="
+            padding: 10px 20px;
+            border-radius: 20px;
+            border: none;
+            background: #0096ff;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+        "
+    >
+        Enviar
+    </button>
+    <button
+        id="btn-voz"
+        onclick="grabarVoz()"
+        style="
+            padding: 10px 16px;
+            border-radius: 20px;
+            border: none;
+            background: #00cc44;
+            color: white;
+            cursor: pointer;
+            font-size: 18px;
+        "
+    >
+        🎤
+    </button>
+</div>
+
+<div id="respuesta" style="
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    text-align: center;
+    color: white;
+    font-size: 14px;
+    font-family: sans-serif;
+    background: rgba(0,0,0,0.5);
+    padding: 10px;
+    border-radius: 10px;
+    display: none;
+">
+</div>

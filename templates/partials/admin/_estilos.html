@@ -1,0 +1,108 @@
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        background: #0a0a0a;
+        color: #fff;
+        font-family: 'Segoe UI', sans-serif;
+        padding: 20px;
+    }
+    h1 {
+        color: #0096ff;
+        margin-bottom: 30px;
+        font-size: 24px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    h2 {
+        color: #0096ff;
+        margin-bottom: 15px;
+        font-size: 18px;
+        border-bottom: 1px solid #222;
+        padding-bottom: 8px;
+    }
+    .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+    .card {
+        background: #111;
+        border: 1px solid #222;
+        border-radius: 12px;
+        padding: 20px;
+    }
+    .card.full { grid-column: 1 / -1; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th {
+        background: #1a1a2e;
+        color: #0096ff;
+        padding: 10px;
+        text-align: left;
+        font-weight: 600;
+    }
+    td {
+        padding: 8px 10px;
+        border-bottom: 1px solid #1a1a1a;
+        vertical-align: top;
+        max-width: 400px;
+        word-wrap: break-word;
+    }
+    tr:hover td { background: #1a1a1a; }
+    .btn {
+        padding: 6px 14px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.8; }
+    .btn-red { background: #ff3333; color: white; }
+    .btn-blue { background: #0096ff; color: white; }
+    .btn-green { background: #00cc44; color: white; }
+    .btn-yellow { background: #ffaa00; color: black; }
+    input[type="text"], textarea {
+        background: #1a1a1a;
+        border: 1px solid #333;
+        border-radius: 6px;
+        color: white;
+        padding: 8px 12px;
+        font-size: 13px;
+        width: 100%;
+        margin-bottom: 8px;
+    }
+    textarea { height: 80px; resize: vertical; }
+    .actions { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; }
+    .badge {
+        background: #1a1a2e;
+        color: #0096ff;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+    .alert {
+        padding: 10px 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        font-size: 13px;
+    }
+    .alert-success { background: #0d3320; border: 1px solid #00cc44; color: #00cc44; }
+    .alert-error { background: #330d0d; border: 1px solid #ff3333; color: #ff3333; }
+    .empty { color: #444; font-style: italic; text-align: center; padding: 20px; }
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 2fr auto;
+        gap: 8px;
+        align-items: start;
+        margin-bottom: 8px;
+    }
+    @media (max-width: 768px) {
+        .grid { grid-template-columns: 1fr; }
+        .card.full { grid-column: 1; }
+        .form-row { grid-template-columns: 1fr; }
+    }
+</style>

@@ -1,0 +1,124 @@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+<script>
+    const socket = io();
+    const face = document.getElementById('face');
+    let blinkInterval;
+
+    function iniciarParpadeo() {
+        detenerParpadeo();
+        function parpadear() {
+            if (!face.classList.contains("idle")) {
+                programar();
+                return;
+            }
+            document.querySelectorAll(".eye").forEach(ojo => {
+                ojo.style.transition = "120ms";
+                ojo.style.transform += " scaleY(0.05)";
+            });
+            setTimeout(()=>{
+                document.querySelectorAll(".eye").forEach(ojo=>{
+                    ojo.style.transform =
+                        ojo.classList.contains("eye-left")
+                        ? "rotate(-6deg)"
+                        : "rotate(6deg)";
+                });
+            },120);
+            programar();
+        }
+        function programar(){
+            blinkInterval = setTimeout(parpadear, 3000 + Math.random()*4000);
+        }
+        programar();
+    }
+
+    function detenerParpadeo(){
+        clearTimeout(blinkInterval);
+    }
+
+    const estados = ['idle','listening','thinking','speaking','happy','error'];
+
+    socket.on("estado",(data)=>{
+        estados.forEach(e=>face.classList.remove(e));
+        face.classList.add(data.estado);
+        if(data.estado==="idle"){
+            iniciarParpadeo();
+        }else{
+            detenerParpadeo();
+        }
+    });
+
+    socket.on("modo_sensei", function(data){
+        if (data.activo) {
+            face.classList.add("sensei");
+        } else {
+            face.classList.remove("sensei");
+        }
+    });
+
+    iniciarParpadeo();
+
+    // ── Funciones del chat ──
+    document.getElementById('input').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') enviarMensaje();
+    });
+
+    async function enviarMensaje() {
+        const input = document.getElementById('input');
+        const respuestaDiv = document.getElementById('respuesta');
+        const mensaje = input.value.trim();
+        if (!mensaje) return;
+        input.value = '';
+        respuestaDiv.style.display = 'block';
+        respuestaDiv.textContent = '...';
+        try {
+            const response = await fetch('/chat', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ mensaje: mensaje })
+            });
+            const data = await response.json();
+            if (data.respuesta) {
+                respuestaDiv.textContent = data.respuesta;
+            } else {
+                respuestaDiv.textContent = 'Error: ' + data.error;
+            }
+        } catch (error) {
+            respuestaDiv.textContent = 'Error de conexión';
+        }
+    }
+
+    let grabando = false;
+
+    async function grabarVoz() {
+        if (grabando) return;
+        const btn = document.getElementById('btn-voz');
+        const respuestaDiv = document.getElementById('respuesta');
+        grabando = true;
+        btn.style.background = '#ff3333';
+        btn.textContent = '⏺️';
+        respuestaDiv.style.display = 'block';
+        respuestaDiv.textContent = '🎤 Grabando 5 segundos...';
+        try {
+            const response = await fetch('/grabar', {method: 'POST'});
+            const data = await response.json();
+            if (data.transcripcion) {
+                respuestaDiv.textContent = `📝 "${data.transcripcion}"`;
+            }
+            if (data.error) {
+                respuestaDiv.textContent = '❌ ' + data.error;
+            }
+        } catch (error) {
+            respuestaDiv.textContent = '❌ Error de conexión';
+        } finally {
+            grabando = false;
+            btn.style.background = '#00cc44';
+            btn.textContent = '🎤';
+        }
+    }
+
+    socket.on('transcripcion', function(data) {
+        const respuestaDiv = document.getElementById('respuesta');
+        respuestaDiv.style.display = 'block';
+        respuestaDiv.textContent = `📝 "${data.texto}"`;
+    });
+</script>

@@ -536,22 +536,24 @@ class Brain:
 
     def _limpiar_json_de_respuesta(self, texto: str) -> str:
         """
-        Elimina cualquier bloque JSON (delimitado por ---JSON--- o ---)
-        y cualquier JSON suelto al final del texto antes de enviarlo al TTS.
+        Elimina cualquier bloque JSON delimitado por ---JSON--- (o solo ---)
+        y el JSON que le sigue hasta el final del texto.
         """
         if not texto:
             return texto
 
-        # Eliminar bloques ---JSON--- ... contenido ... ---
+        # Eliminar desde el último "---" (con o sin JSON) hasta el final,
+        # siempre que después venga un objeto o array JSON.
+        # Esto cubre tanto "---JSON---\n{...}" como "---\n{...}".
         texto = regex.sub(
-            r'---\s*(?:JSON)?\s*---.*?---\s*(?:JSON)?\s*---',
+            r'---\s*(?:JSON)?\s*---\s*(\{[\s\S]*\}|\[[\s\S]*\])\s*$',
             '',
             texto,
-            flags=regex.DOTALL | regex.IGNORECASE
+            flags=regex.IGNORECASE
         )
 
-        # Eliminar JSON suelto al final (ej: {"items": [...]})
-        texto = regex.sub(r'\n?\{[^{}]*\}[^{}]*$', '', texto)
-        texto = regex.sub(r'\n?\[[^\[\]]*\][^\[\]]*$', '', texto)
+        # Por si queda algún resto de "---JSON---" suelto al final (sin JSON),
+        # lo eliminamos también.
+        texto = regex.sub(r'\n?---\s*(?:JSON)?\s*---\s*$', '', texto)
 
         return texto.strip()
