@@ -11,22 +11,25 @@
                 programar();
                 return;
             }
-            document.querySelectorAll(".eye").forEach(ojo => {
-                ojo.style.transition = "120ms";
-                ojo.style.transform += " scaleY(0.05)";
-            });
+            document.querySelectorAll(".eye").forEach(ojo=>{
+            ojo.classList.add("blink");
+
             setTimeout(()=>{
-                document.querySelectorAll(".eye").forEach(ojo=>{
-                    ojo.style.transform =
-                        ojo.classList.contains("eye-left")
-                        ? "rotate(-6deg)"
-                        : "rotate(6deg)";
-                });
-            },120);
+                ojo.classList.remove("blink");
+            },140);
+            });
+            if (Math.random() < 0.3) {
+                setTimeout(() => {
+                    document.querySelectorAll(".eye").forEach(ojo=>{
+                        ojo.classList.add("blink");
+                        setTimeout(()=>ojo.classList.remove("blink"),140);
+                    });
+                },180);
+            }
             programar();
         }
         function programar(){
-            blinkInterval = setTimeout(parpadear, 3000 + Math.random()*4000);
+            blinkInterval = setTimeout(parpadear, 2500 + Math.random()*2200);
         }
         programar();
     }

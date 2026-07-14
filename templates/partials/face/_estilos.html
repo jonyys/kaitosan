@@ -14,67 +14,143 @@
         justify-content:center;
         align-items:center;
     }
-    /* CARA */
-    .face{
-        width:100%;
-        display:flex;
-        justify-content:center;
-        align-items:center;
-        gap:120px;
+    /* CARA (contenedor vertical) */
+    .face {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0;
+        transition: .35s;
+        animation: breathing 5s ease-in-out infinite;
     }
-    @keyframes breathing{
-        0%,100%{transform:translateY(0);}
-        50%{transform:translateY(-2px);}
+
+    /* CEJAS */
+    .eyebrows {
+        display: flex;
+        justify-content: center;
+        gap: 170px;             /* un poco más juntas */
+        margin-bottom: 15px;   /* más arriba */
+        z-index: 2;
     }
-    /* OJOS */
-    .eye{
-        width:28vw;
-        max-width:260px;
+    .eyebrow {
+        width: 90px;            /* un poco más pequeñas */
         height: auto;
         transition: .35s;
         transform-origin: center center;
     }
-    .eye-left{transform:rotate(-6deg);}
-    .eye-right{transform:rotate(6deg);}
+
+    /* OJOS */
+    .eyes {
+        display: flex;
+        justify-content: center;
+        gap: 70px;              /* ojos más juntos para acompañar la rotación hacia dentro */
+    }
+    .eye {
+        width: 150px;
+        height: auto;
+        transition: .35s;
+        transform-origin: center center;
+    }
+    /* Rotación base: mirando hacia la nariz */
+    .eye-left  { transform: rotate(5deg); }
+    .eye-right { transform: rotate(-5deg); }
+
+    /* BOCA */
+    .mouth-container {
+        margin-top: 20px;
+    }
+    .mouth {
+        width: 90px;
+        height: auto;
+        transition: .35s;
+        transform-origin: center center;
+    }
+
+    @keyframes breathing{
+        0%,100%{transform:translateY(0);}
+        50%{transform:translateY(-2px);}
+    }
+
     /* IDLE */
-    .idle .eye-left{animation:idleLeft 5s infinite ease-in-out;}
-    .idle .eye-right{animation:idleRight 5s infinite ease-in-out;}
+    .idle .eye-left{animation:idleLeft 7s infinite ease-in-out;}
+    .idle .eye-right{animation:idleRight 7s infinite ease-in-out;}
     @keyframes idleLeft{
-        0%,100%{transform:rotate(-6deg) translateX(0);}
-        18%{transform:rotate(-6deg) translateX(-4px);}
-        37%{transform:rotate(-6deg) translateX(3px);}
-        63%{transform:rotate(-6deg) translateX(-2px);}
-        82%{transform:rotate(-6deg) translateX(2px);}
+        0%,100%{
+            transform:rotate(5deg) translate(0,0);
+        }
+        20%{
+            transform:rotate(5deg) translate(-1px,-1px);
+        }
+        40%{
+            transform:rotate(5deg) translate(1px,0px);
+        }
+        60%{
+            transform:rotate(5deg) translate(0px,1px);
+        }
+        80%{
+            transform:rotate(5deg) translate(-1px,0px);
+        }
     }
+
     @keyframes idleRight{
-        0%,100%{transform:rotate(6deg) translateX(0);}
-        18%{transform:rotate(6deg) translateX(-4px);}
-        37%{transform:rotate(6deg) translateX(3px);}
-        63%{transform:rotate(6deg) translateX(-2px);}
-        82%{transform:rotate(6deg) translateX(2px);}
+        0%,100%{
+            transform:rotate(-5deg) translate(0,0);
+        }
+        20%{
+            transform:rotate(-5deg) translate(-1px,-1px);
+        }
+        40%{
+            transform:rotate(-5deg) translate(1px,0px);
+        }
+        60%{
+            transform:rotate(-5deg) translate(0px,1px);
+        }
+        80%{
+            transform:rotate(-5deg) translate(-1px,0px);
+        }
     }
+
+    .eye.blink{
+        animation: blink .14s ease;
+    }
+
+    @keyframes blink{
+        0%{
+            transform:scaleY(1);
+        }
+        45%{
+            transform:scaleY(0.03);
+        }
+        100%{
+            transform:scaleY(1);
+        }
+    }
+
     /* LISTENING */
     .listening .eye{
         animation:listeningPulse .9s infinite ease-in-out;
         filter:drop-shadow(0 0 10px #00aaff) drop-shadow(0 0 20px #00aaff);
     }
     @keyframes listeningPulse{
-        0%,100%{transform:scale(1);}
-        50%{transform:scale(1.12);}
+        0%,100%{transform:rotate(5deg) scale(1);}
+        50%{transform:rotate(5deg) scale(1.12);}
     }
+
     /* THINKING */
     .thinking .eye{animation:thinkingAnim .85s infinite ease-in-out;}
     @keyframes thinkingAnim{
         0%,100%{transform:scaleY(1) scaleX(1);}
         50%{transform:translateY(-6px) scaleY(.72) scaleX(1.08);}
     }
+
     /* SPEAKING */
     .speaking .eye{animation:speakingAnim .35s infinite ease-in-out;}
     @keyframes speakingAnim{
         0%,100%{transform:translateY(0) scaleY(.82) scaleX(1);}
         50%{transform:translateY(-3px) scaleY(.72) scaleX(1.08);}
     }
-        /* HAPPY */
+
+    /* HAPPY */
     .happy .eye{
         animation:happyAnim .45s infinite ease-in-out;
         fill:#ffb347;
@@ -83,6 +159,7 @@
         0%,100%{transform: scaleY(.28) translateY(-6%);}
         50%{transform: scaleY(.18) translateY(-12%);}
     }
+
     /* ERROR */
     .error .eye{
         fill:#ff3a3a;
@@ -93,6 +170,7 @@
         50%{transform:translateX(1%);}
         100%{transform:translateX(-1%);}
     }
+
     /* SENSEI */
     .sensei .eye{
         transform: scaleY(0.45) scaleX(1.12);
