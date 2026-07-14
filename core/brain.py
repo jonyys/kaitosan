@@ -177,6 +177,7 @@ class Brain:
             self.historial.append({"role": "assistant", "content": respuesta})
             self.memory.guardar_mensaje(self.session_id, "user", mensaje)
             self.memory.guardar_mensaje(self.session_id, "assistant", respuesta)
+            respuesta = self._limpiar_json_de_respuesta(respuesta)
             print(f"🤖 Kaito [sensei]: {respuesta}")
             return respuesta, lento_extra
 
@@ -249,7 +250,7 @@ class Brain:
         if len(self.historial) > MAX_MENSAJES + 1:
             self.historial = [self.historial[0]] + self.historial[-(MAX_MENSAJES):]
             print(f"🧹 Historial truncado a {MAX_MENSAJES} mensajes")
-
+        respuesta = self._limpiar_json_de_respuesta(respuesta)
         return respuesta
 
     def saludar(self):
@@ -278,27 +279,17 @@ class Brain:
         prompt_japones = cargar_prompt("profesor_japones")
         self.historial.append({"role": "system", "content": prompt_japones})
 
-        # Inyectar perfil actualizado de Laura (si no está ya)
-        if not any("=== PERFIL ACTUAL DE LAURA" in m.get("content","") for m in self.historial if m["role"]=="system"):
-            perfil = self.jap_memory.obtener_perfil_completo()
-            self.historial.insert(1, {"role": "system", "content": perfil})
-            print("🎌 Perfil de japonés inyectado")
-
-        # Determinar modo según el mensaje de Laura
-        modo = "conversacion"
-        
         # Inyectar estado de la sesión
-        estado = self._generar_estado_japones(modo)
+        estado = self._generar_estado_japones()
         self.historial.insert(1, {"role": "system", "content": estado})
 
         try:
-            # Si hay frase objetivo guardada, evaluamos pronunciación
+            # Evaluar pronunciación si hay frase objetivo
             if self.ultima_frase_objetivo:
                 from ai.pronunciation import comparar_pronunciacion
                 evaluacion = comparar_pronunciacion(
                     self.ultima_frase_objetivo, mensaje
                 )
-                # Añadir contexto de evaluación al historial
                 self.historial.append({
                     "role": "system",
                     "content": f"La pronunciación de Laura obtuvo {evaluacion['precision']}%. "
@@ -310,24 +301,14 @@ class Brain:
 
             respuesta = self.provider.completar(self.historial)
 
-            # Dar ritmo natural a las frases de práctica
-            if "repite" in respuesta.lower() or "di" in respuesta.lower():
-                # Insertar pausas con puntos suspensivos
-                respuesta = respuesta.replace(
-                    "Repite conmigo",
-                    "Repite conmigo... despacio..."
-                )
-            
-            # Extraer nueva frase objetivo si la hay
+            # Extraer frase objetivo si la hay
             frase = self._extraer_frase_objetivo(respuesta)
             if frase:
                 self.ultima_frase_objetivo = frase
-            
+
             # ── Extraer y guardar progreso ──
-            # Busca "---JSON---" o solo "---" seguido de posible JSON
             match = regex.split(r'---\s*(?:JSON)?\s*---', respuesta, maxsplit=1)
             if len(match) >= 2:
-                texto_respuesta = match[0].strip()
                 json_str = match[-1].strip()
                 try:
                     if json_str.startswith("```"):
@@ -335,8 +316,6 @@ class Brain:
                         if json_str.startswith("json"):
                             json_str = json_str[4:]
                     progreso = json.loads(json_str)
-                    
-                    # NUEVO: guardar en las nuevas tablas
                     for item in progreso.get("items", []):
                         cat = item.get("category", "vocabulario")
                         if cat in ("vocabulario", "frase"):
@@ -354,9 +333,11 @@ class Brain:
                         print(f"🎌 Progreso guardado: {item}")
                 except Exception as e:
                     print(f"⚠️ Error guardando progreso: {e}")
-                return texto_respuesta
-            # Si no hay JSON, devolvemos la respuesta completa
+
+            # Limpiar cualquier JSON residual antes de devolver
+            respuesta = self._limpiar_json_de_respuesta(respuesta)
             return respuesta
+
         finally:
             self.historial.pop()
 
@@ -460,10 +441,11 @@ class Brain:
 
         # Usamos el proveedor ligero para que no gaste tokens del modelo grande
         respuesta = self.provider_ligero.completar(self.historial)
+        respuesta = self._limpiar_json_de_respuesta(respuesta)
 
         # Quitamos el mensaje system que acabamos de añadir para no ensuciar el historial
         self.historial.pop()
-
+        respuesta = self._limpiar_json_de_respuesta(respuesta)
         return respuesta
 
     def _inyectar_perfil_si_falta(self):
@@ -551,3 +533,25 @@ class Brain:
                     print(f"🎌 Progreso guardado: {item}")
             except Exception as e:
                 print(f"⚠️ Error guardando progreso: {e}")
+
+    def _limpiar_json_de_respuesta(self, texto: str) -> str:
+        """
+        Elimina cualquier bloque JSON (delimitado por ---JSON--- o ---)
+        y cualquier JSON suelto al final del texto antes de enviarlo al TTS.
+        """
+        if not texto:
+            return texto
+
+        # Eliminar bloques ---JSON--- ... contenido ... ---
+        texto = regex.sub(
+            r'---\s*(?:JSON)?\s*---.*?---\s*(?:JSON)?\s*---',
+            '',
+            texto,
+            flags=regex.DOTALL | regex.IGNORECASE
+        )
+
+        # Eliminar JSON suelto al final (ej: {"items": [...]})
+        texto = regex.sub(r'\n?\{[^{}]*\}[^{}]*$', '', texto)
+        texto = regex.sub(r'\n?\[[^\[\]]*\][^\[\]]*$', '', texto)
+
+        return texto.strip()
