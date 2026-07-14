@@ -6,6 +6,7 @@ from ai.prompts import cargar_prompt
 from ai.fallback_provider import FallbackProvider
 from ai.search_provider import SearchProvider
 from ai.skills.weather import WeatherSkill
+from ai.skills.alarm import AlarmSkill
 
 from core.japanese_memory import JapaneseMemory
 from core.memory import DB_PATH, Memory
@@ -39,6 +40,7 @@ class Brain:
         self.socketio = socketio
         self.provider = FallbackProvider(model="llama-3.3-70b-versatile")
         self.router_provider = GroqProvider(model="llama-3.1-8b-instant") # modelo ligero para enrutar
+        self.provider_ligero = FallbackProvider(model="llama-3.1-8b-instant")
         self.memory = Memory()
         self.jap_memory = JapaneseMemory(DB_PATH)    
         self.session_id = None
@@ -50,7 +52,7 @@ class Brain:
         self.timer_sensei = None
         self.sensei_lento = False
         self.weather = WeatherSkill()
-        self.provider_ligero = FallbackProvider(model="llama-3.1-8b-instant")
+        self.alarm = AlarmSkill()
 
     def _iniciar_sesion(self):
         """
@@ -420,6 +422,17 @@ class Brain:
         if tipo == "hora":
             ahora = datetime.now().strftime("%H:%M")
             return self._responder_tarea_amable(f"Son las {ahora}.")
+        elif tipo == "alarma":
+            hora = accion.get("hora", "07:00")
+            return self._responder_tarea_amable(
+                self.alarm.poner_alarma(hora)
+            )
+        elif tipo == "temporizador":
+            minutos = accion.get("minutos", 0)
+            segundos = accion.get("segundos", 0)
+            return self._responder_tarea_amable(
+                self.alarm.poner_temporizador(minutos, segundos)
+            )
         elif tipo == "fecha":
             hoy = datetime.now().strftime("%d de %B de %Y")
             return self._responder_tarea_amable(f"Hoy es {hoy}.")

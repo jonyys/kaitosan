@@ -10,3 +10,11 @@ Formatos admitidos:
   {"tipo": "clima", "ciudad": "nombre o null", "cuando": "ahora/hoy/mañana/pasado mañana/finde/esta noche"}
   Si Laura no especifica ciudad, usar nulllo.
   Si no especifica cuándo, usar "ahora".
+  - Para poner una alarma a una hora concreta:
+  {"tipo": "alarma", "hora": "HH:MM"}
+  Ejemplo: "pon una alarma a las 7 y media" → {"tipo": "alarma", "hora": "7:30"}
+
+- Para poner un temporizador (cuenta atrás):
+  {"tipo": "temporizador", "minutos": X, "segundos": Y}
+  Ejemplo: "pon un temporizador de 10 minutos" → {"tipo": "temporizador", "minutos": 10, "segundos": 0}
+  Ejemplo: "avísame en 30 segundos" → {"tipo": "temporizador", "minutos": 0, "segundos": 30}
