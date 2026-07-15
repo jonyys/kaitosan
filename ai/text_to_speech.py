@@ -127,7 +127,7 @@ class TextToSpeech:
             
             # Ralentizar voz japonesa con ffmpeg
             if voz == self.voice_ja:
-                    velocidad = "0.7" if self._lento else "0.85"
+                    velocidad = "0.7" if self._lento_extra else "0.85"
                     slowed_path = seg_path.replace(".mp3", "_slow.mp3")
                     subprocess.run([
                         "ffmpeg", "-y", "-i", seg_path,

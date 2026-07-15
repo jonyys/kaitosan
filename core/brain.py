@@ -51,7 +51,7 @@ class Brain:
         self.search = SearchProvider()
         self.modo_sensei = False
         self.timer_sensei = None
-        self.sensei_lento = False
+        self.sensei_lento_extra = False
         self.weather = WeatherSkill()
         self.alarm = AlarmSkill()
         self.reminder = ReminderSkill()
@@ -98,8 +98,9 @@ class Brain:
             }}
 
             Reglas:
-                - agente: "general" para conversación normal, preguntas, saludos, peticiones de traducción, significado de palabras, etc. 
-                    "tarea" para crear/modificar/consultar recordatorios, alarmas, hora/fecha, temporizadores, tiempo, clima, etc.
+                - agente:
+                    -"general" para conversación normal, preguntas, saludos, peticiones de traducción, significado de palabras, etc. 
+                    -"tarea" para crear/modificar/consultar recordatorios, alarmas, hora/fecha, temporizadores, tiempo, clima, etc.
                 - usar_memoria: true si necesita datos personales de Laura (gustos, trabajo, familia, perfil).
                 - buscar_historial: true crees que debes recordar una conversación pasada sobre algo que ya hablasteis.
                 - terminos_memoria: 1-3 palabras clave SOLO si buscar_historial es true. Si no, array vacío [].
@@ -187,9 +188,9 @@ class Brain:
             decision["consultar_progreso"] = True
 
         if self.modo_sensei and any(p in mensaje.lower() for p in ["más lento", " mas despacio", "lentamente", "despacito"]):
-            self.sensei_lento = True
+            self.sensei_lento_extra = True
         else:
-            self.sensei_lento = False
+            self.sensei_lento_extra = False
 
         # ── Flujo normal con enrutador ──
         decision = self._detectar_intencion(mensaje)
@@ -348,11 +349,12 @@ class Brain:
         finally:
             self.historial.pop()
 
-    def _generar_estado_japones(self, modo: str) -> str:
+    def _generar_estado_japones(self) -> str:
         """
         Genera un bloque de contexto para el profesor de japonés
         con el progreso real de Laura y el modo actual.
         """
+        modo = "conversacion"
         perfil = self.jap_memory.obtener_perfil_completo()  # ya tienes este método
         
         # Determinar objetivo según el modo

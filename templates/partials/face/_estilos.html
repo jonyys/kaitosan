@@ -1,4 +1,17 @@
 <style>
+
+    .transition,
+    .transition .eye,
+    .transition .eyebrow,
+    .transition .mouth,
+    .transition .face{
+
+        transition:
+            transform .45s cubic-bezier(.22,.61,.36,1),
+            filter .45s ease,
+            opacity .45s ease;
+
+    }
     *{
         margin:0;
         padding:0;
@@ -115,6 +128,17 @@
     @keyframes breathing{
         0%,100%{transform:translateY(0);}
         50%{transform:translateY(-2px);}
+    }
+
+    .eye,
+    .eyebrow,
+    .mouth,
+    .face{
+        transition:
+            transform .45s cubic-bezier(.22,.61,.36,1),
+            filter .45s ease,
+            opacity .45s ease;
+        will-change: transform;
     }
 
     /* IDLE */
@@ -329,14 +353,48 @@
 
     /* THINKING */
     .thinking{
-        animation: thinkingHead 4.5s ease-in-out infinite;
+        animation:
+            thinkingEnter .45s ease forwards,
+            thinkingHead 5s ease-in-out .45s infinite;
     }
+
     .thinking .eye-left{
-        animation:thinkingEyeLeft 3.8s ease-in-out infinite;
+        animation:
+            thinkingEyeEnter .45s ease forwards,
+            thinkingEyeLeft 4.8s ease-in-out .45s infinite;
     }
 
     .thinking .eye-right{
-        animation:thinkingEyeRight 3.8s ease-in-out infinite;
+        animation:
+            thinkingEyeEnterRight .45s ease forwards,
+            thinkingEyeRight 4.8s ease-in-out .45s infinite;
+    }
+
+    @keyframes thinkingEnter{
+        from{
+            transform:rotate(0deg);
+        }
+        to{
+            transform:rotate(.7deg);
+        }
+    }
+
+    @keyframes thinkingEyeEnter{
+        from{
+            transform:rotate(5deg);
+        }
+        to{
+            transform:rotate(5deg) translate(-6px,-6px);
+        }
+    }
+
+    @keyframes thinkingEyeEnterRight{
+        from{
+            transform:rotate(-5deg);
+        }
+        to{
+            transform:rotate(-5deg) translate(-6px,-6px);
+        }
     }
 
     .thinking .eyebrow-left{

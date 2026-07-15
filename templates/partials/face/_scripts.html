@@ -184,31 +184,79 @@
         }, 700); // coincide con la duración de la transition CSS
     }
 
+    function cambiarEstado(nuevoEstado){
+
+        const actual = estados.find(e => face.classList.contains(e));
+
+        if(actual===nuevoEstado) return;
+
+        face.classList.add("transition");
+
+        estados.forEach(e=>face.classList.remove(e));
+
+        requestAnimationFrame(()=>{
+            face.classList.add(nuevoEstado);
+
+            setTimeout(()=>{
+                face.classList.remove("transition");
+            },450);
+        });
+
+    }
+
     const estados = ['idle','listening','thinking','speaking','happy','error'];
 
     socket.on("estado", (data) => {
-        estados.forEach(e => face.classList.remove(e));
 
+        // Si seguimos en el mismo estado no hacemos nada
+        if (face.classList.contains(data.estado)) return;
+
+        // Salimos suavemente de listening
+        if (face.classList.contains("listening") && data.estado !== "listening") {
+            salirListening();
+        }
+
+        // Limpiar animaciones
+        detenerParpadeo();
+        detenerParpadeoLento();
+        detenerBusqueda();
+
+        // Listening tiene su propio sistema
         if (data.estado === "listening") {
-            detenerParpadeo();
-            detenerBusqueda();
+
+            estados.forEach(e => {
+                if (e !== "listening")
+                    face.classList.remove(e);
+            });
+
             entrarListening();
             iniciarParpadeoLento();
-        } else {
-            if (face.classList.contains('listening')) {
-                salirListening();
-            }
+            return;
+        }
+
+        // ---------- Transición para el resto ----------
+        face.classList.add("transition");
+
+        estados.forEach(e => {
+            if (e !== "listening")
+                face.classList.remove(e);
+        });
+
+        requestAnimationFrame(() => {
+
             face.classList.add(data.estado);
-            detenerParpadeoLento();
 
             if (data.estado === "idle") {
                 iniciarParpadeo();
                 iniciarBusqueda();
-            } else {
-                detenerParpadeo();
-                detenerBusqueda();
             }
-        }
+
+            setTimeout(() => {
+                face.classList.remove("transition");
+            }, 450);
+
+        });
+
     });
 
     socket.on("modo_sensei", function(data){
