@@ -126,17 +126,88 @@
         clearTimeout(blinkInterval);
     }
 
+    function iniciarParpadeoLento() {
+        detenerParpadeo();
+
+        function parpadear() {
+            // Solo parpadea si sigue en listening
+            if (!face.classList.contains("listening")) return;
+
+            document.querySelectorAll(".eye").forEach(ojo => {
+                ojo.classList.add("blink");
+                setTimeout(() => ojo.classList.remove("blink"), 180); // más lento que el normal
+            });
+
+            // Parpadeo doble ocasional, igual que en idle pero más raro
+            if (Math.random() < 0.15) {
+                setTimeout(() => {
+                    document.querySelectorAll(".eye").forEach(ojo => {
+                        ojo.classList.add("blink");
+                        setTimeout(() => ojo.classList.remove("blink"), 180);
+                    });
+                }, 220);
+            }
+
+            // Intervalo largo — la gente parpadea poco cuando escucha
+            blinkInterval = setTimeout(parpadear, 4000 + Math.random() * 3000);
+        }
+
+        blinkInterval = setTimeout(parpadear, 3000 + Math.random() * 2000);
+    }
+
+    function detenerParpadeoLento() {
+        clearTimeout(blinkInterval);
+    }
+
+    let listeningTransitionTimeout = null;
+
+    function entrarListening() {
+        // Primero ponemos la clase base sin animaciones todavía
+        face.classList.add('listening');
+        
+        // Un frame después arrancamos las animaciones para que el navegador
+        // interpole desde el estado actual hasta el nuevo
+        listeningTransitionTimeout = setTimeout(() => {
+            face.classList.add('listening-active');
+        }, 50);
+    }
+
+    function salirListening() {
+        clearTimeout(listeningTransitionTimeout);
+        
+        // Quitamos las animaciones pero mantenemos listening brevemente
+        // para que la transition CSS suavice la vuelta a idle
+        face.classList.remove('listening-active');
+        
+        listeningTransitionTimeout = setTimeout(() => {
+            face.classList.remove('listening');
+        }, 700); // coincide con la duración de la transition CSS
+    }
+
     const estados = ['idle','listening','thinking','speaking','happy','error'];
 
-    socket.on("estado",(data)=>{
-        estados.forEach(e=>face.classList.remove(e));
-        face.classList.add(data.estado);
-        if(data.estado==="idle"){
-            iniciarParpadeo();
-            iniciarBusqueda();
-        }else{
+    socket.on("estado", (data) => {
+        estados.forEach(e => face.classList.remove(e));
+
+        if (data.estado === "listening") {
             detenerParpadeo();
             detenerBusqueda();
+            entrarListening();
+            iniciarParpadeoLento();
+        } else {
+            if (face.classList.contains('listening')) {
+                salirListening();
+            }
+            face.classList.add(data.estado);
+            detenerParpadeoLento();
+
+            if (data.estado === "idle") {
+                iniciarParpadeo();
+                iniciarBusqueda();
+            } else {
+                detenerParpadeo();
+                detenerBusqueda();
+            }
         }
     });
 
