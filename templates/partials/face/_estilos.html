@@ -203,9 +203,21 @@
             transform:scaleY(1);
         }
     }
-    .speaking .mouth-single {
+    /*.speaking .mouth-single {
     animation: mouthSpeak 0.12s ease-in-out infinite alternate;
-    animation-delay: 0.05s; /* Pequeño retraso para coincidir con el ataque del audio */
+    animation-delay: 0.05s; /* Pequeño retraso para coincidir con el ataque del audio 
+    }*/
+ 
+    /*.face:not(.speaking) .mouth-single {
+        animation-play-state: paused;
+    }*/
+
+    .mouth-single {
+        /* sin animación por defecto */
+    }
+    .mouth-active {
+        animation: mouthSpeak 0.12s ease-in-out infinite alternate;
+        animation-delay: 0.05s; /* Pequeño retraso para coincidir con el ataque del audio */
     }
 
     @keyframes mouthSpeak {

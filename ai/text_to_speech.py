@@ -7,6 +7,8 @@ import os
 import tempfile
 import re
 import subprocess
+import threading
+import time as tmod
 
 
 class TextToSpeech:
@@ -160,7 +162,7 @@ class TextToSpeech:
         if os.path.exists(list_path):
             os.unlink(list_path)
 
-    def hablar(self, texto: str, lento_extra: bool = False, on_start=None):
+    def hablar(self, texto: str, lento_extra: bool = False, on_start=None, on_stop=None):
         self._lento_extra = lento_extra
         try:
             print(f"🔊 Hablando: {texto}")
@@ -182,13 +184,12 @@ class TextToSpeech:
                     data, orig_sr=fs, target_sr=self.sample_rate_device
                 )
 
-            # 🆕 Callback justo antes de reproducir
+            intervalos = self._detectar_intervalos_habla(data)
+            
             if on_start:
                 on_start()
 
-            sd.play(data, self.sample_rate_device, device=self.device)
-            sd.wait()
-            print("✅ Reproducción completada")
+            self._reproducir_con_control_boca(data, intervalos, on_stop)
 
         except Exception as e:
             print(f"❌ Error en TTS: {e}")
@@ -204,3 +205,84 @@ class TextToSpeech:
             np.arange(len(audio)),
             audio.flatten()
         ).astype(np.float32)
+
+    def _detectar_intervalos_habla(self, audio: np.ndarray, umbral=0.02, min_silencio=0.25) -> list:
+        """
+        Detecta segmentos donde hay sonido.
+        Devuelve lista de (inicio_segundos, fin_segundos).
+        """
+        sr = self.sample_rate_device
+        ventana = int(sr * 0.05)  # 50ms
+        intervalos = []
+        hablando = False
+        inicio = 0
+        silencio_desde = 0
+
+        for i in range(0, len(audio), ventana):
+            chunk = audio[i:i+ventana]
+            if len(chunk) == 0:
+                break
+            nivel = np.max(np.abs(chunk))
+            tiempo = i / sr
+
+            if nivel > umbral:
+                if not hablando:
+                    inicio = tiempo
+                    hablando = True
+                silencio_desde = 0
+            else:
+                if hablando:
+                    silencio_desde += len(chunk) / sr
+                    if silencio_desde >= min_silencio:
+                        intervalos.append((inicio, tiempo - silencio_desde))
+                        hablando = False
+        if hablando:
+            intervalos.append((inicio, len(audio) / sr))
+        return intervalos
+
+    def _reproducir_con_control_boca(self, data, intervalos, on_stop=None):
+        import threading
+        import time as tmod
+
+        sio = getattr(self, 'socketio', None)
+        
+        if not sio or not intervalos:
+            sd.play(data, self.sample_rate_device, device=self.device)
+            sd.wait()
+            if on_stop:
+                on_stop()
+            return
+
+        sd.play(data, self.sample_rate_device, device=self.device)
+        inicio = tmod.time()
+        duracion_total = len(data) / self.sample_rate_device
+
+        def control_boca():
+            boca_abierta = False
+            while tmod.time() - inicio < duracion_total:
+                ahora = tmod.time() - inicio
+
+                # Determinar si ahora mismo estamos en un intervalo de habla
+                deberia_hablar = any(
+                    inicio_seg <= ahora < fin_seg
+                    for inicio_seg, fin_seg in intervalos
+                )
+
+                if deberia_hablar and not boca_abierta:
+                    sio.emit("boca", {"hablado": True})
+                    boca_abierta = True
+                elif not deberia_hablar and boca_abierta:
+                    sio.emit("boca", {"hablado": False})
+                    boca_abierta = False
+
+                tmod.sleep(0.03)
+
+            # Cerrar boca al terminar
+            if boca_abierta:
+                sio.emit("boca", {"hablado": False})
+
+        t = threading.Thread(target=control_boca, daemon=True)
+        t.start()
+        sd.wait()
+        if on_stop:
+            on_stop()

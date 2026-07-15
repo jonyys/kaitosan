@@ -58,6 +58,18 @@
         }
     });
 
+    // 🆕 Control de boca por audio real
+    socket.on("boca", function(data){
+        const mouth = document.querySelector('.mouth-single');
+        if (mouth) {
+            if (data.hablado) {
+                mouth.classList.add("mouth-active");
+            } else {
+                mouth.classList.remove("mouth-active");
+            }
+        }
+    });
+
     iniciarParpadeo();
 
     // ── Funciones del chat ──

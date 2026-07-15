@@ -35,6 +35,8 @@ detector = PersonDetector(camera, state, brain)
 recorder = Recorder(device=1)
 stt = SpeechToText()
 tts = TextToSpeech(device=1)
+tts.socketio = socketio
+
 
 @app.route("/")
 def index():
