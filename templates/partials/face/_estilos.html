@@ -188,10 +188,32 @@
     }
 
     /* SPEAKING */
-    .speaking .eye{animation:speakingAnim .35s infinite ease-in-out;}
-    @keyframes speakingAnim{
-        0%,100%{transform:translateY(0) scaleY(.82) scaleX(1);}
-        50%{transform:translateY(-3px) scaleY(.72) scaleX(1.08);}
+    .eye.blink{
+        animation: blink .14s ease;
+    }
+
+    @keyframes blink{
+        0%{
+            transform:scaleY(1);
+        }
+        45%{
+            transform:scaleY(0.03);
+        }
+        100%{
+            transform:scaleY(1);
+        }
+    }
+    .speaking .mouth-single {
+    animation: mouthSpeak 0.12s ease-in-out infinite alternate;
+    }
+
+    @keyframes mouthSpeak {
+        0% {
+            d: path("M 265.112 239.115 C 265.112 243.048 255.383 247.237 243.382 247.237 C 231.381 247.237 221.652 243.048 221.652 239.115 C 221.652 236.182 230.758 240.737 242.759 240.737 C 254.76 240.737 265.112 236.182 265.112 239.115 Z");
+        }
+        100% {
+            d: path("M 265.112 239.115 C 265.112 248.5 255.383 255.0 243.382 255.0 C 231.381 255.0 221.652 248.5 221.652 239.115 C 221.652 229.73 231.381 233.23 243.382 233.23 C 255.383 233.23 265.112 229.73 265.112 239.115 Z");
+        }
     }
 
     /* HAPPY */
