@@ -560,12 +560,57 @@
     }
 
     /* SENSEI */
-    .sensei .eye{
-        transform: scaleY(0.45) scaleX(1.12);
-        transition: transform 0.5s ease;
+    /* Ocultar ojos sensei por defecto */
+    .eye-sensei {
+        display: none;
+        width: 175px;
+        height: auto;
     }
+
+    /* Al entrar en sensei: ocultar ojos normales, mostrar ojos sensei */
     .sensei .eye-left,
-    .sensei .eye-right{
-        transform: scaleY(0.45) scaleX(1.12) !important;
+    .sensei .eye-right {
+        display: none !important;
+        animation: none !important;
+    }
+
+    .sensei .eye-sensei {
+        display: block;
+    }
+
+    /* Transición de entrada suave */
+    .eye-sensei {
+        opacity: 0;
+        transition: opacity 0.45s ease, transform 0.45s cubic-bezier(.22,.61,.36,1);
+    }
+    .sensei .eye-sensei {
+        opacity: 1;
+    }
+
+
+    /* Ocultar cejas sensei por defecto */
+    .eyebrow-sensei {
+        display: none;
+        opacity: 0;
+        width: 120px;
+        height: auto;
+        transition: opacity 0.45s ease, transform 0.45s cubic-bezier(.22,.61,.36,1);
+    }
+
+    /* Al entrar en sensei: ocultar cejas normales, mostrar cejas sensei */
+    .sensei .eyebrow-left,
+    .sensei .eyebrow-right {
+        display: none !important;
+        animation: none !important;
+    }
+
+    .sensei .eyebrow-sensei {
+        display: block;
+        opacity: 1;
+        width: 170px;
+    }
+
+    .sensei .eyebrows {
+        gap: 40px;
     }
 </style>
