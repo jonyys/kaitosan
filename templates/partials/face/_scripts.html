@@ -3,6 +3,94 @@
     const socket = io();
     const face = document.getElementById('face');
     let blinkInterval;
+    const busquedas = [
+        {
+            ojoIzq: 'eyeLookRight 4s ease-in-out',
+            ojoDer: 'eyeLookRightMirror 4s ease-in-out',
+            cejaIzq: 'browShiftRight 4s ease-in-out',
+            cejaDer: 'browShiftRight 4s ease-in-out',
+            bocaX: '6px',
+            bocaY: '0px',
+        },
+        {
+            ojoIzq: 'eyeLookLeft 4s ease-in-out',
+            ojoDer: 'eyeLookLeftMirror 4s ease-in-out',
+            cejaIzq: 'browShiftLeft 4s ease-in-out',
+            cejaDer: 'browShiftLeft 4s ease-in-out',
+            bocaX: '-6px',
+            bocaY: '0px',
+        },
+        {
+            ojoIzq: 'eyeLookUp 4s ease-in-out',
+            ojoDer: 'eyeLookUpMirror 4s ease-in-out',
+            cejaIzq: 'browFrownLeft 4s ease-in-out, browShiftLeft 4s ease-in-out',
+            cejaDer: 'browFrownRight 4s ease-in-out, browShiftRight 4s ease-in-out',
+            bocaX: '0px',
+            bocaY: '-6px',
+        },
+    ];
+
+    let busquedaInterval;
+
+    function iniciarBusqueda() {
+        detenerBusqueda();
+
+        function elegirMovimiento() {
+            if (!face.classList.contains('idle')) return;
+
+            const mov = busquedas[Math.floor(Math.random() * busquedas.length)];
+            const ojoIzq = document.querySelector('.eye-left');
+            const ojoDer = document.querySelector('.eye-right');
+            const cejas  = document.querySelectorAll('.eyebrow');
+            const boca   = document.querySelector('.mouth-single');
+
+            // Quitamos la animación idle para que no compita
+            ojoIzq.style.animation = mov.ojoIzq;
+            ojoDer.style.animation = mov.ojoDer;
+            cejas[0].style.animation = mov.cejaIzq;
+            cejas[1].style.animation = mov.cejaDer;
+
+            // Animar boca con la variable CSS personalizada
+            if (boca) {
+                boca.style.setProperty('--mouth-x', mov.bocaX);
+                boca.style.setProperty('--mouth-y', mov.bocaY);
+                boca.style.animation = 'mouthSearch 4s ease-in-out';
+            }
+
+            // Al terminar el ciclo, volvemos a idle
+            busquedaInterval = setTimeout(() => {
+                ojoIzq.style.animation = '';
+                ojoDer.style.animation = '';
+                cejas[0].style.animation = '';
+                cejas[1].style.animation = '';
+
+                if (boca) {
+                    boca.style.animation = '';
+                    boca.style.removeProperty('--mouth-x');
+                    boca.style.removeProperty('--mouth-y');
+                }
+
+                // Siguiente busqueda entre 5 y 7 segundos
+                busquedaInterval = setTimeout(elegirMovimiento, 5000 + Math.random() * 2000);
+            }, 4200);
+        }
+
+        busquedaInterval = setTimeout(elegirMovimiento, 2000 + Math.random() * 3000);
+    }
+
+    function detenerBusqueda() {
+        clearTimeout(busquedaInterval);
+        document.querySelector('.eye-left').style.animation  = '';
+        document.querySelector('.eye-right').style.animation = '';
+        document.querySelectorAll('.eyebrow').forEach(c => c.style.animation = '');
+
+        const boca = document.querySelector('.mouth-single');
+        if (boca) {
+            boca.style.animation = '';
+            boca.style.removeProperty('--mouth-x');
+            boca.style.removeProperty('--mouth-y');
+        }
+    }
 
     function iniciarParpadeo() {
         detenerParpadeo();
@@ -45,8 +133,10 @@
         face.classList.add(data.estado);
         if(data.estado==="idle"){
             iniciarParpadeo();
+            iniciarBusqueda();
         }else{
             detenerParpadeo();
+            detenerBusqueda();
         }
     });
 
@@ -62,15 +152,23 @@
     socket.on("boca", function(data){
         const mouth = document.querySelector('.mouth-single');
         if (mouth) {
+            mouth.style.animation = '';
+            mouth.style.removeProperty('--mouth-x');
+            mouth.style.removeProperty('--mouth-y');
+
+
             if (data.hablado) {
                 mouth.classList.add("mouth-active");
+                iniciarParpadeo(); // Reinicia el parpadeo para que no se quede bloqueado
             } else {
                 mouth.classList.remove("mouth-active");
+                detenerParpadeo();
             }
         }
     });
 
     iniciarParpadeo();
+    iniciarBusqueda();
 
     // ── Funciones del chat ──
     document.getElementById('input').addEventListener('keypress', function(e) {

@@ -102,8 +102,10 @@
     /* BOCA */
     .mouth-container {
         margin-top: 20px;
+        overflow: visible;
     }
     .mouth {
+        overflow: visible;
         width: 90px;
         height: auto;
         transition: .35s;
@@ -168,6 +170,85 @@
         100%{
             transform:scaleY(1);
         }
+    }
+
+    /* Keyframes de movimiento */
+    @keyframes lookRight {
+        0%,12%   { transform: translateX(0); }
+        22%,55%  { transform: translateX(14px); }
+        65%,100% { transform: translateX(0); }
+    }
+    @keyframes lookLeft {
+        0%,12%   { transform: translateX(0); }
+        22%,55%  { transform: translateX(-14px); }
+        65%,100% { transform: translateX(0); }
+    }
+    @keyframes lookUp {
+        0%,12%   { transform: translateY(0); }
+        22%,55%  { transform: translateY(-10px); }
+        65%,100% { transform: translateY(0); }
+    }
+    @keyframes browFrownLeft {
+        0%,12%   { transform: rotate(0deg); }
+        22%,55%  { transform: rotate(-9deg); }
+        65%,100% { transform: rotate(0deg); }
+    }
+    @keyframes browFrownRight {
+        0%,12%   { transform: rotate(0deg); }
+        22%,55%  { transform: rotate(9deg); }
+        65%,100% { transform: rotate(0deg); }
+    }
+    @keyframes browShiftRight {
+        0%,12%   { transform: translateX(0); }
+        22%,55%  { transform: translateX(10px); }
+        65%,100% { transform: translateX(0); }
+    }
+    @keyframes browShiftLeft {
+        0%,12%   { transform: translateX(0); }
+        22%,55%  { transform: translateX(-10px); }
+        65%,100% { transform: translateX(0); }
+    }
+    @keyframes mouthSearch {
+        0%,12%   { transform: translateX(0) translateY(0); }
+        22%,55%  { transform: translateX(var(--mouth-x, 0px)) translateY(var(--mouth-y, 0px)); }
+        65%,100% { transform: translateX(0) translateY(0); }
+    }
+    /* Búsqueda de ojos */
+    @keyframes eyeLookRight {
+        0%,12%   { transform: rotate(5deg) translateX(0); }
+        22%,55%  { transform: rotate(5deg) translateX(14px); }
+        65%,100% { transform: rotate(5deg) translateX(0); }
+    }
+    @keyframes eyeLookRightMirror {
+        0%,12%   { transform: rotate(-5deg) translateX(0); }
+        22%,55%  { transform: rotate(-5deg) translateX(14px); }
+        65%,100% { transform: rotate(-5deg) translateX(0); }
+    }
+    @keyframes eyeLookLeft {
+        0%,12%   { transform: rotate(5deg) translateX(0); }
+        22%,55%  { transform: rotate(5deg) translateX(-14px); }
+        65%,100% { transform: rotate(5deg) translateX(0); }
+    }
+    @keyframes eyeLookLeftMirror {
+        0%,12%   { transform: rotate(-5deg) translateX(0); }
+        22%,55%  { transform: rotate(-5deg) translateX(-14px); }
+        65%,100% { transform: rotate(-5deg) translateX(0); }
+    }
+    @keyframes eyeLookUp {
+        0%,12%   { transform: rotate(5deg) translateY(0); }
+        22%,55%  { transform: rotate(5deg) translateY(-10px); }
+        65%,100% { transform: rotate(5deg) translateY(0); }
+    }
+    @keyframes eyeLookUpMirror {
+        0%,12%   { transform: rotate(-5deg) translateY(0); }
+        22%,55%  { transform: rotate(-5deg) translateY(-10px); }
+        65%,100% { transform: rotate(-5deg) translateY(0); }
+    }
+
+    /* Parpadeo */
+    @keyframes idleBlink {
+        0%,88%,100% { transform: scaleY(1); }
+        91%          { transform: scaleY(0.04); }
     }
 
     /* LISTENING */
