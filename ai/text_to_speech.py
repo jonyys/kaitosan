@@ -160,10 +160,8 @@ class TextToSpeech:
         if os.path.exists(list_path):
             os.unlink(list_path)
 
-    def hablar(self, texto: str, lento_extra: bool = False):
-        """Convierte texto a voz y reproduce por el dispositivo de audio."""
-        self._lento = lento_extra
-
+    def hablar(self, texto: str, lento_extra: bool = False, on_start=None):
+        self._lento_extra = lento_extra
         try:
             print(f"🔊 Hablando: {texto}")
 
@@ -172,7 +170,6 @@ class TextToSpeech:
 
             asyncio.run(self._generar_audio_completo(texto, tmp_path))
 
-            # Leer mp3 con soundfile
             data, fs = sf.read(tmp_path)
             os.unlink(tmp_path)
 
@@ -184,6 +181,10 @@ class TextToSpeech:
                 data = self._convertir_sample_rate(
                     data, orig_sr=fs, target_sr=self.sample_rate_device
                 )
+
+            # 🆕 Callback justo antes de reproducir
+            if on_start:
+                on_start()
 
             sd.play(data, self.sample_rate_device, device=self.device)
             sd.wait()

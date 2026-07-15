@@ -254,22 +254,29 @@ class Brain:
         return respuesta
 
     def saludar(self):
-        """Saluda a Laura cuando la detecta"""
         try:
             self.state.cambiar("thinking")
-
             saludo = self.responder(
                 "Laura acaba de sentarse delante de ti, "
                 "salúdala de forma breve, cariñosa y personalizada"
             )
-
             print(f"🤖 Kaito: {saludo}")
-            self.state.cambiar("speaking")
+
+            # Emitir mensaje a la interfaz
             self.socketio.emit("mensaje", {"texto": saludo})
 
-            tiempo = min(len(saludo) * 0.05, 6)
-            time.sleep(tiempo)
-            self.state.cambiar("idle")
+            # Reproducir saludo con sincronización
+            def al_iniciar_audio():
+                self.state.cambiar("speaking")
+                self.socketio.emit("estado", {"estado": "speaking"})
+
+            def hablar_y_volver():
+                self.tts.hablar(saludo, on_start=al_iniciar_audio)
+                time.sleep(0.2)
+                self.state.cambiar("idle")
+                self.socketio.emit("estado", {"estado": "idle"})
+
+            threading.Thread(target=hablar_y_volver, daemon=True).start()
 
         except Exception as e:
             print(f"❌ Error saludando: {e}")

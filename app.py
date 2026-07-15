@@ -61,18 +61,20 @@ def chat():
 
         respuesta = brain.responder(mensaje)
 
-        state.cambiar("speaking")
+        # Emitir mensaje (sin cambiar estado todavía)
         socketio.emit("mensaje", {"texto": respuesta})
 
-        # Habla la respuesta en hilo separado
-        def hablar_y_volver():
-            tts.hablar(respuesta, lento=brain.sensei_lento)
-            state.cambiar("idle")
+        # Callback que se ejecuta cuando el audio empieza de verdad
+        def al_iniciar_audio():
+            state.cambiar("speaking")
+            socketio.emit("estado", {"estado": "speaking"})
 
-        threading.Thread(
-            target=hablar_y_volver,
-            daemon=True
-        ).start()
+        def hablar_y_volver():
+            tts.hablar(respuesta, lento_extra=brain.sensei_lento, on_start=al_iniciar_audio)
+            state.cambiar("idle")
+            socketio.emit("estado", {"estado": "idle"})
+
+        threading.Thread(target=hablar_y_volver, daemon=True).start()
 
         return jsonify({
             "respuesta": respuesta,
@@ -108,9 +110,6 @@ def grabar():
             state.cambiar("idle")
             return jsonify({"error": "No se entendió nada"}), 400
 
-        # Emite transcripción a la web
-        socketio.emit("transcripcion", {"texto": texto})
-
         # ── Evaluar pronunciación si hay frase objetivo ──
         if brain.ultima_frase_objetivo:
             evaluacion = comparar_pronunciacion(
@@ -132,22 +131,24 @@ def grabar():
         else:
             lento_extra = False
 
-        state.cambiar("speaking")
+        #state.cambiar("speaking")
         socketio.emit("mensaje", {"texto": respuesta})
 
         # Hablando
-        state.cambiar("speaking")
+        # Emitir mensaje (sin cambiar estado todavía)
         socketio.emit("mensaje", {"texto": respuesta})
 
-        # Habla la respuesta en hilo separado
-        def hablar_y_volver():
-            tts.hablar(respuesta, lento_extra=lento_extra)
-            state.cambiar("idle")
+        # Callback que se ejecuta cuando el audio empieza de verdad
+        def al_iniciar_audio():
+            state.cambiar("speaking")
+            socketio.emit("estado", {"estado": "speaking"})
 
-        threading.Thread(
-            target=hablar_y_volver,
-            daemon=True
-        ).start()
+        def hablar_y_volver():
+            tts.hablar(respuesta, lento_extra=lento_extra, on_start=al_iniciar_audio)
+            state.cambiar("idle")
+            socketio.emit("estado", {"estado": "idle"})
+
+        threading.Thread(target=hablar_y_volver, daemon=True).start()
 
         return jsonify({
             "transcripcion": texto,
