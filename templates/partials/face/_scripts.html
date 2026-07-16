@@ -1,356 +1,390 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
 <script>
-    const socket = io();
-    const face = document.getElementById('face');
-    let blinkInterval;
-    const busquedas = [
-        {
-            ojoIzq: 'eyeLookRight 4s ease-in-out',
-            ojoDer: 'eyeLookRightMirror 4s ease-in-out',
-            cejaIzq: 'browShiftRight 4s ease-in-out',
-            cejaDer: 'browShiftRight 4s ease-in-out',
-            bocaX: '6px',
-            bocaY: '0px',
-        },
-        {
-            ojoIzq: 'eyeLookLeft 4s ease-in-out',
-            ojoDer: 'eyeLookLeftMirror 4s ease-in-out',
-            cejaIzq: 'browShiftLeft 4s ease-in-out',
-            cejaDer: 'browShiftLeft 4s ease-in-out',
-            bocaX: '-6px',
-            bocaY: '0px',
-        },
-        {
-            ojoIzq: 'eyeLookUp 4s ease-in-out',
-            ojoDer: 'eyeLookUpMirror 4s ease-in-out',
-            cejaIzq: 'browFrownLeft 4s ease-in-out, browShiftLeft 4s ease-in-out',
-            cejaDer: 'browFrownRight 4s ease-in-out, browShiftRight 4s ease-in-out',
-            bocaX: '0px',
-            bocaY: '-6px',
-        },
-    ];
+  const socket = io();
+  const face = document.getElementById("face");
+  let blinkInterval;
+  const busquedas = [
+    {
+      ojoIzq: "eyeLookRight 4s ease-in-out",
+      ojoDer: "eyeLookRightMirror 4s ease-in-out",
+      cejaIzq: "browShiftRight 4s ease-in-out",
+      cejaDer: "browShiftRight 4s ease-in-out",
+      bocaX: "6px",
+      bocaY: "0px",
+    },
+    {
+      ojoIzq: "eyeLookLeft 4s ease-in-out",
+      ojoDer: "eyeLookLeftMirror 4s ease-in-out",
+      cejaIzq: "browShiftLeft 4s ease-in-out",
+      cejaDer: "browShiftLeft 4s ease-in-out",
+      bocaX: "-6px",
+      bocaY: "0px",
+    },
+    {
+      ojoIzq: "eyeLookUp 4s ease-in-out",
+      ojoDer: "eyeLookUpMirror 4s ease-in-out",
+      cejaIzq: "browFrownLeft 4s ease-in-out, browShiftLeft 4s ease-in-out",
+      cejaDer: "browFrownRight 4s ease-in-out, browShiftRight 4s ease-in-out",
+      bocaX: "0px",
+      bocaY: "-6px",
+    },
+  ];
 
-    let busquedaInterval;
+  let busquedaInterval;
 
-    function iniciarBusqueda() {
-        detenerBusqueda();
+  function iniciarBusqueda() {
+    detenerBusqueda();
 
-        function elegirMovimiento() {
-            if (!face.classList.contains('idle')) return;
+    function elegirMovimiento() {
+      if (!face.classList.contains("idle")) return;
 
-            const mov = busquedas[Math.floor(Math.random() * busquedas.length)];
-            const ojoIzq = document.querySelector('.eye-left');
-            const ojoDer = document.querySelector('.eye-right');
-            const cejas  = document.querySelectorAll('.eyebrow');
-            const boca   = document.querySelector('.mouth-single');
+      const mov = busquedas[Math.floor(Math.random() * busquedas.length)];
+      // Seleccionamos ojos normales Y sensei
+      const ojosIzq = document.querySelectorAll(".eye-left, .eye-sensei-left");
+      const ojosDer = document.querySelectorAll(
+        ".eye-right, .eye-sensei-right",
+      );
+      // Cejas: las normales son .eyebrow (left/right), las sensei .eyebrow-sensei
+      const cejasIzq = document.querySelectorAll(
+        ".eyebrow-left, .eyebrow-sensei-left",
+      );
+      const cejasDer = document.querySelectorAll(
+        ".eyebrow-right, .eyebrow-sensei-right",
+      );
+      // Bocas: normal y sensei
+      const bocas = document.querySelectorAll(".mouth-single, .mouth-sensei");
 
-            // Quitamos la animación idle para que no compita
-            ojoIzq.style.animation = mov.ojoIzq;
-            ojoDer.style.animation = mov.ojoDer;
-            cejas[0].style.animation = mov.cejaIzq;
-            cejas[1].style.animation = mov.cejaDer;
+      ojosIzq.forEach((ojo) => (ojo.style.animation = mov.ojoIzq));
+      ojosDer.forEach((ojo) => (ojo.style.animation = mov.ojoDer));
+      cejasIzq.forEach((ceja) => (ceja.style.animation = mov.cejaIzq));
+      cejasDer.forEach((ceja) => (ceja.style.animation = mov.cejaDer));
 
-            // Animar boca con la variable CSS personalizada
-            if (boca) {
-                boca.style.setProperty('--mouth-x', mov.bocaX);
-                boca.style.setProperty('--mouth-y', mov.bocaY);
-                boca.style.animation = 'mouthSearch 4s ease-in-out';
-            }
+      bocas.forEach((boca) => {
+        boca.style.setProperty("--mouth-x", mov.bocaX);
+        boca.style.setProperty("--mouth-y", mov.bocaY);
+        boca.style.animation = "mouthSearch 4s ease-in-out";
+      });
 
-            // Al terminar el ciclo, volvemos a idle
-            busquedaInterval = setTimeout(() => {
-                ojoIzq.style.animation = '';
-                ojoDer.style.animation = '';
-                cejas[0].style.animation = '';
-                cejas[1].style.animation = '';
+      // Al terminar el ciclo, volvemos a idle (limpiar estilos inline)
+      busquedaInterval = setTimeout(() => {
+        ojosIzq.forEach((ojo) => (ojo.style.animation = ""));
+        ojosDer.forEach((ojo) => (ojo.style.animation = ""));
+        cejasIzq.forEach((ceja) => (ceja.style.animation = ""));
+        cejasDer.forEach((ceja) => (ceja.style.animation = ""));
 
-                if (boca) {
-                    boca.style.animation = '';
-                    boca.style.removeProperty('--mouth-x');
-                    boca.style.removeProperty('--mouth-y');
-                }
+        bocas.forEach((boca) => {
+          boca.style.animation = "";
+          boca.style.removeProperty("--mouth-x");
+          boca.style.removeProperty("--mouth-y");
+        });
 
-                // Siguiente busqueda entre 5 y 7 segundos
-                busquedaInterval = setTimeout(elegirMovimiento, 5000 + Math.random() * 2000);
-            }, 4200);
-        }
-
-        busquedaInterval = setTimeout(elegirMovimiento, 2000 + Math.random() * 3000);
+        // Siguiente busqueda entre 5 y 7 segundos
+        busquedaInterval = setTimeout(
+          elegirMovimiento,
+          5000 + Math.random() * 2000,
+        );
+      }, 4200);
     }
 
-    function detenerBusqueda() {
-        clearTimeout(busquedaInterval);
-        document.querySelector('.eye-left').style.animation  = '';
-        document.querySelector('.eye-right').style.animation = '';
-        document.querySelectorAll('.eyebrow').forEach(c => c.style.animation = '');
+    busquedaInterval = setTimeout(
+      elegirMovimiento,
+      2000 + Math.random() * 3000,
+    );
+  }
 
-        const boca = document.querySelector('.mouth-single');
-        if (boca) {
-            boca.style.animation = '';
-            boca.style.removeProperty('--mouth-x');
-            boca.style.removeProperty('--mouth-y');
-        }
-    }
+  function detenerBusqueda() {
+    clearTimeout(busquedaInterval);
+    document
+      .querySelectorAll(".eye-left, .eye-sensei-left")
+      .forEach((ojo) => (ojo.style.animation = ""));
+    document
+      .querySelectorAll(".eye-right, .eye-sensei-right")
+      .forEach((ojo) => (ojo.style.animation = ""));
+    document
+      .querySelectorAll(
+        ".eyebrow-left, .eyebrow-sensei-left, .eyebrow-right, .eyebrow-sensei-right",
+      )
+      .forEach((ceja) => (ceja.style.animation = ""));
 
-    function iniciarParpadeo() {
-        detenerParpadeo();
-        function parpadear() {
-            if (!face.classList.contains("idle")) {
-                programar();
-                return;
-            }
-            document.querySelectorAll(".eye").forEach(ojo=>{
-            ojo.classList.add("blink");
+    const bocas = document.querySelectorAll(".mouth-single, .mouth-sensei");
+    bocas.forEach((boca) => {
+      boca.style.animation = "";
+      boca.style.removeProperty("--mouth-x");
+      boca.style.removeProperty("--mouth-y");
+    });
+  }
 
-            setTimeout(()=>{
-                ojo.classList.remove("blink");
-            },140);
-            });
-            if (Math.random() < 0.3) {
-                setTimeout(() => {
-                    document.querySelectorAll(".eye").forEach(ojo=>{
-                        ojo.classList.add("blink");
-                        setTimeout(()=>ojo.classList.remove("blink"),140);
-                    });
-                },180);
-            }
-            programar();
-        }
-        function programar(){
-            blinkInterval = setTimeout(parpadear, 2500 + Math.random()*2200);
-        }
+  function iniciarParpadeo() {
+    detenerParpadeo();
+    function parpadear() {
+      if (!face.classList.contains("idle")) {
         programar();
+        return;
+      }
+      document.querySelectorAll(".eye, .eye-sensei").forEach((ojo) => {
+        ojo.classList.add("blink");
+
+        setTimeout(() => {
+          ojo.classList.remove("blink");
+        }, 140);
+      });
+      if (Math.random() < 0.3) {
+        setTimeout(() => {
+          document.querySelectorAll(".eye, .eye-sensei").forEach((ojo) => {
+            ojo.classList.add("blink");
+            setTimeout(() => ojo.classList.remove("blink"), 140);
+          });
+        }, 180);
+      }
+      programar();
+    }
+    function programar() {
+      blinkInterval = setTimeout(parpadear, 2500 + Math.random() * 2200);
+    }
+    programar();
+  }
+
+  function detenerParpadeo() {
+    clearTimeout(blinkInterval);
+  }
+
+  function iniciarParpadeoLento() {
+    detenerParpadeo();
+
+    function parpadear() {
+      // Solo parpadea si sigue en listening
+      if (!face.classList.contains("listening")) return;
+
+      document.querySelectorAll(".eye").forEach((ojo) => {
+        ojo.classList.add("blink");
+        setTimeout(() => ojo.classList.remove("blink"), 180); // más lento que el normal
+      });
+
+      // Parpadeo doble ocasional, igual que en idle pero más raro
+      if (Math.random() < 0.15) {
+        setTimeout(() => {
+          document.querySelectorAll(".eye").forEach((ojo) => {
+            ojo.classList.add("blink");
+            setTimeout(() => ojo.classList.remove("blink"), 180);
+          });
+        }, 220);
+      }
+
+      // Intervalo largo — la gente parpadea poco cuando escucha
+      blinkInterval = setTimeout(parpadear, 4000 + Math.random() * 3000);
     }
 
-    function detenerParpadeo(){
-        clearTimeout(blinkInterval);
+    blinkInterval = setTimeout(parpadear, 3000 + Math.random() * 2000);
+  }
+
+  function detenerParpadeoLento() {
+    clearTimeout(blinkInterval);
+  }
+
+  let listeningTransitionTimeout = null;
+
+  function entrarListening() {
+    // Primero ponemos la clase base sin animaciones todavía
+    face.classList.add("listening");
+
+    // Un frame después arrancamos las animaciones para que el navegador
+    // interpole desde el estado actual hasta el nuevo
+    listeningTransitionTimeout = setTimeout(() => {
+      face.classList.add("listening-active");
+    }, 50);
+  }
+
+  function salirListening() {
+    clearTimeout(listeningTransitionTimeout);
+
+    // Quitamos las animaciones pero mantenemos listening brevemente
+    // para que la transition CSS suavice la vuelta a idle
+    face.classList.remove("listening-active");
+
+    listeningTransitionTimeout = setTimeout(() => {
+      face.classList.remove("listening");
+    }, 700); // coincide con la duración de la transition CSS
+  }
+
+  function cambiarEstado(nuevoEstado) {
+    const actual = estados.find((e) => face.classList.contains(e));
+
+    if (actual === nuevoEstado) return;
+
+    face.classList.add("transition");
+
+    estados.forEach((e) => face.classList.remove(e));
+
+    requestAnimationFrame(() => {
+      face.classList.add(nuevoEstado);
+
+      setTimeout(() => {
+        face.classList.remove("transition");
+      }, 450);
+    });
+  }
+
+  const estados = [
+    "idle",
+    "listening",
+    "thinking",
+    "speaking",
+    "happy",
+    "error",
+  ];
+
+  socket.on("estado", (data) => {
+    // Si seguimos en el mismo estado no hacemos nada
+    if (face.classList.contains(data.estado)) return;
+
+    // Salimos suavemente de listening
+    if (face.classList.contains("listening") && data.estado !== "listening") {
+      salirListening();
     }
 
-    function iniciarParpadeoLento() {
-        detenerParpadeo();
+    // Limpiar animaciones
+    detenerParpadeo();
+    detenerParpadeoLento();
+    detenerBusqueda();
 
-        function parpadear() {
-            // Solo parpadea si sigue en listening
-            if (!face.classList.contains("listening")) return;
+    // Listening tiene su propio sistema
+    if (data.estado === "listening") {
+      estados.forEach((e) => {
+        if (e !== "listening") face.classList.remove(e);
+      });
 
-            document.querySelectorAll(".eye").forEach(ojo => {
-                ojo.classList.add("blink");
-                setTimeout(() => ojo.classList.remove("blink"), 180); // más lento que el normal
-            });
-
-            // Parpadeo doble ocasional, igual que en idle pero más raro
-            if (Math.random() < 0.15) {
-                setTimeout(() => {
-                    document.querySelectorAll(".eye").forEach(ojo => {
-                        ojo.classList.add("blink");
-                        setTimeout(() => ojo.classList.remove("blink"), 180);
-                    });
-                }, 220);
-            }
-
-            // Intervalo largo — la gente parpadea poco cuando escucha
-            blinkInterval = setTimeout(parpadear, 4000 + Math.random() * 3000);
-        }
-
-        blinkInterval = setTimeout(parpadear, 3000 + Math.random() * 2000);
+      entrarListening();
+      iniciarParpadeoLento();
+      return;
     }
 
-    function detenerParpadeoLento() {
-        clearTimeout(blinkInterval);
-    }
+    // ---------- Transición para el resto ----------
+    face.classList.add("transition");
 
-    let listeningTransitionTimeout = null;
-
-    function entrarListening() {
-        // Primero ponemos la clase base sin animaciones todavía
-        face.classList.add('listening');
-        
-        // Un frame después arrancamos las animaciones para que el navegador
-        // interpole desde el estado actual hasta el nuevo
-        listeningTransitionTimeout = setTimeout(() => {
-            face.classList.add('listening-active');
-        }, 50);
-    }
-
-    function salirListening() {
-        clearTimeout(listeningTransitionTimeout);
-        
-        // Quitamos las animaciones pero mantenemos listening brevemente
-        // para que la transition CSS suavice la vuelta a idle
-        face.classList.remove('listening-active');
-        
-        listeningTransitionTimeout = setTimeout(() => {
-            face.classList.remove('listening');
-        }, 700); // coincide con la duración de la transition CSS
-    }
-
-    function cambiarEstado(nuevoEstado){
-
-        const actual = estados.find(e => face.classList.contains(e));
-
-        if(actual===nuevoEstado) return;
-
-        face.classList.add("transition");
-
-        estados.forEach(e=>face.classList.remove(e));
-
-        requestAnimationFrame(()=>{
-            face.classList.add(nuevoEstado);
-
-            setTimeout(()=>{
-                face.classList.remove("transition");
-            },450);
-        });
-
-    }
-
-    const estados = ['idle','listening','thinking','speaking','happy','error'];
-
-    socket.on("estado", (data) => {
-
-        // Si seguimos en el mismo estado no hacemos nada
-        if (face.classList.contains(data.estado)) return;
-
-        // Salimos suavemente de listening
-        if (face.classList.contains("listening") && data.estado !== "listening") {
-            salirListening();
-        }
-
-        // Limpiar animaciones
-        detenerParpadeo();
-        detenerParpadeoLento();
-        detenerBusqueda();
-
-        // Listening tiene su propio sistema
-        if (data.estado === "listening") {
-
-            estados.forEach(e => {
-                if (e !== "listening")
-                    face.classList.remove(e);
-            });
-
-            entrarListening();
-            iniciarParpadeoLento();
-            return;
-        }
-
-        // ---------- Transición para el resto ----------
-        face.classList.add("transition");
-
-        estados.forEach(e => {
-            if (e !== "listening")
-                face.classList.remove(e);
-        });
-
-        requestAnimationFrame(() => {
-
-            face.classList.add(data.estado);
-
-            if (data.estado === "idle") {
-                iniciarParpadeo();
-                iniciarBusqueda();
-            }
-
-            setTimeout(() => {
-                face.classList.remove("transition");
-            }, 450);
-
-        });
-
+    estados.forEach((e) => {
+      if (e !== "listening") face.classList.remove(e);
     });
 
-    socket.on("modo_sensei", function(data){
-        if (data.activo) {
-            face.classList.add("sensei");
-        } else {
-            face.classList.remove("sensei");
-        }
+    requestAnimationFrame(() => {
+      face.classList.add(data.estado);
+
+      if (data.estado === "idle") {
+        iniciarParpadeo();
+        iniciarBusqueda();
+      }
+
+      setTimeout(() => {
+        face.classList.remove("transition");
+      }, 450);
     });
+  });
 
-    // 🆕 Control de boca por audio real
-    socket.on("boca", function(data){
-        const mouth = document.querySelector('.mouth-single');
-        if (mouth) {
-            mouth.style.animation = '';
-            mouth.style.removeProperty('--mouth-x');
-            mouth.style.removeProperty('--mouth-y');
-
-
-            if (data.hablado) {
-                mouth.classList.add("mouth-active");
-                iniciarParpadeo(); // Reinicia el parpadeo para que no se quede bloqueado
-            } else {
-                mouth.classList.remove("mouth-active");
-                detenerParpadeo();
-            }
-        }
-    });
-
-    iniciarParpadeo();
-    iniciarBusqueda();
-
-    // ── Funciones del chat ──
-    document.getElementById('input').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') enviarMensaje();
-    });
-
-    async function enviarMensaje() {
-        const input = document.getElementById('input');
-        const respuestaDiv = document.getElementById('respuesta');
-        const mensaje = input.value.trim();
-        if (!mensaje) return;
-        input.value = '';
-        respuestaDiv.style.display = 'block';
-        respuestaDiv.textContent = '...';
-        try {
-            const response = await fetch('/chat', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ mensaje: mensaje })
-            });
-            const data = await response.json();
-            if (data.respuesta) {
-                respuestaDiv.textContent = data.respuesta;
-            } else {
-                respuestaDiv.textContent = 'Error: ' + data.error;
-            }
-        } catch (error) {
-            respuestaDiv.textContent = 'Error de conexión';
-        }
+  socket.on("modo_sensei", function (data) {
+    if (data.activo) {
+      face.classList.add("sensei");
+    } else {
+      face.classList.remove("sensei");
     }
+  });
 
-    let grabando = false;
-
-    async function grabarVoz() {
-        if (grabando) return;
-        const btn = document.getElementById('btn-voz');
-        const respuestaDiv = document.getElementById('respuesta');
-        grabando = true;
-        btn.style.background = '#ff3333';
-        btn.textContent = '⏺️';
-        respuestaDiv.style.display = 'block';
-        respuestaDiv.textContent = '🎤 Grabando 5 segundos...';
-        try {
-            const response = await fetch('/grabar', {method: 'POST'});
-            const data = await response.json();
-            if (data.transcripcion) {
-                respuestaDiv.textContent = `📝 "${data.transcripcion}"`;
-            }
-            if (data.error) {
-                respuestaDiv.textContent = '❌ ' + data.error;
-            }
-        } catch (error) {
-            respuestaDiv.textContent = '❌ Error de conexión';
-        } finally {
-            grabando = false;
-            btn.style.background = '#00cc44';
-            btn.textContent = '🎤';
-        }
-    }
-
-    socket.on('transcripcion', function(data) {
-        const respuestaDiv = document.getElementById('respuesta');
-        respuestaDiv.style.display = 'block';
-        respuestaDiv.textContent = `📝 "${data.texto}"`;
+  // 🆕 Control de boca por audio real
+  socket.on("boca", function (data) {
+    // Boca normal
+    const mouthsNormal = document.querySelectorAll(".mouth-single");
+    mouthsNormal.forEach((mouth) => {
+      mouth.style.animation = "";
+      mouth.style.removeProperty("--mouth-x");
+      mouth.style.removeProperty("--mouth-y");
+      if (data.hablado) {
+        mouth.classList.add("mouth-active");
+      } else {
+        mouth.classList.remove("mouth-active");
+      }
     });
+
+    // Boca sensei — solo si el modo sensei está visible/activo
+    const mouthsSensei = document.querySelectorAll(".mouth-sensei");
+    mouthsSensei.forEach((mouth) => {
+      mouth.style.animation = "";
+      if (data.hablado) {
+        mouth.classList.add("mouth-active"); // CSS se encarga del keyframe correcto
+      } else {
+        mouth.classList.remove("mouth-active");
+      }
+    });
+
+    if (data.hablado) {
+      iniciarParpadeo();
+    } else {
+      detenerParpadeo();
+    }
+  });
+
+  iniciarParpadeo();
+  iniciarBusqueda();
+
+  // ── Funciones del chat ──
+  document.getElementById("input").addEventListener("keypress", function (e) {
+    if (e.key === "Enter") enviarMensaje();
+  });
+
+  async function enviarMensaje() {
+    const input = document.getElementById("input");
+    const respuestaDiv = document.getElementById("respuesta");
+    const mensaje = input.value.trim();
+    if (!mensaje) return;
+    input.value = "";
+    respuestaDiv.style.display = "block";
+    respuestaDiv.textContent = "...";
+    try {
+      const response = await fetch("/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mensaje: mensaje }),
+      });
+      const data = await response.json();
+      if (data.respuesta) {
+        respuestaDiv.textContent = data.respuesta;
+      } else {
+        respuestaDiv.textContent = "Error: " + data.error;
+      }
+    } catch (error) {
+      respuestaDiv.textContent = "Error de conexión";
+    }
+  }
+
+  let grabando = false;
+
+  async function grabarVoz() {
+    if (grabando) return;
+    const btn = document.getElementById("btn-voz");
+    const respuestaDiv = document.getElementById("respuesta");
+    grabando = true;
+    btn.style.background = "#ff3333";
+    btn.textContent = "⏺️";
+    respuestaDiv.style.display = "block";
+    respuestaDiv.textContent = "🎤 Grabando 5 segundos...";
+    try {
+      const response = await fetch("/grabar", { method: "POST" });
+      const data = await response.json();
+      if (data.transcripcion) {
+        respuestaDiv.textContent = `📝 "${data.transcripcion}"`;
+      }
+      if (data.error) {
+        respuestaDiv.textContent = "❌ " + data.error;
+      }
+    } catch (error) {
+      respuestaDiv.textContent = "❌ Error de conexión";
+    } finally {
+      grabando = false;
+      btn.style.background = "#00cc44";
+      btn.textContent = "🎤";
+    }
+  }
+
+  socket.on("transcripcion", function (data) {
+    const respuestaDiv = document.getElementById("respuesta");
+    respuestaDiv.style.display = "block";
+    respuestaDiv.textContent = `📝 "${data.texto}"`;
+  });
 </script>
