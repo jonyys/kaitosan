@@ -1,5 +1,4 @@
 import json
-import threading
 import random
 from ai.groq_provider import GroqProvider
 from ai.prompts import cargar_prompt
@@ -11,7 +10,7 @@ from ai.skills.reminder import ReminderSkill
 
 from core.japanese_memory import JapaneseMemory
 from core.memory import DB_PATH, Memory
-import time
+from ai.sensei.profesor import ProfesorJapones, SALUDOS, DESPEDIDAS
 from datetime import datetime
 import re as regex
 
@@ -19,22 +18,6 @@ import re as regex
 MAX_MENSAJES = 20
 
 class Brain:
-
-    SALUDOS_SENSEI = [
-            "Modo Sensei activado! 【こんにちは、ラウラさん。おげんきですか。】",
-            "Modo Sensei activado! 【おはようございます、ラウラさん。きょうはなにをしたいですか。】",
-            "Modo Sensei activado! 【こんばんは、ラウラさん。げんきですか。】",
-            "Modo Sensei activado! 【やあ、ラウラさん。ちょうしはどうですか。】",
-            "Modo Sensei activado! 【ラウラさん、こんにちは。にほんごをべんきょうしましょう。】"
-    ]
-
-    DESPEDIDAS_SENSEI = [
-        "【またね、ラウラさん】",
-        "【じゃあね、ラウラさん。また会いましょう】",
-        "【おつかれさまでした。またね】",
-        "【さようなら、ラウラさん。また今度】",
-        "【バイバイ、ラウラさん。気をつけてね】"
-    ]
 
     def __init__(self, state_manager, socketio):
         self.state = state_manager
@@ -47,14 +30,11 @@ class Brain:
         self.session_id = None
         self._iniciar_sesion()
         self.ultimo_agente = "general"
-        self.ultima_frase_objetivo = None
         self.search = SearchProvider()
-        self.modo_sensei = False
-        self.timer_sensei = None
-        self.sensei_lento_extra = False
         self.weather = WeatherSkill()
         self.alarm = AlarmSkill()
         self.reminder = ReminderSkill()
+        self.profesor = ProfesorJapones(self.jap_memory, self.provider, self.provider_ligero, self.memory, self.socketio)
 
     def _iniciar_sesion(self):
         """
@@ -152,45 +132,37 @@ class Brain:
                 "buscar_internet": False
             }
 
-    def responder(self, mensaje: str) -> str:
+    def responder(self, mensaje: str) -> tuple[str, bool]:
+        """Devuelve siempre (respuesta, lento_extra).
 
-        # Detectar comandos de modo sensei
+        `lento_extra` solo es True dentro del modo sensei cuando Laura pide
+        hablar más despacio; en el flujo normal es siempre False.
+        """
+
+        # Detectar comandos de modo sensei → delegar en ProfesorJapones
         if any(frase in mensaje.lower() for frase in ["sensei", "entrar en modo", "entra en modo", "modo sensei on", "activar modo sensei", "activar modo", "en modo"]):
-            if not self.modo_sensei:
-                self.entrar_modo_sensei()
-                return random.choice(self.SALUDOS_SENSEI)
+            if not self.profesor.esta_activo():
+                self.profesor.entrar()
+                return random.choice(SALUDOS), False
 
         if any(frase in mensaje.lower() for frase in ["salir del modo sensei", "sal del modo sensei", "modo sensei off", "salir del modo", "sal del modo", "desactivar modo", "desactivar modo", "desctivar", "desactiva"]):
-            if self.modo_sensei:
-                self.salir_modo_sensei()
-                return random.choice(self.DESPEDIDAS_SENSEI)
+            if self.profesor.esta_activo():
+                self.profesor.salir()
+                return random.choice(DESPEDIDAS), False
 
-         # ── Si ya estamos en modo sensei, saltamos el enrutador ──
-        if self.modo_sensei:
+         # ── Si ya estamos en modo sensei, delegamos en el profesor ──
+        if self.profesor.esta_activo():
             # Detectar si Laura pide más lento (solo para esta respuesta)
             lento_extra = any(
                 p in mensaje.lower() for p in ["más lento", "despacio", "lentamente", "despacito"]
             )
 
-            self._renovar_timer_sensei()
-            self.historial.append({"role": "user", "content": mensaje})
-            respuesta = self._responder_profesor_japones(mensaje)
-            self.historial.append({"role": "assistant", "content": respuesta})
+            respuesta = self.profesor.responder_turno(mensaje, lento_extra)
             self.memory.guardar_mensaje(self.session_id, "user", mensaje)
             self.memory.guardar_mensaje(self.session_id, "assistant", respuesta)
             respuesta = self._limpiar_json_de_respuesta(respuesta)
             print(f"🤖 Kaito [sensei]: {respuesta}")
             return respuesta, lento_extra
-
-        # Si estamos en modo sensei, forzar agente japones
-        if self.modo_sensei and agente != "japones":
-            agente = "japones"
-            decision["consultar_progreso"] = True
-
-        if self.modo_sensei and any(p in mensaje.lower() for p in ["más lento", " mas despacio", "lentamente", "despacito"]):
-            self.sensei_lento_extra = True
-        else:
-            self.sensei_lento_extra = False
 
         # ── Flujo normal con enrutador ──
         decision = self._detectar_intencion(mensaje)
@@ -231,9 +203,7 @@ class Brain:
         self.historial.append({"role": "user", "content": mensaje})
 
         # Agentes especializados
-        if agente == "japones":
-            respuesta = self._responder_profesor_japones(mensaje)   # ya con contexto
-        elif agente == "tarea":
+        if agente == "tarea":
             # Si agente es "tarea", siempre sin busqueda en internet
             self.provider.buscar_internet = False
             respuesta = self._procesar_tarea(mensaje)
@@ -252,136 +222,7 @@ class Brain:
             self.historial = [self.historial[0]] + self.historial[-(MAX_MENSAJES):]
             print(f"🧹 Historial truncado a {MAX_MENSAJES} mensajes")
         respuesta = self._limpiar_json_de_respuesta(respuesta)
-        return respuesta
-
-    def saludar(self):
-        try:
-            self.state.cambiar("thinking")
-            saludo = self.responder(
-                "Laura acaba de sentarse delante de ti, "
-                "salúdala de forma breve, cariñosa y personalizada"
-            )
-            print(f"🤖 Kaito: {saludo}")
-
-            # Emitir mensaje a la interfaz
-            self.socketio.emit("mensaje", {"texto": saludo})
-
-            # Reproducir saludo con sincronización
-            def al_iniciar_audio():
-                self.state.cambiar("speaking")
-                self.socketio.emit("estado", {"estado": "speaking"})
-
-            def hablar_y_volver():
-                self.tts.hablar(saludo, on_start=al_iniciar_audio)
-                time.sleep(0.2)
-                self.state.cambiar("idle")
-                self.socketio.emit("estado", {"estado": "idle"})
-
-            threading.Thread(target=hablar_y_volver, daemon=True).start()
-
-        except Exception as e:
-            print(f"❌ Error saludando: {e}")
-            self.state.cambiar("idle")
-
-    def _responder_profesor_japones(self, mensaje: str) -> str:
-        prompt_japones = cargar_prompt("profesor_japones")
-        self.historial.append({"role": "system", "content": prompt_japones})
-
-        # Inyectar estado de la sesión
-        estado = self._generar_estado_japones()
-        self.historial.insert(1, {"role": "system", "content": estado})
-
-        try:
-            # Evaluar pronunciación si hay frase objetivo
-            if self.ultima_frase_objetivo:
-                from ai.pronunciation import comparar_pronunciacion
-                evaluacion = comparar_pronunciacion(
-                    self.ultima_frase_objetivo, mensaje
-                )
-                self.historial.append({
-                    "role": "system",
-                    "content": f"La pronunciación de Laura obtuvo {evaluacion['precision']}%. "
-                               f"IPA objetivo: {evaluacion['ipa_objetivo']}. "
-                               f"IPA hablado: {evaluacion['ipa_hablado']}. "
-                               f"Incluye este feedback en tu respuesta: {evaluacion['feedback']}"
-                })
-                self.ultima_frase_objetivo = None
-
-            respuesta = self.provider.completar(self.historial)
-
-            # Extraer frase objetivo si la hay
-            frase = self._extraer_frase_objetivo(respuesta)
-            if frase:
-                self.ultima_frase_objetivo = frase
-
-            # ── Extraer y guardar progreso ──
-            match = regex.split(r'---\s*(?:JSON)?\s*---', respuesta, maxsplit=1)
-            if len(match) >= 2:
-                json_str = match[-1].strip()
-                try:
-                    if json_str.startswith("```"):
-                        json_str = json_str.split("```")[1]
-                        if json_str.startswith("json"):
-                            json_str = json_str[4:]
-                    progreso = json.loads(json_str)
-                    for item in progreso.get("items", []):
-                        cat = item.get("category", "vocabulario")
-                        if cat in ("vocabulario", "frase"):
-                            self.jap_memory.registrar_vocabulario(
-                                word=item.get("jp", item.get("item", "")),
-                                reading=item.get("jp", ""),
-                                meaning=item.get("es", item.get("detail", "")),
-                                word_type=cat
-                            )
-                        elif cat == "gramatica":
-                            self.jap_memory.registrar_gramatica(
-                                grammar_point=item.get("jp", item.get("item", "")),
-                                description=item.get("es", item.get("detail", ""))
-                            )
-                        print(f"🎌 Progreso guardado: {item}")
-                except Exception as e:
-                    print(f"⚠️ Error guardando progreso: {e}")
-
-            # Limpiar cualquier JSON residual antes de devolver
-            respuesta = self._limpiar_json_de_respuesta(respuesta)
-            return respuesta
-
-        finally:
-            self.historial.pop()
-
-    def _generar_estado_japones(self) -> str:
-        """
-        Genera un bloque de contexto para el profesor de japonés
-        con el progreso real de Laura y el modo actual.
-        """
-        modo = "conversacion"
-        perfil = self.jap_memory.obtener_perfil_completo()  # ya tienes este método
-        
-        # Determinar objetivo según el modo
-        objetivos = {
-            "conversacion": "Practicar conversación natural usando vocabulario y gramática ya dominados.",
-            "traduccion": "Traducir palabras o frases solicitadas por Laura.",
-            "practica": "Reforzar estructuras gramaticales con ejercicios guiados."
-        }
-        objetivo = objetivos.get(modo, objetivos["conversacion"])
-        
-        estado = f"""ESTADO DE LA SESIÓN
-
-            Modo: {modo.capitalize()}
-
-            Objetivo: {objetivo}
-
-            {perfil}
-
-            Reglas importantes:
-            - NO enseñes palabras que ya aparezcan como dominadas, salvo que Laura pida repasarlas explícitamente.
-            - Introduce como máximo UNA palabra o estructura nueva por respuesta.
-            - Prioriza que Laura gane confianza. No interrumpas para corregir errores menores.
-            - Si un error no impide entender el mensaje, continúa y coméntalo después.
-            - Reutiliza vocabulario ya aprendido para reforzar la memoria.
-            - Alterna entre enseñar, preguntar y conversar.
-            """
-        return estado
+        return respuesta, False
 
     def cerrar_sesion(self):
         """Cierra la sesión actual en la BD"""
@@ -470,78 +311,6 @@ class Brain:
             if msg["role"] == "assistant":
                 return msg["content"]
         return ""
-
-    def _extraer_frase_objetivo(self, respuesta: str) -> str | None:
-        """
-        Si la respuesta contiene una frase para repetir,
-        la extrae y la guarda.
-        Busca patrones como 'Repite conmigo: X' o 'Di: X'
-        """
-        import re
-        patrones = [
-            r"(?:repit[ea]|di|pronuncia)\s+(?:conmigo\s*)?(?::|,)?\s*[「「]([^」」]+)[」」]",
-            r"(?:repit[ea]|di|pronuncia)\s+(?:conmigo\s*)?(?::|,)?\s*([\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]+)",
-        ]
-        for patron in patrones:
-            match = re.search(patron, respuesta, re.IGNORECASE)
-            if match:
-                return match.group(1).strip()
-        return None
-
-    def entrar_modo_sensei(self):
-        self.modo_sensei = True
-        print("🎌 Modo Sensei activado")
-        # Cancelar timer de salida si existía
-        if self.timer_sensei:
-            self.timer_sensei.cancel()
-        self.socketio.emit("modo_sensei", {"activo": True})
-
-    def salir_modo_sensei(self):
-        self.modo_sensei = False
-        print("🎌 Modo Sensei desactivado")
-        # Cancelar timer
-        if self.timer_sensei:
-            self.timer_sensei.cancel()
-            self.timer_sensei = None
-        self.socketio.emit("modo_sensei", {"activo": False})
-
-    def _renovar_timer_sensei(self):
-        """Reinicia el contador de inactividad de 20 minutos."""
-        if self.timer_sensei:
-            self.timer_sensei.cancel()
-        self.timer_sensei = threading.Timer(20 * 60, self.salir_modo_sensei)
-        self.timer_sensei.daemon = True
-        self.timer_sensei.start()
-
-    def _procesar_json_progreso(self, respuesta: str):
-        """Extrae y guarda el progreso si la respuesta contiene JSON."""
-        import re as regex
-        match = regex.split(r'---\s*(?:JSON)?\s*---', respuesta, maxsplit=1)
-        if len(match) >= 2:
-            json_str = match[-1].strip()
-            try:
-                if json_str.startswith("```"):
-                    json_str = json_str.split("```")[1]
-                    if json_str.startswith("json"):
-                        json_str = json_str[4:]
-                progreso = json.loads(json_str)
-                for item in progreso.get("items", []):
-                    cat = item.get("category", "vocabulario")
-                    if cat in ("vocabulario", "frase"):
-                        self.jap_memory.registrar_vocabulario(
-                            word=item.get("jp", item.get("item", "")),
-                            reading=item.get("jp", ""),
-                            meaning=item.get("es", item.get("detail", "")),
-                            word_type=cat
-                        )
-                    elif cat == "gramatica":
-                        self.jap_memory.registrar_gramatica(
-                            grammar_point=item.get("jp", item.get("item", "")),
-                            description=item.get("es", item.get("detail", ""))
-                        )
-                    print(f"🎌 Progreso guardado: {item}")
-            except Exception as e:
-                print(f"⚠️ Error guardando progreso: {e}")
 
     def _limpiar_json_de_respuesta(self, texto: str) -> str:
         """

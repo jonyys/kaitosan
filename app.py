@@ -13,7 +13,6 @@ from datetime import timedelta
 from audio.recorder import Recorder
 from ai.speech_to_text import SpeechToText
 from ai.text_to_speech import TextToSpeech
-from ai.pronunciation import comparar_pronunciacion
 from core.token_tracker import TokenTracker
 
 
@@ -61,7 +60,7 @@ def chat():
         state.cambiar("listening")
         state.cambiar("thinking")
 
-        respuesta = brain.responder(mensaje)
+        respuesta, lento_extra = brain.responder(mensaje)
 
         # Emitir mensaje (sin cambiar estado todavía)
         socketio.emit("mensaje", {"texto": respuesta})
@@ -72,7 +71,7 @@ def chat():
             socketio.emit("estado", {"estado": "speaking"})
 
         def hablar_y_volver():
-            tts.hablar(respuesta, lento_extra=brain.sensei_lento, on_start=al_iniciar_audio)
+            tts.hablar(respuesta, lento_extra=lento_extra, on_start=al_iniciar_audio)
             state.cambiar("idle")
             socketio.emit("estado", {"estado": "idle"})
 
@@ -105,33 +104,21 @@ def grabar():
 
         # Transcribe
         # Usar japonés si estamos en modo sensei, español en caso contrario
-        idioma_stt = None if brain.modo_sensei else "es"
+        idioma_stt = None if brain.profesor.esta_activo() else "es"
         texto = stt.transcribir(archivo, idioma=idioma_stt)
-        
+
         if not texto:
             state.cambiar("idle")
             return jsonify({"error": "No se entendió nada"}), 400
 
-        # ── Evaluar pronunciación si hay frase objetivo ──
-        if brain.ultima_frase_objetivo:
-            evaluacion = comparar_pronunciacion(
-                brain.ultima_frase_objetivo, texto
-            )
-            print(f"🎌 Evaluación: {evaluacion['precision']}% - {evaluacion['feedback']}")
-            # Limpiar para no evaluar mensajes posteriores
-            brain.ultima_frase_objetivo = None
+        # La evaluación de pronunciación vive dentro de
+        # ProfesorJapones.responder_turno (no se duplica aquí).
 
         # Pensando
         state.cambiar("thinking")
 
-        # Responde con Groq
-        respuesta = brain.responder(texto)
-
-        # Desempaquetar si es modo sensei con orden de velocidad
-        if isinstance(respuesta, tuple):
-            respuesta, lento_extra = respuesta
-        else:
-            lento_extra = False
+        # Responde con Groq (siempre devuelve (respuesta, lento_extra))
+        respuesta, lento_extra = brain.responder(texto)
 
         #state.cambiar("speaking")
         socketio.emit("mensaje", {"texto": respuesta})
@@ -406,6 +393,12 @@ def admin_mensaje_borrar(mensaje_id):
     flash("✅ Mensaje borrado", "success")
     return redirect(url_for("admin"))
 
+# TODO(admin-japonés): estas 3 rutas apuntan al esquema VIEJO y están rotas.
+# - `registrar_item` no existe en JapaneseMemory (usar `add_item`).
+# - las tablas `japanese_progress` y `japanese_goals` fueron eliminadas
+#   (el nuevo esquema usa `japanese_vocabulary` / `japanese_grammar` + SRS).
+# Fuera del alcance del plan "modo sensei"; reapuntar al nuevo esquema en una
+# tarea futura (decisión (b) del plan, Fase 7 punto 7).
 @app.route("/admin/japones/añadir", methods=["POST"])
 @login_requerido
 def admin_japones_añadir():
@@ -422,6 +415,7 @@ def admin_japones_añadir():
 @app.route("/admin/japones/borrar/<int:item_id>", methods=["POST"])
 @login_requerido
 def admin_japones_borrar(item_id):
+    # TODO(admin-japonés): esquema viejo; `japanese_progress` ya no existe.
     db = brain.jap_memory._conectar()
     db.execute("DELETE FROM japanese_progress WHERE id = ?", (item_id,))
     db.commit()
@@ -432,6 +426,7 @@ def admin_japones_borrar(item_id):
 @app.route("/admin/japones/borrar-todo", methods=["POST"])
 @login_requerido
 def admin_japones_borrar_todo():
+    # TODO(admin-japonés): esquema viejo; `japanese_progress`/`japanese_goals` ya no existen.
     db = brain.jap_memory._conectar()
     db.execute("DELETE FROM japanese_progress")
     db.execute("DELETE FROM japanese_goals")
