@@ -10,13 +10,21 @@ import subprocess
 import threading
 import time as tmod
 
+def buscar_g435():
+    for i, d in enumerate(sd.query_devices()):
+        if "G435" in d["name"]:
+            return i
+    raise RuntimeError("No se encontró el Logitech G435")
+
 
 class TextToSpeech:
-    def __init__(self, device=1):
-        self.device = device
+    def __init__(self, device=None):
+        self.device = device if device is not None else buscar_g435()
         self.sample_rate_device = 48000
         self.voice_es = "es-ES-AlvaroNeural"
         self.voice_ja = "ja-JP-KeitaNeural"
+
+        print(f"🔊 Salida de audio: {sd.query_devices(self.device)['name']}")
 
     def _contiene_japones(self, texto: str) -> bool:
         """Detecta si hay kana/kanji o bloques 【】 en el texto."""

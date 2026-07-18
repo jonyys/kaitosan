@@ -31,9 +31,9 @@ camera = Camera()
 state = StateManager(socketio)
 brain = Brain(state, socketio)
 detector = PersonDetector(camera, state, brain)
-recorder = Recorder(device=1)
+recorder = Recorder()
 stt = SpeechToText()
-tts = TextToSpeech(device=1)
+tts = TextToSpeech()
 tts.socketio = socketio
 
 
