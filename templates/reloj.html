@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reloj · Kaito</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0f;
+      --surface: #11111a;
+      --surface2: #1a1a27;
+      --border: #2a2a40;
+      --accent: #5b8fff;
+      --accent2: #7ef8c8;
+      --danger: #ff5b6a;
+      --text: #e8e8f0;
+      --text-muted: #7070a0;
+      --alarm-color: #ffd966;
+      --timer-color: #7ef8c8;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    /* ── CABECERA ─────────────────────────────── */
+    header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+
+    header a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 14px;
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      transition: color .2s, border-color .2s;
+    }
+    header a:hover { color: var(--accent); border-color: var(--accent); }
+
+    header h1 {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    /* ── RELOJ DIGITAL ───────────────────────── */
+    .clock-display {
+      text-align: center;
+      margin-bottom: 40px;
+      user-select: none;
+    }
+
+    #hora {
+      font-size: clamp(72px, 14vw, 140px);
+      font-weight: 200;
+      letter-spacing: -2px;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+    }
+
+    #fecha {
+      font-size: 16px;
+      color: var(--text-muted);
+      margin-top: 8px;
+      text-transform: capitalize;
+      letter-spacing: 1px;
+    }
+
+    /* ── LAYOUT PRINCIPAL ────────────────────── */
+    .panels {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 640px) {
+      .panels { grid-template-columns: 1fr; }
+    }
+
+    /* ── PANEL GENÉRICO ──────────────────────── */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 20px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-title {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--text-muted);
+    }
+
+    .panel-title.alarmas { color: var(--alarm-color); }
+    .panel-title.timers  { color: var(--timer-color); }
+
+    .count-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 99px;
+      background: var(--surface2);
+      color: var(--text-muted);
+    }
+
+    .panel-body { padding: 16px 20px; }
+
+    /* ── LISTA DE ITEMS ──────────────────────── */
+    .items-list { list-style: none; }
+
+    .items-list li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      animation: fadeIn .25s ease;
+    }
+    .items-list li:last-child { border-bottom: none; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .item-icon {
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .item-value {
+      flex: 1;
+      font-size: 22px;
+      font-weight: 300;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 1px;
+    }
+    .item-value.alarm-value { color: var(--alarm-color); }
+    .item-value.timer-value { color: var(--timer-color); }
+
+    .item-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 1px;
+    }
+
+    .item-actions {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .btn-icon {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      cursor: pointer;
+      border-radius: 8px;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      transition: all .2s;
+    }
+    .btn-icon:hover { color: var(--text); border-color: var(--accent); }
+    .btn-icon.danger:hover { color: var(--danger); border-color: var(--danger); }
+
+    .empty-msg {
+      color: var(--text-muted);
+      font-size: 13px;
+      text-align: center;
+      padding: 20px 0;
+    }
+
+    /* ── FORMULARIO ADD ──────────────────────── */
+    .add-form {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .add-form-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .add-form input[type="time"],
+    .add-form input[type="number"] {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 14px;
+      padding: 8px 12px;
+      outline: none;
+      transition: border-color .2s;
+      -webkit-appearance: none;
+    }
+    .add-form input:focus { border-color: var(--accent); }
+    .add-form input[type="time"] { width: 120px; }
+    .add-form input[type="number"] { width: 72px; text-align: center; }
+
+    .add-form label {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .btn-add {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity .2s;
+      white-space: nowrap;
+    }
+    .btn-add:hover { opacity: .85; }
+    .btn-add.timer-btn { background: #2a7a5e; color: var(--timer-color); }
+    .btn-add.timer-btn:hover { opacity: .85; }
+
+    /* ── MODAL EDITAR ────────────────────────── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.7);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      min-width: 280px;
+      animation: fadeIn .2s ease;
+    }
+
+    .modal h3 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: var(--alarm-color);
+    }
+
+    .modal .add-form-row { justify-content: flex-start; }
+
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+      justify-content: flex-end;
+    }
+
+    .btn-cancel {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .btn-cancel:hover { color: var(--text); }
+
+    /* ── TOAST ───────────────────────────────── */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 12px 18px;
+      border-radius: 10px;
+      font-size: 13px;
+      opacity: 0;
+      transition: opacity .3s;
+      z-index: 200;
+      pointer-events: none;
+    }
+    #toast.show { opacity: 1; }
+
+    /* ── SYNC DOT ────────────────────────────── */
+    .sync-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      display: inline-block;
+      margin-right: 6px;
+      transition: background .3s;
+    }
+    .sync-dot.live { background: var(--accent2); box-shadow: 0 0 6px var(--accent2); }
+  </style>
+</head>
+<body>
+
+<header>
+  <a href="/">← Kaito</a>
+  <h1>Reloj</h1>
+  <span style="margin-left: auto; font-size: 12px; color: var(--text-muted); display:flex;align-items:center;">
+    <span class="sync-dot" id="syncDot"></span>sincronizado con el robot
+  </span>
+</header>
+
+<!-- Reloj digital -->
+<div class="clock-display">
+  <div id="hora">--:--:--</div>
+  <div id="fecha"></div>
+</div>
+
+<!-- Paneles -->
+<div class="panels">
+
+  <!-- ALARMAS -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title alarmas">⏰ Alarmas</span>
+      <span class="count-badge" id="alarmas-count">0</span>
+    </div>
+    <div class="panel-body">
+      <ul class="items-list" id="alarmas-list"></ul>
+      <div class="empty-msg" id="alarmas-empty" style="display:none">No hay alarmas programadas</div>
+
+      <div class="add-form">
+        <div class="add-form-row">
+          <input type="time" id="nueva-hora" value="07:00">
+          <button class="btn-add" onclick="agregarAlarma()">+ Alarma</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TEMPORIZADORES -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title timers">⏲️ Temporizadores</span>
+      <span class="count-badge" id="timers-count">0</span>
+    </div>
+    <div class="panel-body">
+      <ul class="items-list" id="timers-list"></ul>
+      <div class="empty-msg" id="timers-empty" style="display:none">No hay temporizadores activos</div>
+
+      <div class="add-form">
+        <div class="add-form-row">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+            <input type="number" id="timer-min" value="5" min="0" max="999" placeholder="0">
+            <label>min</label>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+            <input type="number" id="timer-sec" value="0" min="0" max="59" placeholder="0">
+            <label>seg</label>
+          </div>
+          <button class="btn-add timer-btn" onclick="agregarTemporizador()">+ Temporizador</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /panels -->
+
+<!-- Panel recordatorios (ancho completo) -->
+<div style="max-width:960px;margin:24px auto 0;">
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title" style="color:#c77dff">📌 Recordatorios</span>
+      <span class="count-badge" id="rem-count">0</span>
+    </div>
+    <div class="panel-body">
+      <ul class="items-list" id="rem-list"></ul>
+      <div class="empty-msg" id="rem-empty" style="display:none">No hay recordatorios pendientes</div>
+
+      <div class="add-form">
+        <div class="add-form-row" style="flex-wrap:wrap;gap:10px;align-items:flex-end;">
+          <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:160px;">
+            <label style="font-size:12px;color:var(--text-muted)">Recordatorio</label>
+            <input type="text" id="rem-texto" placeholder="Qué hay que recordar..."
+              style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+                     color:var(--text);font-size:14px;padding:8px 12px;outline:none;width:100%;
+                     transition:border-color .2s;"
+              onfocus="this.style.borderColor='var(--accent)'"
+              onblur="this.style.borderColor='var(--border)'">
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:12px;color:var(--text-muted)">Cuándo</label>
+            <input type="datetime-local" id="rem-fecha"
+              style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+                     color:var(--text);font-size:14px;padding:8px 12px;outline:none;
+                     transition:border-color .2s;color-scheme:dark;"
+              onfocus="this.style.borderColor='var(--accent)'"
+              onblur="this.style.borderColor='var(--border)'">
+          </div>
+          <button class="btn-add" style="background:#5a2d82;color:#c77dff;align-self:flex-end;"
+                  onclick="agregarRecordatorio()">+ Recordatorio</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal editar alarma -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <h3>Modificar alarma</h3>
+    <div class="add-form">
+      <div class="add-form-row">
+        <input type="time" id="edit-hora" value="07:00">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn-add" onclick="guardarEdicion()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+  // ── ESTADO LOCAL ────────────────────────────────────────────────────────
+  let alarmas = [];
+  let temporizadores = [];
+  let editandoId = null;
+  let countdowns = {};   // id → intervalo de countdown
+
+  // ── RELOJ ───────────────────────────────────────────────────────────────
+  const DIAS = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+  const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+  function actualizarReloj() {
+    const ahora = new Date();
+    const h = String(ahora.getHours()).padStart(2,'0');
+    const m = String(ahora.getMinutes()).padStart(2,'0');
+    const s = String(ahora.getSeconds()).padStart(2,'0');
+    document.getElementById('hora').textContent = `${h}:${m}:${s}`;
+    document.getElementById('fecha').textContent =
+      `${DIAS[ahora.getDay()]}, ${ahora.getDate()} de ${MESES[ahora.getMonth()]} de ${ahora.getFullYear()}`;
+  }
+  actualizarReloj();
+  setInterval(actualizarReloj, 1000);
+
+  // ── SOCKET.IO ───────────────────────────────────────────────────────────
+  const socket = io();
+
+  socket.on('connect', () => {
+    document.getElementById('syncDot').classList.add('live');
+  });
+  socket.on('disconnect', () => {
+    document.getElementById('syncDot').classList.remove('live');
+  });
+
+  socket.on('actualizar_reloj', (data) => {
+    aplicarEstado(data);
+    mostrarToast('🔄 El robot actualizó el reloj');
+  });
+
+  socket.on('actualizar_recordatorios', (data) => {
+    aplicarEstadoRecordatorios(data);
+    mostrarToast('🔄 El robot actualizó los recordatorios');
+  });
+
+  // ── CARGA INICIAL ───────────────────────────────────────────────────────
+  async function cargarEstado() {
+    try {
+      const res = await fetch('/reloj/alarmas');
+      const data = await res.json();
+      aplicarEstado(data);
+    } catch(e) {
+      console.error('Error cargando estado:', e);
+    }
+  }
+
+  function aplicarEstado(data) {
+    alarmas = data.alarmas || [];
+    temporizadores = data.temporizadores || [];
+    renderAlarmas();
+    renderTemporizadores();
+  }
+
+  // ── RENDER ALARMAS ──────────────────────────────────────────────────────
+  function renderAlarmas() {
+    const list = document.getElementById('alarmas-list');
+    const empty = document.getElementById('alarmas-empty');
+    const badge = document.getElementById('alarmas-count');
+    const activas = alarmas.filter(a => a.activa);
+
+    badge.textContent = activas.length;
+
+    if (!activas.length) {
+      list.innerHTML = '';
+      empty.style.display = '';
+      return;
+    }
+    empty.style.display = 'none';
+
+    list.innerHTML = activas.map(a => `
+      <li>
+        <span class="item-icon">⏰</span>
+        <div style="flex:1">
+          <div class="item-value alarm-value">${a.hora}</div>
+          <div class="item-sub">activa</div>
+        </div>
+        <div class="item-actions">
+          <button class="btn-icon" title="Editar" onclick="abrirModal(${a.id}, '${a.hora}')">✏️</button>
+          <button class="btn-icon danger" title="Eliminar" onclick="eliminarAlarma(${a.id})">🗑️</button>
+        </div>
+      </li>
+    `).join('');
+  }
+
+  // ── RENDER TEMPORIZADORES ───────────────────────────────────────────────
+  function renderTemporizadores() {
+    const list = document.getElementById('timers-list');
+    const empty = document.getElementById('timers-empty');
+    const badge = document.getElementById('timers-count');
+    const activos = temporizadores.filter(t => t.activo);
+
+    badge.textContent = activos.length;
+
+    // Limpiar countdowns anteriores
+    Object.values(countdowns).forEach(clearInterval);
+    countdowns = {};
+
+    if (!activos.length) {
+      list.innerHTML = '';
+      empty.style.display = '';
+      return;
+    }
+    empty.style.display = 'none';
+
+    list.innerHTML = activos.map(t => `
+      <li id="timer-item-${t.id}">
+        <span class="item-icon">⏲️</span>
+        <div style="flex:1">
+          <div class="item-value timer-value" id="timer-val-${t.id}">${formatTimer(t)}</div>
+          <div class="item-sub">total: ${fmtDuracion(t.duracion_total)}</div>
+        </div>
+        <div class="item-actions">
+          <button class="btn-icon danger" title="Cancelar" onclick="eliminarTemporizador(${t.id})">🗑️</button>
+        </div>
+      </li>
+    `).join('');
+
+    activos.forEach(t => {
+      const inicio = t.inicio * 1000;
+      const duracion = t.duracion_total * 1000;
+      countdowns[t.id] = setInterval(() => {
+        const restante = Math.max(0, duracion - (Date.now() - inicio));
+        const el = document.getElementById(`timer-val-${t.id}`);
+        if (el) {
+          const m = Math.floor(restante / 60000);
+          const s = Math.floor((restante % 60000) / 1000);
+          el.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+          if (restante === 0) {
+            clearInterval(countdowns[t.id]);
+            el.textContent = '00:00';
+          }
+        }
+      }, 500);
+    });
+  }
+
+  function formatTimer(t) {
+    const inicio = t.inicio * 1000;
+    const duracion = t.duracion_total * 1000;
+    const restante = Math.max(0, duracion - (Date.now() - inicio));
+    const m = Math.floor(restante / 60000);
+    const s = Math.floor((restante % 60000) / 1000);
+    return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }
+
+  function fmtDuracion(seg) {
+    const m = Math.floor(seg / 60);
+    const s = seg % 60;
+    if (m > 0 && s > 0) return `${m}m ${s}s`;
+    if (m > 0) return `${m}m`;
+    return `${s}s`;
+  }
+
+  // ── ACCIONES ALARMAS ────────────────────────────────────────────────────
+  async function agregarAlarma() {
+    const hora = document.getElementById('nueva-hora').value;
+    if (!hora) return;
+    try {
+      const res = await fetch('/reloj/alarmas', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({hora})
+      });
+      const data = await res.json();
+      aplicarEstado(data);
+      mostrarToast(`✅ ${data.mensaje}`);
+    } catch(e) { mostrarToast('❌ Error al crear la alarma'); }
+  }
+
+  async function eliminarAlarma(id) {
+    try {
+      const res = await fetch(`/reloj/alarmas/${id}`, {method: 'DELETE'});
+      const data = await res.json();
+      aplicarEstado(data);
+      mostrarToast('🗑️ Alarma eliminada');
+    } catch(e) { mostrarToast('❌ Error al eliminar'); }
+  }
+
+  function abrirModal(id, hora) {
+    editandoId = id;
+    document.getElementById('edit-hora').value = hora;
+    document.getElementById('editModal').classList.add('open');
+  }
+
+  function cerrarModal() {
+    editandoId = null;
+    document.getElementById('editModal').classList.remove('open');
+  }
+
+  async function guardarEdicion() {
+    if (!editandoId) return;
+    const hora = document.getElementById('edit-hora').value;
+    try {
+      const res = await fetch(`/reloj/alarmas/${editandoId}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({hora})
+      });
+      const data = await res.json();
+      aplicarEstado(data);
+      mostrarToast(`✅ ${data.mensaje}`);
+      cerrarModal();
+    } catch(e) { mostrarToast('❌ Error al modificar'); }
+  }
+
+  // ── ACCIONES TEMPORIZADORES ─────────────────────────────────────────────
+  async function agregarTemporizador() {
+    const minutos = parseInt(document.getElementById('timer-min').value) || 0;
+    const segundos = parseInt(document.getElementById('timer-sec').value) || 0;
+    if (minutos === 0 && segundos === 0) {
+      mostrarToast('⚠️ Introduce un tiempo mayor a 0'); return;
+    }
+    try {
+      const res = await fetch('/reloj/temporizadores', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({minutos, segundos})
+      });
+      const data = await res.json();
+      aplicarEstado(data);
+      mostrarToast(`✅ ${data.mensaje}`);
+    } catch(e) { mostrarToast('❌ Error al crear el temporizador'); }
+  }
+
+  async function eliminarTemporizador(id) {
+    try {
+      const res = await fetch(`/reloj/temporizadores/${id}`, {method: 'DELETE'});
+      const data = await res.json();
+      aplicarEstado(data);
+      mostrarToast('🗑️ Temporizador cancelado');
+    } catch(e) { mostrarToast('❌ Error al cancelar'); }
+  }
+
+  // ── TOAST ────────────────────────────────────────────────────────────────
+  let toastTimer = null;
+  function mostrarToast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+  }
+
+  // ── CIERRE MODAL CON ESCAPE ──────────────────────────────────────────────
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') cerrarModal();
+  });
+  document.getElementById('editModal').addEventListener('click', e => {
+    if (e.target === e.currentTarget) cerrarModal();
+  });
+
+  // ── RECORDATORIOS ────────────────────────────────────────────────────────
+  let recordatorios = [];
+
+  async function cargarRecordatorios() {
+    try {
+      const res = await fetch('/reloj/recordatorios');
+      const data = await res.json();
+      aplicarEstadoRecordatorios(data);
+    } catch(e) { console.error('Error cargando recordatorios:', e); }
+  }
+
+  function aplicarEstadoRecordatorios(data) {
+    recordatorios = data.recordatorios || [];
+    renderRecordatorios();
+  }
+
+  function renderRecordatorios() {
+    const list = document.getElementById('rem-list');
+    const empty = document.getElementById('rem-empty');
+    const badge = document.getElementById('rem-count');
+    const pendientes = recordatorios.filter(r => !r.completado);
+
+    badge.textContent = pendientes.length;
+
+    const todos = recordatorios.slice().sort((a, b) => {
+      if (a.completado !== b.completado) return a.completado ? 1 : -1;
+      return a.fecha_hora.localeCompare(b.fecha_hora);
+    });
+
+    if (!todos.length) {
+      list.innerHTML = '';
+      empty.style.display = '';
+      return;
+    }
+    empty.style.display = 'none';
+
+    list.innerHTML = todos.map(r => `
+      <li style="opacity:${r.completado ? '0.45' : '1'}">
+        <span class="item-icon">${r.completado ? '✅' : '📌'}</span>
+        <div style="flex:1">
+          <div style="font-size:15px;color:${r.completado ? 'var(--text-muted)' : '#c77dff'};
+                      text-decoration:${r.completado ? 'line-through' : 'none'}">${r.texto}</div>
+          <div class="item-sub">${fmtFecha(r.fecha_hora)}${r.completado ? ' · completado' : ''}</div>
+        </div>
+        ${!r.completado ? `
+        <div class="item-actions">
+          <button class="btn-icon danger" title="Eliminar" onclick="eliminarRecordatorio(${r.id})">🗑️</button>
+        </div>` : ''}
+      </li>
+    `).join('');
+  }
+
+  function fmtFecha(s) {
+    if (!s) return '';
+    const [fecha, hora] = s.split(' ');
+    if (!fecha) return s;
+    const [y, m, d] = fecha.split('-');
+    return `${d}/${m}/${y} ${hora || ''}`.trim();
+  }
+
+  async function agregarRecordatorio() {
+    const texto = document.getElementById('rem-texto').value.trim();
+    const fecha = document.getElementById('rem-fecha').value;
+    if (!texto) { mostrarToast('⚠️ Escribe qué hay que recordar'); return; }
+    if (!fecha) { mostrarToast('⚠️ Indica cuándo'); return; }
+    try {
+      const res = await fetch('/reloj/recordatorios', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({texto, fecha_hora: fecha})
+      });
+      const data = await res.json();
+      if (data.error) { mostrarToast(`❌ ${data.error}`); return; }
+      aplicarEstadoRecordatorios(data);
+      mostrarToast('✅ Recordatorio guardado');
+      document.getElementById('rem-texto').value = '';
+      document.getElementById('rem-fecha').value = '';
+    } catch(e) { mostrarToast('❌ Error al crear el recordatorio'); }
+  }
+
+  async function eliminarRecordatorio(id) {
+    try {
+      const res = await fetch(`/reloj/recordatorios/${id}`, {method: 'DELETE'});
+      const data = await res.json();
+      aplicarEstadoRecordatorios(data);
+      mostrarToast('🗑️ Recordatorio eliminado');
+    } catch(e) { mostrarToast('❌ Error al eliminar'); }
+  }
+
+  // ── INICIAR ──────────────────────────────────────────────────────────────
+  cargarEstado();
+  cargarRecordatorios();
+</script>
+</body>
+</html>

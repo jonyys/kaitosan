@@ -158,6 +158,107 @@ def grabar():
         state.cambiar("error")
         return jsonify({"error": str(e)}), 500
 
+# ── RELOJ ────────────────────────────────────────
+
+@app.route("/reloj")
+def reloj():
+    return render_template("reloj.html")
+
+@app.route("/reloj/alarmas", methods=["GET"])
+def reloj_alarmas_listar():
+    return jsonify(brain.alarm._estado_serializable())
+
+@app.route("/reloj/alarmas", methods=["POST"])
+def reloj_alarma_crear():
+    data = request.get_json()
+    hora = data.get("hora", "")
+    if not hora:
+        return jsonify({"error": "Falta la hora"}), 400
+    resultado = brain.alarm.poner_alarma(hora)
+    return jsonify({"mensaje": resultado, **brain.alarm._estado_serializable()})
+
+@app.route("/reloj/alarmas/<int:alarma_id>", methods=["DELETE"])
+def reloj_alarma_borrar(alarma_id):
+    alarma = next((a for a in brain.alarm.alarmas if a["id"] == alarma_id), None)
+    if not alarma:
+        return jsonify({"error": "Alarma no encontrada"}), 404
+    alarma["timer"].cancel()
+    brain.alarm.alarmas.remove(alarma)
+    brain.alarm._emitir_estado()
+    return jsonify({"mensaje": "Alarma eliminada", **brain.alarm._estado_serializable()})
+
+@app.route("/reloj/alarmas/<int:alarma_id>", methods=["PUT"])
+def reloj_alarma_modificar(alarma_id):
+    data = request.get_json()
+    nueva_hora = data.get("hora", "")
+    if not nueva_hora:
+        return jsonify({"error": "Falta la nueva hora"}), 400
+    alarma = next((a for a in brain.alarm.alarmas if a["id"] == alarma_id), None)
+    if not alarma:
+        return jsonify({"error": "Alarma no encontrada"}), 404
+    alarma["timer"].cancel()
+    brain.alarm.alarmas.remove(alarma)
+    resultado = brain.alarm.poner_alarma(nueva_hora)
+    return jsonify({"mensaje": resultado, **brain.alarm._estado_serializable()})
+
+@app.route("/reloj/temporizadores", methods=["POST"])
+def reloj_temporizador_crear():
+    data = request.get_json()
+    minutos = int(data.get("minutos", 0))
+    segundos = int(data.get("segundos", 0))
+    if minutos == 0 and segundos == 0:
+        return jsonify({"error": "Tiempo inválido"}), 400
+    resultado = brain.alarm.poner_temporizador(minutos, segundos)
+    return jsonify({"mensaje": resultado, **brain.alarm._estado_serializable()})
+
+@app.route("/reloj/temporizadores/<int:temp_id>", methods=["DELETE"])
+def reloj_temporizador_borrar(temp_id):
+    temp = next((t for t in brain.alarm.temporizadores if t["id"] == temp_id), None)
+    if not temp:
+        return jsonify({"error": "Temporizador no encontrado"}), 404
+    temp["timer"].cancel()
+    brain.alarm.temporizadores.remove(temp)
+    brain.alarm._emitir_estado()
+    return jsonify({"mensaje": "Temporizador eliminado", **brain.alarm._estado_serializable()})
+
+@app.route("/reloj/recordatorios", methods=["GET"])
+def reloj_recordatorios_listar():
+    return jsonify(brain.reminder._estado_serializable())
+
+@app.route("/reloj/recordatorios", methods=["POST"])
+def reloj_recordatorio_crear():
+    data = request.get_json()
+    texto = data.get("texto", "").strip()
+    fecha_hora = data.get("fecha_hora", "").strip()
+    if not texto or not fecha_hora:
+        return jsonify({"error": "Faltan campos"}), 400
+    # Normalizar: acepta "2026-07-22T10:00" o "2026-07-22 10:00"
+    fecha_hora = fecha_hora.replace("T", " ")[:16]
+    try:
+        from datetime import datetime as _dt
+        _dt.strptime(fecha_hora, "%Y-%m-%d %H:%M")
+    except ValueError:
+        return jsonify({"error": "Formato de fecha inválido (usa YYYY-MM-DDTHH:MM)"}), 400
+    db = brain.reminder._conectar()
+    db.execute("INSERT INTO reminders (texto, fecha_hora) VALUES (?, ?)", (texto, fecha_hora))
+    db.commit()
+    db.close()
+    brain.reminder._emitir_estado()
+    return jsonify({"mensaje": "Recordatorio creado", **brain.reminder._estado_serializable()})
+
+@app.route("/reloj/recordatorios/<int:rem_id>", methods=["DELETE"])
+def reloj_recordatorio_borrar(rem_id):
+    db = brain.reminder._conectar()
+    row = db.execute("SELECT texto FROM reminders WHERE id = ?", (rem_id,)).fetchone()
+    if not row:
+        db.close()
+        return jsonify({"error": "Recordatorio no encontrado"}), 404
+    db.execute("DELETE FROM reminders WHERE id = ?", (rem_id,))
+    db.commit()
+    db.close()
+    brain.reminder._emitir_estado()
+    return jsonify({"mensaje": "Recordatorio eliminado", **brain.reminder._estado_serializable()})
+
 # ── ADMIN ────────────────────────────────────────
 
 def login_requerido(f):

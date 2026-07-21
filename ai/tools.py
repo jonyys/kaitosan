@@ -114,6 +114,72 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "cancelar_recordatorio",
+            "description": "Cancela y elimina un recordatorio pendiente por su ID. Primero usa listar_recordatorios para obtener el ID si no lo sabes.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "integer", "description": "ID del recordatorio a cancelar"}
+                },
+                "required": ["id"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "listar_recordatorios",
+            "description": "Lista todos los recordatorios pendientes con su fecha y hora",
+            "parameters": {"type": "object", "properties": {}, "required": []}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "cancelar_alarma",
+            "description": "Cancela una alarma existente. Si hay una sola alarma activa, la cancela directamente. Si hay varias, especifica la hora.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "hora": {"type": "string", "description": "Hora de la alarma a cancelar, formato HH:MM. Omitir si solo hay una alarma."}
+                },
+                "required": []
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "cancelar_temporizador",
+            "description": "Cancela el temporizador activo. Si hay varios, indica el índice (1 = primero).",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "indice": {"type": "integer", "description": "Número del temporizador a cancelar (1 por defecto si solo hay uno)"}
+                },
+                "required": []
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "listar_alarmas",
+            "description": "Lista todas las alarmas activas programadas",
+            "parameters": {"type": "object", "properties": {}, "required": []}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "listar_temporizadores",
+            "description": "Lista todos los temporizadores activos con el tiempo restante",
+            "parameters": {"type": "object", "properties": {}, "required": []}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "consultar_progreso_japones",
             "description": "Obtiene el progreso de Laura en japonés: vocabulario, gramática, nivel. Usar cuando pregunta por su nivel o cuando vas a enseñarle algo nuevo",
             "parameters": {"type": "object", "properties": {}, "required": []}
@@ -157,6 +223,18 @@ class ToolDispatcher:
             return self.search.buscar(args["query"])
         elif nombre == "buscar_en_historial":
             return self.memory.buscar_en_historial(args.get("terminos", []))
+        elif nombre == "cancelar_recordatorio":
+            return self.reminder.cancelar_recordatorio(args.get("id"))
+        elif nombre == "listar_recordatorios":
+            return self.reminder.listar_recordatorios()
+        elif nombre == "cancelar_alarma":
+            return self.alarm.cancelar_alarma(hora=args.get("hora"))
+        elif nombre == "cancelar_temporizador":
+            return self.alarm.cancelar_temporizador(indice=args.get("indice", 1))
+        elif nombre == "listar_alarmas":
+            return self.alarm.listar_alarmas()
+        elif nombre == "listar_temporizadores":
+            return self.alarm.listar_temporizadores()
         elif nombre == "consultar_progreso_japones":
             return self.jap_memory.obtener_perfil_completo()
         else:

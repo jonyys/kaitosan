@@ -28,8 +28,8 @@ class Brain:
         self.session_id = None
         self._iniciar_sesion()
         self.dispatcher = ToolDispatcher(
-            alarm=AlarmSkill(),
-            reminder=ReminderSkill(),
+            alarm=AlarmSkill(socketio=socketio),
+            reminder=ReminderSkill(socketio=socketio),
             weather=WeatherSkill(),
             search=SearchProvider(),
             memory=self.memory,

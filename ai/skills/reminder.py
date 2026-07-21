@@ -20,8 +20,9 @@ class ReminderSkill:
         "noviembre": 11, "diciembre": 12
     }
 
-    def __init__(self, sample_rate=48000):
+    def __init__(self, sample_rate=48000, socketio=None):
         self.sample_rate = sample_rate
+        self.socketio = socketio
         self._inicializar_tabla()
         self._iniciar_comprobador()
 
@@ -40,46 +41,79 @@ class ReminderSkill:
                 )
             """)
 
+    def _emitir_estado(self):
+        if self.socketio:
+            self.socketio.emit("actualizar_recordatorios", self._estado_serializable())
+
+    def _estado_serializable(self):
+        with self._conectar() as conn:
+            rows = conn.execute(
+                "SELECT id, texto, fecha_hora, creado, completado FROM reminders ORDER BY completado ASC, fecha_hora ASC"
+            ).fetchall()
+        return {
+            "recordatorios": [
+                {
+                    "id": r[0],
+                    "texto": r[1],
+                    "fecha_hora": r[2],
+                    "creado": r[3],
+                    "completado": bool(r[4])
+                }
+                for r in rows
+            ]
+        }
+
     def crear_recordatorio(self, texto: str, cuando_str: str) -> str:
         print(f"📌 DEBUG crear_recordatorio: texto='{texto}', cuando_str='{cuando_str}'")
-
-        """
-        Crea un recordatorio.
-        cuando_str puede ser:
-        - "en 30 minutos"
-        - "mañana 10:00"
-        - "el viernes que viene a las 17:00"
-        - "el próximo lunes"
-        - "dentro de dos semanas"
-        - "el 5 de enero a las 8"
-        - "YYYY-MM-DD HH:MM"
-        """
         try:
             ahora = datetime.now()
             fecha = self._interpretar_cuando(cuando_str, ahora)
 
             if fecha is None:
-                # Intentar parseo ISO por si el LLM lo pasó así
                 try:
                     fecha = datetime.strptime(cuando_str, "%Y-%m-%d %H:%M")
                 except ValueError:
                     return "No he entendido la fecha. Prueba con 'mañana a las 10', 'el viernes que viene' o 'en 30 minutos'."
 
-            # Guardar en BD
             with self._conectar() as conn:
                 conn.execute(
                     "INSERT INTO reminders (texto, fecha_hora) VALUES (?, ?)",
                     (texto, fecha.strftime("%Y-%m-%d %H:%M"))
                 )
 
+            self._emitir_estado()
             return f"Recordatorio guardado: '{texto}' para el {fecha.strftime('%d/%m a las %H:%M')}."
 
         except Exception as e:
             print(f"❌ Error creando recordatorio: {e}")
             return "No he podido guardar el recordatorio. ¿Puedes repetirlo?"
 
+    def cancelar_recordatorio(self, id: int) -> str:
+        try:
+            with self._conectar() as conn:
+                row = conn.execute(
+                    "SELECT texto FROM reminders WHERE id = ? AND completado = 0", (id,)
+                ).fetchone()
+                if not row:
+                    return "No encontré ese recordatorio pendiente."
+                conn.execute("DELETE FROM reminders WHERE id = ?", (id,))
+            self._emitir_estado()
+            return f"Recordatorio '{row[0]}' eliminado."
+        except Exception as e:
+            print(f"❌ Error cancelando recordatorio: {e}")
+            return "No pude cancelar el recordatorio."
+
+    def listar_recordatorios(self) -> str:
+        with self._conectar() as conn:
+            rows = conn.execute(
+                "SELECT texto, fecha_hora FROM reminders WHERE completado = 0 ORDER BY fecha_hora ASC"
+            ).fetchall()
+        if not rows:
+            return "No hay recordatorios pendientes."
+        partes = [f"'{r[0]}' el {r[1]}" for r in rows]
+        return "Recordatorios pendientes: " + "; ".join(partes) + "."
+
     def _comprobar_recordatorios(self):
-        """Comprueba si hay recordatorios pendientes cada 30 segundos."""
         while True:
             try:
                 ahora = datetime.now().strftime("%Y-%m-%d %H:%M")
@@ -89,13 +123,14 @@ class ReminderSkill:
                         (ahora,)
                     ).fetchall()
 
-                    for rid, texto in pendientes:
-                        print(f"📌 Recordatorio: {texto}")
-                        # Marcar como completado
-                        conn.execute(
-                            "UPDATE reminders SET completado = 1 WHERE id = ?",
-                            (rid,)
-                        )
+                    if pendientes:
+                        for rid, texto in pendientes:
+                            print(f"📌 Recordatorio: {texto}")
+                            conn.execute(
+                                "UPDATE reminders SET completado = 1 WHERE id = ?",
+                                (rid,)
+                            )
+                        self._emitir_estado()
             except Exception as e:
                 print(f"❌ Error comprobando recordatorios: {e}")
 
@@ -106,29 +141,25 @@ class ReminderSkill:
         hilo.start()
 
     def _interpretar_cuando(self, cuando_str: str, ahora: datetime) -> datetime | None:
-        """Convierte una expresión temporal en una fecha concreta."""
         import re
         texto = cuando_str.lower().strip()
         hoy = ahora.date()
 
-        # 1) "mañana", "pasado mañana"
         if "pasado mañana" in texto:
             return ahora + timedelta(days=2)
         if "mañana" in texto:
             return self._extraer_hora(texto, ahora + timedelta(days=1))
 
-        # 2) "el próximo X", "el X que viene", "el X"
         for nombre_dia, num_dia in self.DIAS_SEMANA.items():
             if nombre_dia in texto:
                 dias_hasta = (num_dia - hoy.weekday()) % 7
                 if dias_hasta == 0 and ("próximo" in texto or "que viene" in texto or "siguiente" in texto):
                     dias_hasta = 7
                 elif dias_hasta == 0:
-                    dias_hasta = 7  # si es hoy, asumimos la semana que viene
+                    dias_hasta = 7
                 fecha = ahora + timedelta(days=dias_hasta)
                 return self._extraer_hora(texto, fecha)
 
-        # 3) "dentro de X días/semanas/meses"
         nums = re.findall(r'\d+', texto)
         if nums:
             cantidad = int(nums[0])
@@ -143,7 +174,6 @@ class ReminderSkill:
             if "minuto" in texto:
                 return ahora + timedelta(minutes=cantidad)
 
-        # 4) "en X minutos/horas" (caso simple)
         if "en" in texto:
             nums = re.findall(r'\d+', texto)
             if nums:
@@ -153,7 +183,6 @@ class ReminderSkill:
                 if "minuto" in texto:
                     return ahora + timedelta(minutes=cantidad)
 
-        # 5) "el X de mes" o "el X de mes de año"
         match = re.search(r'(\d{1,2})\s+de\s+(\w+)', texto)
         if match:
             dia = int(match.group(1))
@@ -167,7 +196,6 @@ class ReminderSkill:
                 fecha = datetime(año, mes, dia)
                 return self._extraer_hora(texto, fecha)
 
-        # 6) "HH:MM" (hoy o mañana)
         match = re.search(r'(\d{1,2})[:h](\d{2})?', texto)
         if match:
             hora = int(match.group(1))
@@ -180,7 +208,6 @@ class ReminderSkill:
         return None
 
     def _extraer_hora(self, texto: str, fecha: datetime) -> datetime:
-        """Busca una hora en el texto y la aplica a la fecha dada."""
         import re
         match = re.search(r'(\d{1,2})[:h](\d{2})?', texto)
         if match:
@@ -188,15 +215,13 @@ class ReminderSkill:
             minuto = int(match.group(2)) if match.group(2) else 0
             fecha = fecha.replace(hour=hora, minute=minuto, second=0, microsecond=0)
         else:
-            fecha = fecha.replace(hour=9, minute=0, second=0, microsecond=0)  # por defecto 9:00
+            fecha = fecha.replace(hour=9, minute=0, second=0, microsecond=0)
         return fecha
 
     def _sumar_meses(self, fecha: datetime, meses: int) -> datetime:
-        """Suma meses a una fecha (aproximado)."""
         nuevo_mes = fecha.month + meses
         año = fecha.year + (nuevo_mes - 1) // 12
         mes = ((nuevo_mes - 1) % 12) + 1
-        # Días del mes
         dias_por_mes = [31, 29 if año % 4 == 0 and (año % 100 != 0 or año % 400 == 0) else 28,
                         31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
         dia = min(fecha.day, dias_por_mes[mes - 1])
