@@ -80,12 +80,12 @@ class Brain:
 
         self.historial.append({"role": "user", "content": mensaje})
 
-        content = None
-        for _ in range(3):
-            content, tool_calls = self.provider.completar_tools(self.historial, TOOLS)
-            if not tool_calls:
-                break
+        # Primera llamada: el modelo decide si usar herramientas
+        content, tool_calls = self.provider.completar_tools(self.historial, TOOLS)
+        if tool_calls:
             self._aplicar_tool_calls(tool_calls)
+            # Segunda llamada sin herramientas: fuerza respuesta de texto con los resultados
+            content = self.provider.completar(self.historial)
 
         respuesta = self._limpiar_json_de_respuesta(content or "")
         self.historial.append({"role": "assistant", "content": respuesta})

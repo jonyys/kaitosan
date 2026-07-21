@@ -80,11 +80,14 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "buscar_internet",
-            "description": "Busca información actual en internet. Usar solo para datos que cambian cada día: noticias de hoy, precio actual de un producto, resultado deportivo, horario de un negocio específico",
+            "description": "Busca información actual en internet. Usar solo para datos que cambian con frecuencia: noticias de hoy, precio actual de un producto, resultado deportivo, horario de un negocio, clima si no tienes la herramienta de clima disponible.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "query": {"type": "string", "description": "Consulta de búsqueda"}
+                    "query": {
+                        "type": "string",
+                        "description": "Consulta optimizada para buscador web. Construye tú la query a partir del contexto de la conversación: usa 2-5 palabras clave en español, nunca pases literalmente lo que dijo el usuario. Ejemplos: 'recetas pollo al horno fácil', 'precio iPhone 16 España', 'Real Madrid resultado hoy', 'horario Mercadona Collado Mediano'."
+                    }
                 },
                 "required": ["query"]
             }
@@ -130,6 +133,11 @@ class ToolDispatcher:
 
     def ejecutar(self, nombre: str, args: dict) -> str:
         print(f"🔧 Herramienta: {nombre}({args})")
+        resultado = self._ejecutar(nombre, args)
+        print(f"   ↳ Resultado: {resultado}")
+        return resultado
+
+    def _ejecutar(self, nombre: str, args: dict) -> str:
         if nombre == "poner_alarma":
             return self.alarm.poner_alarma(args.get("hora", "07:00"))
         elif nombre == "poner_temporizador":
