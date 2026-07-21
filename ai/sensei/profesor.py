@@ -10,6 +10,7 @@ import threading
 from datetime import datetime
 
 from ai.sensei.curriculum import siguiente_item_nuevo
+from core.config import MAX_TOKENS_SENSEI, TEMPERATURE_SENSEI
 
 # ── Constantes ────────────────────────────────────────────────────────────────
 
@@ -38,14 +39,40 @@ _EXTRACCION_PROMPT = (
     "Analiza la conversación y devuelve ÚNICAMENTE un JSON con este esquema exacto:\n\n"
     '{\n'
     '  "summary": "<2-3 frases sobre qué se trabajó en la sesión>",\n'
-    '  "reviewed": [{"jp": "<ítem en japonés>", "resultado": "bien|duda|mal"}],\n'
-    '  "new_items": [{"category": "vocabulario|gramatica", "jp": "<japonés>", "es": "<español>"}]\n'
+    '  "reviewed": [{"jp": "<ítem en japonés sin corchetes>", "resultado": "bien|duda|mal"}],\n'
+    '  "new_items": [{"category": "vocabulario|gramatica", "jp": "<japonés sin corchetes>", "es": "<español>"}]\n'
     '}\n\n'
     "Reglas:\n"
     "- Incluye SOLO ítems que aparecieron realmente en la conversación.\n"
-    "- reviewed: cada ítem que el alumno intentó usar; juzga bien/duda/mal.\n"
-    "- new_items: ítems introducidos por primera vez en esta sesión.\n"
-    "- Responde SOLO con el JSON, sin markdown ni texto adicional."
+    "- Los ítems en japonés van sin los corchetes 【】.\n"
+    "- reviewed: cada palabra/expresión/partícula que el alumno intentó producir o repetir;\n"
+    "  juzga su resultado: bien (correcto o casi), duda (intentó pero con errores), mal (no lo logró).\n"
+    "- new_items: palabras, expresiones o puntos gramaticales introducidos por primera vez.\n"
+    "  Incluye también partículas cuando se explican por primera vez (category: gramatica).\n"
+    "- Si el alumno no intentó producir ningún ítem, deja reviewed como array vacío [].\n"
+    "- Responde SOLO con el JSON, sin markdown ni texto adicional.\n\n"
+    "=== EJEMPLO ===\n"
+    "Conversación:\n"
+    "Profesor: La palabra para agua es 【みず】. Di conmigo: 【みず】.\n"
+    "Laura: みず\n"
+    "Profesor: 【いいね】! Ahora prueba esta frase: 【みずをください】, que significa 'agua, por favor'.\n"
+    "Laura: みずをくなさい\n"
+    "Profesor: Casi. La forma correcta es 【みずをください】. ¿Lo intentamos de nuevo?\n"
+    "Laura: みずをください\n"
+    "Salida esperada:\n"
+    '{\n'
+    '  "summary": "Se introdujo みず (agua) y la expresión みずをください (agua, por favor). '
+    'Laura dominó みず a la primera y consiguió みずをください al segundo intento.",\n'
+    '  "reviewed": [\n'
+    '    {"jp": "みず", "resultado": "bien"},\n'
+    '    {"jp": "みずをください", "resultado": "duda"}\n'
+    '  ],\n'
+    '  "new_items": [\n'
+    '    {"category": "vocabulario", "jp": "みず", "es": "agua"},\n'
+    '    {"category": "vocabulario", "jp": "みずをください", "es": "agua, por favor"}\n'
+    '  ]\n'
+    '}\n'
+    "=== FIN EJEMPLO ==="
 )
 
 
@@ -132,12 +159,14 @@ class ProfesorJapones:
             try:
                 from ai.pronunciation import comparar_pronunciacion
                 ev = comparar_pronunciacion(self.ultima_frase_objetivo, mensaje)
-                contexto_pronunciacion = (
-                    f"\n[Evaluación de pronunciación: {ev['precision']}%. "
-                    f"IPA objetivo: {ev['ipa_objetivo']}. "
-                    f"IPA hablado: {ev['ipa_hablado']}. "
-                    f"Feedback: {ev['feedback']}]"
-                )
+                # Solo inyectar si texto_a_ipa pudo convertir ambos textos
+                if ev.get("ipa_objetivo") and ev.get("ipa_hablado"):
+                    contexto_pronunciacion = (
+                        f"\n[Evaluación de pronunciación: {ev['precision']}%. "
+                        f"IPA objetivo: {ev['ipa_objetivo']}. "
+                        f"IPA hablado: {ev['ipa_hablado']}. "
+                        f"Feedback: {ev['feedback']}]"
+                    )
             except Exception as e:
                 print(f"⚠️ Error evaluando pronunciación: {e}")
             self.ultima_frase_objetivo = None
@@ -173,7 +202,11 @@ class ProfesorJapones:
 
         # Llamar al LLM
         try:
-            respuesta = self.provider.completar(historial_sensei)
+            respuesta = self.provider.completar(
+                historial_sensei,
+                max_tokens=MAX_TOKENS_SENSEI,
+                temperature=TEMPERATURE_SENSEI,
+            )
         except Exception as e:
             print(f"❌ Error LLM en modo sensei: {e}")
             return "【ちょっとまってください。】 Un momento, hubo un problema técnico."
@@ -289,6 +322,15 @@ class ProfesorJapones:
             return
 
         transcript = self._construir_transcript()
+
+        # Nivel 1: resumen en texto libre con cualquier modelo disponible.
+        # Se guarda siempre para que la próxima sesión tenga continuidad aunque
+        # la extracción completa no sea posible.
+        summary_basico = self._extraer_resumen_basico(transcript)
+
+        # Nivel 2: extracción completa de vocabulario y gramática.
+        # Solo con el modelo principal (strict=True) — los alternativos producen
+        # JSON con japonés corrupto que contamina la BD.
         historial = [
             {"role": "system", "content": _EXTRACCION_PROMPT},
             {"role": "user", "content": f"Conversación:\n{transcript}"},
@@ -313,8 +355,8 @@ class ProfesorJapones:
                 print(f"⚠️ Error en extractor (intento 2): {e}")
 
         if data is None:
-            print(f"❌ Extracción fallida (sesión {session_id}). Se guarda sin resumen.")
-            self.jap_memory.guardar_resumen_sesion(session_id, summary=None)
+            print(f"⚠️ Extracción completa no disponible (sesión {session_id}). Guardando resumen mínimo.")
+            self.jap_memory.guardar_resumen_sesion(session_id, summary=summary_basico)
             return
 
         # Añadir ítems nuevos primero para que review los encuentre si son de esta sesión
@@ -361,7 +403,7 @@ class ProfesorJapones:
 
         self.jap_memory.guardar_resumen_sesion(
             session_id,
-            summary=data.get("summary") or None,
+            summary=data.get("summary") or summary_basico or None,
             words_learned=words_learned,
             grammar_practiced=", ".join(grammar_list),
             errors_noted=", ".join(errors_list),
@@ -374,13 +416,35 @@ class ProfesorJapones:
             lines.append(f"{rol}: {m['content']}")
         return "\n".join(lines)
 
-    def _llamar_extractor(self, historial: list) -> str:
+    def _extraer_resumen_basico(self, transcript: str) -> str:
+        """Resumen en texto libre usando cualquier modelo disponible.
+
+        No requiere JSON ni japonés correcto — sirve de continuidad mínima
+        para la próxima sesión cuando la extracción completa no está disponible.
+        """
+        historial = [
+            {"role": "system", "content": (
+                "Resume en 2-3 frases qué vocabulario y estructuras japonesas "
+                "se trabajaron en esta clase. Menciona las palabras o expresiones "
+                "en japonés que aparecieron. Responde solo en español."
+            )},
+            {"role": "user", "content": f"Conversación:\n{transcript}"},
+        ]
         try:
-            return self.provider_ligero.completar(
-                historial, response_format={"type": "json_object"}
-            )
-        except TypeError:
-            return self.provider_ligero.completar(historial)
+            return self.provider.completar(historial, max_tokens=150)
+        except Exception as e:
+            print(f"⚠️ No se pudo generar resumen básico: {e}")
+            return None
+
+    def _llamar_extractor(self, historial: list) -> str:
+        # strict=True: si el modelo principal está en rate limit no usamos fallback —
+        # un modelo alternativo produce JSON corrupto que contamina la BD.
+        return self.provider.completar(
+            historial,
+            max_tokens=700,
+            response_format={"type": "json_object"},
+            strict=True,
+        )
 
     def _parsear_json_sesion(self, texto: str):
         texto = re.sub(r"```(?:json)?\s*", "", texto).replace("```", "").strip()

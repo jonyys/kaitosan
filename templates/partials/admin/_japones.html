@@ -1,81 +1,48 @@
 <div class="card full">
-    <h2>🎌 Japonés – Perfil actual</h2>
-    {% if jap_profile %}
-        <pre style="white-space:pre-wrap; background:#1a1a1a; padding:10px; border-radius:6px;">{{ jap_profile.text }}</pre>
-        <small>Generado: {{ jap_profile.date }}</small>
-    {% else %}
-        <p class="empty">Aún no hay perfil generado</p>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <h2>🎌 Japonés</h2>
+        <a href="/japones" style="text-decoration:none;">
+            <button class="btn btn-blue">Ver panel completo →</button>
+        </a>
+    </div>
+
+    {# Stats row #}
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">
+        <div style="background:#1a1a1a;border-radius:8px;padding:14px;text-align:center;">
+            <div style="font-size:26px;font-weight:700;color:#0096ff;">{{ jap_vocab|length }}</div>
+            <div style="font-size:11px;color:#555;margin-top:4px;">palabras</div>
+        </div>
+        <div style="background:#1a1a1a;border-radius:8px;padding:14px;text-align:center;">
+            <div style="font-size:26px;font-weight:700;color:#888;">{{ jap_grammar|length }}</div>
+            <div style="font-size:11px;color:#555;margin-top:4px;">gramática</div>
+        </div>
+        <div style="background:#1a1a1a;border-radius:8px;padding:14px;text-align:center;">
+            <div style="font-size:26px;font-weight:700;color:#00cc44;">{{ jap_sessions|length }}</div>
+            <div style="font-size:11px;color:#555;margin-top:4px;">sesiones</div>
+        </div>
+    </div>
+
+    {# Vocab status breakdown #}
+    {% if jap_vocab %}
+    {% set n_learning = jap_vocab | selectattr('status', 'equalto', 'learning') | list | length %}
+    {% set n_learned  = jap_vocab | selectattr('status', 'equalto', 'learned')  | list | length %}
+    {% set n_mastered = jap_vocab | selectattr('status', 'equalto', 'mastered') | list | length %}
+    <div style="margin-bottom:16px;font-size:12px;color:#666;">
+        <span style="color:#44cc44;">● {{ n_learning }} aprendiendo</span> &nbsp;
+        <span style="color:#0096ff;">● {{ n_learned }} aprendida</span> &nbsp;
+        <span style="color:#ffaa00;">● {{ n_mastered }} dominada</span>
+    </div>
     {% endif %}
 
-    <h2 style="margin-top:20px">📊 Competencias</h2>
-    {% if jap_skills %}
-    <table>
-        <tr><th>Habilidad</th><th>Porcentaje</th></tr>
-        {% for s in jap_skills %}
-        <tr><td>{{ s.skill }}</td><td>{{ s.percentage }}%</td></tr>
-        {% endfor %}
-    </table>
-    {% else %}<p class="empty">Sin datos</p>{% endif %}
-
-    <h2 style="margin-top:20px">📚 Vocabulario</h2>
-    {% if jap_vocab %}
-    <table>
-        <tr><th>Palabra</th><th>Lectura</th><th>Significado</th><th>Tipo</th><th>Estado</th><th>Confianza</th><th>Errores</th><th>Último repaso</th></tr>
-        {% for v in jap_vocab %}
-        <tr>
-            <td><strong>{{ v.word }}</strong></td>
-            <td>{{ v.reading or '' }}</td>
-            <td>{{ v.meaning or '' }}</td>
-            <td>{{ v.type or '' }}</td>
-            <td><span class="badge">{{ v.status }}</span></td>
-            <td>{{ v.confidence }}%</td>
-            <td>{{ v.errors }}</td>
-            <td>{{ v.last_reviewed or '-' }}</td>
-        </tr>
-        {% endfor %}
-    </table>
-    {% else %}<p class="empty">Sin vocabulario registrado</p>{% endif %}
-
-    <h2 style="margin-top:20px">🧩 Gramática</h2>
-    {% if jap_grammar %}
-    <table>
-        <tr><th>Punto gramatical</th><th>Descripción</th><th>Dominio</th><th>Errores</th><th>Último uso</th></tr>
-        {% for g in jap_grammar %}
-        <tr>
-            <td><strong>{{ g.point }}</strong></td>
-            <td>{{ g.description or '' }}</td>
-            <td>{{ g.mastery }}%</td>
-            <td>{{ g.errors }}</td>
-            <td>{{ g.last_used or '-' }}</td>
-        </tr>
-        {% endfor %}
-    </table>
-    {% else %}<p class="empty">Sin gramática registrada</p>{% endif %}
-
-    <h2 style="margin-top:20px">💬 Temas de conversación</h2>
-    {% if jap_topics %}
-    <table>
-        <tr><th>Tema</th><th>¿Lo maneja?</th></tr>
-        {% for t in jap_topics %}
-        <tr><td>{{ t.topic }}</td><td>{% if t.can_handle %}✔️{% else %}❌{% endif %}</td></tr>
-        {% endfor %}
-    </table>
-    {% else %}<p class="empty">Sin temas registrados</p>{% endif %}
-
-    <h2 style="margin-top:20px">📅 Sesiones de japonés</h2>
-    {% if jap_sessions %}
-    <table>
-        <tr><th>ID</th><th>Inicio</th><th>Fin</th><th>Palabras aprendidas</th><th>Gramática practicada</th><th>Errores</th></tr>
-        {% for s in jap_sessions %}
-        <tr>
-            <td>#{{ s.id }}</td>
-            <td>{{ s.started_at }}</td>
-            <td>{{ s.ended_at or 'Activa' }}</td>
-            <td>{{ s.words_learned }}</td>
-            <td>{{ s.grammar_practiced or '-' }}</td>
-            <td>{{ s.errors_noted or '-' }}</td>
-        </tr>
-        {% endfor %}
-    </table>
-    {% else %}<p class="empty">Sin sesiones registradas</p>{% endif %}
+    {# Last session summary #}
+    {% set sessions_con_resumen = jap_sessions | selectattr('summary') | list %}
+    {% if sessions_con_resumen %}
+    {% set ultima = sessions_con_resumen[0] %}
+    <div style="margin-bottom:6px;font-size:11px;color:#555;">Última sesión — {{ ultima.started_at }}</div>
+    <div style="background:#1a1a1a;border-radius:6px;padding:10px 12px;color:#999;font-size:13px;line-height:1.6;">
+        {{ ultima.summary[:250] }}{% if ultima.summary|length > 250 %}…{% endif %}
+    </div>
+    {% else %}
+    <p class="empty">Sin sesiones registradas todavía</p>
+    {% endif %}
 </div>

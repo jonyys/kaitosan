@@ -1,5 +1,5 @@
 from groq import Groq
-from core.config import GROQ_API_KEY, DEFAULT_MODEL, MAX_TOKENS
+from core.config import GROQ_API_KEY, DEFAULT_MODEL, MAX_TOKENS, TEMPERATURE
 from core.token_tracker import TokenTracker
 
 
@@ -14,18 +14,31 @@ class GroqProvider:
         ]
         self.tracker = TokenTracker()
 
-    def completar(self, mensajes: list) -> str:
-        """Intenta con el modelo principal y alternativos si hay rate limit."""
-        modelos_a_probar = [self.model] + [
-            m for m in self.modelos_alternativos if m != self.model
-        ]
+    def completar(self, mensajes: list, max_tokens: int = None,
+                  response_format: dict = None, temperature: float = None,
+                  strict: bool = False) -> str:
+        """Intenta con el modelo principal y alternativos si hay rate limit.
+
+        strict=True: solo usa el modelo principal — lanza excepción si hay rate
+        limit en lugar de caer en alternativos. Úsalo cuando la calidad del modelo
+        no es negociable (p.ej. extractor de sesión).
+        """
+        modelos_a_probar = [self.model] if strict else (
+            [self.model] + [m for m in self.modelos_alternativos if m != self.model]
+        )
 
         for modelo in modelos_a_probar:
             try:
+                kwargs = {
+                    "max_tokens": max_tokens or MAX_TOKENS,
+                    "temperature": temperature if temperature is not None else TEMPERATURE,
+                }
+                if response_format:
+                    kwargs["response_format"] = response_format
                 response = self.client.chat.completions.create(
                     model=modelo,
                     messages=mensajes,
-                    max_tokens=MAX_TOKENS
+                    **kwargs
                 )
 
                 try:
@@ -42,6 +55,8 @@ class GroqProvider:
                 return response.choices[0].message.content
             except Exception as e:
                 if "429" in str(e) or "rate_limit" in str(e).lower():
+                    if strict:
+                        raise Exception(f"Rate limit en modelo principal ({modelo}) — extracción pospuesta")
                     print(f"⚠️ Rate limit en {modelo}, probando otro...")
                     continue
                 else:

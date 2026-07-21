@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Japonés — Kaitosan</title>
+    {% include 'partials/admin/_estilos.html' %}
+    <style>
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: #111;
+            border: 1px solid #222;
+            border-radius: 12px;
+            padding: 18px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 34px;
+            font-weight: 700;
+            color: #0096ff;
+            display: block;
+        }
+        .stat-due { color: #ffaa00; }
+        .stat-ok  { color: #00cc44; }
+        .stat-label {
+            font-size: 11px;
+            color: #555;
+            margin-top: 5px;
+        }
+        .progress-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        .progress-label { font-size: 12px; color: #888; width: 80px; }
+        .progress-count { font-size: 12px; color: #888; width: 28px; text-align: right; }
+        .progress-bar-bg {
+            flex: 1;
+            background: #1a1a1a;
+            border-radius: 5px;
+            height: 7px;
+            overflow: hidden;
+        }
+        .progress-bar-fill { height: 100%; border-radius: 5px; }
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+        .section-header h2 { margin-bottom: 0; border: none; }
+        .nav-back {
+            display: inline-block;
+            color: #555;
+            text-decoration: none;
+            font-size: 13px;
+            margin-bottom: 18px;
+        }
+        .nav-back:hover { color: #0096ff; }
+        .summary-box {
+            background: #1a1a1a;
+            border-radius: 8px;
+            padding: 12px 14px;
+            color: #aaa;
+            font-size: 13px;
+            line-height: 1.7;
+            white-space: pre-wrap;
+        }
+        .due-badge {
+            background: #2a1a00;
+            color: #ffaa00;
+            border-radius: 10px;
+            font-size: 10px;
+            padding: 1px 6px;
+            font-weight: 600;
+        }
+        @media (max-width: 768px) {
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<a href="/admin" class="nav-back">← Volver al panel de admin</a>
+<h1>🎌 Panel de Japonés</h1>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+{# ── Stats ── #}
+<div class="stats-grid">
+    <div class="stat-card">
+        <span class="stat-number">{{ total_vocab }}</span>
+        <div class="stat-label">palabras en total</div>
+    </div>
+    <div class="stat-card">
+        <span class="stat-number stat-due">{{ due_today }}</span>
+        <div class="stat-label">para repasar hoy</div>
+    </div>
+    <div class="stat-card">
+        <span class="stat-number">{{ total_grammar }}</span>
+        <div class="stat-label">puntos gramaticales</div>
+    </div>
+    <div class="stat-card">
+        <span class="stat-number stat-ok">{{ total_sessions }}</span>
+        <div class="stat-label">sesiones totales</div>
+    </div>
+</div>
+
+{# ── Progreso vocabulario ── #}
+{% if total_vocab > 0 %}
+<div class="card full" style="margin-bottom:20px;">
+    <h2>Progreso del vocabulario</h2>
+    {% set n_learning = vocab_by_status.get('learning', 0) %}
+    {% set n_learned  = vocab_by_status.get('learned', 0) %}
+    {% set n_mastered = vocab_by_status.get('mastered', 0) %}
+    <div class="progress-row">
+        <span class="progress-label">Aprendiendo</span>
+        <div class="progress-bar-bg">
+            <div class="progress-bar-fill" style="width:{{ (n_learning / total_vocab * 100)|round }}%; background:#44cc44;"></div>
+        </div>
+        <span class="progress-count">{{ n_learning }}</span>
+    </div>
+    <div class="progress-row">
+        <span class="progress-label">Aprendida</span>
+        <div class="progress-bar-bg">
+            <div class="progress-bar-fill" style="width:{{ (n_learned / total_vocab * 100)|round }}%; background:#0096ff;"></div>
+        </div>
+        <span class="progress-count">{{ n_learned }}</span>
+    </div>
+    <div class="progress-row">
+        <span class="progress-label">Dominada</span>
+        <div class="progress-bar-bg">
+            <div class="progress-bar-fill" style="width:{{ (n_mastered / total_vocab * 100)|round }}%; background:#ffaa00;"></div>
+        </div>
+        <span class="progress-count">{{ n_mastered }}</span>
+    </div>
+</div>
+{% endif %}
+
+{# ── Última sesión ── #}
+{% if last_session %}
+<div class="card full" style="margin-bottom:20px;">
+    <h2>Última sesión — {{ last_session.date }}</h2>
+    <div class="summary-box">{{ last_session.summary }}</div>
+</div>
+{% endif %}
+
+<div class="grid">
+
+{# ── Vocabulario ── #}
+<div class="card full">
+    <div class="section-header">
+        <h2>📚 Vocabulario ({{ total_vocab }})</h2>
+        <form method="post" action="/japones/vocabulario/borrar-todo"
+              onsubmit="return confirm('¿Borrar TODO el vocabulario? Esta acción no se puede deshacer.')">
+            <button class="btn btn-red">Borrar todo</button>
+        </form>
+    </div>
+
+    <form method="post" action="/japones/vocabulario/añadir" style="margin-bottom:16px;">
+        <div class="form-row">
+            <input type="text" name="jp" placeholder="Japonés (ej: おいしい)" required>
+            <input type="text" name="es" placeholder="Significado en español" required>
+            <button type="submit" class="btn btn-green">+ Añadir</button>
+        </div>
+    </form>
+
+    {% if vocab %}
+    <table>
+        <tr>
+            <th>Palabra</th>
+            <th>Significado</th>
+            <th>Estado</th>
+            <th>Reps</th>
+            <th>EF</th>
+            <th>Intervalo</th>
+            <th>Próx. repaso</th>
+            <th>✓&nbsp;/&nbsp;✗</th>
+            <th></th>
+        </tr>
+        {% for v in vocab %}
+        <tr>
+            <td><strong>{{ v.word }}</strong></td>
+            <td>{{ v.meaning or '—' }}</td>
+            <td><span class="badge">{{ v.status }}</span></td>
+            <td>{{ v.reps }}</td>
+            <td>{{ "%.2f"|format(v.ease_factor or 2.5) }}</td>
+            <td>{{ v.interval_days or 0 }}d</td>
+            <td>
+                {% if v.next_review %}
+                    {% if v.next_review <= today %}
+                        <span class="due-badge">{{ v.next_review }}</span>
+                    {% else %}
+                        <span style="color:#555;">{{ v.next_review }}</span>
+                    {% endif %}
+                {% else %}—{% endif %}
+            </td>
+            <td style="color:#888;">{{ v.times_correct or 0 }} / {{ v.errors or 0 }}</td>
+            <td>
+                <div style="display:flex;gap:4px;">
+                    <form method="post" action="/japones/vocabulario/resetear-srs/{{ v.id }}">
+                        <button class="btn btn-yellow" title="Resetear SRS">↺</button>
+                    </form>
+                    <form method="post" action="/japones/vocabulario/borrar/{{ v.id }}"
+                          onsubmit="return confirm('¿Borrar {{ v.word | replace("'", "\\'") }}?')">
+                        <button class="btn btn-red">✕</button>
+                    </form>
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p class="empty">Sin vocabulario registrado</p>
+    {% endif %}
+</div>
+
+{# ── Gramática ── #}
+<div class="card full">
+    <div class="section-header">
+        <h2>🧩 Gramática ({{ total_grammar }})</h2>
+        <form method="post" action="/japones/gramatica/borrar-todo"
+              onsubmit="return confirm('¿Borrar TODA la gramática?')">
+            <button class="btn btn-red">Borrar todo</button>
+        </form>
+    </div>
+
+    <form method="post" action="/japones/gramatica/añadir" style="margin-bottom:16px;">
+        <div class="form-row">
+            <input type="text" name="jp" placeholder="Punto gramatical (ej: は)" required>
+            <input type="text" name="es" placeholder="Descripción en español" required>
+            <button type="submit" class="btn btn-green">+ Añadir</button>
+        </div>
+    </form>
+
+    {% if grammar %}
+    <table>
+        <tr>
+            <th>Punto</th>
+            <th>Descripción</th>
+            <th>Dominio</th>
+            <th>Reps</th>
+            <th>EF</th>
+            <th>Intervalo</th>
+            <th>Próx. repaso</th>
+            <th>✓&nbsp;/&nbsp;✗</th>
+            <th></th>
+        </tr>
+        {% for g in grammar %}
+        <tr>
+            <td><strong>{{ g.point }}</strong></td>
+            <td>{{ g.description or '—' }}</td>
+            <td>
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <div class="progress-bar-bg" style="width:60px;flex:none;">
+                        <div class="progress-bar-fill" style="width:{{ (g.mastery or 0)|round }}%;background:#0096ff;"></div>
+                    </div>
+                    <span style="font-size:11px;color:#666;">{{ (g.mastery or 0)|round }}%</span>
+                </div>
+            </td>
+            <td>{{ g.reps }}</td>
+            <td>{{ "%.2f"|format(g.ease_factor or 2.5) }}</td>
+            <td>{{ g.interval_days or 0 }}d</td>
+            <td>
+                {% if g.next_review %}
+                    {% if g.next_review <= today %}
+                        <span class="due-badge">{{ g.next_review }}</span>
+                    {% else %}
+                        <span style="color:#555;">{{ g.next_review }}</span>
+                    {% endif %}
+                {% else %}—{% endif %}
+            </td>
+            <td style="color:#888;">{{ g.times_correct or 0 }} / {{ g.errors or 0 }}</td>
+            <td>
+                <div style="display:flex;gap:4px;">
+                    <form method="post" action="/japones/gramatica/resetear-srs/{{ g.id }}">
+                        <button class="btn btn-yellow" title="Resetear SRS">↺</button>
+                    </form>
+                    <form method="post" action="/japones/gramatica/borrar/{{ g.id }}"
+                          onsubmit="return confirm('¿Borrar {{ g.point | replace("'", "\\'") }}?')">
+                        <button class="btn btn-red">✕</button>
+                    </form>
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p class="empty">Sin gramática registrada</p>
+    {% endif %}
+</div>
+
+{# ── Sesiones ── #}
+<div class="card full">
+    <div class="section-header">
+        <h2>📅 Sesiones ({{ total_sessions }})</h2>
+        <form method="post" action="/japones/sesiones/borrar-todo"
+              onsubmit="return confirm('¿Borrar TODAS las sesiones de japonés?')">
+            <button class="btn btn-red">Borrar todo</button>
+        </form>
+    </div>
+
+    {% if sessions %}
+    <table>
+        <tr>
+            <th>#</th>
+            <th>Inicio</th>
+            <th>Fin</th>
+            <th>Palabras</th>
+            <th>Gramática</th>
+            <th>Resumen</th>
+            <th></th>
+        </tr>
+        {% for s in sessions %}
+        <tr>
+            <td style="color:#555;">#{{ s.id }}</td>
+            <td>{{ s.started_at }}</td>
+            <td>{{ s.ended_at or '<span style="color:#44cc44;">Activa</span>' }}</td>
+            <td>{{ s.words_learned or 0 }}</td>
+            <td style="color:#888;">{{ s.grammar_practiced or '—' }}</td>
+            <td style="font-size:12px;color:#888;max-width:320px;">
+                {% if s.summary %}
+                    {{ s.summary[:180] }}{% if s.summary|length > 180 %}…{% endif %}
+                {% else %}—{% endif %}
+            </td>
+            <td>
+                <form method="post" action="/japones/sesiones/borrar/{{ s.id }}"
+                      onsubmit="return confirm('¿Borrar sesión #{{ s.id }}?')">
+                    <button class="btn btn-red">✕</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p class="empty">Sin sesiones registradas</p>
+    {% endif %}
+</div>
+
+</div>{# /grid #}
+</body>
+</html>

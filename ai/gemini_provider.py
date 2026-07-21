@@ -6,7 +6,7 @@ class GeminiProvider:
         genai.configure(api_key=GEMINI_API_KEY)
         self.model = genai.GenerativeModel(model)
 
-    def completar(self, mensajes: list) -> str:
+    def completar(self, mensajes: list, max_tokens: int = None, temperature: float = None) -> str:
         """
         Convierte el formato OpenAI (role/content) al formato Gemini
         y devuelve la respuesta.
@@ -40,9 +40,17 @@ class GeminiProvider:
             if not historial_gemini:
                 return ""
 
+            gen_config = {}
+            if max_tokens:
+                gen_config["max_output_tokens"] = max_tokens
+            if temperature is not None:
+                gen_config["temperature"] = temperature
             chat = self.model.start_chat(history=historial_gemini[:-1])
             ultimo = historial_gemini[-1]["parts"][0]
-            respuesta = chat.send_message(ultimo)
+            respuesta = chat.send_message(
+                ultimo,
+                generation_config=gen_config if gen_config else None,
+            )
             return respuesta.text.strip()
 
         except Exception as e:

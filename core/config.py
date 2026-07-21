@@ -7,7 +7,9 @@ load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 DEFAULT_MODEL = "llama-3.3-70b-versatile"
 MAX_TOKENS = 300
+MAX_TOKENS_SENSEI = 500   # respuestas del profesor — más largas que el router/tareas
 TEMPERATURE = 0.7
+TEMPERATURE_SENSEI = 0.3  # respuestas del profesor — más deterministas para seguir las reglas
 
 # Gemini
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
