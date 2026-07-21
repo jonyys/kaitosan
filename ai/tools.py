@@ -50,7 +50,7 @@ TOOLS = [
         "function": {
             "name": "obtener_hora",
             "description": "Obtiene la hora actual del sistema",
-            "parameters": {"type": "object", "properties": {}}
+            "parameters": {"type": "object", "properties": {}, "required": []}
         }
     },
     {
@@ -58,7 +58,7 @@ TOOLS = [
         "function": {
             "name": "obtener_fecha",
             "description": "Obtiene la fecha de hoy",
-            "parameters": {"type": "object", "properties": {}}
+            "parameters": {"type": "object", "properties": {}, "required": []}
         }
     },
     {
@@ -113,7 +113,7 @@ TOOLS = [
         "function": {
             "name": "consultar_progreso_japones",
             "description": "Obtiene el progreso de Laura en japonés: vocabulario, gramática, nivel. Usar cuando pregunta por su nivel o cuando vas a enseñarle algo nuevo",
-            "parameters": {"type": "object", "properties": {}}
+            "parameters": {"type": "object", "properties": {}, "required": []}
         }
     }
 ]

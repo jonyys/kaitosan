@@ -101,8 +101,7 @@ class GroqProvider:
                 if "429" in str(e) or "rate_limit" in str(e).lower():
                     print(f"⚠️ Rate limit en {modelo}, probando otro...")
                     continue
-                elif "tool" in str(e).lower() or "function" in str(e).lower():
-                    # El modelo no soporta tools — responder sin herramientas
+                elif "does not support tool" in str(e).lower() or "tool use is not supported" in str(e).lower():
                     print(f"⚠️ {modelo} no soporta tools, respondiendo sin herramientas")
                     try:
                         response = self.client.chat.completions.create(
@@ -115,6 +114,7 @@ class GroqProvider:
                     except Exception:
                         continue
                 else:
+                    print(f"❌ Error en {modelo} con tools: {e}")
                     raise e
 
         raise Exception("Todos los modelos fallaron por rate limit")

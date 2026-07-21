@@ -35,6 +35,9 @@ class Brain:
             memory=self.memory,
             jap_memory=self.jap_memory,
         )
+        # Acceso directo para compatibilidad con app.py
+        self.reminder = self.dispatcher.reminder
+        self.alarm = self.dispatcher.alarm
         self.profesor = ProfesorJapones(self.jap_memory, self.provider, self.provider_ligero, self.memory, self.socketio)
         self._emitir_desactivar_sensei = False
 
