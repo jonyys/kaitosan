@@ -147,7 +147,10 @@ class ToolDispatcher:
         elif nombre == "obtener_hora":
             return datetime.now().strftime("%H:%M")
         elif nombre == "obtener_fecha":
-            return datetime.now().strftime("%d de %B de %Y")
+            MESES_ES = ["enero","febrero","marzo","abril","mayo","junio",
+                        "julio","agosto","septiembre","octubre","noviembre","diciembre"]
+            hoy = datetime.now()
+            return f"{hoy.day} de {MESES_ES[hoy.month - 1]} de {hoy.year}"
         elif nombre == "obtener_clima":
             return self.weather.describir_clima(ciudad=args.get("ciudad"), cuando=args.get("cuando", "ahora"))
         elif nombre == "buscar_internet":
