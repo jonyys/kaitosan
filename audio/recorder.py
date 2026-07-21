@@ -125,19 +125,22 @@ class Recorder:
 
     def record_vad(self, filename=DEFAULT_PATH,
                    silencio_seg=1.5, max_seg=10,
-                   umbral_rms=0.02) -> str:
+                   umbral_rms=0.02, timeout_inicio_seg=0) -> str:
         """
         Graba hasta detectar silencio sostenido.
         - silencio_seg: segundos de silencio para parar (default 1.5)
         - max_seg: tope máximo de grabación (default 10)
         - umbral_rms: energía por debajo de la cual se considera silencio
+        - timeout_inicio_seg: si no hay voz en este tiempo retorna None (0 = sin límite)
         """
         CHUNK = int(self.sample_rate * 0.02)  # chunks de 20ms
         max_chunks = int(max_seg * self.sample_rate / CHUNK)
         chunks_para_parar = int(silencio_seg * self.sample_rate / CHUNK)
+        chunks_timeout = int(timeout_inicio_seg * self.sample_rate / CHUNK) if timeout_inicio_seg > 0 else 0
 
         grabacion = []
         chunks_silencio = 0
+        chunks_sin_voz = 0
         hablando = False
 
         try:
@@ -161,6 +164,11 @@ class Recorder:
                         chunks_silencio += 1
                         if chunks_silencio >= chunks_para_parar:
                             break
+                    else:
+                        if chunks_timeout > 0:
+                            chunks_sin_voz += 1
+                            if chunks_sin_voz >= chunks_timeout:
+                                return None
 
             if not hablando:
                 print("❌ No se detectó voz")

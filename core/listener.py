@@ -2,6 +2,8 @@ import time
 import threading
 from audio.wakeword import WakeWordDetector
 
+TIMEOUT_CONVERSACION_SEG = 3
+
 
 class VoiceListener:
     def __init__(self, recorder, stt, brain, tts, state, socketio):
@@ -20,21 +22,40 @@ class VoiceListener:
         self._detector.detener()
 
     def procesar_voz(self):
-        """Graba con VAD, transcribe, responde y habla. Bloqueante hasta que termina el TTS."""
-        if self.state.get() != "idle":
+        """Punto de entrada público para un único ciclo (usado por /grabar)."""
+        self._ciclo_voz()
+
+    def _on_wakeword(self):
+        # Primera interacción activada por wakeword
+        if not self._ciclo_voz():
             return
 
+        # Modo conversación: sigue escuchando tras cada respuesta
+        print("💬 Modo conversación activo")
+        while True:
+            if not self._ciclo_voz(timeout_inicio_seg=TIMEOUT_CONVERSACION_SEG):
+                print("💬 Fin de conversación (sin respuesta)")
+                break
+
+    def _ciclo_voz(self, timeout_inicio_seg=0) -> bool:
+        """
+        Un ciclo completo: graba → transcribe → responde → habla.
+        Retorna True si se procesó algo, False si no hubo voz o el sistema estaba ocupado.
+        """
+        if self.state.get() != "idle":
+            return False
+
         self.state.cambiar("listening")
-        archivo = self.recorder.record_vad()
+        archivo = self.recorder.record_vad(timeout_inicio_seg=timeout_inicio_seg)
         if not archivo:
             self.state.cambiar("idle")
-            return
+            return False
 
         idioma_stt = None if self.brain.profesor.esta_activo() else "es"
         texto = self.stt.transcribir(archivo, idioma=idioma_stt)
         if not texto:
             self.state.cambiar("idle")
-            return
+            return False
 
         self.state.cambiar("thinking")
         respuesta, lento_extra = self.brain.responder(texto)
@@ -57,5 +78,4 @@ class VoiceListener:
         while self.state.get() != "idle":
             time.sleep(0.2)
 
-    def _on_wakeword(self):
-        self.procesar_voz()
+        return True
