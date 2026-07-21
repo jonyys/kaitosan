@@ -1,3 +1,4 @@
+import re
 import time
 import threading
 from audio.wakeword import WakeWordDetector
@@ -66,7 +67,8 @@ class VoiceListener:
             self.socketio.emit("estado", {"estado": "speaking"})
 
         def hablar_y_volver():
-            self.tts.hablar(respuesta, lento_extra=lento_extra, on_start=al_iniciar_audio)
+            texto_audio = re.sub(r'https?://\S+', '', respuesta).strip()
+            self.tts.hablar(texto_audio, lento_extra=lento_extra, on_start=al_iniciar_audio)
             if self.brain._emitir_desactivar_sensei:
                 self.brain._emitir_desactivar_sensei = False
                 self.socketio.emit("modo_sensei", {"activo": False})

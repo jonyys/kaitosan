@@ -16,17 +16,43 @@ class GeminiProvider:
             system_prompt = ""
             historial_gemini = []
 
+            pending_tool_results = []
+
             for msg in mensajes:
-                if msg["role"] == "system":
+                role = msg.get("role")
+
+                if role == "system":
                     system_prompt += msg["content"] + "\n"
-                elif msg["role"] == "user":
-                    historial_gemini.append({
-                        "role": "user",
-                        "parts": [msg["content"]]
-                    })
-                elif msg["role"] == "assistant":
+
+                elif role == "tool":
+                    # Acumula resultados de herramientas para fusionarlos con el siguiente turno
+                    pending_tool_results.append(msg.get("content", ""))
+
+                elif role == "assistant":
+                    content = msg.get("content")
+                    if content is None:
+                        # Turno de tool-call: el contenido real vendrá en el role:tool siguiente
+                        # No añadimos nada todavía; pending_tool_results lo capturará
+                        continue
+                    # Si hay resultados de herramientas pendientes, los pegamos al assistant
+                    if pending_tool_results:
+                        content = "[Resultados de búsqueda: " + " | ".join(pending_tool_results) + "]\n" + content
+                        pending_tool_results = []
                     historial_gemini.append({
                         "role": "model",
+                        "parts": [content]
+                    })
+
+                elif role == "user":
+                    # Si hay resultados pendientes sin assistant que los consuma, los convertimos en contexto
+                    if pending_tool_results:
+                        historial_gemini.append({
+                            "role": "model",
+                            "parts": ["[Resultados obtenidos: " + " | ".join(pending_tool_results) + "]"]
+                        })
+                        pending_tool_results = []
+                    historial_gemini.append({
+                        "role": "user",
                         "parts": [msg["content"]]
                     })
 
