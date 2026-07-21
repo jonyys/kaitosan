@@ -8,12 +8,23 @@ class GroqProvider:
         self.client = Groq(api_key=GROQ_API_KEY, max_retries=0)
         self.model = model
         self.modelos_alternativos = [
-            "llama3-70b-8192",        # 70b legacy — cuota separada del versatile
             "llama-3.1-8b-instant",
             "gemma2-9b-it",
-            "mixtral-8x7b-32768"
         ]
         self.tracker = TokenTracker()
+
+    @staticmethod
+    def _saltar_modelo(e: Exception) -> bool:
+        """True si el error indica que este modelo no está disponible y debe probarse el siguiente."""
+        s = str(e).lower()
+        return (
+            "429" in str(e) or
+            "rate_limit" in s or
+            "decommissioned" in s or
+            "model_not_active" in s or
+            "model_not_found" in s or
+            "not supported" in s
+        )
 
     def completar(self, mensajes: list, max_tokens: int = None,
                   response_format: dict = None, temperature: float = None,
@@ -55,15 +66,15 @@ class GroqProvider:
                     print(f"⚠️ Usando modelo alternativo: {modelo}")
                 return response.choices[0].message.content
             except Exception as e:
-                if "429" in str(e) or "rate_limit" in str(e).lower():
+                if self._saltar_modelo(e):
                     if strict:
-                        raise Exception(f"Rate limit en modelo principal ({modelo}) — extracción pospuesta")
-                    print(f"⚠️ Rate limit en {modelo}, probando otro...")
+                        raise Exception(f"Modelo {modelo} no disponible — extracción pospuesta")
+                    print(f"⚠️ {modelo} no disponible ({type(e).__name__}), probando otro...")
                     continue
                 else:
                     raise e
 
-        raise Exception("Todos los modelos fallaron por rate limit")
+        raise Exception("Todos los modelos fallaron")
 
     def completar_tools(self, mensajes: list, tools: list) -> tuple:
         """
@@ -99,8 +110,8 @@ class GroqProvider:
                 return message.content, message.tool_calls
 
             except Exception as e:
-                if "429" in str(e) or "rate_limit" in str(e).lower():
-                    print(f"⚠️ Rate limit en {modelo}, probando otro...")
+                if self._saltar_modelo(e):
+                    print(f"⚠️ {modelo} no disponible ({type(e).__name__}), probando otro...")
                     continue
                 elif "does not support tool" in str(e).lower() or "tool use is not supported" in str(e).lower():
                     print(f"⚠️ {modelo} no soporta tools, respondiendo sin herramientas")
@@ -118,4 +129,4 @@ class GroqProvider:
                     print(f"❌ Error en {modelo} con tools: {e}")
                     raise e
 
-        raise Exception("Todos los modelos fallaron por rate limit")
+        raise Exception("Todos los modelos fallaron")
