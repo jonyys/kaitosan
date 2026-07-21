@@ -8,3 +8,4 @@ numpy
 pykakasi
 google-generativeai
 python-dotenv
+livekit-wakeword[listener]
