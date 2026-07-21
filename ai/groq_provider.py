@@ -63,3 +63,58 @@ class GroqProvider:
                     raise e
 
         raise Exception("Todos los modelos fallaron por rate limit")
+
+    def completar_tools(self, mensajes: list, tools: list) -> tuple:
+        """
+        Llamada con soporte de herramientas.
+        Retorna (content, tool_calls) — tool_calls es None si el modelo responde directamente.
+        """
+        modelos_a_probar = [self.model] + [m for m in self.modelos_alternativos if m != self.model]
+
+        for modelo in modelos_a_probar:
+            try:
+                response = self.client.chat.completions.create(
+                    model=modelo,
+                    messages=mensajes,
+                    tools=tools,
+                    tool_choice="auto",
+                    max_tokens=MAX_TOKENS,
+                    temperature=TEMPERATURE,
+                )
+
+                try:
+                    tokens_usados = response.usage.total_tokens
+                    datos = self.tracker.añadir_tokens(modelo, tokens_usados)
+                    total_modelo = datos["tokens"].get(modelo, 0)
+                    total_hoy = sum(datos["tokens"].values())
+                    print(f"📊 Tokens {modelo}: {tokens_usados} (hoy: {total_modelo} este modelo, {total_hoy} total)")
+                except Exception as e:
+                    print(f"⚠️ Error guardando tokens: {e}")
+
+                if modelo != self.model:
+                    print(f"⚠️ Usando modelo alternativo: {modelo}")
+
+                message = response.choices[0].message
+                return message.content, message.tool_calls
+
+            except Exception as e:
+                if "429" in str(e) or "rate_limit" in str(e).lower():
+                    print(f"⚠️ Rate limit en {modelo}, probando otro...")
+                    continue
+                elif "tool" in str(e).lower() or "function" in str(e).lower():
+                    # El modelo no soporta tools — responder sin herramientas
+                    print(f"⚠️ {modelo} no soporta tools, respondiendo sin herramientas")
+                    try:
+                        response = self.client.chat.completions.create(
+                            model=modelo,
+                            messages=mensajes,
+                            max_tokens=MAX_TOKENS,
+                            temperature=TEMPERATURE,
+                        )
+                        return response.choices[0].message.content, None
+                    except Exception:
+                        continue
+                else:
+                    raise e
+
+        raise Exception("Todos los modelos fallaron por rate limit")

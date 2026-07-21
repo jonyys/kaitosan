@@ -21,3 +21,11 @@ class FallbackProvider:
             print("🔄 Cambiando a Gemini...")
             return self.gemini.completar(mensajes, max_tokens=max_tokens,
                                          temperature=temperature)
+
+    def completar_tools(self, mensajes: list, tools: list) -> tuple:
+        try:
+            return self.groq.completar_tools(mensajes, tools)
+        except Exception as e:
+            print(f"⚠️ Groq tools falló: {e}, usando Gemini sin herramientas")
+            content = self.gemini.completar(mensajes)
+            return content, None
