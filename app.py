@@ -72,6 +72,9 @@ def chat():
 
         def hablar_y_volver():
             tts.hablar(respuesta, lento_extra=lento_extra, on_start=al_iniciar_audio)
+            if brain._emitir_desactivar_sensei:
+                brain._emitir_desactivar_sensei = False
+                socketio.emit("modo_sensei", {"activo": False})
             state.cambiar("idle")
             socketio.emit("estado", {"estado": "idle"})
 
@@ -134,6 +137,9 @@ def grabar():
 
         def hablar_y_volver():
             tts.hablar(respuesta, lento_extra=lento_extra, on_start=al_iniciar_audio)
+            if brain._emitir_desactivar_sensei:
+                brain._emitir_desactivar_sensei = False
+                socketio.emit("modo_sensei", {"activo": False})
             state.cambiar("idle")
             socketio.emit("estado", {"estado": "idle"})
 

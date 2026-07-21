@@ -35,6 +35,7 @@ class Brain:
         self.alarm = AlarmSkill()
         self.reminder = ReminderSkill()
         self.profesor = ProfesorJapones(self.jap_memory, self.provider, self.provider_ligero, self.memory, self.socketio)
+        self._emitir_desactivar_sensei = False  # se activa en salir; app.py lo consume tras el TTS
 
     def _iniciar_sesion(self):
         """
@@ -148,6 +149,7 @@ class Brain:
         if any(frase in mensaje.lower() for frase in ["salir del modo sensei", "sal del modo sensei", "modo sensei off", "salir del modo", "sal del modo", "desactivar modo", "desactivar modo", "desctivar", "desactiva"]):
             if self.profesor.esta_activo():
                 self.profesor.salir()
+                self._emitir_desactivar_sensei = True
                 return random.choice(DESPEDIDAS), False
 
          # ── Si ya estamos en modo sensei, delegamos en el profesor ──

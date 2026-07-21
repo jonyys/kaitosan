@@ -120,13 +120,16 @@ class ProfesorJapones:
         print("🎌 Modo Sensei activado")
 
     def salir(self):
-        """Desactiva el modo sensei, cancela el timer y cierra la sesión."""
+        """Desactiva el modo sensei, cancela el timer y cierra la sesión.
+
+        El evento modo_sensei activo:False lo emite app.py después de que el
+        TTS termine, para que la despedida se pronuncie con la cara sensei.
+        """
         if self.timer:
             self.timer.cancel()
             self.timer = None
         self.activo = False
         self.cerrar_sesion_y_extraer()
-        self.socketio.emit("modo_sensei", {"activo": False})
         print("🎌 Modo Sensei desactivado")
 
     def esta_activo(self) -> bool:
