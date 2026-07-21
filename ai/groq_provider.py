@@ -5,9 +5,10 @@ from core.token_tracker import TokenTracker
 
 class GroqProvider:
     def __init__(self, model=DEFAULT_MODEL):
-        self.client = Groq(api_key=GROQ_API_KEY)
+        self.client = Groq(api_key=GROQ_API_KEY, max_retries=0)
         self.model = model
         self.modelos_alternativos = [
+            "llama3-70b-8192",        # 70b legacy — cuota separada del versatile
             "llama-3.1-8b-instant",
             "gemma2-9b-it",
             "mixtral-8x7b-32768"
