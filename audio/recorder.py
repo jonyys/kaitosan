@@ -123,6 +123,64 @@ class Recorder:
         )
         return convertido.reshape(-1, 1)
 
+    def record_vad(self, filename=DEFAULT_PATH,
+                   silencio_seg=1.5, max_seg=10,
+                   umbral_rms=0.02) -> str:
+        """
+        Graba hasta detectar silencio sostenido.
+        - silencio_seg: segundos de silencio para parar (default 1.5)
+        - max_seg: tope máximo de grabación (default 10)
+        - umbral_rms: energía por debajo de la cual se considera silencio
+        """
+        CHUNK = int(self.sample_rate * 0.02)  # chunks de 20ms
+        max_chunks = int(max_seg * self.sample_rate / CHUNK)
+        chunks_para_parar = int(silencio_seg * self.sample_rate / CHUNK)
+
+        grabacion = []
+        chunks_silencio = 0
+        hablando = False
+
+        try:
+            print("🎤 Escuchando... (para al detectar silencio)")
+            with sd.InputStream(
+                samplerate=self.sample_rate,
+                channels=1,
+                dtype='float32',
+                device=self.device,
+                blocksize=CHUNK
+            ) as stream:
+                for _ in range(max_chunks):
+                    chunk, _ = stream.read(CHUNK)
+                    grabacion.append(chunk.copy())
+
+                    rms = np.sqrt(np.mean(chunk ** 2))
+                    if rms > umbral_rms:
+                        hablando = True
+                        chunks_silencio = 0
+                    elif hablando:
+                        chunks_silencio += 1
+                        if chunks_silencio >= chunks_para_parar:
+                            break
+
+            if not hablando:
+                print("❌ No se detectó voz")
+                return None
+
+            audio = np.concatenate(grabacion, axis=0)
+            audio = audio * 3.0
+            audio = np.clip(audio, -1.0, 1.0)
+
+            audio_16k = self._convertir_sample_rate(
+                audio, orig_sr=self.sample_rate, target_sr=SAMPLE_RATE_STT
+            )
+            sf.write(filename, audio_16k, SAMPLE_RATE_STT)
+            print(f"✅ Audio guardado: {filename}")
+            return filename
+
+        except Exception as e:
+            print(f"❌ Error grabando: {e}")
+            return None
+
     def reproducir(self, filename=DEFAULT_PATH):
         """
         Reproduce un archivo de audio.

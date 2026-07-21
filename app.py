@@ -6,6 +6,7 @@ from core.camera import Camera
 from core.state import StateManager
 from core.brain import Brain
 from core.detection import PersonDetector
+from core.listener import VoiceListener
 from core.config import FLASK_SECRET_KEY, ADMIN_PASSWORD
 from flask import flash, redirect, url_for, session, request
 from functools import wraps
@@ -35,6 +36,8 @@ recorder = Recorder()
 stt = SpeechToText()
 tts = TextToSpeech()
 tts.socketio = socketio
+
+voice_listener = VoiceListener(recorder, stt, brain, tts, state, socketio)
 
 
 @app.route("/")
@@ -640,5 +643,6 @@ if __name__ == "__main__":
     print("🤖 Kaitosan arrancando...")
     camera.iniciar()
     detector.iniciar()
+    voice_listener.iniciar()
     state.cambiar("idle")
     socketio.run(app, host="0.0.0.0", port=5000, debug=False)
