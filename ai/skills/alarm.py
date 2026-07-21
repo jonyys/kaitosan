@@ -18,7 +18,10 @@ class AlarmSkill:
 
     def _emitir_estado(self):
         if self.socketio:
-            self.socketio.emit("actualizar_reloj", self._estado_serializable())
+            try:
+                self.socketio.emit("actualizar_reloj", self._estado_serializable())
+            except Exception as e:
+                print(f"⚠️ Error emitiendo actualizar_reloj: {e}")
 
     def _estado_serializable(self):
         return {

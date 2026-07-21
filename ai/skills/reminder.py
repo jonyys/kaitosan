@@ -43,7 +43,10 @@ class ReminderSkill:
 
     def _emitir_estado(self):
         if self.socketio:
-            self.socketio.emit("actualizar_recordatorios", self._estado_serializable())
+            try:
+                self.socketio.emit("actualizar_recordatorios", self._estado_serializable())
+            except Exception as e:
+                print(f"⚠️ Error emitiendo actualizar_recordatorios: {e}")
 
     def _estado_serializable(self):
         with self._conectar() as conn:

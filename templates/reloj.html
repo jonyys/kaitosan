@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Reloj · Kaito</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -800,6 +800,21 @@
       mostrarToast('🗑️ Recordatorio eliminado');
     } catch(e) { mostrarToast('❌ Error al eliminar'); }
   }
+
+  // ── POLLING DE RESPALDO (cada 5s si el socket no emitió) ─────────────────
+  let ultimaActualizacion = 0;
+  setInterval(async () => {
+    if (Date.now() - ultimaActualizacion > 4500) {
+      await cargarEstado();
+      await cargarRecordatorios();
+    }
+  }, 5000);
+
+  // Marcar cada vez que llega un evento por socket para no hacer polling innecesario
+  const _aplicarEstadoOriginal = aplicarEstado;
+  aplicarEstado = (data) => { ultimaActualizacion = Date.now(); _aplicarEstadoOriginal(data); };
+  const _aplicarRecordatoriosOriginal = aplicarEstadoRecordatorios;
+  aplicarEstadoRecordatorios = (data) => { ultimaActualizacion = Date.now(); _aplicarRecordatoriosOriginal(data); };
 
   // ── INICIAR ──────────────────────────────────────────────────────────────
   cargarEstado();
