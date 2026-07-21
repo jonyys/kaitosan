@@ -12,7 +12,7 @@ async def main():
     async with WakeWordListener(model, threshold=0.5) as listener:
         while True:
             detection = await listener.wait_for_detection()
-            print(f"[WAKEWORD] Wake word detectado: '{detection.name}' (score: {detection.score:.3f})")
+            print(f"[WAKEWORD] Wake word detectado: '{detection.name}' | {vars(detection)}")
 
 if __name__ == "__main__":
     try:
