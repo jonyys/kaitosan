@@ -115,13 +115,13 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "cancelar_recordatorio",
-            "description": "Cancela y elimina un recordatorio pendiente por su ID. Primero usa listar_recordatorios para obtener el ID si no lo sabes.",
+            "description": "Cancela y elimina un recordatorio pendiente buscándolo por palabra clave en su texto. No hace falta saber el ID.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "id": {"type": "integer", "description": "ID del recordatorio a cancelar"}
+                    "texto": {"type": "string", "description": "Palabra o frase clave del recordatorio a cancelar, por ejemplo 'médico' o 'comprar leche'"}
                 },
-                "required": ["id"]
+                "required": ["texto"]
             }
         }
     },
@@ -224,7 +224,7 @@ class ToolDispatcher:
         elif nombre == "buscar_en_historial":
             return self.memory.buscar_en_historial(args.get("terminos", []))
         elif nombre == "cancelar_recordatorio":
-            return self.reminder.cancelar_recordatorio(args.get("id"))
+            return self.reminder.cancelar_recordatorio_por_texto(args.get("texto", ""))
         elif nombre == "listar_recordatorios":
             return self.reminder.listar_recordatorios()
         elif nombre == "cancelar_alarma":

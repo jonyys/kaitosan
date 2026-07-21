@@ -106,6 +106,32 @@ class ReminderSkill:
             print(f"❌ Error cancelando recordatorio: {e}")
             return "No pude cancelar el recordatorio."
 
+    def cancelar_recordatorio_por_texto(self, texto: str) -> str:
+        """Cancela el recordatorio pendiente cuyo texto contenga la palabra clave dada."""
+        try:
+            with self._conectar() as conn:
+                rows = conn.execute(
+                    "SELECT id, texto FROM reminders WHERE completado = 0"
+                ).fetchall()
+            if not rows:
+                return "No hay recordatorios pendientes que cancelar."
+            texto_lower = texto.lower()
+            coincidencias = [(r[0], r[1]) for r in rows if texto_lower in r[1].lower()]
+            if not coincidencias:
+                todos = ", ".join(f"'{r[1]}'" for r in rows)
+                return f"No encontré ningún recordatorio con '{texto}'. Los pendientes son: {todos}."
+            if len(coincidencias) > 1:
+                lista = ", ".join(f"'{c[1]}'" for c in coincidencias)
+                return f"Hay varios recordatorios que coinciden: {lista}. ¿Cuál quieres eliminar?"
+            rid, rtexto = coincidencias[0]
+            with self._conectar() as conn:
+                conn.execute("DELETE FROM reminders WHERE id = ?", (rid,))
+            self._emitir_estado()
+            return f"Recordatorio '{rtexto}' eliminado."
+        except Exception as e:
+            print(f"❌ Error cancelando recordatorio por texto: {e}")
+            return "No pude cancelar el recordatorio."
+
     def listar_recordatorios(self) -> str:
         with self._conectar() as conn:
             rows = conn.execute(

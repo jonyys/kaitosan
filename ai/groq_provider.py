@@ -85,9 +85,16 @@ class GroqProvider:
 
     @staticmethod
     def _es_error_tool_call(e: Exception) -> bool:
-        """True cuando el modelo intentó llamar una herramienta pero lo formateó mal."""
+        """True cuando el modelo no puede manejar tool calls en este contexto."""
         s = str(e).lower()
-        return "tool_use_failed" in s or "failed to call a function" in s
+        return (
+            "tool_use_failed" in s or
+            "failed to call a function" in s or
+            "failed to render" in s or
+            "harmonyerror" in s or
+            "tools should have a name" in s or
+            "failed to template" in s
+        )
 
     def completar_tools(self, mensajes: list, tools: list) -> tuple:
         """
