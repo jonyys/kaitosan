@@ -11,6 +11,13 @@ class GroqProvider:
             "llama-3.1-8b-instant",
             "gemma2-9b-it",
         ]
+        # Modelos capaces de manejar tool calls correctamente
+        self.modelos_tools = [
+            "llama-3.3-70b-versatile",
+            "openai/gpt-oss-120b",
+            "groq/compound",
+            "qwen/qwen3.6-27b",
+        ]
         self.tracker = TokenTracker()
 
     @staticmethod
@@ -76,13 +83,22 @@ class GroqProvider:
 
         raise Exception("Todos los modelos fallaron")
 
+    @staticmethod
+    def _es_error_tool_call(e: Exception) -> bool:
+        """True cuando el modelo intentó llamar una herramienta pero lo formateó mal."""
+        s = str(e).lower()
+        return "tool_use_failed" in s or "failed to call a function" in s
+
     def completar_tools(self, mensajes: list, tools: list) -> tuple:
         """
         Llamada con soporte de herramientas.
         Retorna (content, tool_calls) — tool_calls es None si el modelo responde directamente.
+        Solo usa modelos_tools (70B+) porque los modelos pequeños no formatean bien las tool calls.
         """
-        modelos_a_probar = [self.model] + [m for m in self.modelos_alternativos if m != self.model]
+        modelos_a_probar = [m for m in self.modelos_tools if m == self.model] + \
+                           [m for m in self.modelos_tools if m != self.model]
 
+        ultimo_error = None
         for modelo in modelos_a_probar:
             try:
                 response = self.client.chat.completions.create(
@@ -104,7 +120,7 @@ class GroqProvider:
                     print(f"⚠️ Error guardando tokens: {e}")
 
                 if modelo != self.model:
-                    print(f"⚠️ Usando modelo alternativo: {modelo}")
+                    print(f"⚠️ Usando modelo alternativo para tools: {modelo}")
 
                 message = response.choices[0].message
                 return message.content, message.tool_calls
@@ -112,6 +128,7 @@ class GroqProvider:
             except Exception as e:
                 if self._saltar_modelo(e):
                     print(f"⚠️ {modelo} no disponible ({type(e).__name__}), probando otro...")
+                    ultimo_error = e
                     continue
                 elif "does not support tool" in str(e).lower() or "tool use is not supported" in str(e).lower():
                     print(f"⚠️ {modelo} no soporta tools, respondiendo sin herramientas")
@@ -124,9 +141,16 @@ class GroqProvider:
                         )
                         return response.choices[0].message.content, None
                     except Exception:
+                        ultimo_error = e
                         continue
+                elif self._es_error_tool_call(e):
+                    # El modelo intentó llamar la herramienta pero con formato incorrecto
+                    # → saltar al siguiente modelo con capacidad de tools
+                    print(f"⚠️ {modelo} generó tool call con formato incorrecto, probando otro...")
+                    ultimo_error = e
+                    continue
                 else:
                     print(f"❌ Error en {modelo} con tools: {e}")
                     raise e
 
-        raise Exception("Todos los modelos fallaron")
+        raise Exception(f"Todos los modelos con tools fallaron. Último error: {ultimo_error}")
