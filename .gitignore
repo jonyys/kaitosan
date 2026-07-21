@@ -222,3 +222,4 @@ audio/*.wav
 
 # Data
 data/
+.vscode/settings.json
