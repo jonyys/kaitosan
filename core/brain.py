@@ -22,7 +22,6 @@ class Brain:
         self.state = state_manager
         self.socketio = socketio
         self.provider = FallbackProvider(model="llama-3.3-70b-versatile")
-        self.provider_ligero = FallbackProvider(model="llama-3.1-8b-instant")
         self.memory = Memory()
         self.jap_memory = JapaneseMemory(DB_PATH)
         self.session_id = None
@@ -38,7 +37,7 @@ class Brain:
         # Acceso directo para compatibilidad con app.py
         self.reminder = self.dispatcher.reminder
         self.alarm = self.dispatcher.alarm
-        self.profesor = ProfesorJapones(self.jap_memory, self.provider, self.provider_ligero, self.memory, self.socketio)
+        self.profesor = ProfesorJapones(self.jap_memory, self.provider, self.memory, self.socketio)
         self._emitir_desactivar_sensei = False
 
     def _iniciar_sesion(self):
