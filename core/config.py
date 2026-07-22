@@ -18,5 +18,9 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 FLASK_SECRET_KEY = os.getenv("FLASK_SECRET_KEY", "fallback_key")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "kaito123")
 
+# Sensei — ritmo de introducción
+MAX_ITEMS_NUEVOS = 2   # ítems nuevos por sesión (configurable hasta 3)
+THROTTLE_DUE = 12      # si hay ≥ N repasos vencidos, no introducir ítems nuevos
+
 # Busqueda en internet
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "")

@@ -1,7 +1,7 @@
 """Clase ProfesorJapones: orquestador del modo sensei.
 
 Estado propio, historial independiente del de Brain, integración
-de SRS (Fase 1) y currículo (Fase 2), y evaluación de pronunciación.
+de SRS (Fase 1) y currículo (Fase 2).
 """
 
 import json
@@ -9,8 +9,8 @@ import re
 import threading
 from datetime import datetime
 
-from ai.sensei.curriculum import siguiente_item_nuevo
-from core.config import MAX_TOKENS_SENSEI, TEMPERATURE_SENSEI
+from ai.sensei.curriculum import siguiente_items_nuevos
+from core.config import MAX_ITEMS_NUEVOS, MAX_TOKENS_SENSEI, TEMPERATURE_SENSEI, THROTTLE_DUE
 
 # ── Constantes ────────────────────────────────────────────────────────────────
 
@@ -45,31 +45,50 @@ _EXTRACCION_PROMPT = (
     "Reglas:\n"
     "- Incluye SOLO ítems que aparecieron realmente en la conversación.\n"
     "- Los ítems en japonés van sin los corchetes 【】.\n"
-    "- reviewed: cada palabra/expresión/partícula que el alumno intentó producir o repetir;\n"
-    "  juzga su resultado: bien (correcto o casi), duda (intentó pero con errores), mal (no lo logró).\n"
-    "- new_items: palabras, expresiones o puntos gramaticales introducidos por primera vez.\n"
-    "  Incluye también partículas cuando se explican por primera vez (category: gramatica).\n"
-    "- Si el alumno no intentó producir ningún ítem, deja reviewed como array vacío [].\n"
+    "- reviewed: TODO lo que el alumno intentó producir o practicar, en dos tipos:\n"
+    "  * VOCABULARIO: palabras sueltas y expresiones fijas (みず, ありがとう, みずをください…).\n"
+    "  * GRAMÁTICA / CONJUGACIÓN: cuando Laura usó un patrón de conjugación o estructura,\n"
+    "    añade el PATRÓN CANÓNICO, NO el verbo concreto. Ejemplos:\n"
+    "      - dijo 食べた, 行った → jp: '〜た'\n"
+    "      - dijo 食べています → jp: '〜ている'\n"
+    "      - dijo むずかしくない → jp: '〜くない'\n"
+    "      - dijo おいしかった → jp: '〜かった'\n"
+    "      - dijo 食べてください → jp: '〜てください'\n"
+    "      - usó は/が/を/に en una oración → jp: la partícula (は, が…)\n"
+    "    Usa el jp exacto del FOCO si el patrón aparece en él.\n"
+    "  Juzga resultado: bien (correcto o casi), duda (intentó con errores), mal (no lo logró).\n"
+    "- new_items: vocabulario, expresiones o puntos gramaticales introducidos por primera vez.\n"
+    "  Para gramática usa el jp canónico del patrón (〜て, 〜た, る動詞…).\n"
+    "- Si el alumno no intentó producir nada, reviewed = [].\n"
     "- Responde SOLO con el JSON, sin markdown ni texto adicional.\n\n"
     "=== EJEMPLO ===\n"
+    "FOCO:\n"
+    "  Vocabulario para repasar: 【みず】 agua\n"
+    "  Gramática para repasar: 【〜てください】 petición formal\n"
+    "  Ítem nuevo: 【〜た】 pasado casual\n"
     "Conversación:\n"
-    "Profesor: La palabra para agua es 【みず】. Di conmigo: 【みず】.\n"
+    "Profesor: Hoy repasamos 【みず】. Di conmigo.\n"
     "Laura: みず\n"
-    "Profesor: 【いいね】! Ahora prueba esta frase: 【みずをください】, que significa 'agua, por favor'.\n"
+    "Profesor: 【いいね】! Ahora 【みずをください】.\n"
     "Laura: みずをくなさい\n"
-    "Profesor: Casi. La forma correcta es 【みずをください】. ¿Lo intentamos de nuevo?\n"
+    "Profesor: Casi, es 【みずをください】. ¿Puedes repetirlo?\n"
     "Laura: みずをください\n"
+    "Profesor: 【いいね】! Ahora el pasado: ayer comiste, que se dice 【食べた】.\n"
+    "Laura: たべた\n"
+    "Profesor: 【すごい】! ¿Y bebiste? 【飲んだ】.\n"
+    "Laura: のんだ\n"
     "Salida esperada:\n"
     '{\n'
-    '  "summary": "Se introdujo みず (agua) y la expresión みずをください (agua, por favor). '
-    'Laura dominó みず a la primera y consiguió みずをください al segundo intento.",\n'
+    '  "summary": "Se repasó みず y 〜てください; Laura logró みずをください al segundo intento. '
+    'Se introdujo el pasado casual 〜た: acertó 食べた y 飲んだ sin dificultad.",\n'
     '  "reviewed": [\n'
     '    {"jp": "みず", "resultado": "bien"},\n'
-    '    {"jp": "みずをください", "resultado": "duda"}\n'
+    '    {"jp": "〜てください", "resultado": "duda"},\n'
+    '    {"jp": "〜た", "resultado": "bien"}\n'
     '  ],\n'
     '  "new_items": [\n'
     '    {"category": "vocabulario", "jp": "みず", "es": "agua"},\n'
-    '    {"category": "vocabulario", "jp": "みずをください", "es": "agua, por favor"}\n'
+    '    {"category": "gramatica", "jp": "〜た", "es": "pasado casual del verbo"}\n'
     '  ]\n'
     '}\n'
     "=== FIN EJEMPLO ==="
@@ -78,17 +97,15 @@ _EXTRACCION_PROMPT = (
 
 class ProfesorJapones:
 
-    def __init__(self, jap_memory, provider, provider_ligero, memory, socketio):
+    def __init__(self, jap_memory, provider, memory, socketio):
         """
-        jap_memory      — JapaneseMemory (capa de datos japonés + SRS)
-        provider        — proveedor LLM principal (llama-3.3-70b)
-        provider_ligero — proveedor LLM ligero (llama-3.1-8b), usado en Fase 5
-        memory          — core.memory.Memory (perfil general de Laura)
-        socketio        — instancia Flask-SocketIO para emitir eventos
+        jap_memory — JapaneseMemory (capa de datos japonés + SRS)
+        provider   — proveedor LLM principal (llama-3.3-70b)
+        memory     — core.memory.Memory (perfil general de Laura)
+        socketio   — instancia Flask-SocketIO para emitir eventos
         """
         self.jap_memory = jap_memory
         self.provider = provider
-        self.provider_ligero = provider_ligero
         self.memory = memory
         self.socketio = socketio
 
@@ -96,7 +113,11 @@ class ProfesorJapones:
         self.timer = None
         self.session_id = None
         self.mensajes = []          # historial propio de la sesión sensei (solo user/assistant)
-        self.ultima_frase_objetivo = None
+
+        # Estado del último FOCO (para cierre resiliente en Fase 4)
+        self._foco_due_vocab = []
+        self._foco_due_gram = []
+        self._foco_nuevos = []
 
     # ── Ciclo de vida ─────────────────────────────────────────────────────────
 
@@ -104,7 +125,9 @@ class ProfesorJapones:
         """Activa el modo sensei y abre una sesión en la BD."""
         self.activo = True
         self.mensajes = []
-        self.ultima_frase_objetivo = None
+        self._foco_due_vocab = []
+        self._foco_due_gram = []
+        self._foco_nuevos = []
 
         now = datetime.now().isoformat(sep=" ", timespec="seconds")
         with self.jap_memory._conectar() as conn:
@@ -139,7 +162,12 @@ class ProfesorJapones:
         """Reinicia el contador de inactividad de 20 minutos."""
         if self.timer:
             self.timer.cancel()
-        self.timer = threading.Timer(20 * 60, self.salir)
+        def _timeout():
+            self.activo = False
+            self.timer = None
+            # ponytail: DB/LLM writes via managed socketio task, not daemon timer thread
+            self.socketio.start_background_task(self.cerrar_sesion_y_extraer)
+        self.timer = threading.Timer(20 * 60, _timeout)
         self.timer.daemon = True
         self.timer.start()
 
@@ -155,24 +183,6 @@ class ProfesorJapones:
         from ai.prompts import cargar_prompt  # import diferido para evitar ciclos
 
         self._renovar_timer()
-
-        # Evaluar pronunciación si hay frase objetivo pendiente
-        contexto_pronunciacion = ""
-        if self.ultima_frase_objetivo:
-            try:
-                from ai.pronunciation import comparar_pronunciacion
-                ev = comparar_pronunciacion(self.ultima_frase_objetivo, mensaje)
-                # Solo inyectar si texto_a_ipa pudo convertir ambos textos
-                if ev.get("ipa_objetivo") and ev.get("ipa_hablado"):
-                    contexto_pronunciacion = (
-                        f"\n[Evaluación de pronunciación: {ev['precision']}%. "
-                        f"IPA objetivo: {ev['ipa_objetivo']}. "
-                        f"IPA hablado: {ev['ipa_hablado']}. "
-                        f"Feedback: {ev['feedback']}]"
-                    )
-            except Exception as e:
-                print(f"⚠️ Error evaluando pronunciación: {e}")
-            self.ultima_frase_objetivo = None
 
         # Construir historial del sensei desde cero (sin mutar el de Brain)
         try:
@@ -199,9 +209,7 @@ class ProfesorJapones:
         # Últimos MAX_TURNOS pares de la sesión actual
         historial_sensei.extend(self.mensajes[-(MAX_TURNOS * 2):])
 
-        # Mensaje de usuario, con contexto de pronunciación si aplica
-        contenido_usuario = mensaje + contexto_pronunciacion if contexto_pronunciacion else mensaje
-        historial_sensei.append({"role": "user", "content": contenido_usuario})
+        historial_sensei.append({"role": "user", "content": mensaje})
 
         # Llamar al LLM
         try:
@@ -217,11 +225,6 @@ class ProfesorJapones:
         # Guardar turno limpio en el historial propio
         self.mensajes.append({"role": "user", "content": mensaje})
         self.mensajes.append({"role": "assistant", "content": respuesta})
-
-        # Extraer frase objetivo para el siguiente turno
-        frase = self._extraer_frase_objetivo(respuesta)
-        if frase:
-            self.ultima_frase_objetivo = frase
 
         return respuesta
 
@@ -259,7 +262,25 @@ class ProfesorJapones:
         # ── FOCO_DE_HOY ────────────────────────────────────────────────────
         due_vocab = self.jap_memory.get_due_items(5, kind="vocabulario")
         due_gram = self.jap_memory.get_due_items(3, kind="gramatica")
-        nuevo = siguiente_item_nuevo(self.jap_memory)
+
+        due_count = perfil_jap["due_count"]
+        if due_count >= THROTTLE_DUE:
+            nuevos = []
+        else:
+            nuevos = siguiente_items_nuevos(self.jap_memory, MAX_ITEMS_NUEVOS)
+
+        # Persistir ítems nuevos en cuanto se seleccionan — add_item es idempotente
+        for nuevo in nuevos:
+            self.jap_memory.add_item(
+                nuevo["kind"], nuevo["jp"],
+                reading=nuevo.get("reading"),
+                meaning=nuevo.get("meaning"),
+                tipo=nuevo.get("tipo"),
+                session_id=self.session_id,
+            )
+        self._foco_due_vocab = due_vocab
+        self._foco_due_gram = due_gram
+        self._foco_nuevos = nuevos
 
         lineas_f = []
         if due_vocab:
@@ -276,10 +297,17 @@ class ProfesorJapones:
                 meaning = item.get("meaning") or item.get("description", "")
                 lineas_f.append(f"  - 【{jp}】 {meaning}")
 
-        if nuevo:
+        if nuevos:
+            lineas_f.append(f"Ítems nuevos a introducir ({len(nuevos)}):")
+            for nuevo in nuevos:
+                lineas_f.append(
+                    f"  - 【{nuevo['jp']}】 — {nuevo['meaning']}"
+                    f" (unidad: {nuevo['unidad']})"
+                )
+        elif due_count >= THROTTLE_DUE:
             lineas_f.append(
-                f"Ítem nuevo a introducir: 【{nuevo['jp']}】 — {nuevo['meaning']}"
-                f" (unidad: {nuevo['unidad']})"
+                f"Carga alta de repasos ({due_count} pendientes): no introducir ítems nuevos del temario hoy. "
+                f"Consolida los repasos. (Si Laura pide algo concreto, enséñalo igualmente.)"
             )
 
         if not lineas_f:
@@ -289,18 +317,6 @@ class ProfesorJapones:
 
         foco_de_hoy = "\n".join(lineas_f)
         return recuerdas_de_laura, foco_de_hoy
-
-    def _extraer_frase_objetivo(self, respuesta: str):
-        """Extrae frase objetivo para evaluar pronunciación en el turno siguiente."""
-        patrones = [
-            r"(?:repit[ea]|di|pronuncia)\s+(?:conmigo\s*)?(?::|,)?\s*[「「【]([^」」】]+)[」」】]",
-            r"(?:repit[ea]|di|pronuncia)\s+(?:conmigo\s*)?(?::|,)?\s*([぀-ゟ゠-ヿ一-鿿]+)",
-        ]
-        for patron in patrones:
-            match = re.search(patron, respuesta, re.IGNORECASE)
-            if match:
-                return match.group(1).strip()
-        return None
 
     # ── Cierre de sesión y extracción (Fase 5) ───────────────────────────────
 
@@ -358,7 +374,18 @@ class ProfesorJapones:
                 print(f"⚠️ Error en extractor (intento 2): {e}")
 
         if data is None:
-            print(f"⚠️ Extracción completa no disponible (sesión {session_id}). Guardando resumen mínimo.")
+            print(f"⚠️ Extracción completa no disponible (sesión {session_id}). Aplicando review de rescate.")
+            # ponytail: review con quality=3 (duda) para marcar los ítems del FOCO como vistos
+            for item in self._foco_due_vocab:
+                try:
+                    self.jap_memory.review(item["id"], 3, "vocabulario")
+                except Exception:
+                    pass
+            for item in self._foco_due_gram:
+                try:
+                    self.jap_memory.review(item["id"], 3, "gramatica")
+                except Exception:
+                    pass
             self.jap_memory.guardar_resumen_sesion(session_id, summary=summary_basico)
             return
 
@@ -403,6 +430,17 @@ class ProfesorJapones:
                     errors_list.append(jp)
             except Exception as e:
                 print(f"⚠️ Error en review de '{jp}': {e}")
+
+        # Ítems nuevos del FOCO que el extractor no capturó: mínimo reps=1 (duda)
+        reviewed_jp = {(r.get("jp") or "").strip() for r in data.get("reviewed", [])}
+        for nuevo in self._foco_nuevos:
+            if nuevo["jp"] not in reviewed_jp:
+                item_id = self.jap_memory.get_item_id(nuevo["jp"], nuevo["kind"])
+                if item_id is not None:
+                    try:
+                        self.jap_memory.review(item_id, 3, nuevo["kind"])
+                    except Exception:
+                        pass
 
         self.jap_memory.guardar_resumen_sesion(
             session_id,

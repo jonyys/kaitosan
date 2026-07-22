@@ -14,13 +14,6 @@ class JapaneseMemory:
     def _inicializar_tablas(self):
         with self._conectar() as conn:
             conn.executescript("""
-                CREATE TABLE IF NOT EXISTS japanese_skills (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    skill TEXT UNIQUE,
-                    percentage REAL DEFAULT 0,
-                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                );
-
                 CREATE TABLE IF NOT EXISTS japanese_vocabulary (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     word TEXT NOT NULL,
@@ -43,19 +36,6 @@ class JapaneseMemory:
                     errors INTEGER DEFAULT 0,
                     last_used DATETIME,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                );
-
-                CREATE TABLE IF NOT EXISTS japanese_topics (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    topic TEXT UNIQUE,
-                    can_handle BOOLEAN DEFAULT 0,
-                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                );
-
-                CREATE TABLE IF NOT EXISTS japanese_profile (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    summary_text TEXT,
-                    generated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 );
 
                 CREATE TABLE IF NOT EXISTS japanese_sessions (
@@ -231,12 +211,12 @@ class JapaneseMemory:
                     datetime.now() + timedelta(days=max(interval, 1))
                 ).strftime("%Y-%m-%d")
 
-                mastery = min(100.0, interval / 21.0 * 100)
-
+                correct_delta = 1 if quality >= 3 else 0
                 conn.execute(
                     """UPDATE japanese_grammar SET
                            reps = ?, ease_factor = ?, interval_days = ?,
-                           next_review = ?, mastery = ?,
+                           next_review = ?,
+                           mastery = CAST(times_correct + ? AS REAL) / (times_seen + 1) * 100,
                            times_seen = times_seen + 1,
                            times_correct = times_correct + ?,
                            errors = errors + ?,
@@ -244,8 +224,9 @@ class JapaneseMemory:
                        WHERE id = ?""",
                     (
                         reps, round(ease, 4), interval,
-                        next_review, round(mastery, 2),
-                        1 if quality >= 3 else 0,
+                        next_review,
+                        correct_delta,
+                        correct_delta,
                         1 if quality < 3 else 0,
                         now, item_id,
                     ),
@@ -279,9 +260,6 @@ class JapaneseMemory:
     def resumen_perfil(self) -> dict:
         """Versión ligera de obtener_perfil_completo para el orquestador."""
         with self._conectar() as conn:
-            skills = conn.execute(
-                "SELECT skill, percentage FROM japanese_skills"
-            ).fetchall()
             vocab_counts = conn.execute(
                 """SELECT status, COUNT(*) FROM japanese_vocabulary GROUP BY status"""
             ).fetchall()
@@ -293,11 +271,12 @@ class JapaneseMemory:
                    WHERE summary IS NOT NULL ORDER BY started_at DESC LIMIT 1"""
             ).fetchone()
             weak = conn.execute(
-                "SELECT word, errors FROM japanese_vocabulary WHERE errors > 2 ORDER BY errors DESC LIMIT 5"
+                "SELECT word, errors FROM japanese_vocabulary "
+                "WHERE times_reviewed >= 3 AND CAST(errors AS REAL) / times_reviewed > 0.4 "
+                "ORDER BY CAST(errors AS REAL) / times_reviewed DESC LIMIT 5"
             ).fetchall()
 
         return {
-            "skills": dict(skills),
             "vocab_by_status": dict(vocab_counts),
             "due_count": due_count,
             "last_session_summary": last_session[0] if last_session else None,
@@ -312,39 +291,28 @@ class JapaneseMemory:
     def obtener_perfil_completo(self) -> str:
         """Genera el perfil actual de Laura para el prompt del profesor."""
         with self._conectar() as conn:
-            skills = conn.execute(
-                "SELECT skill, percentage FROM japanese_skills"
-            ).fetchall()
             vocab_count = conn.execute(
                 "SELECT COUNT(*) FROM japanese_vocabulary WHERE status IN ('learned','mastered')"
             ).fetchone()[0]
             grammar = conn.execute(
                 "SELECT grammar_point, mastery FROM japanese_grammar ORDER BY mastery DESC"
             ).fetchall()
-            topics = conn.execute(
-                "SELECT topic FROM japanese_topics WHERE can_handle=1"
-            ).fetchall()
             errors = conn.execute(
-                "SELECT word, errors FROM japanese_vocabulary WHERE errors>2 ORDER BY errors DESC LIMIT 5"
+                "SELECT word, errors FROM japanese_vocabulary "
+                "WHERE times_reviewed >= 3 AND CAST(errors AS REAL) / times_reviewed > 0.4 "
+                "ORDER BY CAST(errors AS REAL) / times_reviewed DESC LIMIT 5"
             ).fetchall()
 
         perfil = "=== PERFIL ACTUAL DE LAURA (JAPONÉS) ===\n"
         perfil += f"Palabras dominadas: {vocab_count}\n"
-        perfil += "Competencias:\n"
-        for s, p in skills:
-            perfil += f"- {s}: {p}%\n"
         perfil += "Gramática:\n"
         for g, m in grammar:
             perfil += f"- {g}: {m:.0f}% dominio\n"
-        if topics:
-            perfil += "Temas que maneja:\n"
-            for (t,) in topics:
-                perfil += f"- {t}\n"
         if errors:
             perfil += "Puntos débiles:\n"
             for w, e in errors:
                 perfil += f"- {w}: {e} errores\n"
         perfil += "\nInstrucciones:\n"
-        perfil += "- No enseñes saludos ni vocabulario ya dominado.\n"
+        perfil += "- No enseñes vocabulario ya dominado.\n"
         perfil += "- Refuerza las estructuras con errores frecuentes.\n"
         return perfil

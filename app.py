@@ -117,9 +117,6 @@ def grabar():
             state.cambiar("idle")
             return jsonify({"error": "No se entendió nada"}), 400
 
-        # La evaluación de pronunciación vive dentro de
-        # ProfesorJapones.responder_turno (no se duplica aquí).
-
         # Pensando
         state.cambiar("thinking")
 
@@ -332,12 +329,6 @@ def admin():
     # --- Consultar progreso de japonés ---
     jap_db = brain.jap_memory._conectar()
     
-    # Skills
-    skills = jap_db.execute("""
-        SELECT skill, percentage FROM japanese_skills ORDER BY skill
-    """).fetchall()
-    jap_skills = [{"skill": r[0], "percentage": r[1]} for r in skills]
-
     # Vocabulario
     vocab = jap_db.execute("""
         SELECT word, reading, meaning, type, status, confidence, errors,
@@ -365,12 +356,6 @@ def admin():
             "errors": r[3], "last_used": r[4]
         })
 
-    # Temas
-    topics = jap_db.execute("""
-        SELECT topic, can_handle FROM japanese_topics ORDER BY topic
-    """).fetchall()
-    jap_topics = [{"topic": r[0], "can_handle": bool(r[1])} for r in topics]
-
     # Sesiones de japonés
     sessions_jap = jap_db.execute("""
         SELECT id, started_at, ended_at, words_learned, grammar_practiced,
@@ -384,15 +369,6 @@ def admin():
             "words_learned": r[3], "grammar_practiced": r[4],
             "errors_noted": r[5], "summary": r[6]
         })
-
-    # Perfil generado más reciente
-    perfil_jap = jap_db.execute("""
-        SELECT summary_text, generated_at FROM japanese_profile
-        ORDER BY generated_at DESC LIMIT 1
-    """).fetchone()
-    jap_profile = None
-    if perfil_jap:
-        jap_profile = {"text": perfil_jap[0], "date": perfil_jap[1]}
 
     jap_db.close()
 
@@ -424,12 +400,9 @@ def admin():
                             sesiones=sesiones,
                             mensajes=mensajes,
                             sesion_filtro=sesion_filtro,
-                            jap_skills=jap_skills,
                             jap_vocab=jap_vocab,
                             jap_grammar=jap_grammar,
-                            jap_topics=jap_topics,
                             jap_sessions=jap_sessions,
-                            jap_profile=jap_profile,
                             lista_recordatorios=lista_recordatorios)
 
 @app.route("/admin/perfil/añadir", methods=["POST"])
