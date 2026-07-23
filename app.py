@@ -403,7 +403,9 @@ def admin():
                             jap_vocab=jap_vocab,
                             jap_grammar=jap_grammar,
                             jap_sessions=jap_sessions,
-                            lista_recordatorios=lista_recordatorios)
+                            lista_recordatorios=lista_recordatorios,
+                            uso_tokens=tokens,
+                            uso_audio=audio)
 
 @app.route("/admin/perfil/añadir", methods=["POST"])
 @login_requerido
