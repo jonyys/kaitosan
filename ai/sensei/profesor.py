@@ -32,6 +32,20 @@ DESPEDIDAS = [
     "【バイバイ、ラウラさん。気をつけてね】",
 ]
 
+SALUDOS_CONV = [
+    "¡Modo charla activado! Nada de clase, solo tú, yo y 【にほんご】. ¿Qué tal el día?",
+    "¡Modo colega ON! Olvida que soy un profesor, soy tu amigo que resulta que habla japonés. 【はじめよう！】",
+    "Ahora sí, modo conversación. Sin drills, sin temario. Solo 【おしゃべり】. ¿Por dónde empezamos?",
+    "Cambiando al modo charla... Hecho. Ahora dime algo interesante. En español o en 【にほんご】, lo que te salga.",
+    "¡Modo charla! Prometido: cero ejercicios. Solo quiero saber qué has hecho hoy. 【どうだった？】",
+]
+
+CAMBIO_A_ESTUDIO = [
+    "¡Modo estudio activado! Volvemos al temario. 【さあ、べんきょうしましょう！】",
+    "De acuerdo, ponemos el modo serio. Un poco. 【がんばろう！】",
+    "Modo clase activado. Aunque tampoco me voy a poner muy formal, que me conozco. 【はじめましょう！】",
+]
+
 _QUALITY_MAP = {"bien": 5, "duda": 3, "mal": 1}
 
 _EXTRACCION_PROMPT = (
@@ -110,6 +124,7 @@ class ProfesorJapones:
         self.socketio = socketio
 
         self.activo = False
+        self.modo_conv = False
         self.timer = None
         self.session_id = None
         self.mensajes = []          # historial propio de la sesión sensei (solo user/assistant)
@@ -121,9 +136,13 @@ class ProfesorJapones:
 
     # ── Ciclo de vida ─────────────────────────────────────────────────────────
 
-    def entrar(self):
+    def set_modo_conv(self, conv: bool):
+        self.modo_conv = conv
+
+    def entrar(self, conv: bool = False):
         """Activa el modo sensei y abre una sesión en la BD."""
         self.activo = True
+        self.modo_conv = conv
         self.mensajes = []
         self._foco_due_vocab = []
         self._foco_due_gram = []
@@ -185,10 +204,11 @@ class ProfesorJapones:
         self._renovar_timer()
 
         # Construir historial del sensei desde cero (sin mutar el de Brain)
+        nombre_prompt = "profesor_japones_conv" if self.modo_conv else "profesor_japones"
         try:
-            prompt_base = cargar_prompt("profesor_japones")
+            prompt_base = cargar_prompt(nombre_prompt)
         except Exception as e:
-            print(f"⚠️ No se pudo cargar prompt profesor_japones: {e}")
+            print(f"⚠️ No se pudo cargar prompt {nombre_prompt}: {e}")
             prompt_base = "Eres un profesor de japonés amable. Habla en japonés con 【】."
 
         recuerdas, foco = self._montar_estado()

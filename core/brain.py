@@ -10,7 +10,7 @@ from ai.tools import TOOLS, ToolDispatcher
 
 from core.japanese_memory import JapaneseMemory
 from core.memory import DB_PATH, Memory
-from ai.sensei.profesor import ProfesorJapones, SALUDOS, DESPEDIDAS
+from ai.sensei.profesor import ProfesorJapones, SALUDOS, SALUDOS_CONV, CAMBIO_A_ESTUDIO, DESPEDIDAS
 import re as regex
 
 MAX_MENSAJES = 20
@@ -53,12 +53,27 @@ class Brain:
         """Devuelve siempre (respuesta, lento_extra)."""
 
         # ── Comandos de modo sensei ──
-        if any(f in mensaje.lower() for f in ["sensei", "entrar en modo", "entra en modo", "modo sensei on", "activar modo sensei", "activar modo", "en modo"]):
+        _msg = mensaje.lower()
+        _triggers_conv = ["modo conversación", "modo conversacion", "modo charla", "modo colega", "modo amigo", "hablemos en japonés", "hablemos en japones", "hablar en japones"]
+        _triggers_estudio = ["modo estudio", "modo clase", "modo lección", "modo leccion", "modo sensei"]
+
+        if any(f in _msg for f in _triggers_conv):
             if not self.profesor.esta_activo():
-                self.profesor.entrar()
+                self.profesor.entrar(conv=True)
+            else:
+                self.profesor.set_modo_conv(True)
+            return random.choice(SALUDOS_CONV), False
+
+        if any(f in _msg for f in ["sensei", "entrar en modo", "entra en modo", "modo sensei on", "activar modo sensei", "activar modo", "en modo"]):
+            if not self.profesor.esta_activo():
+                self.profesor.entrar(conv=False)
                 return random.choice(SALUDOS), False
 
-        if any(f in mensaje.lower() for f in ["salir del modo sensei", "sal del modo sensei", "modo sensei off", "salir del modo", "sal del modo", "desactivar modo", "desctivar", "desactiva"]):
+        if any(f in _msg for f in _triggers_estudio) and self.profesor.esta_activo():
+            self.profesor.set_modo_conv(False)
+            return random.choice(CAMBIO_A_ESTUDIO), False
+
+        if any(f in _msg for f in ["salir del modo sensei", "sal del modo sensei", "modo sensei off", "salir del modo", "sal del modo", "desactivar modo", "desctivar", "desactiva"]):
             if self.profesor.esta_activo():
                 self.profesor.salir()
                 self._emitir_desactivar_sensei = True
@@ -82,6 +97,16 @@ class Brain:
         # Primera llamada: el modelo decide si usar herramientas
         content, tool_calls = self.provider.completar_tools(self.historial, TOOLS)
         if tool_calls:
+            modo_switch = next((tc for tc in tool_calls if tc.function.name in ("activar_modo_sensei", "activar_modo_conversacion_japones")), None)
+            if modo_switch:
+                conv = modo_switch.function.name == "activar_modo_conversacion_japones"
+                self.profesor.entrar(conv=conv)
+                saludo = random.choice(SALUDOS_CONV if conv else SALUDOS)
+                self.historial.append({"role": "assistant", "content": saludo})
+                self.memory.guardar_mensaje(self.session_id, "user", mensaje)
+                self.memory.guardar_mensaje(self.session_id, "assistant", saludo)
+                print(f"🎌 Kaito activa modo {'conversación' if conv else 'sensei'} via tool")
+                return saludo, False
             self._aplicar_tool_calls(tool_calls)
             # Segunda llamada sin herramientas: fuerza respuesta de texto con los resultados
             content = self.provider.completar(self.historial)

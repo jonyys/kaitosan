@@ -184,6 +184,22 @@ TOOLS = [
             "description": "Obtiene el progreso de Laura en japonés: vocabulario, gramática, nivel. Usar cuando pregunta por su nivel o cuando vas a enseñarle algo nuevo",
             "parameters": {"type": "object", "properties": {}, "required": []}
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "activar_modo_sensei",
+            "description": "Activa el modo sensei (clase de japonés estructurada). Usar SOLO cuando Laura pide explícitamente empezar una sesión de práctica o clase, por ejemplo: 'ponme en modo sensei', 'quiero hacer clase de japonés'. NO usar para preguntas puntuales de traducción o cuando pregunta cómo se dice algo.",
+            "parameters": {"type": "object", "properties": {}, "required": []}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "activar_modo_conversacion_japones",
+            "description": "Activa el modo conversación japonés. Usar SOLO cuando Laura pide explícitamente ponerse a charlar o practicar en japonés de forma continua, por ejemplo: 'hablemos en japonés', 'quiero practicar conversación'. NO usar para preguntas sueltas de traducción.",
+            "parameters": {"type": "object", "properties": {}, "required": []}
+        }
     }
 ]
 
