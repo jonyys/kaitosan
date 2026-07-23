@@ -108,10 +108,10 @@
   }
   /* Rotación base: mirando hacia la nariz */
   .eye-left {
-    transform: rotate(5deg);
+    rotate: 7deg;
   }
   .eye-right {
-    transform: rotate(-5deg);
+    rotate: -7deg;
   }
 
   /* BOCA */
@@ -158,38 +158,38 @@
   @keyframes idleLeft {
     0%,
     100% {
-      transform: rotate(5deg) translate(0, 0);
+      transform: translate(0, 0);
     }
     20% {
-      transform: rotate(5deg) translate(-1px, -1px);
+      transform: translate(-1px, -1px);
     }
     40% {
-      transform: rotate(5deg) translate(1px, 0px);
+      transform: translate(1px, 0px);
     }
     60% {
-      transform: rotate(5deg) translate(0px, 1px);
+      transform: translate(0px, 1px);
     }
     80% {
-      transform: rotate(5deg) translate(-1px, 0px);
+      transform: translate(-1px, 0px);
     }
   }
 
   @keyframes idleRight {
     0%,
     100% {
-      transform: rotate(-5deg) translate(0, 0);
+      transform: translate(0, 0);
     }
     20% {
-      transform: rotate(-5deg) translate(-1px, -1px);
+      transform: translate(-1px, -1px);
     }
     40% {
-      transform: rotate(-5deg) translate(1px, 0px);
+      transform: translate(1px, 0px);
     }
     60% {
-      transform: rotate(-5deg) translate(0px, 1px);
+      transform: translate(0px, 1px);
     }
     80% {
-      transform: rotate(-5deg) translate(-1px, 0px);
+      transform: translate(-1px, 0px);
     }
   }
 
@@ -326,85 +326,85 @@
   @keyframes eyeLookRight {
     0%,
     12% {
-      transform: rotate(5deg) translateX(0);
+      transform: translateX(0);
     }
     22%,
     55% {
-      transform: rotate(5deg) translateX(14px);
+      transform: translateX(14px);
     }
     65%,
     100% {
-      transform: rotate(5deg) translateX(0);
+      transform: translateX(0);
     }
   }
   @keyframes eyeLookRightMirror {
     0%,
     12% {
-      transform: rotate(-5deg) translateX(0);
+      transform: translateX(0);
     }
     22%,
     55% {
-      transform: rotate(-5deg) translateX(14px);
+      transform: translateX(14px);
     }
     65%,
     100% {
-      transform: rotate(-5deg) translateX(0);
+      transform: translateX(0);
     }
   }
   @keyframes eyeLookLeft {
     0%,
     12% {
-      transform: rotate(5deg) translateX(0);
+      transform: translateX(0);
     }
     22%,
     55% {
-      transform: rotate(5deg) translateX(-14px);
+      transform: translateX(-14px);
     }
     65%,
     100% {
-      transform: rotate(5deg) translateX(0);
+      transform: translateX(0);
     }
   }
   @keyframes eyeLookLeftMirror {
     0%,
     12% {
-      transform: rotate(-5deg) translateX(0);
+      transform: translateX(0);
     }
     22%,
     55% {
-      transform: rotate(-5deg) translateX(-14px);
+      transform: translateX(-14px);
     }
     65%,
     100% {
-      transform: rotate(-5deg) translateX(0);
+      transform: translateX(0);
     }
   }
   @keyframes eyeLookUp {
     0%,
     12% {
-      transform: rotate(5deg) translateY(0);
+      transform: translateY(0);
     }
     22%,
     55% {
-      transform: rotate(5deg) translateY(-10px);
+      transform: translateY(-10px);
     }
     65%,
     100% {
-      transform: rotate(5deg) translateY(0);
+      transform: translateY(0);
     }
   }
   @keyframes eyeLookUpMirror {
     0%,
     12% {
-      transform: rotate(-5deg) translateY(0);
+      transform: translateY(0);
     }
     22%,
     55% {
-      transform: rotate(-5deg) translateY(-10px);
+      transform: translateY(-10px);
     }
     65%,
     100% {
-      transform: rotate(-5deg) translateY(0);
+      transform: translateY(0);
     }
   }
 
@@ -459,25 +459,25 @@
   @keyframes listenEyeLeft {
     0%,
     100% {
-      transform: rotate(5deg) scaleY(1.22) translate(0, 0);
+      transform: scaleY(1.22) translate(0, 0);
     }
     30% {
-      transform: rotate(5deg) scaleY(1.22) translate(2px, -2px);
+      transform: scaleY(1.22) translate(2px, -2px);
     }
     60% {
-      transform: rotate(5deg) scaleY(1.22) translate(-1px, 0px);
+      transform: scaleY(1.22) translate(-1px, 0px);
     }
   }
   @keyframes listenEyeRight {
     0%,
     100% {
-      transform: rotate(-5deg) scaleY(1.22) translate(0, 0);
+      transform: scaleY(1.22) translate(0, 0);
     }
     30% {
-      transform: rotate(-5deg) scaleY(1.22) translate(2px, -2px);
+      transform: scaleY(1.22) translate(2px, -2px);
     }
     60% {
-      transform: rotate(-5deg) scaleY(1.22) translate(-1px, 0px);
+      transform: scaleY(1.22) translate(-1px, 0px);
     }
   }
 
@@ -531,10 +531,10 @@
   /* Sin listening-active, los elementos están en reposo — la transition CSS
     interpola suavemente desde idle hasta aquí */
   .listening:not(.listening-active) .eye-left {
-    transform: rotate(5deg) scaleY(1);
+    transform: scaleY(1);
   }
   .listening:not(.listening-active) .eye-right {
-    transform: rotate(-5deg) scaleY(1);
+    transform: scaleY(1);
   }
   .listening:not(.listening-active) .eyebrow-left {
     transform: translateY(0);
@@ -590,19 +590,19 @@
 
   @keyframes thinkingEyeEnter {
     from {
-      transform: rotate(5deg);
+      transform: translate(0, 0);
     }
     to {
-      transform: rotate(5deg) translate(-6px, -6px);
+      transform: translate(-6px, -6px);
     }
   }
 
   @keyframes thinkingEyeEnterRight {
     from {
-      transform: rotate(-5deg);
+      transform: translate(0, 0);
     }
     to {
-      transform: rotate(-5deg) translate(-6px, -6px);
+      transform: translate(-6px, -6px);
     }
   }
 
@@ -635,22 +635,22 @@
   @keyframes thinkingEyeLeft {
     0%,
     30% {
-      transform: rotate(5deg) translate(-10px, -12px) scaleY(1);
+      transform: translate(-10px, -12px) scaleY(1);
     }
     45%,
     100% {
-      transform: rotate(5deg) translate(-2px, 4px) scaleY(0.82);
+      transform: translate(-2px, 4px) scaleY(0.82);
     }
   }
   @keyframes thinkingEyeRight {
     0%,
     30% {
-      transform: rotate(-5deg) translate(-10px, -12px) scaleY(1);
+      transform: translate(-10px, -12px) scaleY(1);
     }
 
     45%,
     100% {
-      transform: rotate(-5deg) translate(-2px, 4px) scaleY(0.82);
+      transform: translate(-2px, 4px) scaleY(0.82);
     }
   }
 
