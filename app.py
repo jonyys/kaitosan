@@ -7,6 +7,7 @@ from core.state import StateManager
 from core.brain import Brain
 from core.detection import PersonDetector
 from core.listener import VoiceListener
+from core.button import PowerButton
 from core.config import FLASK_SECRET_KEY, ADMIN_PASSWORD
 from flask import flash, redirect, url_for, session, request
 from functools import wraps
@@ -720,5 +721,6 @@ if __name__ == "__main__":
     camera.iniciar()
     detector.iniciar()
     voice_listener.iniciar()
+    PowerButton(on_short_press=voice_listener._on_wakeword)
     state.cambiar("idle")
     socketio.run(app, host="0.0.0.0", port=5000, debug=False)
