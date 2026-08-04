@@ -11,15 +11,18 @@ SAMPLE_RATE_DEVICE = 48000
 # Sample rate para Whisper STT
 SAMPLE_RATE_STT = 16000
 
-def buscar_g435():
+def buscar_microfono():
     for i, d in enumerate(sd.query_devices()):
-        if "G435" in d["name"]:
+        if d["max_input_channels"] > 0 and "AB17X" in d["name"]:
             return i
-    raise RuntimeError("No se encontró el G435")
+    for i, d in enumerate(sd.query_devices()):
+        if d["max_input_channels"] > 0 and "G435" in d["name"]:
+            return i
+    raise RuntimeError("No se encontró micrófono (AB17X ni G435)")
 
 class Recorder:
     def __init__(self, device=None, sample_rate=SAMPLE_RATE_DEVICE):
-        self.device = device if device is not None else buscar_g435()
+        self.device = device if device is not None else buscar_microfono()
         self.sample_rate = sample_rate
 
     def record(self, filename=DEFAULT_PATH,

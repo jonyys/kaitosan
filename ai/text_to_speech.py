@@ -10,16 +10,19 @@ import subprocess
 import threading
 import time as tmod
 
-def buscar_g435():
+def buscar_altavoz():
     for i, d in enumerate(sd.query_devices()):
-        if "G435" in d["name"]:
+        if d["max_output_channels"] > 0 and "hifiberry" in d["name"].lower():
             return i
-    raise RuntimeError("No se encontró el Logitech G435")
+    for i, d in enumerate(sd.query_devices()):
+        if d["max_output_channels"] > 0 and "G435" in d["name"]:
+            return i
+    raise RuntimeError("No se encontró altavoz (hifiberry ni G435)")
 
 
 class TextToSpeech:
     def __init__(self, device=None):
-        self.device = device if device is not None else buscar_g435()
+        self.device = device if device is not None else buscar_altavoz()
         self.sample_rate_device = 48000
         self.voice_es = "es-ES-AlvaroNeural"
         self.voice_ja = "ja-JP-KeitaNeural"
