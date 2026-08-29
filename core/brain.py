@@ -8,6 +8,7 @@ from ai.skills.alarm import AlarmSkill
 from ai.skills.reminder import ReminderSkill
 from ai.tools import TOOLS, ToolDispatcher
 
+from core.config import MODEL_SENSEI
 from core.japanese_memory import JapaneseMemory
 from core.memory import DB_PATH, Memory
 from ai.sensei.profesor import ProfesorJapones, SALUDOS, SALUDOS_CONV, CAMBIO_A_ESTUDIO, DESPEDIDAS
@@ -37,7 +38,10 @@ class Brain:
         # Acceso directo para compatibilidad con app.py
         self.reminder = self.dispatcher.reminder
         self.alarm = self.dispatcher.alarm
-        self.profesor = ProfesorJapones(self.jap_memory, self.provider, self.memory, self.socketio)
+        # El profesor usa su propio proveedor: puede convenirle un modelo distinto
+        # al del router (ver MODEL_SENSEI en config).
+        provider_sensei = FallbackProvider(model=MODEL_SENSEI)
+        self.profesor = ProfesorJapones(self.jap_memory, provider_sensei, self.memory, self.socketio)
         self._emitir_desactivar_sensei = False
 
     def _iniciar_sesion(self):

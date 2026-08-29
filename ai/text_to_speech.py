@@ -177,6 +177,13 @@ class TextToSpeech:
 
     def hablar(self, texto: str, lento_extra: bool = False, on_start=None, on_stop=None):
         self._lento_extra = lento_extra
+
+        if not texto or not texto.strip():
+            print("⚠️ TTS: texto vacío, nada que reproducir")
+            if on_stop:
+                on_stop()
+            return
+
         try:
             print(f"🔊 Hablando: {texto}")
 
@@ -184,6 +191,14 @@ class TextToSpeech:
                 tmp_path = tmp.name
 
             asyncio.run(self._generar_audio_completo(texto, tmp_path))
+
+            if not os.path.exists(tmp_path) or os.path.getsize(tmp_path) == 0:
+                print("⚠️ TTS: no se generó audio (texto sin contenido hablable)")
+                if os.path.exists(tmp_path):
+                    os.unlink(tmp_path)
+                if on_stop:
+                    on_stop()
+                return
 
             data, fs = sf.read(tmp_path)
             os.unlink(tmp_path)

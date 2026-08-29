@@ -35,7 +35,7 @@ class GroqProvider:
 
     def completar(self, mensajes: list, max_tokens: int = None,
                   response_format: dict = None, temperature: float = None,
-                  strict: bool = False) -> str:
+                  strict: bool = False, reasoning_effort: str = None) -> str:
         """Intenta con el modelo principal y alternativos si hay rate limit.
 
         strict=True: solo usa el modelo principal — lanza excepción si hay rate
@@ -54,6 +54,10 @@ class GroqProvider:
                 }
                 if response_format:
                     kwargs["response_format"] = response_format
+                # reasoning_effort solo lo aceptan los modelos gpt-oss; en otros
+                # daría 400, así que lo filtramos por nombre.
+                if reasoning_effort and "gpt-oss" in modelo:
+                    kwargs["reasoning_effort"] = reasoning_effort
                 response = self.client.chat.completions.create(
                     model=modelo,
                     messages=mensajes,

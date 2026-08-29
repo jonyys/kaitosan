@@ -8,12 +8,13 @@ class FallbackProvider:
 
     def completar(self, mensajes: list, max_tokens: int = None,
                   response_format: dict = None, temperature: float = None,
-                  strict: bool = False) -> str:
+                  strict: bool = False, reasoning_effort: str = None) -> str:
         try:
             return self.groq.completar(mensajes, max_tokens=max_tokens,
                                        response_format=response_format,
                                        temperature=temperature,
-                                       strict=strict)
+                                       strict=strict,
+                                       reasoning_effort=reasoning_effort)
         except Exception as e:
             if strict:
                 raise  # no hay fallback aceptable — dejar que el caller decida

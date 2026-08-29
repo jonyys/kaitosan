@@ -10,7 +10,13 @@ import threading
 from datetime import datetime
 
 from ai.sensei.curriculum import siguiente_items_nuevos
-from core.config import MAX_ITEMS_NUEVOS, MAX_TOKENS_SENSEI, TEMPERATURE_SENSEI, THROTTLE_DUE
+from core.config import (
+    MAX_ITEMS_NUEVOS,
+    MAX_TOKENS_SENSEI,
+    REASONING_EFFORT_SENSEI,
+    TEMPERATURE_SENSEI,
+    THROTTLE_DUE,
+)
 
 # ── Constantes ────────────────────────────────────────────────────────────────
 
@@ -250,10 +256,17 @@ class ProfesorJapones:
                 historial_sensei,
                 max_tokens=MAX_TOKENS_SENSEI,
                 temperature=TEMPERATURE_SENSEI,
+                reasoning_effort=REASONING_EFFORT_SENSEI,
             )
         except Exception as e:
             print(f"❌ Error LLM en modo sensei: {e}")
             return "【ちょっとまってください。】 Un momento, hubo un problema técnico."
+
+        # El modelo a veces devuelve vacío (todo el presupuesto se fue en
+        # razonamiento). No guardamos el turno y pedimos que repita.
+        if not respuesta or not respuesta.strip():
+            print("⚠️ Respuesta vacía del LLM en modo sensei")
+            return "Perdona, se me ha cruzado un cable. ¿Me lo repites? 【もういちど おねがいします】"
 
         # Guardar turno limpio en el historial propio
         self.mensajes.append({"role": "user", "content": mensaje})
@@ -515,9 +528,10 @@ class ProfesorJapones:
         # un modelo alternativo produce JSON corrupto que contamina la BD.
         return self.provider.completar(
             historial,
-            max_tokens=700,
+            max_tokens=1000,
             response_format={"type": "json_object"},
             strict=True,
+            reasoning_effort="low",
         )
 
     def _parsear_json_sesion(self, texto: str):
