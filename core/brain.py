@@ -21,7 +21,7 @@ class Brain:
     def __init__(self, state_manager, socketio):
         self.state = state_manager
         self.socketio = socketio
-        self.provider = FallbackProvider(model="llama-3.3-70b-versatile")
+        self.provider = FallbackProvider(model="openai/gpt-oss-120b")
         self.memory = Memory()
         self.jap_memory = JapaneseMemory(DB_PATH)
         self.session_id = None

@@ -114,7 +114,7 @@ class ProfesorJapones:
     def __init__(self, jap_memory, provider, memory, socketio):
         """
         jap_memory — JapaneseMemory (capa de datos japonés + SRS)
-        provider   — proveedor LLM principal (llama-3.3-70b)
+        provider   — proveedor LLM principal (openai/gpt-oss-120b)
         memory     — core.memory.Memory (perfil general de Laura)
         socketio   — instancia Flask-SocketIO para emitir eventos
         """

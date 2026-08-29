@@ -2,7 +2,7 @@ from ai.groq_provider import GroqProvider
 from ai.gemini_provider import GeminiProvider
 
 class FallbackProvider:
-    def __init__(self, model="llama-3.3-70b-versatile"):
+    def __init__(self, model="openai/gpt-oss-120b"):
         self.groq = GroqProvider(model=model)
         self.gemini = GeminiProvider()
 

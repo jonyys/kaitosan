@@ -8,15 +8,15 @@ class GroqProvider:
         self.client = Groq(api_key=GROQ_API_KEY, max_retries=0)
         self.model = model
         self.modelos_alternativos = [
-            "llama-3.1-8b-instant",
-            "gemma2-9b-it",
+            "openai/gpt-oss-20b",
+            "qwen/qwen3.8-27b",
         ]
         # Modelos capaces de manejar tool calls correctamente
         self.modelos_tools = [
-            "llama-3.3-70b-versatile",
             "openai/gpt-oss-120b",
+            "qwen/qwen3.8-27b",
+            "openai/gpt-oss-20b",
             "groq/compound",
-            "qwen/qwen3.6-27b",
         ]
         self.tracker = TokenTracker()
 
