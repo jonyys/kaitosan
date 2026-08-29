@@ -25,6 +25,12 @@ THROTTLE_DUE = 12      # si hay ≥ N repasos vencidos, no introducir ítems nue
 # Busqueda en internet
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "")
 
+# Audio: subcadena para forzar el dispositivo de salida/entrada por nombre.
+# Vacío = autodetección (salida: hifiberry → G435; entrada: AB17X → G435).
+# Ej.: AUDIO_OUTPUT_HINT=G435 para escuchar por los cascos.
+AUDIO_OUTPUT_HINT = os.getenv("AUDIO_OUTPUT_HINT", "").strip()
+AUDIO_INPUT_HINT = os.getenv("AUDIO_INPUT_HINT", "").strip()
+
 # Azure Speech — evaluación de pronunciación en modo sensei (tier gratuito F0)
 # F0 da 5 h de audio STT/pronunciación al mes. Dejamos margen: ~4 h 40 min.
 AZURE_SPEECH_KEY = os.getenv("AZURE_SPEECH_KEY", "")

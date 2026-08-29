@@ -12,13 +12,15 @@ SAMPLE_RATE_DEVICE = 48000
 SAMPLE_RATE_STT = 16000
 
 def buscar_microfono():
-    for i, d in enumerate(sd.query_devices()):
-        if d["max_input_channels"] > 0 and "AB17X" in d["name"]:
-            return i
-    for i, d in enumerate(sd.query_devices()):
-        if d["max_input_channels"] > 0 and "G435" in d["name"]:
-            return i
-    raise RuntimeError("No se encontró micrófono (AB17X ni G435)")
+    from core.config import AUDIO_INPUT_HINT
+
+    devs = list(enumerate(sd.query_devices()))
+    hints = [AUDIO_INPUT_HINT] if AUDIO_INPUT_HINT else ["AB17X", "G435"]
+    for h in hints:
+        for i, d in devs:
+            if d["max_input_channels"] > 0 and h.lower() in d["name"].lower():
+                return i
+    raise RuntimeError(f"No se encontró micrófono ({' ni '.join(hints)})")
 
 class Recorder:
     def __init__(self, device=None, sample_rate=SAMPLE_RATE_DEVICE):

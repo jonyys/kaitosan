@@ -11,13 +11,15 @@ import threading
 import time as tmod
 
 def buscar_altavoz():
-    for i, d in enumerate(sd.query_devices()):
-        if d["max_output_channels"] > 0 and "hifiberry" in d["name"].lower():
-            return i
-    for i, d in enumerate(sd.query_devices()):
-        if d["max_output_channels"] > 0 and "G435" in d["name"]:
-            return i
-    raise RuntimeError("No se encontró altavoz (hifiberry ni G435)")
+    from core.config import AUDIO_OUTPUT_HINT
+
+    devs = list(enumerate(sd.query_devices()))
+    hints = [AUDIO_OUTPUT_HINT] if AUDIO_OUTPUT_HINT else ["hifiberry", "G435"]
+    for h in hints:
+        for i, d in devs:
+            if d["max_output_channels"] > 0 and h.lower() in d["name"].lower():
+                return i
+    raise RuntimeError(f"No se encontró altavoz ({' ni '.join(hints)})")
 
 
 class TextToSpeech:
