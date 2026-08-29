@@ -24,3 +24,14 @@ THROTTLE_DUE = 12      # si hay ≥ N repasos vencidos, no introducir ítems nue
 
 # Busqueda en internet
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "")
+
+# Azure Speech — evaluación de pronunciación en modo sensei (tier gratuito F0)
+# F0 da 5 h de audio STT/pronunciación al mes. Dejamos margen: ~4 h 40 min.
+AZURE_SPEECH_KEY = os.getenv("AZURE_SPEECH_KEY", "")
+AZURE_SPEECH_REGION = os.getenv("AZURE_SPEECH_REGION", "westeurope")
+AZURE_STT_LIMITE_SEG_MES = int(os.getenv("AZURE_STT_LIMITE_SEG_MES", "16800"))
+# Por defecto la pronunciación solo se evalúa en modo sensei estructurado.
+# Ponlo a true para evaluarla también en el modo charla (gasta cuota más rápido).
+AZURE_PRON_EN_CHARLA = os.getenv("AZURE_PRON_EN_CHARLA", "false").strip().lower() in (
+    "1", "true", "yes", "si", "sí", "on",
+)

@@ -192,12 +192,16 @@ class ProfesorJapones:
 
     # ── Turno de conversación ─────────────────────────────────────────────────
 
-    def responder_turno(self, mensaje: str, lento_extra: bool = False) -> str:
+    def responder_turno(self, mensaje: str, lento_extra: bool = False, pron_contexto: str = None) -> str:
         """Genera la respuesta del sensei para un turno.
 
         Construye el historial desde cero usando el estado actual (SRS +
         currículo) sin tocar el historial de Brain. No lanza excepciones al
         exterior — ante fallos del proveedor devuelve mensaje de error amable.
+
+        `pron_contexto` — resumen de la evaluación de pronunciación de Azure
+        para este audio (o None). Se inyecta en el turno del usuario para que el
+        profesor dé feedback específico; NO se guarda en el historial limpio.
         """
         from ai.prompts import cargar_prompt  # import diferido para evitar ciclos
 
@@ -229,7 +233,16 @@ class ProfesorJapones:
         # Últimos MAX_TURNOS pares de la sesión actual
         historial_sensei.extend(self.mensajes[-(MAX_TURNOS * 2):])
 
-        historial_sensei.append({"role": "user", "content": mensaje})
+        contenido_usuario = mensaje
+        if pron_contexto:
+            contenido_usuario += (
+                "\n\n[EVALUACIÓN DE PRONUNCIACIÓN de este audio de Laura (no la leas "
+                "en voz alta ni menciones que existe un sistema que puntúa):\n"
+                f"{pron_contexto}\n"
+                "Dale como mucho UN consejo concreto y amable sobre un sonido flojo; "
+                "si la precisión es alta, basta con celebrarlo en una frase.]"
+            )
+        historial_sensei.append({"role": "user", "content": contenido_usuario})
 
         # Llamar al LLM
         try:

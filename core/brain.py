@@ -49,8 +49,12 @@ class Brain:
         ]
         print(f"✅ Sesión {self.session_id} iniciada")
 
-    def responder(self, mensaje: str) -> tuple[str, bool]:
-        """Devuelve siempre (respuesta, lento_extra)."""
+    def responder(self, mensaje: str, pron_contexto: str = None) -> tuple[str, bool]:
+        """Devuelve siempre (respuesta, lento_extra).
+
+        `pron_contexto` — resumen de pronunciación (Azure) del audio de este
+        turno; solo se usa cuando el modo sensei está activo.
+        """
 
         # ── Comandos de modo sensei ──
         _msg = mensaje.lower()
@@ -81,7 +85,7 @@ class Brain:
 
         if self.profesor.esta_activo():
             lento_extra = any(p in mensaje.lower() for p in ["más lento", "despacio", "lentamente", "despacito"])
-            respuesta = self.profesor.responder_turno(mensaje, lento_extra)
+            respuesta = self.profesor.responder_turno(mensaje, lento_extra, pron_contexto=pron_contexto)
             self.memory.guardar_mensaje(self.session_id, "user", mensaje)
             self.memory.guardar_mensaje(self.session_id, "assistant", respuesta)
             print(f"🤖 Kaito [sensei]: {respuesta}")

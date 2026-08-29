@@ -13,7 +13,7 @@ from flask import flash, redirect, url_for, session, request
 from functools import wraps
 from datetime import timedelta, date
 from audio.recorder import Recorder
-from ai.speech_to_text import SpeechToText
+from ai.speech_to_text import SpeechToText, transcribir_para_turno
 from ai.text_to_speech import TextToSpeech
 from core.token_tracker import TokenTracker
 
@@ -109,10 +109,13 @@ def grabar():
             state.cambiar("error")
             return jsonify({"error": "Error grabando"}), 500
 
-        # Transcribe
-        # Usar japonés si estamos en modo sensei, español en caso contrario
-        idioma_stt = None if brain.profesor.esta_activo() else "es"
-        texto = stt.transcribir(archivo, idioma=idioma_stt)
+        # Transcribe. En modo sensei estructurado se usa Azure (pronunciación);
+        # en charla y fuera de sensei, Groq Whisper.
+        texto, pron_ctx = transcribir_para_turno(
+            stt, archivo,
+            sensei_activo=brain.profesor.esta_activo(),
+            modo_conv=brain.profesor.modo_conv,
+        )
 
         if not texto:
             state.cambiar("idle")
@@ -122,7 +125,7 @@ def grabar():
         state.cambiar("thinking")
 
         # Responde con Groq (siempre devuelve (respuesta, lento_extra))
-        respuesta, lento_extra = brain.responder(texto)
+        respuesta, lento_extra = brain.responder(texto, pron_contexto=pron_ctx)
 
         #state.cambiar("speaking")
         socketio.emit("mensaje", {"texto": respuesta})

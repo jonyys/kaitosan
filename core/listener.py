@@ -2,6 +2,7 @@ import re
 import time
 import threading
 from audio.wakeword import WakeWordDetector
+from ai.speech_to_text import transcribir_para_turno
 
 TIMEOUT_CONVERSACION_SEG = 3
 
@@ -52,14 +53,17 @@ class VoiceListener:
             self.state.cambiar("idle")
             return False
 
-        idioma_stt = None if self.brain.profesor.esta_activo() else "es"
-        texto = self.stt.transcribir(archivo, idioma=idioma_stt)
+        texto, pron_ctx = transcribir_para_turno(
+            self.stt, archivo,
+            sensei_activo=self.brain.profesor.esta_activo(),
+            modo_conv=self.brain.profesor.modo_conv,
+        )
         if not texto:
             self.state.cambiar("idle")
             return False
 
         self.state.cambiar("thinking")
-        respuesta, lento_extra = self.brain.responder(texto)
+        respuesta, lento_extra = self.brain.responder(texto, pron_contexto=pron_ctx)
         self.socketio.emit("mensaje", {"texto": respuesta})
 
         def al_iniciar_audio():

@@ -1,6 +1,7 @@
 flask
 flask-socketio
 groq
+requests
 edge-tts
 sounddevice
 soundfile

@@ -485,6 +485,60 @@ Sustituir la lógica "solo FOCO / redirigir" por comportamiento de tutor particu
 
 ---
 
+# FASE 9 — Pronunciación real vía Azure Speech (IMPLEMENTADA)
+
+**Objetivo.** Reintroducir feedback de pronunciación, pero **acústico**, no por
+comparación de transcripciones. La Fase 3 eliminó la comparación IPA porque Whisper
+normaliza la escritura y comparar el texto no detecta errores de habla. Azure
+**Pronunciation Assessment** puntúa la señal de audio contra un modelo nativo
+(precisión por fonema, fluidez, completeness), así que el razonamiento de la Fase 3
+**no le aplica**: no es la complejidad muerta que se quitó. NO revertir esta fase
+al "simplificar".
+
+**Diseño.**
+- Por defecto solo en **modo sensei estructurado** (`profesor.esta_activo() and
+  not modo_conv`). Con `AZURE_PRON_EN_CHARLA=true` (`.env`) también en el modo
+  charla, con una regla más suave en `profesor_japones_conv.txt` (comentario de
+  pasada, no en cada turno). Fuera de sensei se sigue usando Groq Whisper.
+- Azure devuelve transcripción **y** scores en una sola llamada REST
+  (`ai/speech_to_text.py::transcribir_con_pronunciacion`, modo *unscripted*: sin
+  `ReferenceText`, así no hace falta resucitar el tracking de frase objetivo que
+  borró la Fase 3).
+- **Tier gratuito F0**: ~5 h audio/mes. `core/token_tracker.py` lleva un contador
+  **mensual** (`azure_stt_seconds`, clave `YYYY-MM`, sobrevive al reset diario, se
+  reinicia al cambiar de mes). Límite con margen en `AZURE_STT_LIMITE_SEG_MES`
+  (`core/config.py`, por defecto 16 800 s ≈ 4 h 40 m). Al superarlo, o ante 403 de
+  Azure, cae a Groq Whisper de forma transparente.
+- **TTS sin cambios**: sigue en edge-tts (gratis e ilimitado, mismas voces
+  neuronales que Azure). No se toca.
+- El resumen de pronunciación se inyecta en el turno del usuario dentro de
+  `ProfesorJapones.responder_turno(..., pron_contexto=...)` (no se guarda en el
+  historial limpio ni en el transcript de cierre). Reglas de uso en
+  `ai/prompts/profesor_japones.txt` (sección PRONUNCIACIÓN + regla crítica 8).
+
+**Config.** `.env`: `AZURE_SPEECH_KEY` (vacío = Azure desactivado),
+`AZURE_SPEECH_REGION`, `AZURE_STT_LIMITE_SEG_MES`, `AZURE_PRON_EN_CHARLA`
+(por defecto `false`). Nueva dependencia: `requests` (import perezoso; si falta,
+Azure se desactiva sin romper el arranque).
+
+**Archivos tocados.** `core/config.py`, `core/token_tracker.py`,
+`ai/speech_to_text.py` (+ helper `transcribir_para_turno`), `ai/sensei/profesor.py`,
+`core/brain.py`, `app.py` (`/grabar`), `core/listener.py` (`_ciclo_voz`),
+`ai/prompts/profesor_japones.txt`, `.env.example`, `requirements.txt`.
+
+**Verificación.**
+- [ ] Sin `AZURE_SPEECH_KEY`: `transcribir_para_turno` usa Groq Whisper y
+  `pron_contexto` es `None`; el modo sensei funciona igual que antes.
+- [ ] Con clave válida y en modo sensei estructurado: `/grabar` registra segundos
+  en `token_usage.json` → `monthly[YYYY-MM].azure_stt_seconds`, y la respuesta del
+  profesor incluye UN consejo de pronunciación sin leer cifras.
+- [ ] Forzar `AZURE_STT_LIMITE_SEG_MES=1`: la siguiente petición cae a Groq Whisper.
+- [ ] Modo charla con `AZURE_PRON_EN_CHARLA=false` (defecto): nunca llama a Azure.
+- [ ] Modo charla con `AZURE_PRON_EN_CHARLA=true`: llama a Azure y el colega mete
+  algún apunte de pronunciación de pasada (no en cada turno, sin números).
+
+---
+
 ## Apéndice — Tabla de archivos por fase
 
 | Archivo | F1 | F2 | F3 | F4 | F5 | F6 | F7 | F8 |
