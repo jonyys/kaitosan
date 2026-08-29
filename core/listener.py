@@ -57,6 +57,7 @@ class VoiceListener:
             self.stt, archivo,
             sensei_activo=self.brain.profesor.esta_activo(),
             modo_conv=self.brain.profesor.modo_conv,
+            referencia=getattr(self.brain.profesor, "ultima_frase_objetivo", None),
         )
         if not texto:
             self.state.cambiar("idle")

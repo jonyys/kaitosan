@@ -115,6 +115,7 @@ def grabar():
             stt, archivo,
             sensei_activo=brain.profesor.esta_activo(),
             modo_conv=brain.profesor.modo_conv,
+            referencia=getattr(brain.profesor, "ultima_frase_objetivo", None),
         )
 
         if not texto:

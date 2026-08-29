@@ -7,6 +7,7 @@ import soundfile as sf
 from groq import Groq
 
 from core.config import (
+    AZURE_PRON_DEBUG,
     AZURE_PRON_EN_CHARLA,
     AZURE_SPEECH_KEY,
     AZURE_SPEECH_REGION,
@@ -55,10 +56,14 @@ class SpeechToText:
             return ""
 
     # ── Azure Speech: transcripción + evaluación de pronunciación ────────────
-    def transcribir_con_pronunciacion(self, archivo_audio: str) -> dict | None:
+    def transcribir_con_pronunciacion(self, archivo_audio: str, referencia: str = None) -> dict | None:
         """Envía el audio a Azure Speech (japonés) y devuelve un dict:
 
             {"texto": "<transcripción>", "pron": "<resumen legible o None>"}
+
+        `referencia` — frase que Laura debía decir. Si se pasa, Azure evalúa en
+        modo *scripted* (compara palabra a palabra y marca Mispronunciation /
+        Omission / Insertion). Sin referencia, evaluación libre (menos útil).
 
         Devuelve None si Azure no está configurado, si se ha agotado la cuota
         mensual del tier gratuito, o si la llamada falla por cualquier motivo
@@ -95,8 +100,9 @@ class SpeechToText:
                 tmp_pcm = t.name
             sf.write(tmp_pcm, data, sr, subtype="PCM_16")
 
+            ref = (referencia or "").strip()
             pron_cfg = base64.b64encode(json.dumps({
-                "ReferenceText": "",
+                "ReferenceText": ref,
                 "GradingSystem": "HundredMark",
                 "Granularity": "Phoneme",
                 "Dimension": "Comprehensive",
@@ -118,7 +124,8 @@ class SpeechToText:
                 "Accept": "application/json",
             }
 
-            print("🔄 Transcribiendo con Azure Speech (pronunciación)...")
+            modo = f"scripted → 「{ref}」" if ref else "libre"
+            print(f"🔄 Transcribiendo con Azure Speech (pronunciación, {modo})...")
             with open(tmp_pcm, "rb") as f:
                 audio_bytes = f.read()
             resp = requests.post(url, headers=headers, data=audio_bytes, timeout=15)
@@ -139,11 +146,12 @@ class SpeechToText:
             print(f"🎌 Azure este mes: {total}/{AZURE_STT_LIMITE_SEG_MES}s")
 
             best = body["NBest"][0]
+            if AZURE_PRON_DEBUG:
+                print("🔬 Azure NBest[0]:", json.dumps(best, ensure_ascii=False))
             texto = (best.get("Display") or best.get("Lexical") or "").strip()
-            pron = self._resumir_pronunciacion(best)
+            pron = self._resumir_pronunciacion(best, referencia=ref, oido=texto)
             print(f"✅ Transcripción (Azure): {texto}")
-            if pron:
-                print(f"🗣️  Pronunciación: {pron.replace(chr(10), ' | ')}")
+            print(f"🗣️  Pronunciación: {pron.replace(chr(10), '  |  ') if pron else 'sin datos de evaluación en la respuesta de Azure'}")
             return {"texto": texto, "pron": pron}
 
         except Exception as e:
@@ -157,50 +165,70 @@ class SpeechToText:
                     pass
 
     @staticmethod
-    def _resumir_pronunciacion(best: dict) -> str | None:
-        """Convierte la respuesta de Azure en un resumen breve para el profesor."""
+    def _resumir_pronunciacion(best: dict, referencia: str = "", oido: str = "") -> str | None:
+        """Convierte la respuesta de Azure en un resumen legible para el profesor
+        (y para la consola)."""
         pa = best.get("PronunciationAssessment") or {}
         acc = pa.get("AccuracyScore")
         flu = pa.get("FluencyScore")
-        pro = pa.get("ProsodyScore")
-        if acc is None and flu is None:
+        comp = pa.get("CompletenessScore")
+        pron = pa.get("PronScore")
+        palabras = best.get("Words") or []
+
+        if acc is None and flu is None and not palabras:
             return None
 
         partes = []
+        if pron is not None:
+            partes.append(f"Global {pron:.0f}/100")
         if acc is not None:
-            partes.append(f"Precisión: {acc:.0f}/100")
+            partes.append(f"Precisión {acc:.0f}")
         if flu is not None:
-            partes.append(f"Fluidez: {flu:.0f}/100")
-        if pro is not None:
-            partes.append(f"Prosodia: {pro:.0f}/100")
-        lineas = [" · ".join(partes)]
+            partes.append(f"Fluidez {flu:.0f}")
+        if comp is not None:
+            partes.append(f"Completitud {comp:.0f}")
+        lineas = [" · ".join(partes)] if partes else []
 
-        # Fonemas más flojos (puntuación < 60), como mucho 3.
+        # Palabras con problema (ErrorType != None o puntuación baja).
+        malas = []
         flojos = []
-        for w in best.get("Words", []) or []:
+        for w in palabras:
             palabra = w.get("Word", "")
+            wpa = w.get("PronunciationAssessment") or {}
+            etype = wpa.get("ErrorType", "None")
+            wscore = wpa.get("AccuracyScore")
+            if etype and etype != "None":
+                malas.append(f"{palabra} [{etype}{f', {wscore:.0f}' if wscore is not None else ''}]")
+            elif wscore is not None and wscore < 60:
+                malas.append(f"{palabra} [flojo, {wscore:.0f}]")
             for ph in w.get("Phonemes", []) or []:
-                score = (ph.get("PronunciationAssessment") or {}).get("AccuracyScore")
-                if score is not None and score < 60:
-                    flojos.append((score, ph.get("Phoneme", ""), palabra))
+                pscore = (ph.get("PronunciationAssessment") or {}).get("AccuracyScore")
+                if pscore is not None and pscore < 50:
+                    flojos.append((pscore, ph.get("Phoneme", ""), palabra))
+
+        if malas:
+            lineas.append("Palabras con problema: " + ", ".join(malas))
         flojos.sort(key=lambda x: x[0])
         if flojos:
-            detalle = ", ".join(
-                f"{ph} en 「{palabra}」 ({score:.0f})" for score, ph, palabra in flojos[:3]
+            lineas.append(
+                "Sonidos peor pronunciados: "
+                + ", ".join(f"{ph} en 「{pal}」 ({sc:.0f})" for sc, ph, pal in flojos[:4])
             )
-            lineas.append(f"Sonidos flojos: {detalle}")
-        elif acc is not None and acc >= 80:
+        if referencia and oido and oido.replace(" ", "") != referencia.replace(" ", ""):
+            lineas.append(f"Objetivo: 「{referencia}」 — se entendió: 「{oido}」")
+        if not malas and not flojos and acc is not None and acc >= 80:
             lineas.append("Sin errores destacables.")
 
-        return "\n".join(lineas)
+        return "\n".join(l for l in lineas if l) or None
 
 
-def transcribir_para_turno(stt: SpeechToText, archivo: str, *, sensei_activo: bool, modo_conv: bool):
+def transcribir_para_turno(stt: SpeechToText, archivo: str, *, sensei_activo: bool,
+                           modo_conv: bool, referencia: str = None):
     """Enruta la transcripción de un turno.
 
     - Sensei estructurado (activo y no charla): intenta Azure para obtener
-      también la evaluación de pronunciación; si Azure no está disponible o sin
-      cuota, cae a Groq Whisper con autodetección de idioma.
+      también la evaluación de pronunciación (contra `referencia` si la hay); si
+      Azure no está disponible o sin cuota, cae a Groq Whisper con autodetección.
     - Sensei charla: igual que estructurado solo si AZURE_PRON_EN_CHARLA está
       activo; si no, Groq Whisper con autodetección y sin pronunciación.
     - Fuera de sensei: Groq Whisper en español.
@@ -209,7 +237,7 @@ def transcribir_para_turno(stt: SpeechToText, archivo: str, *, sensei_activo: bo
     resumen de pronunciación o None.
     """
     if sensei_activo and (not modo_conv or AZURE_PRON_EN_CHARLA):
-        res = stt.transcribir_con_pronunciacion(archivo)
+        res = stt.transcribir_con_pronunciacion(archivo, referencia=referencia)
         if res is not None:
             return res["texto"], res.get("pron")
         return stt.transcribir(archivo, idioma=None), None

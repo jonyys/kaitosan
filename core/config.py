@@ -41,6 +41,10 @@ AUDIO_INPUT_HINT = os.getenv("AUDIO_INPUT_HINT", "").strip()
 AZURE_SPEECH_KEY = os.getenv("AZURE_SPEECH_KEY", "")
 AZURE_SPEECH_REGION = os.getenv("AZURE_SPEECH_REGION", "westeurope")
 AZURE_STT_LIMITE_SEG_MES = int(os.getenv("AZURE_STT_LIMITE_SEG_MES", "16800"))
+# Vuelca en consola el JSON de evaluación que devuelve Azure (para depurar).
+AZURE_PRON_DEBUG = os.getenv("AZURE_PRON_DEBUG", "false").strip().lower() in (
+    "1", "true", "yes", "si", "sí", "on",
+)
 # Por defecto la pronunciación solo se evalúa en modo sensei estructurado.
 # Ponlo a true para evaluarla también en el modo charla (gasta cuota más rápido).
 AZURE_PRON_EN_CHARLA = os.getenv("AZURE_PRON_EN_CHARLA", "false").strip().lower() in (

@@ -54,6 +54,26 @@ CAMBIO_A_ESTUDIO = [
 
 _QUALITY_MAP = {"bien": 5, "duda": 3, "mal": 1}
 
+# Bloques 【...】 que contienen al menos un kana/kanji (con o sin puntuación dentro).
+_RE_BLOQUE_JP = re.compile(
+    r'【([^【】]*[぀-ゟ゠-ヿ一-鿿][^【】]*)】'
+)
+
+
+def _extraer_frase_objetivo(texto: str):
+    """La frase que el profesor quiere que Laura repita.
+
+    Heurística: la ÚLTIMA expresión 【】 de ≥ 4 caracteres (suele ser la frase
+    completa que se pide repetir, al final del turno). Si no hay ninguna larga,
+    el bloque más largo que haya (p. ej. 'repite 【みず】')."""
+    bloques = [b.strip() for b in _RE_BLOQUE_JP.findall(texto or "") if b.strip()]
+    if not bloques:
+        return None
+    frases = [b for b in bloques if len(b) >= 4]
+    if frases:
+        return frases[-1]
+    return max(bloques, key=len)
+
 _EXTRACCION_PROMPT = (
     "Eres un extractor de datos de sesiones de japonés.\n"
     "Analiza la conversación y devuelve ÚNICAMENTE un JSON con este esquema exacto:\n\n"
@@ -134,6 +154,8 @@ class ProfesorJapones:
         self.timer = None
         self.session_id = None
         self.mensajes = []          # historial propio de la sesión sensei (solo user/assistant)
+        # Frase que el profesor pidió repetir en su último turno (ReferenceText de Azure).
+        self.ultima_frase_objetivo = None
 
         # Estado del último FOCO (para cierre resiliente en Fase 4)
         self._foco_due_vocab = []
@@ -150,6 +172,7 @@ class ProfesorJapones:
         self.activo = True
         self.modo_conv = conv
         self.mensajes = []
+        self.ultima_frase_objetivo = None
         self._foco_due_vocab = []
         self._foco_due_gram = []
         self._foco_nuevos = []
@@ -242,11 +265,14 @@ class ProfesorJapones:
         contenido_usuario = mensaje
         if pron_contexto:
             contenido_usuario += (
-                "\n\n[EVALUACIÓN DE PRONUNCIACIÓN de este audio de Laura (no la leas "
-                "en voz alta ni menciones que existe un sistema que puntúa):\n"
+                "\n\n[EVALUACIÓN DE PRONUNCIACIÓN del audio de Laura (no la leas en voz "
+                "alta ni menciones que hay un sistema que puntúa):\n"
                 f"{pron_contexto}\n"
-                "Dale como mucho UN consejo concreto y amable sobre un sonido flojo; "
-                "si la precisión es alta, basta con celebrarlo en una frase.]"
+                "Dile de forma concreta y amable QUÉ palabra o sonido le ha fallado y cómo "
+                "suena bien. Si una palabra sale marcada como Mispronunciation u Omission, "
+                "nómbrala explícitamente entre 【】. Si hay 'se entendió: ...', dile que has "
+                "oído eso y cuál era la palabra correcta. No te limites a 'inténtalo otra "
+                "vez'. Si todo está por encima de 80, felicítala en una frase.]"
             )
         historial_sensei.append({"role": "user", "content": contenido_usuario})
 
@@ -271,6 +297,11 @@ class ProfesorJapones:
         # Guardar turno limpio en el historial propio
         self.mensajes.append({"role": "user", "content": mensaje})
         self.mensajes.append({"role": "assistant", "content": respuesta})
+
+        # Frase objetivo para la evaluación de pronunciación del PRÓXIMO turno.
+        self.ultima_frase_objetivo = _extraer_frase_objetivo(respuesta)
+        if self.ultima_frase_objetivo:
+            print(f"🎯 Frase objetivo: {self.ultima_frase_objetivo}")
 
         return respuesta
 
