@@ -1,6 +1,7 @@
 import base64
 import json
 import os
+import re
 import tempfile
 
 import soundfile as sf
@@ -32,6 +33,21 @@ def _num(d: dict, clave: str):
 
 def _norm_jp(s: str) -> str:
     return "".join(c for c in (s or "") if c not in _PUNT_JP)
+
+
+_RE_JP_CHARS = re.compile(r'[぀-ヿ㐀-䶿一-鿿ｦ-ﾝ]')
+_RE_LATIN = re.compile(r'[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]')
+
+
+def _es_mayormente_japones(texto: str) -> bool:
+    """True si la transcripción es japonés (kana/kanji) con, como mucho, alguna
+    letra latina suelta. Sirve para decidir si merece la pena llamar a Azure:
+    si Laura contestó en español, nos quedamos con Whisper."""
+    jp = len(_RE_JP_CHARS.findall(texto or ""))
+    lat = len(_RE_LATIN.findall(texto or ""))
+    if jp == 0:
+        return False
+    return lat <= max(2, jp * 0.25)
 
 
 class SpeechToText:
@@ -265,21 +281,29 @@ def transcribir_para_turno(stt: SpeechToText, archivo: str, *, sensei_activo: bo
                            modo_conv: bool, referencia: str = None):
     """Enruta la transcripción de un turno.
 
-    - Sensei estructurado (activo y no charla): intenta Azure para obtener
-      también la evaluación de pronunciación (contra `referencia` si la hay); si
-      Azure no está disponible o sin cuota, cae a Groq Whisper con autodetección.
-    - Sensei charla: igual que estructurado solo si AZURE_PRON_EN_CHARLA está
-      activo; si no, Groq Whisper con autodetección y sin pronunciación.
+    - Sensei estructurado + hay `referencia` (el profesor pidió repetir una frase):
+      primero Groq Whisper (autodetección). Si lo que dijo Laura es japonés, se
+      llama a Azure para la evaluación de pronunciación contra `referencia`; si
+      contestó en español (o mezcla), nos quedamos con la transcripción de Whisper
+      y no se evalúa nada.
+    - Sensei sin `referencia` (respuesta libre, sí/no, comprensión…): Groq Whisper
+      con autodetección.
+    - Sensei charla: solo evalúa si AZURE_PRON_EN_CHARLA está activo.
     - Fuera de sensei: Groq Whisper en español.
 
     Devuelve `(texto, pron_contexto)` donde `pron_contexto` es un string con el
     resumen de pronunciación o None.
     """
-    if sensei_activo and (not modo_conv or AZURE_PRON_EN_CHARLA):
-        res = stt.transcribir_con_pronunciacion(archivo, referencia=referencia)
-        if res is not None:
-            return res["texto"], res.get("pron")
-        return stt.transcribir(archivo, idioma=None), None
+    quiere_pron = sensei_activo and referencia and (not modo_conv or AZURE_PRON_EN_CHARLA)
+    if quiere_pron:
+        texto_w = stt.transcribir(archivo, idioma=None)
+        if texto_w and _es_mayormente_japones(texto_w):
+            res = stt.transcribir_con_pronunciacion(archivo, referencia=referencia)
+            if res is not None:
+                return res["texto"], res.get("pron")
+        elif texto_w:
+            print("🈳 Respuesta en español/mixta → sin evaluación de pronunciación")
+        return texto_w, None
 
     if sensei_activo:
         return stt.transcribir(archivo, idioma=None), None

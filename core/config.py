@@ -30,6 +30,10 @@ THROTTLE_DUE = 12      # si hay ≥ N repasos vencidos, no introducir ítems nue
 # Busqueda en internet
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "")
 
+# TTS: pausa (segundos) entre cada trozo de voz al alternar español/japonés.
+# Súbelo si lo dice demasiado seguido, bájalo (o 0) si hay huecos largos.
+TTS_PAUSA_SEGMENTOS = float(os.getenv("TTS_PAUSA_SEGMENTOS", "0.3"))
+
 # Audio: subcadena para forzar el dispositivo de salida/entrada por nombre.
 # Vacío = autodetección (salida: hifiberry → G435; entrada: AB17X → G435).
 # Ej.: AUDIO_OUTPUT_HINT=G435 para escuchar por los cascos.

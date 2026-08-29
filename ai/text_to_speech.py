@@ -129,9 +129,10 @@ class TextToSpeech:
         tts = edge_tts.Communicate(texto, voice=voz)
         await tts.save(tmp_path)
 
-    def _procesar_segmento(self, seg_path: str, es_japones: bool) -> str:
+    def _procesar_segmento(self, seg_path: str, es_japones: bool, pausa_final: float = 0.0) -> str:
         """Recorta el silencio de principio y fin (edge-tts mete bastante relleno,
-        y eso genera huecos audibles al concatenar) y ralentiza la voz japonesa.
+        y eso genera huecos audibles al concatenar), ralentiza la voz japonesa y
+        añade `pausa_final` segundos de silencio al final (separación entre trozos).
         Salida CBR 64k para que el concat con -c copy sea limpio."""
         filtros = []
         if es_japones:
@@ -144,6 +145,8 @@ class TextToSpeech:
                 "silenceremove=start_periods=1:start_duration=0.02:start_threshold=-45dB:detection=peak,"
                 "areverse")
         filtros.append(trim)
+        if pausa_final and pausa_final > 0:
+            filtros.append(f"apad=pad_dur={pausa_final:.3f}")
 
         out_path = seg_path.replace(".mp3", "_p.mp3")
         r = subprocess.run(
@@ -160,18 +163,28 @@ class TextToSpeech:
         """
         Genera el audio final uniendo los segmentos español y japonés.
         """
+        from core.config import TTS_PAUSA_SEGMENTOS
+
         texto = self._limpiar_markdown(texto)
         segmentos = self._dividir_texto(texto)
 
         if not segmentos:
             return
 
+        # La pausa entre trozos es fija; "más despacio" solo afecta al atempo del japonés.
+        pausa = TTS_PAUSA_SEGMENTOS
+
         # Generar y procesar cada segmento por separado
         seg_paths = []
+        ultimo = len(segmentos) - 1
         for i, (txt, voz) in enumerate(segmentos):
             seg_path = tmp_path.replace(".mp3", f"_seg{i}.mp3")
             await self._generar_audio_segmento(txt, voz, seg_path)
-            seg_path = self._procesar_segmento(seg_path, es_japones=(voz == self.voice_ja))
+            seg_path = self._procesar_segmento(
+                seg_path,
+                es_japones=(voz == self.voice_ja),
+                pausa_final=(pausa if i != ultimo else 0.0),
+            )
             seg_paths.append(seg_path)
 
         if len(seg_paths) == 1:

@@ -75,8 +75,11 @@ con un "Veredicto:" (BIEN / REGULAR / MAL), seguido de puntuaciones y una lista 
 - Nunca leas cifras en voz alta ni menciones que hay un sistema que puntúa: habla como un
   profesor que la ha escuchado.
 - La pronunciación es un dato más; no desplaza el FOCO ni el método de 3 pasos.
-- Cuando pidas que repita algo, escribe la frase objetivo o bien entre comillas 「…」 o como
-  UN único bloque 【】 al final del turno, para que el sistema sepa contra qué comparar.
+- Solo se evalúa la pronunciación cuando pides EXPRESAMENTE que repita/diga una frase
+  ("Repite: 【…】", "¿Cómo dirías…?"). En preguntas de comprensión o de sí/no, Laura responde
+  en español y no se puntúa nada — está bien hacerlas, pero no esperes evaluación.
+- Cuando quieras evaluación, termina el turno con la frase objetivo como UN único bloque 【】
+  (o entre 「…」), precedida de "Repite:" o similar.
 
 == FORMATO DE VOZ ==
 

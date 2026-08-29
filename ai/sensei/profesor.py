@@ -67,12 +67,19 @@ _FRASES_ANIMO = {
     "がんばろう", "もういちど", "もういちどおねがいします", "おねがいします",
     "そうです", "せいかい", "だいじょうぶ", "オーケー", "はい", "ええ",
 }
-# Señales de que el turno pide producción.
+# Señales de que el turno pide PRODUCIR una frase japonesa concreta.
 _PISTAS_PRODUCCION = (
-    "repite", "repítela", "repitela", "di conmigo", "dilo", "dime", "cómo dirías",
-    "como dirias", "cómo se dice", "como se dice", "inténtalo", "intentalo",
-    "prueba a decir", "completa la frase", "puedes decir", "puedes decirla",
-    "di la frase", "vuelve a decir",
+    "repite", "repítela", "repitela", "repite conmigo", "di conmigo", "dilo",
+    "cómo dirías", "como dirias", "cómo se dice", "como se dice", "inténtalo",
+    "intentalo", "prueba a decir", "practica diciendo", "completa la frase",
+    "puedes decir", "puedes decirla", "di la frase", "vuelve a decir", "dila",
+)
+# Señales de que el turno espera una respuesta EN ESPAÑOL (sí/no, comprensión):
+# ahí NO hay frase objetivo y no debe evaluarse pronunciación.
+_PISTAS_COMPRENSION = (
+    "sí o no", "si o no", "responde sí", "responde si", "contesta sí", "contesta si",
+    "¿entiendes", "¿lo entiendes", "¿comprendes", "¿qué significa", "¿que significa",
+    "¿sabes qué", "¿sabes que", "¿verdad?", "¿de acuerdo?", "¿vale?", "en español",
 )
 
 
@@ -81,18 +88,19 @@ def _limpiar_objetivo(s: str) -> str:
 
 
 def _extraer_frase_objetivo(texto: str):
-    """La frase que el profesor quiere que Laura repita, para comparar contra ella
-    en la evaluación de pronunciación del turno siguiente.
+    """La frase que el profesor pide REPETIR a Laura, para comparar contra ella en
+    la evaluación de pronunciación del turno siguiente.
 
-    Prioridad:
-      1. Lo que va entre 「…」 / 『…』 (el profesor suele escribir ahí la frase
-         a producir, aunque lleve 【】 dentro).
-      2. Si el turno pide producción ('repite', 'cómo dirías'…), el último bloque
-         【】 (ignorando frases de ánimo).
-      3. Si no, el bloque 【】 más largo, solo si parece una frase (≥ 5 chars).
-    Devuelve None si no hay un objetivo claro (mejor no comparar que comparar
-    contra un 'よくできました')."""
+    Devuelve None salvo que el turno pida producción explícita ('repite',
+    'cómo dirías'…) y NO sea una pregunta de comprensión / sí-no (en ese caso
+    Laura responde en español y no hay que puntuar nada)."""
     if not texto:
+        return None
+
+    bajo = texto.lower()
+    if any(p in bajo for p in _PISTAS_COMPRENSION):
+        return None
+    if not any(p in bajo for p in _PISTAS_PRODUCCION):
         return None
 
     entrecomillados = [
@@ -107,12 +115,8 @@ def _extraer_frase_objetivo(texto: str):
     if not bloques:
         return None
 
-    if any(p in texto.lower() for p in _PISTAS_PRODUCCION):
-        largos = [b for b in bloques if len(b) >= 4]
-        return (largos or bloques)[-1]
-
-    mas_largo = max(bloques, key=len)
-    return mas_largo if len(mas_largo) >= 5 else None
+    largos = [b for b in bloques if len(b) >= 4]
+    return (largos or bloques)[-1]
 
 _EXTRACCION_PROMPT = (
     "Eres un extractor de datos de sesiones de japonés.\n"
