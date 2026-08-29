@@ -70,10 +70,12 @@ _FRASES_ANIMO = {
 }
 # Señales de que el turno pide PRODUCIR una frase japonesa concreta.
 _PISTAS_PRODUCCION = (
-    "repite", "repítela", "repitela", "repite conmigo", "di conmigo", "dilo",
-    "cómo dirías", "como dirias", "cómo se dice", "como se dice", "inténtalo",
-    "intentalo", "prueba a decir", "practica diciendo", "completa la frase",
-    "puedes decir", "puedes decirla", "di la frase", "vuelve a decir", "dila",
+    "repit", "repít", "repet",  # repite, repítela, repíteme, repetir, repetirme…
+    "di conmigo", "dilo", "dila", "di la frase",
+    "cómo dirías", "como dirias", "cómo se dice", "como se dice",
+    "inténtalo", "intentalo", "prueba a decir", "practica diciendo",
+    "completa la frase", "puedes decir", "puedes decirla", "vuelve a decir",
+    "pronuncia", "a ver cómo suena", "dímelo",
 )
 # Señales de que el turno espera una respuesta EN ESPAÑOL (sí/no, comprensión):
 # ahí NO hay frase objetivo y no debe evaluarse pronunciación.
