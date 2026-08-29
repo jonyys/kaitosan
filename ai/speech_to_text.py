@@ -16,6 +16,21 @@ from core.config import (
 )
 from core.token_tracker import TokenTracker
 
+# Signos que no cuentan al comparar lo pedido con lo dicho.
+_PUNT_JP = "。、，．・…！？「」『』（）()【】　 \t\n"
+
+
+def _num(d: dict, clave: str):
+    """Lee una puntuación esté plana en el dict o anidada en PronunciationAssessment."""
+    v = d.get(clave)
+    if v is not None:
+        return v
+    return (d.get("PronunciationAssessment") or {}).get(clave)
+
+
+def _norm_jp(s: str) -> str:
+    return "".join(c for c in (s or "") if c not in _PUNT_JP)
+
 
 class SpeechToText:
     def __init__(self):
@@ -61,9 +76,10 @@ class SpeechToText:
 
             {"texto": "<transcripción>", "pron": "<resumen legible o None>"}
 
-        `referencia` — frase que Laura debía decir. Si se pasa, Azure evalúa en
-        modo *scripted* (compara palabra a palabra y marca Mispronunciation /
-        Omission / Insertion). Sin referencia, evaluación libre (menos útil).
+        Evaluación en modo *libre* (sin ReferenceText): así `Display` es la
+        transcripción real de lo que dijo Laura (en modo scripted Azure devuelve
+        el texto de referencia y no se sabe qué dijo de verdad). `referencia`, si
+        se pasa, solo se usa para comparar el objetivo con lo que se entendió.
 
         Devuelve None si Azure no está configurado, si se ha agotado la cuota
         mensual del tier gratuito, o si la llamada falla por cualquier motivo
@@ -102,7 +118,8 @@ class SpeechToText:
 
             ref = (referencia or "").strip()
             pron_cfg = base64.b64encode(json.dumps({
-                "ReferenceText": ref,
+                # Vacío = evaluación libre: Display = lo que Laura dijo de verdad.
+                "ReferenceText": "",
                 "GradingSystem": "HundredMark",
                 "Granularity": "Phoneme",
                 "Dimension": "Comprehensive",
@@ -124,8 +141,10 @@ class SpeechToText:
                 "Accept": "application/json",
             }
 
-            modo = f"scripted → 「{ref}」" if ref else "libre"
-            print(f"🔄 Transcribiendo con Azure Speech (pronunciación, {modo})...")
+            if ref:
+                print(f"🔄 Transcribiendo con Azure Speech (pronunciación, objetivo 「{ref}」)...")
+            else:
+                print("🔄 Transcribiendo con Azure Speech (pronunciación)...")
             with open(tmp_pcm, "rb") as f:
                 audio_bytes = f.read()
             resp = requests.post(url, headers=headers, data=audio_bytes, timeout=15)
@@ -167,59 +186,76 @@ class SpeechToText:
     @staticmethod
     def _resumir_pronunciacion(best: dict, referencia: str = "", oido: str = "") -> str | None:
         """Convierte la respuesta de Azure en un resumen legible para el profesor
-        (y para la consola)."""
-        pa = best.get("PronunciationAssessment") or {}
-        acc = pa.get("AccuracyScore")
-        flu = pa.get("FluencyScore")
-        comp = pa.get("CompletenessScore")
-        pron = pa.get("PronScore")
+        (y para la consola). Lee el formato PLANO del endpoint REST: las
+        puntuaciones cuelgan de `best` y de cada palabra directamente
+        (`best["AccuracyScore"]`, `word["ErrorType"]`), no de
+        `best["PronunciationAssessment"]` como en el SDK."""
+
+        acc = _num(best, "AccuracyScore")
+        flu = _num(best, "FluencyScore")
+        comp = _num(best, "CompletenessScore")
+        pron = _num(best, "PronScore")
         palabras = best.get("Words") or []
 
         if acc is None and flu is None and not palabras:
             return None
 
-        partes = []
-        if pron is not None:
-            partes.append(f"Global {pron:.0f}/100")
-        if acc is not None:
-            partes.append(f"Precisión {acc:.0f}")
-        if flu is not None:
-            partes.append(f"Fluidez {flu:.0f}")
-        if comp is not None:
-            partes.append(f"Completitud {comp:.0f}")
-        lineas = [" · ".join(partes)] if partes else []
+        overall = pron if pron is not None else acc
 
-        # Palabras con problema (ErrorType != None o puntuación baja).
+        # Palabras con problema: ErrorType real o puntuación baja.
         malas = []
-        flojos = []
         for w in palabras:
             palabra = w.get("Word", "")
-            wpa = w.get("PronunciationAssessment") or {}
-            etype = wpa.get("ErrorType", "None")
-            wscore = wpa.get("AccuracyScore")
+            etype = w.get("ErrorType") or (w.get("PronunciationAssessment") or {}).get("ErrorType") or "None"
+            wscore = _num(w, "AccuracyScore")
             if etype and etype != "None":
-                malas.append(f"{palabra} [{etype}{f', {wscore:.0f}' if wscore is not None else ''}]")
-            elif wscore is not None and wscore < 60:
-                malas.append(f"{palabra} [flojo, {wscore:.0f}]")
-            for ph in w.get("Phonemes", []) or []:
-                pscore = (ph.get("PronunciationAssessment") or {}).get("AccuracyScore")
-                if pscore is not None and pscore < 50:
-                    flojos.append((pscore, ph.get("Phoneme", ""), palabra))
+                extra = f", {wscore:.0f}/100" if wscore is not None else ""
+                malas.append(f"【{palabra}】 ({etype}{extra})")
+            elif wscore is not None and wscore < 55:
+                malas.append(f"【{palabra}】 (flojo, {wscore:.0f}/100)")
+
+        # ¿Dijo algo distinto a lo pedido?
+        ref_n, oido_n = _norm_jp(referencia), _norm_jp(oido)
+        dijo_otra_cosa = bool(ref_n) and bool(oido_n) and ref_n != oido_n
+
+        # Veredicto (para que el LLM no tenga que interpretar los números).
+        if dijo_otra_cosa:
+            veredicto = "MAL — ha dicho algo distinto a lo pedido"
+        elif overall is not None and overall < 55:
+            veredicto = f"MAL (global {overall:.0f}/100)"
+        elif malas:
+            veredicto = "REGULAR — hay palabras que corregir"
+        elif overall is not None and overall >= 78:
+            veredicto = f"BIEN (global {overall:.0f}/100)"
+        elif overall is not None:
+            veredicto = f"ACEPTABLE (global {overall:.0f}/100)"
+        else:
+            veredicto = "sin datos claros"
+
+        lineas = [f"Veredicto: {veredicto}"]
+
+        detalle = []
+        if overall is not None:
+            detalle.append(f"global {overall:.0f}")
+        if acc is not None:
+            detalle.append(f"precisión {acc:.0f}")
+        if flu is not None:
+            detalle.append(f"fluidez {flu:.0f}")
+        if comp is not None:
+            detalle.append(f"completitud {comp:.0f}")
+        if detalle:
+            lineas.append("Puntuaciones: " + " · ".join(detalle))
 
         if malas:
             lineas.append("Palabras con problema: " + ", ".join(malas))
-        flojos.sort(key=lambda x: x[0])
-        if flojos:
-            lineas.append(
-                "Sonidos peor pronunciados: "
-                + ", ".join(f"{ph} en 「{pal}」 ({sc:.0f})" for sc, ph, pal in flojos[:4])
-            )
-        if referencia and oido and oido.replace(" ", "") != referencia.replace(" ", ""):
-            lineas.append(f"Objetivo: 「{referencia}」 — se entendió: 「{oido}」")
-        if not malas and not flojos and acc is not None and acc >= 80:
-            lineas.append("Sin errores destacables.")
 
-        return "\n".join(l for l in lineas if l) or None
+        if referencia and ref_n:
+            if dijo_otra_cosa:
+                lineas.append(f"Se pidió 「{referencia}」 pero se ha oído 「{oido}」")
+            elif not malas:
+                lineas.append(f"Ha dicho la frase pedida 「{referencia}」.")
+
+        return "\n".join(lineas)
 
 
 def transcribir_para_turno(stt: SpeechToText, archivo: str, *, sensei_activo: bool,

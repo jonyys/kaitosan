@@ -55,24 +55,64 @@ CAMBIO_A_ESTUDIO = [
 _QUALITY_MAP = {"bien": 5, "duda": 3, "mal": 1}
 
 # Bloques 【...】 que contienen al menos un kana/kanji (con o sin puntuación dentro).
-_RE_BLOQUE_JP = re.compile(
-    r'【([^【】]*[぀-ゟ゠-ヿ一-鿿][^【】]*)】'
+_RE_BLOQUE_JP = re.compile(r'【([^【】]*[぀-ゟ゠-ヿ一-鿿][^【】]*)】')
+# Cualquier carácter japonés.
+_RE_JP_CHAR = re.compile(r'[぀-ゟ゠-ヿ一-鿿]')
+# Texto entre comillas japonesas 「…」 / 『…』.
+_RE_ENTRECOMILLADO = re.compile(r'[「『]([^「」『』]*)[」『』]')
+
+# Frases de ánimo/muletillas: NO son algo que Laura deba repetir.
+_FRASES_ANIMO = {
+    "よくできました", "いいね", "すごい", "じょうず", "じょうずです", "がんばって",
+    "がんばろう", "もういちど", "もういちどおねがいします", "おねがいします",
+    "そうです", "せいかい", "だいじょうぶ", "オーケー", "はい", "ええ",
+}
+# Señales de que el turno pide producción.
+_PISTAS_PRODUCCION = (
+    "repite", "repítela", "repitela", "di conmigo", "dilo", "dime", "cómo dirías",
+    "como dirias", "cómo se dice", "como se dice", "inténtalo", "intentalo",
+    "prueba a decir", "completa la frase", "puedes decir", "puedes decirla",
+    "di la frase", "vuelve a decir",
 )
 
 
-def _extraer_frase_objetivo(texto: str):
-    """La frase que el profesor quiere que Laura repita.
+def _limpiar_objetivo(s: str) -> str:
+    return (s or "").strip("　 \t\n、。・…！？!?「」『』()（）").replace("【", "").replace("】", "")
 
-    Heurística: la ÚLTIMA expresión 【】 de ≥ 4 caracteres (suele ser la frase
-    completa que se pide repetir, al final del turno). Si no hay ninguna larga,
-    el bloque más largo que haya (p. ej. 'repite 【みず】')."""
-    bloques = [b.strip() for b in _RE_BLOQUE_JP.findall(texto or "") if b.strip()]
+
+def _extraer_frase_objetivo(texto: str):
+    """La frase que el profesor quiere que Laura repita, para comparar contra ella
+    en la evaluación de pronunciación del turno siguiente.
+
+    Prioridad:
+      1. Lo que va entre 「…」 / 『…』 (el profesor suele escribir ahí la frase
+         a producir, aunque lleve 【】 dentro).
+      2. Si el turno pide producción ('repite', 'cómo dirías'…), el último bloque
+         【】 (ignorando frases de ánimo).
+      3. Si no, el bloque 【】 más largo, solo si parece una frase (≥ 5 chars).
+    Devuelve None si no hay un objetivo claro (mejor no comparar que comparar
+    contra un 'よくできました')."""
+    if not texto:
+        return None
+
+    entrecomillados = [
+        _limpiar_objetivo(m) for m in _RE_ENTRECOMILLADO.findall(texto)
+    ]
+    entrecomillados = [e for e in entrecomillados if _RE_JP_CHAR.search(e) and len(e) >= 3]
+    if entrecomillados:
+        return entrecomillados[-1]
+
+    bloques = [_limpiar_objetivo(b) for b in _RE_BLOQUE_JP.findall(texto)]
+    bloques = [b for b in bloques if b and b not in _FRASES_ANIMO]
     if not bloques:
         return None
-    frases = [b for b in bloques if len(b) >= 4]
-    if frases:
-        return frases[-1]
-    return max(bloques, key=len)
+
+    if any(p in texto.lower() for p in _PISTAS_PRODUCCION):
+        largos = [b for b in bloques if len(b) >= 4]
+        return (largos or bloques)[-1]
+
+    mas_largo = max(bloques, key=len)
+    return mas_largo if len(mas_largo) >= 5 else None
 
 _EXTRACCION_PROMPT = (
     "Eres un extractor de datos de sesiones de japonés.\n"
@@ -268,11 +308,12 @@ class ProfesorJapones:
                 "\n\n[EVALUACIÓN DE PRONUNCIACIÓN del audio de Laura (no la leas en voz "
                 "alta ni menciones que hay un sistema que puntúa):\n"
                 f"{pron_contexto}\n"
-                "Dile de forma concreta y amable QUÉ palabra o sonido le ha fallado y cómo "
-                "suena bien. Si una palabra sale marcada como Mispronunciation u Omission, "
-                "nómbrala explícitamente entre 【】. Si hay 'se entendió: ...', dile que has "
-                "oído eso y cuál era la palabra correcta. No te limites a 'inténtalo otra "
-                "vez'. Si todo está por encima de 80, felicítala en una frase.]"
+                "Haz caso al 'Veredicto':\n"
+                "- Si es BIEN: felicítala en una frase y sigue.\n"
+                "- Si es REGULAR o MAL: NO digas que lo ha dicho bien. Nombra la palabra "
+                "fallida entre 【】 y di cómo suena la correcta, de forma breve y amable.\n"
+                "- Si dice que ha dicho algo distinto a lo pedido: dile qué has oído y cuál "
+                "era la frase, y pídele que la repita.]"
             )
         historial_sensei.append({"role": "user", "content": contenido_usuario})
 
