@@ -9,6 +9,7 @@ import re
 import threading
 from datetime import datetime
 
+from ai.prompts import cargar_prompt
 from ai.sensei.curriculum import siguiente_items_nuevos
 from core.config import (
     MAX_ITEMS_NUEVOS,
@@ -115,68 +116,12 @@ def _extraer_frase_objetivo(texto: str):
     if not bloques:
         return None
 
-    largos = [b for b in bloques if len(b) >= 4]
-    return (largos or bloques)[-1]
+    # El prompt pide terminar el turno con la frase objetivo como último bloque
+    # 【】 ("Repite: 【…】"). Así que el objetivo es el ÚLTIMO bloque, no el más
+    # largo (antes cogía 【お元気ですか】 en vez de 【晴れた】 por tener más letras).
+    return bloques[-1]
 
-_EXTRACCION_PROMPT = (
-    "Eres un extractor de datos de sesiones de japonés.\n"
-    "Analiza la conversación y devuelve ÚNICAMENTE un JSON con este esquema exacto:\n\n"
-    '{\n'
-    '  "summary": "<2-3 frases sobre qué se trabajó en la sesión>",\n'
-    '  "reviewed": [{"jp": "<ítem en japonés sin corchetes>", "resultado": "bien|duda|mal"}],\n'
-    '  "new_items": [{"category": "vocabulario|gramatica", "jp": "<japonés sin corchetes>", "es": "<español>"}]\n'
-    '}\n\n'
-    "Reglas:\n"
-    "- Incluye SOLO ítems que aparecieron realmente en la conversación.\n"
-    "- Los ítems en japonés van sin los corchetes 【】.\n"
-    "- reviewed: TODO lo que el alumno intentó producir o practicar, en dos tipos:\n"
-    "  * VOCABULARIO: palabras sueltas y expresiones fijas (みず, ありがとう, みずをください…).\n"
-    "  * GRAMÁTICA / CONJUGACIÓN: cuando Laura usó un patrón de conjugación o estructura,\n"
-    "    añade el PATRÓN CANÓNICO, NO el verbo concreto. Ejemplos:\n"
-    "      - dijo 食べた, 行った → jp: '〜た'\n"
-    "      - dijo 食べています → jp: '〜ている'\n"
-    "      - dijo むずかしくない → jp: '〜くない'\n"
-    "      - dijo おいしかった → jp: '〜かった'\n"
-    "      - dijo 食べてください → jp: '〜てください'\n"
-    "      - usó は/が/を/に en una oración → jp: la partícula (は, が…)\n"
-    "    Usa el jp exacto del FOCO si el patrón aparece en él.\n"
-    "  Juzga resultado: bien (correcto o casi), duda (intentó con errores), mal (no lo logró).\n"
-    "- new_items: vocabulario, expresiones o puntos gramaticales introducidos por primera vez.\n"
-    "  Para gramática usa el jp canónico del patrón (〜て, 〜た, る動詞…).\n"
-    "- Si el alumno no intentó producir nada, reviewed = [].\n"
-    "- Responde SOLO con el JSON, sin markdown ni texto adicional.\n\n"
-    "=== EJEMPLO ===\n"
-    "FOCO:\n"
-    "  Vocabulario para repasar: 【みず】 agua\n"
-    "  Gramática para repasar: 【〜てください】 petición formal\n"
-    "  Ítem nuevo: 【〜た】 pasado casual\n"
-    "Conversación:\n"
-    "Profesor: Hoy repasamos 【みず】. Di conmigo.\n"
-    "Laura: みず\n"
-    "Profesor: 【いいね】! Ahora 【みずをください】.\n"
-    "Laura: みずをくなさい\n"
-    "Profesor: Casi, es 【みずをください】. ¿Puedes repetirlo?\n"
-    "Laura: みずをください\n"
-    "Profesor: 【いいね】! Ahora el pasado: ayer comiste, que se dice 【食べた】.\n"
-    "Laura: たべた\n"
-    "Profesor: 【すごい】! ¿Y bebiste? 【飲んだ】.\n"
-    "Laura: のんだ\n"
-    "Salida esperada:\n"
-    '{\n'
-    '  "summary": "Se repasó みず y 〜てください; Laura logró みずをください al segundo intento. '
-    'Se introdujo el pasado casual 〜た: acertó 食べた y 飲んだ sin dificultad.",\n'
-    '  "reviewed": [\n'
-    '    {"jp": "みず", "resultado": "bien"},\n'
-    '    {"jp": "〜てください", "resultado": "duda"},\n'
-    '    {"jp": "〜た", "resultado": "bien"}\n'
-    '  ],\n'
-    '  "new_items": [\n'
-    '    {"category": "vocabulario", "jp": "みず", "es": "agua"},\n'
-    '    {"category": "gramatica", "jp": "〜た", "es": "pasado casual del verbo"}\n'
-    '  ]\n'
-    '}\n'
-    "=== FIN EJEMPLO ==="
-)
+_EXTRACCION_PROMPT = cargar_prompt("extraccion_sesion")
 
 
 class ProfesorJapones:
@@ -276,8 +221,6 @@ class ProfesorJapones:
         para este audio (o None). Se inyecta en el turno del usuario para que el
         profesor dé feedback específico; NO se guarda en el historial limpio.
         """
-        from ai.prompts import cargar_prompt  # import diferido para evitar ciclos
-
         self._renovar_timer()
 
         # Construir historial del sensei desde cero (sin mutar el de Brain)

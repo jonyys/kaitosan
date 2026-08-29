@@ -138,12 +138,13 @@ class TextToSpeech:
         if es_japones:
             velocidad = "0.7" if getattr(self, "_lento_extra", False) else "0.85"
             filtros.append(f"atempo={velocidad}")
-        # Recorta silencio al inicio y (vía areverse) al final, sin tocar las
-        # pausas internas del habla.
-        trim = ("silenceremove=start_periods=1:start_duration=0.02:start_threshold=-45dB:detection=peak,"
-                "areverse,"
-                "silenceremove=start_periods=1:start_duration=0.02:start_threshold=-45dB:detection=peak,"
-                "areverse")
+        # Recorta el silencio de relleno de edge-tts al inicio y (vía areverse) al
+        # final, pero DEJANDO ~90 ms de colchón (start_silence) y con umbral bajo
+        # (-52 dB), para no comerse el ataque de la primera palabra ni la cola de
+        # la última. No toca las pausas internas del habla.
+        _sr = ("silenceremove=start_periods=1:start_duration=0.04:"
+               "start_silence=0.09:start_threshold=-52dB:detection=peak")
+        trim = f"{_sr},areverse,{_sr},areverse"
         filtros.append(trim)
         if pausa_final and pausa_final > 0:
             filtros.append(f"apad=pad_dur={pausa_final:.3f}")
