@@ -129,25 +129,36 @@ class TextToSpeech:
         tts = edge_tts.Communicate(texto, voice=voz)
         await tts.save(tmp_path)
 
-    def _procesar_segmento(self, seg_path: str, es_japones: bool, pausa_final: float = 0.0) -> str:
-        """Recorta el silencio de principio y fin (edge-tts mete bastante relleno,
-        y eso genera huecos audibles al concatenar), ralentiza la voz japonesa y
-        añade `pausa_final` segundos de silencio al final (separación entre trozos).
-        Salida CBR 64k para que el concat con -c copy sea limpio."""
+    def _procesar_segmento(self, seg_path: str, es_japones: bool, *,
+                           trim_inicio: bool = True, trim_fin: bool = True,
+                           pausa_final: float = 0.0, silencio_inicial: float = 0.0) -> str:
+        """Ralentiza la voz japonesa y recorta el silencio de relleno de edge-tts
+        SOLO en los bordes internos (entre trozos), nunca al principio del primer
+        trozo ni al final del último, para que no arranque/corte a bocajarro.
+        Añade `pausa_final` al final (separación entre trozos) y `silencio_inicial`
+        al principio. Salida CBR 64k para que el concat con -c copy sea limpio."""
         filtros = []
         if es_japones:
             velocidad = "0.7" if getattr(self, "_lento_extra", False) else "0.85"
             filtros.append(f"atempo={velocidad}")
-        # Recorta el silencio de relleno de edge-tts al inicio y (vía areverse) al
-        # final, pero DEJANDO ~90 ms de colchón (start_silence) y con umbral bajo
-        # (-52 dB), para no comerse el ataque de la primera palabra ni la cola de
-        # la última. No toca las pausas internas del habla.
+
         _sr = ("silenceremove=start_periods=1:start_duration=0.04:"
-               "start_silence=0.09:start_threshold=-52dB:detection=peak")
-        trim = f"{_sr},areverse,{_sr},areverse"
-        filtros.append(trim)
+               "start_silence=0.06:start_threshold=-50dB:detection=peak")
+        partes = []
+        if trim_inicio:
+            partes.append(_sr)
+        if trim_fin:
+            partes += ["areverse", _sr, "areverse"]
+        if partes:
+            filtros.append(",".join(partes))
+
         if pausa_final and pausa_final > 0:
             filtros.append(f"apad=pad_dur={pausa_final:.3f}")
+        if silencio_inicial and silencio_inicial > 0:
+            filtros.append(f"adelay={int(silencio_inicial * 1000)}")  # tras el trim
+
+        if not filtros:
+            return seg_path  # nada que procesar
 
         out_path = seg_path.replace(".mp3", "_p.mp3")
         r = subprocess.run(
@@ -164,7 +175,7 @@ class TextToSpeech:
         """
         Genera el audio final uniendo los segmentos español y japonés.
         """
-        from core.config import TTS_PAUSA_SEGMENTOS
+        from core.config import TTS_PAUSA_SEGMENTOS, TTS_SILENCIO_INICIAL
 
         texto = self._limpiar_markdown(texto)
         segmentos = self._dividir_texto(texto)
@@ -184,7 +195,10 @@ class TextToSpeech:
             seg_path = self._procesar_segmento(
                 seg_path,
                 es_japones=(voz == self.voice_ja),
+                trim_inicio=(i != 0),          # el primer trozo conserva su arranque
+                trim_fin=(i != ultimo),        # el último conserva su cola
                 pausa_final=(pausa if i != ultimo else 0.0),
+                silencio_inicial=(TTS_SILENCIO_INICIAL if i == 0 else 0.0),
             )
             seg_paths.append(seg_path)
 

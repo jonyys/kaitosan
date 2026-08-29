@@ -33,6 +33,8 @@ TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "")
 # TTS: pausa (segundos) entre cada trozo de voz al alternar español/japonés.
 # Súbelo si lo dice demasiado seguido, bájalo (o 0) si hay huecos largos.
 TTS_PAUSA_SEGMENTOS = float(os.getenv("TTS_PAUSA_SEGMENTOS", "0.3"))
+# Silencio (segundos) al principio del todo, para que no arranque de golpe.
+TTS_SILENCIO_INICIAL = float(os.getenv("TTS_SILENCIO_INICIAL", "0.15"))
 
 # Audio: subcadena para forzar el dispositivo de salida/entrada por nombre.
 # Vacío = autodetección (salida: hifiberry → G435; entrada: AB17X → G435).
