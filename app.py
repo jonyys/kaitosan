@@ -1,3 +1,5 @@
+import atexit
+import signal
 import threading
 from flask import Flask, render_template, request, jsonify, Response
 from flask_socketio import SocketIO
@@ -720,6 +722,39 @@ def admin_rem_borrar_todo():
     flash("✅ Todos los recordatorios borrados", "success")
     return redirect(url_for("admin"))
 
+_apagado = False
+
+
+def _apagar():
+    """Cierre ordenado: vuelca a la BD la sesión sensei en curso (SRS + resumen)
+    y cierra la sesión general. Idempotente."""
+    global _apagado
+    if _apagado:
+        return
+    _apagado = True
+    try:
+        if brain.profesor.esta_activo():
+            print("🎌 Cerrando la sesión de sensei antes de salir…")
+            brain.profesor.salir()
+        else:
+            brain.profesor.cerrar_sesion_y_extraer()  # por si quedó abierta sin 'activo'
+    except Exception as e:
+        print(f"⚠️ Error cerrando la sesión de sensei: {e}")
+    try:
+        brain.cerrar_sesion()
+    except Exception as e:
+        print(f"⚠️ Error cerrando la sesión general: {e}")
+
+
+def _on_sigterm(signum, frame):
+    # systemd/kill mandan SIGTERM: lo convertimos en salida limpia para que corra _apagar.
+    raise SystemExit(0)
+
+
+atexit.register(_apagar)
+signal.signal(signal.SIGTERM, _on_sigterm)
+
+
 if __name__ == "__main__":
     print("🤖 Kaitosan arrancando...")
     camera.iniciar()
@@ -727,4 +762,9 @@ if __name__ == "__main__":
     voice_listener.iniciar()
     PowerButton(on_short_press=voice_listener._on_wakeword)
     state.cambiar("idle")
-    socketio.run(app, host="0.0.0.0", port=5000, debug=False)
+    try:
+        socketio.run(app, host="0.0.0.0", port=5000, debug=False)
+    except (KeyboardInterrupt, SystemExit):
+        pass
+    finally:
+        _apagar()

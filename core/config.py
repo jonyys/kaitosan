@@ -45,6 +45,11 @@ AZURE_STT_LIMITE_SEG_MES = int(os.getenv("AZURE_STT_LIMITE_SEG_MES", "16800"))
 AZURE_PRON_DEBUG = os.getenv("AZURE_PRON_DEBUG", "false").strip().lower() in (
     "1", "true", "yes", "si", "sí", "on",
 )
+# Tolerancia de la evaluación de pronunciación (Azure ja-JP es duro con la 'r'):
+#  - una palabra solo se marca como fallo si baja de este umbral (o es Omission/Insertion)
+#  - a partir de este global (PronScore) sin fallos reales, el veredicto es BIEN
+AZURE_PRON_UMBRAL_PALABRA = int(os.getenv("AZURE_PRON_UMBRAL_PALABRA", "40"))
+AZURE_PRON_UMBRAL_BIEN = int(os.getenv("AZURE_PRON_UMBRAL_BIEN", "75"))
 # Por defecto la pronunciación solo se evalúa en modo sensei estructurado.
 # Ponlo a true para evaluarla también en el modo charla (gasta cuota más rápido).
 AZURE_PRON_EN_CHARLA = os.getenv("AZURE_PRON_EN_CHARLA", "false").strip().lower() in (

@@ -9,6 +9,8 @@ from groq import Groq
 from core.config import (
     AZURE_PRON_DEBUG,
     AZURE_PRON_EN_CHARLA,
+    AZURE_PRON_UMBRAL_BIEN,
+    AZURE_PRON_UMBRAL_PALABRA,
     AZURE_SPEECH_KEY,
     AZURE_SPEECH_REGION,
     AZURE_STT_LIMITE_SEG_MES,
@@ -202,17 +204,18 @@ class SpeechToText:
 
         overall = pron if pron is not None else acc
 
-        # Palabras con problema: ErrorType real o puntuación baja.
+        # Palabras con problema REAL: Omission/Insertion, o puntuación por debajo
+        # del umbral (Azure ja-JP castiga la 'r' española aunque sea aceptable,
+        # así que no marcamos "Mispronunciation" a 50/100 como fallo).
         malas = []
         for w in palabras:
             palabra = w.get("Word", "")
             etype = w.get("ErrorType") or (w.get("PronunciationAssessment") or {}).get("ErrorType") or "None"
             wscore = _num(w, "AccuracyScore")
-            if etype and etype != "None":
-                extra = f", {wscore:.0f}/100" if wscore is not None else ""
-                malas.append(f"【{palabra}】 ({etype}{extra})")
-            elif wscore is not None and wscore < 55:
-                malas.append(f"【{palabra}】 (flojo, {wscore:.0f}/100)")
+            if etype in ("Omission", "Insertion"):
+                malas.append(f"【{palabra}】 ({etype})")
+            elif wscore is not None and wscore < AZURE_PRON_UMBRAL_PALABRA:
+                malas.append(f"【{palabra}】 ({wscore:.0f}/100)")
 
         # ¿Dijo algo distinto a lo pedido?
         ref_n, oido_n = _norm_jp(referencia), _norm_jp(oido)
@@ -225,7 +228,7 @@ class SpeechToText:
             veredicto = f"MAL (global {overall:.0f}/100)"
         elif malas:
             veredicto = "REGULAR — hay palabras que corregir"
-        elif overall is not None and overall >= 78:
+        elif overall is not None and overall >= AZURE_PRON_UMBRAL_BIEN:
             veredicto = f"BIEN (global {overall:.0f}/100)"
         elif overall is not None:
             veredicto = f"ACEPTABLE (global {overall:.0f}/100)"

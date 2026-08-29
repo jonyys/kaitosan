@@ -39,6 +39,18 @@ class TextToSpeech:
             return True
         return False
 
+    def _limpiar_markdown(self, texto: str) -> str:
+        """El TTS lee los símbolos literalmente ('asterisco asterisco...'), así que
+        quitamos negritas, cursivas, code y viñetas antes de sintetizar."""
+        texto = re.sub(r'\*\*([^*]+)\*\*', r'\1', texto)
+        texto = re.sub(r'(?<!\w)\*([^*\n]+)\*(?!\w)', r'\1', texto)
+        texto = re.sub(r'__([^_]+)__', r'\1', texto)
+        texto = re.sub(r'`([^`]+)`', r'\1', texto)
+        texto = texto.replace('**', '').replace('`', '')
+        texto = re.sub(r'(?m)^\s{0,3}[-*#>]+\s+', '', texto)   # viñetas / encabezados
+        texto = re.sub(r'\s*\n\s*', ' ', texto)                # sin saltos de línea
+        return texto.strip()
+
     def _limpiar_para_voz(self, texto: str) -> str:
         """
         Normaliza el texto en español para que la voz española
@@ -117,40 +129,54 @@ class TextToSpeech:
         tts = edge_tts.Communicate(texto, voice=voz)
         await tts.save(tmp_path)
 
+    def _procesar_segmento(self, seg_path: str, es_japones: bool) -> str:
+        """Recorta el silencio de principio y fin (edge-tts mete bastante relleno,
+        y eso genera huecos audibles al concatenar) y ralentiza la voz japonesa.
+        Salida CBR 64k para que el concat con -c copy sea limpio."""
+        filtros = []
+        if es_japones:
+            velocidad = "0.7" if getattr(self, "_lento_extra", False) else "0.85"
+            filtros.append(f"atempo={velocidad}")
+        # Recorta silencio al inicio y (vía areverse) al final, sin tocar las
+        # pausas internas del habla.
+        trim = ("silenceremove=start_periods=1:start_duration=0.02:start_threshold=-45dB:detection=peak,"
+                "areverse,"
+                "silenceremove=start_periods=1:start_duration=0.02:start_threshold=-45dB:detection=peak,"
+                "areverse")
+        filtros.append(trim)
+
+        out_path = seg_path.replace(".mp3", "_p.mp3")
+        r = subprocess.run(
+            ["ffmpeg", "-y", "-i", seg_path, "-filter:a", ",".join(filtros),
+             "-c:a", "libmp3lame", "-b:a", "64k", "-ar", "24000", "-ac", "1", "-vn", out_path],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+        )
+        if r.returncode == 0 and os.path.exists(out_path) and os.path.getsize(out_path) > 0:
+            os.unlink(seg_path)
+            return out_path
+        return seg_path  # si ffmpeg falla, seguimos con el original
+
     async def _generar_audio_completo(self, texto: str, tmp_path: str):
         """
         Genera el audio final uniendo los segmentos español y japonés.
         """
+        texto = self._limpiar_markdown(texto)
         segmentos = self._dividir_texto(texto)
 
         if not segmentos:
             return
 
-        # Si solo hay un segmento, lo generamos directamente
-        if len(segmentos) == 1:
-            txt, voz = segmentos[0]
-            await self._generar_audio_segmento(txt, voz, tmp_path)
-            return
-
-        # Generar cada segmento por separado
+        # Generar y procesar cada segmento por separado
         seg_paths = []
         for i, (txt, voz) in enumerate(segmentos):
             seg_path = tmp_path.replace(".mp3", f"_seg{i}.mp3")
             await self._generar_audio_segmento(txt, voz, seg_path)
-            
-            # Ralentizar voz japonesa con ffmpeg
-            if voz == self.voice_ja:
-                    velocidad = "0.7" if self._lento_extra else "0.85"
-                    slowed_path = seg_path.replace(".mp3", "_slow.mp3")
-                    subprocess.run([
-                        "ffmpeg", "-y", "-i", seg_path,
-                        "-filter:a", f"atempo={velocidad}",
-                        "-vn", slowed_path
-                    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                    os.unlink(seg_path)
-                    seg_path = slowed_path
-
+            seg_path = self._procesar_segmento(seg_path, es_japones=(voz == self.voice_ja))
             seg_paths.append(seg_path)
+
+        if len(seg_paths) == 1:
+            os.replace(seg_paths[0], tmp_path)
+            return
 
         # Crear archivo de lista para ffmpeg concat
         list_path = tmp_path.replace(".mp3", "_list.txt")
