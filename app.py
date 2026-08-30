@@ -1,7 +1,10 @@
 import atexit
+import os
 import signal
+import tempfile
 import threading
-from flask import Flask, render_template, request, jsonify, Response
+from flask import Flask, render_template, request, jsonify, Response, send_file
+from werkzeug.utils import secure_filename
 from flask_socketio import SocketIO
 from dotenv import load_dotenv
 from core.camera import Camera
@@ -434,6 +437,7 @@ def ajustes():
         volumen=system_settings.volumen_get(),
         brillo=system_settings.brillo_get(),
         sistema=system_settings.sistema_info(),
+        salud=system_settings.salud(),
         admin_user=settings_get("admin_user"),
         audio_salidas=system_settings.audio_salidas(),
         audio_entradas=system_settings.audio_entradas(),
@@ -575,6 +579,60 @@ def ajustes_cuenta():
     else:
         flash("✅ Usuario actualizado", "success")
     return redirect(url_for("ajustes"))
+
+
+# --- Mantenimiento (Fase 10): salud, logs y copia de seguridad (§7.2) --- #
+
+@app.route("/admin/ajustes/sistema/logs")
+@login_requerido
+def ajustes_sistema_logs():
+    try:
+        n = int(request.args.get("n", 200))
+    except ValueError:
+        n = 200
+    return Response(system_settings.logs(n),
+                    mimetype="text/plain; charset=utf-8")
+
+
+@app.route("/admin/ajustes/sistema/backup")
+@login_requerido
+def ajustes_sistema_backup():
+    ruta = system_settings.backup_bd()
+    return send_file(ruta, as_attachment=True, download_name="kaito.db")
+
+
+@app.route("/admin/ajustes/sistema/restaurar", methods=["POST"])
+@login_requerido
+def ajustes_sistema_restaurar():
+    subido = request.files.get("bd")
+    if not subido or not subido.filename:
+        flash("❌ Elige un fichero .db para restaurar", "error")
+        return redirect(url_for("ajustes"))
+
+    tmp = os.path.join(tempfile.gettempdir(),
+                       "kaito-restore-" + (secure_filename(subido.filename) or "subida.db"))
+    subido.save(tmp)
+    try:
+        resultado = system_settings.restaurar_bd(tmp)
+    finally:
+        try:
+            os.remove(tmp)
+        except OSError:
+            pass
+
+    if resultado.get("ok"):
+        flash("✅ BD restaurada. " + resultado.get("aviso", ""), "success")
+    else:
+        flash("❌ " + resultado.get("error", "no se pudo restaurar"), "error")
+    return redirect(url_for("ajustes"))
+
+
+@app.route("/admin/ajustes/sistema/diagnostico")
+@login_requerido
+def ajustes_sistema_diagnostico():
+    ruta = system_settings.diagnostico_zip()
+    return send_file(ruta, as_attachment=True,
+                     download_name=os.path.basename(ruta))
 
 
 @app.route("/admin/perfil/añadir", methods=["POST"])

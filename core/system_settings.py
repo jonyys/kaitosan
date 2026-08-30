@@ -39,7 +39,15 @@ no se simula) y cachea la lista ~1 h. La selección se guarda en `app_settings`
 valores de fábrica de `config.py`.
     groq_modelos()          groq_seleccion_get()      groq_seleccion_set(sel)
 
-WiFi como API JSON, Bluetooth y mantenimiento llegan en fases posteriores.
+Fase 10: salud, logs y copia de seguridad (§2.1, §5, §11 nota "Diagnóstico").
+`salud()` y `logs()` usan modo simulado fuera de la Pi; `backup_bd()` y
+`diagnostico_zip()` funcionan también en el portátil (solo tocan ficheros del
+propio proyecto). El zip de diagnóstico ofusca las claves del `.env`.
+    salud()        logs(n=200)
+    backup_bd()    restaurar_bd(fichero)    diagnostico_zip()
+
+WiFi como API JSON, Bluetooth, actualizar/reset y onboarding llegan en fases
+posteriores.
 """
 
 import glob
@@ -49,10 +57,14 @@ import platform
 import re
 import shutil
 import socket
+import sqlite3
 import subprocess
+import tempfile
 import time
+import zipfile
 from datetime import datetime
 
+from core.memory import BASE_DIR, DB_PATH
 from core.settings_store import settings_get, settings_set
 
 _BOOL_TRUE = ("1", "true", "yes", "si", "sí", "on")
@@ -138,6 +150,32 @@ def _temperatura():
         if m:
             return round(float(m.group(1)), 1)
     return None
+
+
+def _uptime_txt():
+    """Tiempo encendida como texto ('3 días, 4 h, 12 min'), o None."""
+    crudo = _leer_archivo("/proc/uptime")
+    if not crudo:
+        return None
+    try:
+        return _fmt_uptime(float(crudo.split()[0]))
+    except (ValueError, IndexError):
+        return None
+
+
+def _disco() -> dict:
+    """Uso del disco de '/' -> {total_gb, usado_gb, libre_gb, pct}."""
+    try:
+        uso = shutil.disk_usage("/")
+    except OSError:
+        return {"total_gb": None, "usado_gb": None, "libre_gb": None, "pct": None}
+    usado = uso.total - uso.free
+    return {
+        "total_gb": round(uso.total / 1e9, 1),
+        "usado_gb": round(usado / 1e9, 1),
+        "libre_gb": round(uso.free / 1e9, 1),
+        "pct": round(usado / uso.total * 100) if uso.total else 0,
+    }
 
 
 def _tz_auto() -> bool:
@@ -756,30 +794,261 @@ def sistema_info() -> dict:
     else:
         modelo = platform.platform()
 
-    uptime = None
-    crudo = _leer_archivo("/proc/uptime")
-    if crudo:
-        try:
-            uptime = _fmt_uptime(float(crudo.split()[0]))
-        except (ValueError, IndexError):
-            uptime = None
-
-    try:
-        uso = shutil.disk_usage("/")
-        usado = uso.total - uso.free
-        disco = {
-            "total_gb": round(uso.total / 1e9, 1),
-            "usado_gb": round(usado / 1e9, 1),
-            "libre_gb": round(uso.free / 1e9, 1),
-            "pct": round(usado / uso.total * 100) if uso.total else 0,
-        }
-    except OSError:
-        disco = {"total_gb": None, "usado_gb": None, "libre_gb": None, "pct": None}
-
     return {
         "hostname": hostname,
         "modelo": modelo,
-        "uptime": uptime,
+        "uptime": _uptime_txt(),
         "temperatura": _temperatura(),
-        "disco": disco,
+        "disco": _disco(),
     }
+
+
+# --------------------------------------------------------------------------- #
+# Mantenimiento — salud, logs y copia de seguridad (Fase 10, §2.1, §5, §11)
+# --------------------------------------------------------------------------- #
+# Bits de `vcgencmd get_throttled` (Raspberry Pi): los 4 bajos = ahora mismo,
+# los 4 altos (16-19) = "ha ocurrido desde el arranque".
+_THROTTLED_BITS = {
+    0: "bajada de tensión ahora",
+    1: "frecuencia de CPU limitada ahora",
+    2: "CPU con throttling ahora",
+    3: "límite térmico software ahora",
+    16: "ha habido bajada de tensión",
+    17: "se ha limitado la frecuencia de CPU",
+    18: "ha habido throttling",
+    19: "se ha alcanzado el límite térmico software",
+}
+
+# Claves del `.env` cuyo valor NO debe salir en claro en el zip de diagnóstico.
+_RE_ENV_SECRETO = re.compile(r"(KEY|TOKEN|SECRET|PASSWORD|PWD|PASS)", re.IGNORECASE)
+
+
+def _throttled() -> dict:
+    """Estado de `vcgencmd get_throttled` -> {codigo, texto, hay_problema}."""
+    salida = _cmd(["vcgencmd", "get_throttled"])
+    m = re.search(r"throttled=(0x[0-9a-fA-F]+)", salida or "")
+    if not m:
+        return {"codigo": None, "texto": "no disponible", "hay_problema": False}
+    codigo = int(m.group(1), 16)
+    if codigo == 0:
+        return {"codigo": "0x0", "texto": "sin problemas", "hay_problema": False}
+    activos = [txt for bit, txt in _THROTTLED_BITS.items() if codigo & (1 << bit)]
+    return {"codigo": hex(codigo), "texto": "; ".join(activos), "hay_problema": True}
+
+
+def _cpu() -> dict:
+    """Carga de CPU desde /proc/loadavg -> {pct, carga, nucleos}."""
+    nucleos = os.cpu_count() or 1
+    carga = None
+    crudo = _leer_archivo("/proc/loadavg")
+    if crudo:
+        try:
+            carga = float(crudo.split()[0])
+        except (ValueError, IndexError):
+            carga = None
+    pct = None if carga is None else max(0, min(100, round(carga / nucleos * 100)))
+    return {"pct": pct, "carga": carga, "nucleos": nucleos}
+
+
+def _ram() -> dict:
+    """Memoria desde /proc/meminfo -> {total_mb, usada_mb, pct}."""
+    crudo = _leer_archivo("/proc/meminfo")
+    if not crudo:
+        return {"total_mb": None, "usada_mb": None, "pct": None}
+    vals = {}
+    for linea in crudo.splitlines():
+        partes = linea.split()
+        if len(partes) >= 2 and partes[0].rstrip(":") in ("MemTotal", "MemAvailable"):
+            try:
+                vals[partes[0].rstrip(":")] = int(partes[1])   # kB
+            except ValueError:
+                pass
+    total, disp = vals.get("MemTotal"), vals.get("MemAvailable")
+    if not total or disp is None:
+        return {"total_mb": None, "usada_mb": None, "pct": None}
+    usada = total - disp
+    return {
+        "total_mb": round(total / 1024),
+        "usada_mb": round(usada / 1024),
+        "pct": round(usada / total * 100) if total else None,
+    }
+
+
+def salud() -> dict:
+    """Salud del sistema para la tarjeta de Mantenimiento.
+
+    {temperatura, throttled:{codigo,texto,hay_problema}, cpu:{pct,carga,nucleos},
+     ram:{total_mb,usada_mb,pct}, disco:{total_gb,usado_gb,libre_gb,pct}, uptime}
+    """
+    if _simulado():
+        return {
+            "temperatura": 47.8,
+            "throttled": {"codigo": "0x0", "texto": "sin problemas",
+                          "hay_problema": False},
+            "cpu": {"pct": 12, "carga": 0.48, "nucleos": 4},
+            "ram": {"total_mb": 3792, "usada_mb": 1123, "pct": 30},
+            "disco": {"total_gb": 29.7, "usado_gb": 8.3, "libre_gb": 21.4, "pct": 28},
+            "uptime": "3 días, 4 h, 12 min",
+        }
+    return {
+        "temperatura": _temperatura(),
+        "throttled": _throttled(),
+        "cpu": _cpu(),
+        "ram": _ram(),
+        "disco": _disco(),
+        "uptime": _uptime_txt(),
+    }
+
+
+def logs(n: int = 200) -> str:
+    """Últimas `n` líneas del journal del servicio (`journalctl -u kaito`).
+
+    En modo simulado devuelve un ejemplo; en la Pi, la salida real (o un aviso
+    si `journalctl` no está disponible / sin permisos).
+    """
+    try:
+        n = max(1, min(2000, int(n)))
+    except (TypeError, ValueError):
+        n = 200
+
+    if _simulado():
+        sello = datetime.now().strftime("%b %d %H:%M:%S")
+        ejemplo = [
+            "(modo simulado — líneas de ejemplo, no son logs reales)",
+            "INFO  app escuchando en http://0.0.0.0:5000",
+            "INFO  cámara inicializada (640x480 @15fps)",
+            "INFO  listener de voz activo — wakeword 'kaito'",
+            "INFO  turno de charla completado (groq: 412 tokens)",
+            "WARN  rate limit de Groq; probando modelo alternativo",
+            "INFO  recordatorio disparado: 'clase de japonés'",
+        ]
+        return "\n".join(f"{sello} kaitosan kaito[1234]: {ln}" for ln in ejemplo)
+
+    salida = _cmd(
+        ["journalctl", "-u", "kaito", "-n", str(n), "--no-pager"], timeout=20
+    )
+    if salida is None:
+        return "(no se pudieron leer los logs: journalctl no disponible o sin permisos)"
+    return salida.strip() or "(sin entradas de log)"
+
+
+def _es_sqlite(ruta: str) -> bool:
+    """True si `ruta` es un fichero SQLite íntegro (cabecera + integrity_check)."""
+    try:
+        with open(ruta, "rb") as f:
+            if f.read(16) != b"SQLite format 3\x00":
+                return False
+    except OSError:
+        return False
+    try:
+        con = sqlite3.connect(ruta)
+        try:
+            fila = con.execute("PRAGMA integrity_check").fetchone()
+        finally:
+            con.close()
+    except sqlite3.Error:
+        return False
+    return bool(fila) and fila[0] == "ok"
+
+
+def backup_bd() -> str:
+    """Copia consistente de `data/kaito.db` en un temporal; devuelve su ruta.
+
+    Usa la API `backup` de SQLite (segura aunque la app esté escribiendo).
+    """
+    destino = os.path.join(
+        tempfile.gettempdir(),
+        f"kaito-backup-{datetime.now():%Y%m%d-%H%M%S}.db",
+    )
+    try:
+        origen = sqlite3.connect(DB_PATH)
+        try:
+            copia = sqlite3.connect(destino)
+            try:
+                with copia:
+                    origen.backup(copia)
+            finally:
+                copia.close()
+        finally:
+            origen.close()
+    except (sqlite3.Error, OSError):
+        shutil.copy2(DB_PATH, destino)          # último recurso
+    return destino
+
+
+def restaurar_bd(fichero: str) -> dict:
+    """Valida que `fichero` es SQLite y reemplaza `data/kaito.db`.
+
+    Hace un `backup_bd()` automático de la BD actual justo antes (§11). El
+    servicio debe reiniciarse para leer la nueva BD (Fase 11 en la Pi).
+    """
+    if not fichero or not os.path.isfile(fichero):
+        return {"ok": False, "error": "no se recibió ningún fichero"}
+    if not _es_sqlite(fichero):
+        return {"ok": False, "error": "el fichero no es una base de datos SQLite válida"}
+
+    try:
+        respaldo = backup_bd()
+    except Exception:  # noqa: BLE001 — la capa de sistema nunca propaga
+        respaldo = None
+    try:
+        shutil.copy2(fichero, DB_PATH)
+    except OSError as e:
+        return {"ok": False, "error": f"no se pudo reemplazar la BD: {e}"}
+    return {
+        "ok": True,
+        "respaldo": respaldo,
+        "aviso": "Reinicia el servicio para que Kaito use la BD restaurada.",
+    }
+
+
+def _ofuscar_env(texto: str) -> str:
+    """Sustituye el valor de las claves sensibles del `.env` por un marcador."""
+    salida = []
+    for linea in texto.splitlines():
+        tira = linea.strip()
+        if not tira or tira.startswith("#") or "=" not in linea:
+            salida.append(linea)
+            continue
+        clave, _, valor = linea.partition("=")
+        v = valor.strip().strip('"').strip("'")
+        if v and _RE_ENV_SECRETO.search(clave):
+            pista = (v[:2] + "…" + v[-2:]) if len(v) > 6 else "…"
+            salida.append(f"{clave}=***ofuscado*** (len={len(v)}, {pista})")
+        else:
+            salida.append(linea)
+    return "\n".join(salida)
+
+
+def diagnostico_zip() -> str:
+    """Zip para soporte: salud + logs + `.env` con las claves ofuscadas + red.
+
+    Devuelve la ruta al zip. §11: revisar el contenido a mano antes de
+    compartirlo (los logs reales aún podrían contener algún secreto).
+    """
+    destino = os.path.join(
+        tempfile.gettempdir(),
+        f"kaito-diagnostico-{datetime.now():%Y%m%d-%H%M%S}.zip",
+    )
+    with zipfile.ZipFile(destino, "w", zipfile.ZIP_DEFLATED) as z:
+        z.writestr("info.txt",
+                   "Diagnóstico de Kaito\n"
+                   f"Generado: {datetime.now().isoformat(timespec='seconds')}\n"
+                   f"Modo simulado: {_simulado()}\n\n"
+                   "Las claves del .env van ofuscadas. Revisa logs.txt por si "
+                   "acaso antes de compartir este archivo.\n")
+        z.writestr("salud.json",
+                   json.dumps(salud(), indent=2, ensure_ascii=False))
+        z.writestr("logs.txt", logs(500))
+
+        crudo_env = _leer_archivo(os.path.join(BASE_DIR, ".env"))
+        if crudo_env is not None:
+            z.writestr("env.ofuscado.txt", _ofuscar_env(crudo_env))
+
+        if _simulado():
+            z.writestr("nmcli-dev-status.txt", "(modo simulado)\n")
+        else:
+            z.writestr("nmcli-dev-status.txt",
+                       _cmd(["nmcli", "dev", "status"]) or "(nmcli no disponible)\n")
+
+    return destino

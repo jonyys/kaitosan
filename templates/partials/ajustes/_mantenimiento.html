@@ -1,0 +1,90 @@
+<div class="card full">
+    <h2>🛠️ Mantenimiento</h2>
+
+    {# --- Salud del sistema (Fase 10) --- #}
+    <div class="fila">
+        <span class="et">Temperatura CPU</span>
+        <span class="val">{{ (salud.temperatura ~ ' °C') if salud.temperatura is not none else '—' }}</span>
+    </div>
+    <div class="fila">
+        <span class="et">Estado térmico / tensión</span>
+        <span class="val">
+            {% if salud.throttled.hay_problema %}⚠️ {{ salud.throttled.texto }}
+            {% else %}{{ salud.throttled.texto }}{% endif %}
+        </span>
+    </div>
+    {% if salud.cpu.pct is not none %}
+    <div class="fila">
+        <span class="et">CPU</span>
+        <span class="val">{{ salud.cpu.pct }}% (carga {{ salud.cpu.carga }} / {{ salud.cpu.nucleos }} núcleos)</span>
+    </div>
+    <div class="medidor"><span style="width: {{ salud.cpu.pct }}%"></span></div>
+    {% endif %}
+    {% if salud.ram.pct is not none %}
+    <div class="fila">
+        <span class="et">Memoria</span>
+        <span class="val">{{ salud.ram.usada_mb }} / {{ salud.ram.total_mb }} MB ({{ salud.ram.pct }}%)</span>
+    </div>
+    <div class="medidor"><span style="width: {{ salud.ram.pct }}%"></span></div>
+    {% endif %}
+    {% if salud.disco.pct is not none %}
+    <div class="fila">
+        <span class="et">Disco</span>
+        <span class="val">{{ salud.disco.usado_gb }} / {{ salud.disco.total_gb }} GB ({{ salud.disco.pct }}%)</span>
+    </div>
+    <div class="medidor"><span style="width: {{ salud.disco.pct }}%"></span></div>
+    {% endif %}
+    <div class="fila">
+        <span class="et">Encendida desde hace</span>
+        <span class="val">{{ salud.uptime or '—' }}</span>
+    </div>
+
+    {# --- Logs (Fase 10) — fetch, sin recargar (§7.2) --- #}
+    <label class="et" for="logs-n" style="display:block; margin-top:20px">Ver logs del servicio</label>
+    <div class="actions">
+        <select id="logs-n" style="max-width:9rem">
+            <option value="100">100 líneas</option>
+            <option value="200" selected>200 líneas</option>
+            <option value="500">500 líneas</option>
+        </select>
+        <button type="button" class="btn btn-yellow" onclick="cargarLogs(this)">📜 Cargar logs</button>
+    </div>
+    <pre id="logs-salida" style="display:none; max-height:340px; overflow:auto;
+         background:var(--surface-2); border:1px solid var(--border);
+         border-radius:var(--radio-sm); padding:12px; font-size:12px;
+         white-space:pre-wrap; word-break:break-word"></pre>
+
+    {# --- Copia de seguridad (Fase 10) --- #}
+    <div class="actions" style="margin-top:20px">
+        <a class="btn btn-yellow" href="/admin/ajustes/sistema/backup">💾 Descargar copia de la BD</a>
+        <a class="btn btn-yellow" href="/admin/ajustes/sistema/diagnostico">🩺 Descargar diagnóstico (.zip)</a>
+    </div>
+    <p class="et" style="color:var(--text-soft); margin:4px 0 0">
+        El diagnóstico ofusca las claves del <code>.env</code>. Revísalo antes de compartirlo.
+    </p>
+
+    {# --- Restaurar BD (Fase 10) — multipart + flash + redirect (§7.2) --- #}
+    <form method="POST" action="/admin/ajustes/sistema/restaurar"
+          enctype="multipart/form-data" style="margin-top:16px"
+          onsubmit="return confirm('Se sustituirá la base de datos actual (se guarda una copia automática antes). ¿Continuar?');">
+        <label class="et" for="bd-file">Restaurar BD desde un fichero</label>
+        <input type="file" id="bd-file" name="bd" accept=".db,.sqlite,.sqlite3"
+               style="width:100%; margin-bottom:8px">
+        <button class="btn btn-red">Restaurar base de datos</button>
+    </form>
+</div>
+
+<script>
+function cargarLogs(btn) {
+    var pre = document.getElementById('logs-salida');
+    var n = document.getElementById('logs-n').value;
+    btn.disabled = true;
+    pre.style.display = '';
+    pre.textContent = 'Cargando…';
+    fetch('/admin/ajustes/sistema/logs?n=' + encodeURIComponent(n))
+        .then(function (r) { return r.text(); })
+        .then(function (t) { pre.textContent = t || '(sin salida)'; })
+        .catch(function () { pre.textContent = '❌ error de red al cargar los logs'; })
+        .finally(function () { btn.disabled = false; });
+}
+</script>
