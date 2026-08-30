@@ -75,16 +75,36 @@
         {% endfor %}
     {% endwith %}
 
-    <div class="grid">
-        {% include 'partials/ajustes/_wifi.html' %}
-        {% include 'partials/ajustes/_bluetooth.html' %}
-        {% include 'partials/ajustes/_hora.html' %}
-        {% include 'partials/ajustes/_sonido.html' %}
-        {% include 'partials/ajustes/_pantalla.html' %}
-        {% include 'partials/ajustes/_modelos.html' %}
-        {% include 'partials/ajustes/_sistema.html' %}
-        {% include 'partials/ajustes/_mantenimiento.html' %}
-        {% include 'partials/ajustes/_cuenta.html' %}
+    <div class="acc-list">
+        <details class="acc"><summary>📶 WiFi</summary>
+            {% include 'partials/ajustes/_wifi.html' %}
+        </details>
+        <details class="acc"><summary>🔵 Bluetooth</summary>
+            {% include 'partials/ajustes/_bluetooth.html' %}
+        </details>
+        <details class="acc"><summary>🕐 Hora y fecha</summary>
+            {% include 'partials/ajustes/_hora.html' %}
+        </details>
+        <details class="acc"><summary>🔊 Sonido</summary>
+            {% include 'partials/ajustes/_sonido.html' %}
+        </details>
+        {% if brillo.soportado %}
+        <details class="acc"><summary>💡 Pantalla</summary>
+            {% include 'partials/ajustes/_pantalla.html' %}
+        </details>
+        {% endif %}
+        <details class="acc"><summary>🧠 Modelos de IA</summary>
+            {% include 'partials/ajustes/_modelos.html' %}
+        </details>
+        <details class="acc"><summary>🖥️ Sistema</summary>
+            {% include 'partials/ajustes/_sistema.html' %}
+        </details>
+        <details class="acc"><summary>🛠️ Mantenimiento</summary>
+            {% include 'partials/ajustes/_mantenimiento.html' %}
+        </details>
+        <details class="acc"><summary>🔑 Cuenta del panel</summary>
+            {% include 'partials/ajustes/_cuenta.html' %}
+        </details>
     </div>
 
 </div>

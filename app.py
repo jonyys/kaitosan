@@ -422,6 +422,7 @@ def admin():
     uso = tracker.consultar()
     tokens = uso.get("tokens", {})
     audio = uso.get("total_audio_seconds", 0)
+    azure_mes = tracker.azure_stt_segundos_mes()
 
     return render_template("admin.html",
                             perfil=perfil,
@@ -433,7 +434,8 @@ def admin():
                             jap_sessions=jap_sessions,
                             lista_recordatorios=lista_recordatorios,
                             uso_tokens=tokens,
-                            uso_audio=audio)
+                            uso_audio=audio,
+                            uso_azure=azure_mes)
 
 @app.route("/admin/ajustes")
 @login_requerido
@@ -955,6 +957,22 @@ def japones_vocab_resetear_srs(item_id):
     flash("✅ SRS reseteado", "success")
     return redirect(url_for("japones"))
 
+@app.route("/japones/vocabulario/marcar-aprendido/<int:item_id>", methods=["POST"])
+@login_requerido
+def japones_vocab_marcar_aprendido(item_id):
+    # Aprendida al 100%: fuera de la cola de repaso (next_review a 100 años vista).
+    db = brain.jap_memory._conectar()
+    db.execute("""
+        UPDATE japanese_vocabulary SET
+            status='mastered', reps=8, ease_factor=2.5, interval_days=36500,
+            next_review=date('now','+36500 days'), errors=0
+        WHERE id=?
+    """, (item_id,))
+    db.commit()
+    db.close()
+    flash("✅ Marcada como aprendida", "success")
+    return redirect(url_for("japones"))
+
 @app.route("/japones/gramatica/añadir", methods=["POST"])
 @login_requerido
 def japones_gram_añadir():
@@ -1010,6 +1028,22 @@ def japones_gram_resetear_srs(item_id):
     db.commit()
     db.close()
     flash("✅ SRS de gramática reseteado", "success")
+    return redirect(url_for("japones"))
+
+@app.route("/japones/gramatica/marcar-aprendido/<int:item_id>", methods=["POST"])
+@login_requerido
+def japones_gram_marcar_aprendido(item_id):
+    # Aprendida al 100%: mastery a tope y fuera de la cola de repaso.
+    db = brain.jap_memory._conectar()
+    db.execute("""
+        UPDATE japanese_grammar SET
+            mastery=100, reps=8, ease_factor=2.5, interval_days=36500,
+            next_review=date('now','+36500 days'), errors=0
+        WHERE id=?
+    """, (item_id,))
+    db.commit()
+    db.close()
+    flash("✅ Marcada como aprendida", "success")
     return redirect(url_for("japones"))
 
 @app.route("/japones/sesiones/borrar/<int:sesion_id>", methods=["POST"])

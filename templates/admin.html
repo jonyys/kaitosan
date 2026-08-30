@@ -20,21 +20,39 @@
     </span>
 </h1>
 
-{% with messages = get_flashed_messages(with_categories=true) %}
-    {% for category, message in messages %}
-        <div class="alert alert-{{ category }}">{{ message }}</div>
-    {% endfor %}
-{% endwith %}
+<div class="acc-list">
+    <details class="acc">
+        <summary>📊 Consumo de tokens</summary>
+        {% include 'partials/admin/_tokens.html' %}
+    </details>
 
-<div class="grid">
-    {% include 'partials/admin/_tokens.html' %}
-    {% include 'partials/admin/_perfil.html' %}
-    {% include 'partials/admin/_sesiones.html' %}
-    {% include 'partials/admin/_mensajes.html' %}
-    {% include 'partials/admin/_japones.html' %}
-    {% include 'partials/admin/_recordatorios.html' %}
+    <details class="acc">
+        <summary>👤 Perfil de Laura <span class="count">({{ perfil|length }})</span></summary>
+        {% include 'partials/admin/_perfil.html' %}
+    </details>
+
+    <details class="acc">
+        <summary>📅 Sesiones <span class="count">({{ sesiones|length }})</span></summary>
+        {% include 'partials/admin/_sesiones.html' %}
+    </details>
+
+    <details class="acc">
+        <summary>💬 Conversaciones <span class="count">({{ mensajes|length }})</span></summary>
+        {% include 'partials/admin/_mensajes.html' %}
+    </details>
+
+    <details class="acc">
+        <summary>🎌 Japonés</summary>
+        {% include 'partials/admin/_japones.html' %}
+    </details>
+
+    <details class="acc">
+        <summary>📌 Recordatorios <span class="count">({{ lista_recordatorios|length }})</span></summary>
+        {% include 'partials/admin/_recordatorios.html' %}
+    </details>
 </div>
 
+{% include 'partials/_panel_scripts.html' %}
 
 </body>
 </html>

@@ -237,4 +237,49 @@
         padding: 12px 0 4px;
         margin-top: 8px;
     }
+
+    /* ---- Secciones plegables (<details>): acordeón en vez de todo apilado,
+       para no hacer scroll hasta el final para ver las secciones de abajo ---- */
+    .acc-list { max-width: 900px; margin: 0 auto; }
+    details.acc { margin-bottom: 12px; }
+    details.acc > summary {
+        list-style: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-height: var(--toque);
+        padding: 14px 20px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radio);
+        box-shadow: var(--sombra-sm);
+        color: var(--rosa-tinta);
+        font-weight: 700;
+        font-size: clamp(15px, 4vw, 18px);
+    }
+    details.acc > summary::-webkit-details-marker { display: none; }
+    details.acc > summary::after {
+        content: "▸";
+        margin-left: auto;
+        font-size: 14px;
+        transition: transform .15s ease;
+    }
+    details.acc[open] > summary::after { transform: rotate(90deg); }
+    details.acc[open] > summary {
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+    details.acc > .card {
+        margin-top: 0;
+        border-top: 0;
+        border-top-left-radius: 0;
+        border-top-right-radius: 0;
+    }
+    details.acc .count { color: var(--text-soft); font-weight: 700; }
+    /* El título ya está en el <summary>: no lo repitas dentro de la card. */
+    details.acc > .card > h2:first-child,
+    details.acc > .card > div:first-child > h2 { display: none; }
+    /* Si esa cabecera tenía un botón al lado del título, que quede a la derecha. */
+    details.acc > .card > div:first-child:has(> h2) { justify-content: flex-end; }
 </style>

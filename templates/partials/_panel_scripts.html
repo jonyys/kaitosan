@@ -1,0 +1,177 @@
+<style>
+    /* Pop-up centrado (confirmación de borrado y mensaje de resultado) */
+    dialog.flash-pop {
+        margin: auto;
+        border: 1px solid var(--border-fuerte);
+        border-radius: var(--radio);
+        padding: 24px 28px;
+        min-width: 240px;
+        max-width: 92vw;
+        text-align: center;
+        background: var(--surface);
+        color: var(--text);
+        box-shadow: var(--sombra);
+    }
+    dialog.flash-pop::backdrop { background: rgba(91, 58, 74, .45); }
+    .flash-pop .flash-msg { margin: 0 0 16px; font-weight: 700; font-size: 16px; }
+    .flash-pop .flash-success { color: var(--ok-tinta); }
+    .flash-pop .flash-error   { color: var(--peligro-tinta); }
+    .flash-pop form { margin: 0; }
+    .flash-pop form button {
+        min-height: 40px; padding: 8px 24px;
+        border: 0; border-radius: var(--radio-pill);
+        background: var(--rosa-tinta); color: #fff;
+        font: inherit; font-weight: 700; cursor: pointer;
+        animation: cp-pop .35s cubic-bezier(.17, .89, .32, 1.28);
+    }
+
+    /* Diálogo de confirmación propio (sustituye al confirm() del navegador) */
+    #confirm-pop .cp-msg { margin: 0 0 18px; font-weight: 700; font-size: 16px; }
+    #confirm-pop .cp-actions { display: flex; gap: 10px; justify-content: center; }
+    #confirm-pop .cp-actions button {
+        min-height: 40px; padding: 8px 20px;
+        border: 0; border-radius: var(--radio-pill);
+        font: inherit; font-weight: 700; cursor: pointer;
+        animation: cp-pop .35s cubic-bezier(.17, .89, .32, 1.28);
+    }
+    #confirm-pop .cp-yes { background: var(--peligro-tinta); color: #fff; }
+    #confirm-pop .cp-no  { background: var(--surface-2); color: var(--text); }
+    #confirm-pop .cp-done p { margin: 0; font-weight: 700; font-size: 16px; color: var(--ok-tinta); }
+    #confirm-pop .cp-ask, #confirm-pop .cp-done { animation: cp-fade .18s ease-out; }
+    @keyframes cp-pop  { from { transform: scale(0);   opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    @keyframes cp-fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+</style>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <dialog id="flash-pop" class="flash-pop">
+        {% for category, message in messages %}
+        <p class="flash-msg flash-{{ category }}">{{ message }}</p>
+        {% endfor %}
+        <form method="dialog"><button>OK</button></form>
+    </dialog>
+    {% endif %}
+{% endwith %}
+
+<dialog id="confirm-pop" class="flash-pop">
+    <div class="cp-ask">
+        <p class="cp-msg"></p>
+        <div class="cp-actions">
+            <button type="button" class="cp-no">Cancelar</button>
+            <button type="button" class="cp-yes">Sí, borrar</button>
+        </div>
+    </div>
+    <div class="cp-done" hidden>
+        <p></p>
+    </div>
+</dialog>
+
+<script>
+(function () {
+    var path = location.pathname;
+    var SCROLL_KEY = 'scrollY:' + path;
+    var DONE_KEY = 'flashDone:' + path;
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+
+    // Guarda la posición de scroll al enviar un formulario, para no saltar arriba.
+    function saveScroll() {
+        sessionStorage.setItem(SCROLL_KEY, JSON.stringify([window.scrollY, Date.now()]));
+    }
+    document.addEventListener('submit', function (e) {
+        if (e.target && e.target.method === 'dialog') return;  // el "OK" del pop-up no navega
+        saveScroll();
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // ¿Llegamos por una recarga o por una acción en la propia página?
+        // Solo entonces reabrimos los desplegables y restauramos el scroll.
+        // Si venimos de fuera (o se volvió a entrar), nada abierto.
+        var rawScroll = sessionStorage.getItem(SCROLL_KEY);
+        sessionStorage.removeItem(SCROLL_KEY);
+        var scroll = null;
+        try { scroll = rawScroll && JSON.parse(rawScroll); } catch (e) {}
+        var reciente = scroll && Date.now() - scroll[1] < 5000;
+        var navType = ((performance.getEntriesByType('navigation')[0]) || {}).type;
+        var mantener = reciente || navType === 'reload' || navType === 'back_forward';
+
+        // 1) Desplegables abiertos entre recargas (por página).
+        document.querySelectorAll('details.acc').forEach(function (d, i) {
+            var key = path + '#acc' + i;
+            if (mantener) {
+                if (localStorage.getItem(key) === '1') d.open = true;
+            } else {
+                localStorage.removeItem(key);
+            }
+            d.addEventListener('toggle', function () {
+                localStorage.setItem(key, d.open ? '1' : '0');
+            });
+        });
+
+        // 2) Restaura el scroll si venimos de un submit reciente (< 5 s).
+        if (reciente) window.scrollTo(0, scroll[0]);
+
+        // 3) Pop-up de resultado del servidor. Se omite si ya mostramos el tick
+        //    en el diálogo de confirmación (salvo que haya un error que enseñar).
+        var fp = document.getElementById('flash-pop');
+        if (fp && fp.showModal) {
+            var done = sessionStorage.getItem(DONE_KEY);
+            sessionStorage.removeItem(DONE_KEY);
+            var yaVisto = done && (Date.now() - +done < 5000) && !fp.querySelector('.flash-error');
+            if (!yaVisto) {
+                fp.showModal();
+                setTimeout(function () { if (fp.open) fp.close(); }, 2500);
+            }
+        }
+
+        // 4) Confirmación de borrado con diálogo propio.
+        var cp = document.getElementById('confirm-pop');
+        var cpMsg = cp.querySelector('.cp-msg');
+        var cpAsk = cp.querySelector('.cp-ask');
+        var cpDone = cp.querySelector('.cp-done');
+        var cpDoneMsg = cpDone.querySelector('p');
+        var pending = null;
+
+        // Traslada `onsubmit="return confirm('...')"` a data-confirm y quita el inline.
+        document.querySelectorAll('form[onsubmit*="confirm("]').forEach(function (f) {
+            var m = /confirm\(\s*(['"])([\s\S]*?)\1\s*\)/.exec(f.getAttribute('onsubmit') || '');
+            if (m) f.setAttribute('data-confirm', m[2].replace(/\\(['"])/g, '$1'));
+            f.removeAttribute('onsubmit');
+        });
+
+        document.addEventListener('submit', function (e) {
+            var f = e.target;
+            if (!f || !f.hasAttribute('data-confirm') || f.dataset.confirmed) return;
+            e.preventDefault();
+            pending = f;
+            cpMsg.textContent = f.getAttribute('data-confirm');
+            cpAsk.hidden = false;
+            cpDone.hidden = true;
+            if (cp.showModal) cp.showModal(); else if (confirm(cpMsg.textContent)) submitPending();
+            cp.querySelector('.cp-no').focus();
+        });
+
+        cp.querySelector('.cp-no').addEventListener('click', function () {
+            pending = null;
+            cp.close();
+        });
+        cp.querySelector('.cp-yes').addEventListener('click', function () {
+            if (!pending) return cp.close();
+            // Morph: mismo pop-up, cambia el texto y aparece el tick.
+            cpDoneMsg.textContent = 'Eliminado';
+            cpAsk.hidden = true;
+            cpDone.hidden = false;
+            sessionStorage.setItem(DONE_KEY, Date.now());
+            setTimeout(submitPending, 650);
+        });
+
+        function submitPending() {
+            if (!pending) return;
+            var f = pending;
+            pending = null;
+            saveScroll();
+            f.dataset.confirmed = '1';   // deja pasar el submit real
+            f.submit();
+        }
+    });
+})();
+</script>

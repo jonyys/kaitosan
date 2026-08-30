@@ -88,6 +88,64 @@
         @media (min-width: 640px) {
             .stats-grid { grid-template-columns: repeat(4, 1fr); gap: 14px; }
         }
+
+        /* El título de la sección ya está en el <summary>: la barra de acciones
+           (Borrar todo) se alinea a la derecha aunque el h2 esté oculto. */
+        .acc .section-header { justify-content: flex-end; }
+        .acc table { font-size: 12px; }
+        .acc > .card { overflow: visible; }   /* que no recorte el desplegable de acciones */
+
+        /* Menú de acciones por fila (nativo, sin JS): un botón "⋯" que despliega
+           las opciones, para que no se salgan del ancho en móvil. */
+        .rowmenu { position: relative; display: inline-block; }
+        .rowmenu > summary {
+            list-style: none;
+            cursor: pointer;
+            width: 36px; height: 36px;
+            display: flex; align-items: center; justify-content: center;
+            border: 1px solid var(--border-fuerte);
+            border-radius: var(--radio-sm);
+            background: var(--surface-2);
+            color: var(--text-soft);
+            font-weight: 700; font-size: 18px; line-height: 1;
+        }
+        .rowmenu > summary::-webkit-details-marker { display: none; }
+        .rowmenu[open] > summary { border-color: var(--rosa-accion); color: var(--rosa-tinta); }
+        .rowmenu-panel {
+            position: absolute; right: 0; top: calc(100% + 4px); z-index: 30;
+            display: flex; flex-direction: column; gap: 2px;
+            padding: 6px; min-width: 190px;
+            background: var(--surface);
+            border: 1px solid var(--border-fuerte);
+            border-radius: var(--radio-sm);
+            box-shadow: var(--sombra);
+        }
+        .rowmenu-panel form { margin: 0; }
+        .rowmenu-panel button {
+            width: 100%; text-align: left;
+            padding: 10px; border: 0; border-radius: var(--radio-sm);
+            background: transparent; color: var(--text);
+            font: inherit; font-weight: 600; cursor: pointer;
+            white-space: nowrap;
+        }
+        .rowmenu-panel button:hover { background: var(--surface-2); }
+        .rowmenu-panel button.peligro { color: var(--peligro-tinta); }
+
+        /* Sesiones: "Fin" ocupa lo justo; "Resumen" se queda el ancho sobrante. */
+        .sess-table td:nth-child(3), .sess-table th:nth-child(3) { width: 1%; white-space: nowrap; }
+        .sess-table td:nth-child(6), .sess-table th:nth-child(6) { width: auto; }
+
+        /* Móvil: nada de arrastrar tablas de lado para llegar a los botones.
+           Se ocultan las columnas SRS secundarias; quedan lo esencial y las acciones. */
+        @media (max-width: 640px) {
+            .acc > .card { padding-left: 14px; padding-right: 14px; }
+            .acc table { min-width: 0; }
+            .srs-table th:nth-child(n+4):nth-child(-n+8),
+            .srs-table td:nth-child(n+4):nth-child(-n+8) { display: none; }
+            .sess-table th:nth-child(1), .sess-table td:nth-child(1),
+            .sess-table th:nth-child(4), .sess-table td:nth-child(4),
+            .sess-table th:nth-child(5), .sess-table td:nth-child(5) { display: none; }
+        }
     </style>
 </head>
 <body>
@@ -95,13 +153,7 @@
 <a href="/admin" class="nav-back">← Volver al panel de admin</a>
 <h1>🎌 Panel de Japonés</h1>
 
-{% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-        {% for category, message in messages %}
-            <div class="alert alert-{{ category }}">{{ message }}</div>
-        {% endfor %}
-    {% endif %}
-{% endwith %}
+{% include 'partials/_panel_scripts.html' %}
 
 {# ── Stats ── #}
 <div class="stats-grid">
@@ -162,9 +214,11 @@
 </div>
 {% endif %}
 
-<div class="grid">
+<div class="acc-list">
 
 {# ── Vocabulario ── #}
+<details class="acc">
+<summary>📚 Vocabulario ({{ total_vocab }})</summary>
 <div class="card full">
     <div class="section-header">
         <h2>📚 Vocabulario ({{ total_vocab }})</h2>
@@ -183,7 +237,7 @@
     </form>
 
     {% if vocab %}
-    <table>
+    <table class="srs-table">
         <tr>
             <th>Palabra</th>
             <th>Significado</th>
@@ -214,15 +268,21 @@
             </td>
             <td style="color:#888;">{{ v.times_correct or 0 }} / {{ v.errors or 0 }}</td>
             <td>
-                <div style="display:flex;gap:4px;">
-                    <form method="post" action="/japones/vocabulario/resetear-srs/{{ v.id }}">
-                        <button class="btn btn-yellow" title="Resetear SRS">↺</button>
-                    </form>
-                    <form method="post" action="/japones/vocabulario/borrar/{{ v.id }}"
-                          onsubmit="return confirm('¿Borrar {{ v.word | replace("'", "\\'") }}?')">
-                        <button class="btn btn-red">✕</button>
-                    </form>
-                </div>
+                <details class="rowmenu">
+                    <summary title="Acciones">⋯</summary>
+                    <div class="rowmenu-panel">
+                        <form method="post" action="/japones/vocabulario/marcar-aprendido/{{ v.id }}">
+                            <button type="submit">✓ Aprendida al 100%</button>
+                        </form>
+                        <form method="post" action="/japones/vocabulario/resetear-srs/{{ v.id }}">
+                            <button type="submit">↺ Resetear a 0</button>
+                        </form>
+                        <form method="post" action="/japones/vocabulario/borrar/{{ v.id }}"
+                              onsubmit="return confirm('¿Borrar {{ v.word | replace("'", "\\'") }}?')">
+                            <button type="submit" class="peligro">🗑 Eliminar</button>
+                        </form>
+                    </div>
+                </details>
             </td>
         </tr>
         {% endfor %}
@@ -231,8 +291,11 @@
     <p class="empty">Sin vocabulario registrado</p>
     {% endif %}
 </div>
+</details>
 
 {# ── Gramática ── #}
+<details class="acc">
+<summary>🧩 Gramática ({{ total_grammar }})</summary>
 <div class="card full">
     <div class="section-header">
         <h2>🧩 Gramática ({{ total_grammar }})</h2>
@@ -251,7 +314,7 @@
     </form>
 
     {% if grammar %}
-    <table>
+    <table class="srs-table">
         <tr>
             <th>Punto</th>
             <th>Descripción</th>
@@ -289,15 +352,21 @@
             </td>
             <td style="color:#888;">{{ g.times_correct or 0 }} / {{ g.errors or 0 }}</td>
             <td>
-                <div style="display:flex;gap:4px;">
-                    <form method="post" action="/japones/gramatica/resetear-srs/{{ g.id }}">
-                        <button class="btn btn-yellow" title="Resetear SRS">↺</button>
-                    </form>
-                    <form method="post" action="/japones/gramatica/borrar/{{ g.id }}"
-                          onsubmit="return confirm('¿Borrar {{ g.point | replace("'", "\\'") }}?')">
-                        <button class="btn btn-red">✕</button>
-                    </form>
-                </div>
+                <details class="rowmenu">
+                    <summary title="Acciones">⋯</summary>
+                    <div class="rowmenu-panel">
+                        <form method="post" action="/japones/gramatica/marcar-aprendido/{{ g.id }}">
+                            <button type="submit">✓ Aprendida al 100%</button>
+                        </form>
+                        <form method="post" action="/japones/gramatica/resetear-srs/{{ g.id }}">
+                            <button type="submit">↺ Resetear a 0</button>
+                        </form>
+                        <form method="post" action="/japones/gramatica/borrar/{{ g.id }}"
+                              onsubmit="return confirm('¿Borrar {{ g.point | replace("'", "\\'") }}?')">
+                            <button type="submit" class="peligro">🗑 Eliminar</button>
+                        </form>
+                    </div>
+                </details>
             </td>
         </tr>
         {% endfor %}
@@ -306,8 +375,11 @@
     <p class="empty">Sin gramática registrada</p>
     {% endif %}
 </div>
+</details>
 
 {# ── Sesiones ── #}
+<details class="acc">
+<summary>📅 Sesiones ({{ total_sessions }})</summary>
 <div class="card full">
     <div class="section-header">
         <h2>📅 Sesiones ({{ total_sessions }})</h2>
@@ -318,7 +390,7 @@
     </div>
 
     {% if sessions %}
-    <table>
+    <table class="sess-table">
         <tr>
             <th>#</th>
             <th>Inicio</th>
@@ -332,12 +404,12 @@
         <tr>
             <td style="color:#555;">#{{ s.id }}</td>
             <td>{{ s.started_at }}</td>
-            <td>{{ s.ended_at or '<span style="color:var(--ok-tinta);font-weight:700;">Activa</span>' }}</td>
+            <td>{% if s.ended_at %}{{ s.ended_at }}{% else %}<span style="color:var(--ok-tinta);font-weight:700;">Activa</span>{% endif %}</td>
             <td>{{ s.words_learned or 0 }}</td>
             <td style="color:#888;">{{ s.grammar_practiced or '—' }}</td>
-            <td style="font-size:12px;color:#888;max-width:320px;">
+            <td style="font-size:12px;color:#888;min-width:220px;">
                 {% if s.summary %}
-                    {{ s.summary[:180] }}{% if s.summary|length > 180 %}…{% endif %}
+                    {{ s.summary[:280] }}{% if s.summary|length > 280 %}…{% endif %}
                 {% else %}—{% endif %}
             </td>
             <td>
@@ -353,7 +425,8 @@
     <p class="empty">Sin sesiones registradas</p>
     {% endif %}
 </div>
+</details>
 
-</div>{# /grid #}
+</div>{# /acc-list #}
 </body>
 </html>

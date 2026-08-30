@@ -12,4 +12,6 @@
     {% endif %}
     <h2 style="margin-top:20px">🎤 Audio transcrito hoy</h2>
     <p style="font-size:24px; font-weight:700; color:var(--rosa-tinta)">{{ uso_audio }} segundos</p>
+    <h2 style="margin-top:20px">☁️ Uso de Azure este mes</h2>
+    <p style="font-size:24px; font-weight:700; color:var(--rosa-tinta)">{{ uso_azure }} segundos (≈ {{ (uso_azure / 60)|round(1) }} min)</p>
 </div>
