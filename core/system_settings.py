@@ -674,6 +674,21 @@ def _resolver_indice(pref: str, entrada: bool):
     return None
 
 
+def _portaudio_tiene_pulse() -> bool:
+    """¿`sounddevice` puede enrutar por el servidor de sonido (PulseAudio/PipeWire)?
+    Sin ese puente NO se puede reproducir por un altavoz Bluetooth, así que no
+    tiene sentido ofrecerlos como salida elegible."""
+    try:
+        import sounddevice as sd
+        for d in sd.query_devices():
+            n = (d.get("name") or "").lower()
+            if ("pulse" in n or "pipewire" in n) and d.get("max_output_channels", 0) > 0:
+                return True
+    except Exception:  # noqa: BLE001
+        pass
+    return False
+
+
 def audio_salidas() -> list:
     """[{id, nombre, en_uso, bt_mac?}] — tarjetas de salida + altavoces BT conectados.
 
@@ -691,12 +706,15 @@ def audio_salidas() -> list:
         return salidas
 
     salidas = _audio_dispositivos_reales(entrada=False)
-    nombres = {s["id"].lower() for s in salidas}
-    for d in _bt_audio_conectados():
-        if d["nombre"].lower() not in nombres:
-            salidas.append({"id": d["nombre"], "nombre": d["nombre"] + " (Bluetooth)",
-                            "en_uso": bool(guardada) and guardada == d["nombre"],
-                            "bt_mac": d["mac"]})
+    # Altavoces Bluetooth: solo si `sounddevice` tiene puente con el servidor de
+    # sonido; si no, no se puede reproducir por ellos y no se ofrecen.
+    if _portaudio_tiene_pulse():
+        nombres = {s["id"].lower() for s in salidas}
+        for d in _bt_audio_conectados():
+            if d["nombre"].lower() not in nombres:
+                salidas.append({"id": d["nombre"], "nombre": d["nombre"] + " (Bluetooth)",
+                                "en_uso": bool(guardada) and guardada == d["nombre"],
+                                "bt_mac": d["mac"]})
     return salidas
 
 
@@ -836,14 +854,24 @@ def audio_probar_salida() -> dict:
     except Exception as e:  # noqa: BLE001
         return {"ok": False, "error": f"audio no disponible: {e}"}
     try:
-        dev = _resolver_indice(audio_salida_preferida(), entrada=False)
+        pref = audio_salida_preferida()
+        dev = _resolver_indice(pref, entrada=False)
         try:
-            nombre = sd.query_devices(dev)["name"] if dev is not None else "(predeterminado del sistema)"
+            if dev is not None:
+                nombre = sd.query_devices(dev)["name"]
+            elif pref:
+                nombre = f"predeterminado del sistema («{pref}» no está disponible)"
+            else:
+                nombre = "predeterminado del sistema"
         except Exception:  # noqa: BLE001
             nombre = str(dev)
         sr = _sr_dispositivo(dev, entrada=False)
-        t = np.linspace(0, 0.6, int(sr * 0.6), endpoint=False)
-        tono = (0.2 * np.sin(2 * np.pi * 660 * t)).astype("float32")
+        dur = 1.0
+        t = np.linspace(0, dur, int(sr * dur), endpoint=False)
+        mono = (0.35 * np.sin(2 * np.pi * 660 * t)).astype("float32")
+        # Estéreo: los DAC I2S (HifiBerry / PCM5102A) suelen exigir 2 canales;
+        # con 1 canal el `hw:` no reproduce nada aunque no dé error.
+        tono = np.column_stack([mono, mono])
         sd.play(tono, sr, device=dev)
         sd.wait()
     except Exception as e:  # noqa: BLE001
@@ -884,7 +912,9 @@ def audio_probar_micro() -> dict:
         grab = sd.rec(int(sr * 2), samplerate=sr, channels=1, dtype="float32", device=dev_in)
         sd.wait()
         dev_out = _resolver_indice(audio_salida_preferida(), entrada=False)
-        sd.play(grab, sr, device=dev_out)
+        import numpy as np
+        estereo = np.column_stack([grab[:, 0], grab[:, 0]])  # DAC I2S: 2 canales
+        sd.play(estereo, sr, device=dev_out)
         sd.wait()
     except Exception as e:  # noqa: BLE001
         return {"ok": False, "error": _msg_audio_error("probar el micrófono", e)}

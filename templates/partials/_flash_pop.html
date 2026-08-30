@@ -18,7 +18,7 @@
     {% if messages %}
     <dialog id="flash-pop" class="flash-pop">
         {% for category, message in messages %}
-        <p class="flash-msg flash-{{ category }}">{{ message }}</p>
+        <p class="flash-msg flash-{{ category }}">{{ message | replace('✅', '') | replace('❌', '') | replace('⚠️', '') | replace('⚠', '') | trim }}</p>
         {% endfor %}
         <form method="dialog"><button>OK</button></form>
     </dialog>

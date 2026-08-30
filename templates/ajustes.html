@@ -24,7 +24,6 @@
 </head>
 <body>
 {% include 'partials/_iconos.html' %}
-{% include 'partials/_confirm_pop.html' %}
 
 <div class="ajustes-wrap">
 
@@ -32,8 +31,6 @@
         <span><svg class="ico"><use href="#i-gear"/></svg> Kaito — Ajustes</span>
         <a href="/admin"><button class="btn btn-yellow" style="font-size:13px"><svg class="ico"><use href="#i-home"/></svg></button></a>
     </h1>
-
-    {% include 'partials/_flash_pop.html' %}
 
     <div class="acc-list">
         <details class="acc"><summary><svg class="ico"><use href="#i-wifi"/></svg> WiFi</summary>
@@ -62,11 +59,14 @@
         <details class="acc"><summary><svg class="ico"><use href="#i-key"/></svg> Cuenta del panel</summary>
             {% include 'partials/ajustes/_cuenta.html' %}
         </details>
+        <details class="acc"><summary style="color:var(--peligro)"><svg class="ico"><use href="#i-bomb"/></svg> Reset de fábrica</summary>
+            {% include 'partials/ajustes/_reset_fabrica.html' %}
+        </details>
     </div>
 
-    {% include 'partials/ajustes/_reset_fabrica.html' %}
-
 </div>
+
+{% include 'partials/_panel_scripts.html' %}
 
 </body>
 </html>

@@ -21,7 +21,10 @@ def buscar_altavoz():
         for i, d in devs:
             if d["max_output_channels"] > 0 and h.lower() in d["name"].lower():
                 return i
-    raise RuntimeError(f"No se encontró altavoz ({' ni '.join(hints)})")
+    # No encontrado: NO tumbes el arranque (el dispositivo elegido puede estar
+    # desconectado). Usa la salida por defecto del sistema, como buscar_microfono().
+    print(f"⚠️ Altavoz '{' / '.join(hints)}' no encontrado; usando la salida por defecto")
+    return None
 
 
 class TextToSpeech:
@@ -31,7 +34,12 @@ class TextToSpeech:
         self.voice_es = "es-ES-AlvaroNeural"
         self.voice_ja = "ja-JP-KeitaNeural"
 
-        print(f"🔊 Salida de audio: {sd.query_devices(self.device)['name']}")
+        try:
+            _nom = sd.query_devices(self.device)["name"] if self.device is not None \
+                else sd.query_devices(kind="output")["name"]
+        except Exception:
+            _nom = "por defecto"
+        print(f"🔊 Salida de audio: {_nom}")
 
     def _contiene_japones(self, texto: str) -> bool:
         """Detecta si hay kana/kanji o bloques 【】 en el texto."""
