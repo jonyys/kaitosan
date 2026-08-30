@@ -11,10 +11,12 @@ import threading
 import time as tmod
 
 def buscar_altavoz():
-    from core.config import AUDIO_OUTPUT_HINT
+    # Preferencia de Ajustes (app_settings) antes que AUDIO_OUTPUT_HINT del .env.
+    from core.system_settings import audio_salida_preferida
+    hint = audio_salida_preferida()
 
     devs = list(enumerate(sd.query_devices()))
-    hints = [AUDIO_OUTPUT_HINT] if AUDIO_OUTPUT_HINT else ["hifiberry", "G435"]
+    hints = [hint] if hint else ["hifiberry", "G435"]
     for h in hints:
         for i, d in devs:
             if d["max_output_channels"] > 0 and h.lower() in d["name"].lower():

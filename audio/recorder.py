@@ -12,10 +12,12 @@ SAMPLE_RATE_DEVICE = 48000
 SAMPLE_RATE_STT = 16000
 
 def buscar_microfono():
-    from core.config import AUDIO_INPUT_HINT
+    # Preferencia de Ajustes (app_settings) antes que AUDIO_INPUT_HINT del .env.
+    from core.system_settings import audio_entrada_preferida
+    hint = audio_entrada_preferida()
 
     devs = list(enumerate(sd.query_devices()))
-    hints = [AUDIO_INPUT_HINT] if AUDIO_INPUT_HINT else ["AB17X", "G435"]
+    hints = [hint] if hint else ["AB17X", "G435"]
     for h in hints:
         for i, d in devs:
             if d["max_input_channels"] > 0 and h.lower() in d["name"].lower():

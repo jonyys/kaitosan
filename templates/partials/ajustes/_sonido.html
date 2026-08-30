@@ -1,5 +1,7 @@
 <div class="card">
     <h2>🔊 Sonido</h2>
+
+    {# --- Volumen (Fase 6) --- #}
     <div class="fila">
         <span class="et">Volumen</span>
         <span class="val">{{ volumen }}%</span>
@@ -17,4 +19,77 @@
         </div>
         <button class="btn btn-green">Guardar volumen</button>
     </form>
+
+    {# --- Dispositivo de salida (Fase 8) --- #}
+    <form method="POST" action="/admin/ajustes/audio/salida" style="margin-top:20px">
+        <label class="et" for="audio-salida">Altavoz (salida de audio)</label>
+        <select id="audio-salida" name="id">
+            <option value="">Automático (según el .env)</option>
+            {% for d in audio_salidas %}
+            <option value="{{ d.id }}" {{ 'selected' if d.id == audio_output else '' }}>{{ d.nombre }}</option>
+            {% endfor %}
+        </select>
+        <button class="btn btn-green">Guardar altavoz</button>
+    </form>
+
+    {# --- Dispositivo de entrada (Fase 8) --- #}
+    <form method="POST" action="/admin/ajustes/audio/entrada" style="margin-top:20px">
+        <label class="et" for="audio-entrada">Micrófono (entrada de audio)</label>
+        <select id="audio-entrada" name="id">
+            <option value="">Automático (según el .env)</option>
+            {% for d in audio_entradas %}
+            <option value="{{ d.id }}" {{ 'selected' if d.id == audio_input else '' }}>{{ d.nombre }}</option>
+            {% endfor %}
+        </select>
+        <button class="btn btn-green">Guardar micrófono</button>
+    </form>
+
+    {# --- Ganancia del micrófono (Fase 8) --- #}
+    <form method="POST" action="/admin/ajustes/audio/micro-ganancia" style="margin-top:20px">
+        <label class="et" for="mic-gain">Ganancia del micrófono</label>
+        <input type="range" id="mic-gain" name="ganancia" min="0" max="100" step="5"
+               value="{{ micro_ganancia }}"
+               oninput="document.getElementById('mic-gain-val').textContent = this.value + '%'">
+        <div class="fila">
+            <span class="et">Nuevo valor</span>
+            <span class="val" id="mic-gain-val">{{ micro_ganancia }}%</span>
+        </div>
+        <button class="btn btn-green">Guardar ganancia</button>
+    </form>
+
+    {# --- Pruebas (Fase 8) — fetch, sin recargar (§7.2) --- #}
+    <div class="actions" style="margin-top:20px">
+        <button type="button" class="btn btn-yellow"
+                onclick="probarAudio('salida', this)">▶️ Probar sonido</button>
+        <button type="button" class="btn btn-yellow"
+                onclick="probarAudio('micro', this)">🎤 Probar micro</button>
+    </div>
+    <p id="audio-prueba-msg" class="et" style="min-height:1.4em"></p>
 </div>
+
+<script>
+function probarAudio(tipo, btn) {
+    var msg = document.getElementById('audio-prueba-msg');
+    btn.disabled = true;
+    msg.textContent = tipo === 'micro'
+        ? 'Grabando 2 s y reproduciendo…'
+        : 'Reproduciendo tono…';
+    fetch('/admin/ajustes/audio/probar', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({tipo: tipo})
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+        if (d.ok) {
+            msg.textContent = d.simulado
+                ? '✅ OK (modo simulado: no suena nada de verdad)'
+                : '✅ Prueba completada';
+        } else {
+            msg.textContent = '❌ ' + (d.error || 'no se pudo completar la prueba');
+        }
+    })
+    .catch(function () { msg.textContent = '❌ error de red'; })
+    .finally(function () { btn.disabled = false; });
+}
+</script>

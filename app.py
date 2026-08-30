@@ -435,6 +435,11 @@ def ajustes():
         brillo=system_settings.brillo_get(),
         sistema=system_settings.sistema_info(),
         admin_user=settings_get("admin_user"),
+        audio_salidas=system_settings.audio_salidas(),
+        audio_entradas=system_settings.audio_entradas(),
+        audio_output=settings_get("audio_output"),
+        audio_input=settings_get("audio_input"),
+        micro_ganancia=system_settings.micro_ganancia_get(),
     )
 
 
@@ -489,6 +494,39 @@ def ajustes_brillo():
     _flash_resultado(system_settings.brillo_set(request.form.get("brillo", "")),
                      "Brillo actualizado")
     return redirect(url_for("ajustes"))
+
+@app.route("/admin/ajustes/audio/salida", methods=["POST"])
+@login_requerido
+def ajustes_audio_salida():
+    _flash_resultado(system_settings.audio_salida_set(request.form.get("id", "")),
+                     "Altavoz actualizado")
+    return redirect(url_for("ajustes"))
+
+
+@app.route("/admin/ajustes/audio/entrada", methods=["POST"])
+@login_requerido
+def ajustes_audio_entrada():
+    _flash_resultado(system_settings.audio_entrada_set(request.form.get("id", "")),
+                     "Micrófono actualizado")
+    return redirect(url_for("ajustes"))
+
+
+@app.route("/admin/ajustes/audio/micro-ganancia", methods=["POST"])
+@login_requerido
+def ajustes_audio_micro_ganancia():
+    _flash_resultado(system_settings.micro_ganancia_set(request.form.get("ganancia", "")),
+                     "Ganancia del micrófono actualizada")
+    return redirect(url_for("ajustes"))
+
+
+@app.route("/admin/ajustes/audio/probar", methods=["POST"])
+@login_requerido
+def ajustes_audio_probar():
+    tipo = (request.get_json(silent=True) or {}).get("tipo", "salida")
+    resultado = (system_settings.audio_probar_micro() if tipo == "micro"
+                 else system_settings.audio_probar_salida())
+    return jsonify(resultado)
+
 
 @app.route("/admin/ajustes/cuenta", methods=["POST"])
 @login_requerido

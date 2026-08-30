@@ -23,7 +23,16 @@ modo simulado no toca nada del sistema real.
     zona_listar()         zona_set(tz)          zona_auto(on)
     volumen_set(pct)      brillo_set(pct)
 
-WiFi como API JSON, Bluetooth, audio, modelos y mantenimiento llegan en fases
+Fase 8: selección de dispositivo de audio. Todo con modo simulado; la
+preferencia se guarda en `app_settings` (`audio_output` / `audio_input`) y el
+arranque de audio la lee **antes** que los `*_HINT` del `.env`.
+    audio_salidas()        audio_entradas()
+    audio_salida_set(id)   audio_entrada_set(id)
+    audio_salida_preferida()   audio_entrada_preferida()   (las usa el arranque)
+    micro_ganancia_get()   micro_ganancia_set(pct)
+    audio_probar_salida()  audio_probar_micro()
+
+WiFi como API JSON, Bluetooth, modelos y mantenimiento llegan en fases
 posteriores.
 """
 
@@ -338,6 +347,201 @@ def volumen_set(pct) -> dict:
     except Exception:  # noqa: BLE001
         pass
     return {"ok": False, "error": "no se encontró un control de volumen"}
+
+
+# --------------------------------------------------------------------------- #
+# Audio: selección de dispositivo (§2.1, §5 nota "Selección de audio")
+# --------------------------------------------------------------------------- #
+# En modo simulado los índices ALSA no existen; usamos tarjetas de ejemplo. El
+# `id` es un trozo estable del nombre (nunca el número de tarjeta, que baila
+# entre arranques) y sirve a la vez como subcadena para la autodetección.
+_AUDIO_SALIDAS_FAKE = [
+    {"id": "hifiberry", "nombre": "HiFiBerry DAC — altavoz de Kaito"},
+    {"id": "G435", "nombre": "Logitech G435 — cascos"},
+    {"id": "HDMI", "nombre": "Salida HDMI"},
+]
+_AUDIO_ENTRADAS_FAKE = [
+    {"id": "AB17X", "nombre": "Micrófono USB AB17X"},
+    {"id": "G435", "nombre": "Logitech G435 — micro de los cascos"},
+]
+
+
+def _audio_dispositivos_reales(entrada: bool) -> list:
+    """Enumera tarjetas de audio con `sounddevice` (reutiliza la autodetección
+    del resto del proyecto). Devuelve [] si `sounddevice` no está disponible."""
+    try:
+        import sounddevice as sd
+    except Exception:  # noqa: BLE001 — la capa de sistema nunca propaga
+        return []
+    clave = "max_input_channels" if entrada else "max_output_channels"
+    pref = (audio_entrada_preferida() if entrada else audio_salida_preferida()).lower()
+    salidas, vistos = [], set()
+    try:
+        for d in sd.query_devices():
+            if d.get(clave, 0) <= 0:
+                continue
+            nombre = (d.get("name") or "").strip()
+            if not nombre or nombre in vistos:
+                continue
+            vistos.add(nombre)
+            salidas.append({
+                "id": nombre,
+                "nombre": nombre,
+                "en_uso": bool(pref) and pref in nombre.lower(),
+            })
+    except Exception:  # noqa: BLE001
+        return []
+    return salidas
+
+
+def _resolver_indice(pref: str, entrada: bool):
+    """Resuelve una subcadena a un índice de dispositivo de `sounddevice`, o
+    None (para que `sounddevice` use el predeterminado)."""
+    pref = (pref or "").strip().lower()
+    if not pref:
+        return None
+    try:
+        import sounddevice as sd
+    except Exception:  # noqa: BLE001
+        return None
+    clave = "max_input_channels" if entrada else "max_output_channels"
+    try:
+        for i, d in enumerate(sd.query_devices()):
+            if d.get(clave, 0) > 0 and pref in (d.get("name") or "").lower():
+                return i
+    except Exception:  # noqa: BLE001
+        return None
+    return None
+
+
+def audio_salidas() -> list:
+    """[{id, nombre, en_uso}] — tarjetas de salida elegibles."""
+    guardada = (settings_get("audio_output") or "").strip()
+    if _simulado():
+        return [{**s, "en_uso": s["id"] == guardada} for s in _AUDIO_SALIDAS_FAKE]
+    return _audio_dispositivos_reales(entrada=False)
+
+
+def audio_entradas() -> list:
+    """[{id, nombre, en_uso}] — micrófonos elegibles."""
+    guardada = (settings_get("audio_input") or "").strip()
+    if _simulado():
+        return [{**s, "en_uso": s["id"] == guardada} for s in _AUDIO_ENTRADAS_FAKE]
+    return _audio_dispositivos_reales(entrada=True)
+
+
+def audio_salida_set(valor) -> dict:
+    """Guarda la salida elegida en `app_settings` (sustituye AUDIO_OUTPUT_HINT).
+    Cadena vacía = volver a la autodetección del `.env`."""
+    valor = (valor or "").strip()
+    if valor and valor not in {s["id"] for s in audio_salidas()}:
+        return {"ok": False, "error": "dispositivo de salida desconocido"}
+    settings_set("audio_output", valor)
+    return {"ok": True, "valor": valor}
+
+
+def audio_entrada_set(valor) -> dict:
+    """Guarda el micrófono elegido en `app_settings` (sustituye AUDIO_INPUT_HINT).
+    Cadena vacía = volver a la autodetección del `.env`."""
+    valor = (valor or "").strip()
+    if valor and valor not in {s["id"] for s in audio_entradas()}:
+        return {"ok": False, "error": "dispositivo de entrada desconocido"}
+    settings_set("audio_input", valor)
+    return {"ok": True, "valor": valor}
+
+
+def audio_salida_preferida() -> str:
+    """Subcadena para elegir el altavoz: preferencia guardada y, si está vacía,
+    `AUDIO_OUTPUT_HINT` del `.env` (que pasa a ser semilla / override de fábrica)."""
+    guardada = (settings_get("audio_output") or "").strip()
+    if guardada:
+        return guardada
+    from core.config import AUDIO_OUTPUT_HINT
+    return AUDIO_OUTPUT_HINT
+
+
+def audio_entrada_preferida() -> str:
+    """Ídem para el micrófono: `app_settings` antes que `AUDIO_INPUT_HINT`."""
+    guardada = (settings_get("audio_input") or "").strip()
+    if guardada:
+        return guardada
+    from core.config import AUDIO_INPUT_HINT
+    return AUDIO_INPUT_HINT
+
+
+def micro_ganancia_get() -> int:
+    """Ganancia de captura del micrófono, 0..100. 50 si no se puede leer."""
+    if _simulado():
+        return 70
+    try:
+        for control in ("Capture", "Mic", "Front Mic"):
+            salida = _cmd(["amixer", "-M", "sget", control])
+            if not salida:
+                continue
+            m = re.search(r"\[(\d{1,3})%\]", salida)
+            if m:
+                return max(0, min(100, int(m.group(1))))
+    except Exception:  # noqa: BLE001
+        pass
+    return 50
+
+
+def micro_ganancia_set(pct) -> dict:
+    """Fija la ganancia del micrófono (0..100) con `amixer -M sset Capture`."""
+    n = _clamp_pct(pct)
+    if n is None:
+        return {"ok": False, "error": "valor de ganancia no válido"}
+    if _simulado():
+        return {"ok": True, "simulado": True, "valor": n}
+    try:
+        for control in ("Capture", "Mic", "Front Mic"):
+            if _cmd(["amixer", "-M", "sget", control]) is None:
+                continue
+            if _cmd(["amixer", "-M", "sset", control, f"{n}%"]) is not None:
+                return {"ok": True, "valor": n}
+    except Exception:  # noqa: BLE001
+        pass
+    return {"ok": False, "error": "no se encontró un control de ganancia de micrófono"}
+
+
+def audio_probar_salida() -> dict:
+    """Reproduce un tono corto por la salida activa."""
+    if _simulado():
+        return {"ok": True, "simulado": True}
+    try:
+        import numpy as np
+        import sounddevice as sd
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": f"audio no disponible: {e}"}
+    try:
+        sr = 44100
+        t = np.linspace(0, 0.6, int(sr * 0.6), endpoint=False)
+        tono = (0.2 * np.sin(2 * np.pi * 660 * t)).astype("float32")
+        sd.play(tono, sr, device=_resolver_indice(audio_salida_preferida(), entrada=False))
+        sd.wait()
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": f"no se pudo reproducir el tono: {e}"}
+    return {"ok": True}
+
+
+def audio_probar_micro() -> dict:
+    """Graba 2 s por el micrófono activo y los reproduce por la salida activa."""
+    if _simulado():
+        return {"ok": True, "simulado": True}
+    try:
+        import sounddevice as sd
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": f"audio no disponible: {e}"}
+    try:
+        sr = 44100
+        grab = sd.rec(int(sr * 2), samplerate=sr, channels=1, dtype="float32",
+                      device=_resolver_indice(audio_entrada_preferida(), entrada=True))
+        sd.wait()
+        sd.play(grab, sr, device=_resolver_indice(audio_salida_preferida(), entrada=False))
+        sd.wait()
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": f"no se pudo probar el micrófono: {e}"}
+    return {"ok": True}
 
 
 # --------------------------------------------------------------------------- #
