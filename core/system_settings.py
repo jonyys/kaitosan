@@ -46,11 +46,19 @@ propio proyecto). El zip de diagnóstico ofusca las claves del `.env`.
     salud()        logs(n=200)
     backup_bd()    restaurar_bd(fichero)    diagnostico_zip()
 
-WiFi como API JSON, Bluetooth, actualizar/reset y onboarding llegan en fases
-posteriores.
+Fase 11: actualizar / reiniciar servicio / reset de fábrica (§5 notas
+"actualizar()" y "reset_fabrica()", §11). El trabajo pesado corre en un hilo
+daemon y las funciones responden **antes** de tocar nada (la sesión se cae al
+reiniciar el servicio). Fuera de la Pi: `actualizar()` sí hace el `git pull` y
+guarda el commit anterior, pero se salta `pip install` y el `restart`;
+`reset_fabrica()` valida el PIN y no borra nada.
+    actualizar()          reiniciar_servicio()      reset_fabrica(pin)
+
+WiFi como API JSON, Bluetooth y onboarding llegan en fases posteriores.
 """
 
 import glob
+import hmac
 import json
 import os
 import platform
@@ -59,7 +67,9 @@ import shutil
 import socket
 import sqlite3
 import subprocess
+import sys
 import tempfile
+import threading
 import time
 import zipfile
 from datetime import datetime
@@ -1052,3 +1062,164 @@ def diagnostico_zip() -> str:
                        _cmd(["nmcli", "dev", "status"]) or "(nmcli no disponible)\n")
 
     return destino
+
+
+# --------------------------------------------------------------------------- #
+# Mantenimiento — actualizar / reiniciar servicio / reset (Fase 11, §5, §11)
+# --------------------------------------------------------------------------- #
+# PIN por defecto para el reset de fábrica cuando no hay `pin_hash` guardado ni
+# `AJUSTES_RESET_PIN` en el `.env`. El reset es irreversible: la UI pide doble
+# confirmación y aquí se re-valida el PIN.
+_RESET_PIN_DEFECTO = "1234"
+
+# Estado de la última actualización, para que la UI pueda consultarlo si quiere.
+_ACTUALIZAR_ESTADO: dict = {"en_curso": False, "pasos": None}
+
+
+def _git(args: list, cwd: str, timeout: int = 120):
+    """`git -C <cwd> <args...>` -> stdout o None."""
+    return _cmd(["git", "-C", cwd, *args], timeout=timeout)
+
+
+def _actualizar_worker(raiz: str) -> None:
+    """Hilo daemon: git pull (+ pip install + restart fuera de simulado)."""
+    pasos = []
+    try:
+        salida = _git(["pull", "--ff-only"], raiz)
+        pasos.append(["git pull", (salida or "ERROR").strip()])
+        if _simulado():
+            pasos.append(["pip install", "omitido (modo simulado)"])
+            pasos.append(["systemctl restart kaito", "omitido (modo simulado)"])
+        else:
+            pip = _cmd(
+                [sys.executable, "-m", "pip", "install", "-r",
+                 os.path.join(raiz, "requirements.txt")],
+                timeout=600,
+            )
+            pasos.append(["pip install", (pip or "ERROR").strip()[-500:]])
+            r = _cmd(["sudo", "-n", "systemctl", "restart", "kaito"], timeout=30)
+            pasos.append(["systemctl restart kaito",
+                          "ok" if r is not None else "ERROR"])
+    finally:
+        _ACTUALIZAR_ESTADO.update(en_curso=False, pasos=pasos)
+
+
+def actualizar() -> dict:
+    """`git pull` + `pip install -r` + `systemctl restart kaito`, en segundo plano.
+
+    Responde **antes** de tocar nada: el trabajo real corre en un hilo daemon
+    (§5). Guarda el commit actual en `app_settings['update_commit_anterior']`
+    para poder ofrecer "volver a la versión anterior". Nunca se auto-invoca.
+
+    Fuera de la Pi (simulado) hace el `git pull` y guarda el commit anterior,
+    pero se salta `pip install` y el `restart`.
+    """
+    if _ACTUALIZAR_ESTADO["en_curso"]:
+        return {"ok": False, "error": "ya hay una actualización en curso"}
+
+    raiz = BASE_DIR
+    commit_anterior = (_git(["rev-parse", "HEAD"], raiz) or "").strip() or None
+    if commit_anterior:
+        settings_set("update_commit_anterior", commit_anterior)
+    log_entrante = (_git(["log", "--oneline", "-n", "8"], raiz) or "").strip()
+
+    _ACTUALIZAR_ESTADO.update(en_curso=True, pasos=None)
+    threading.Thread(
+        target=_actualizar_worker, args=(raiz,), daemon=True
+    ).start()
+
+    return {
+        "ok": True,
+        "commit_anterior": commit_anterior,
+        "log": log_entrante,
+        "simulado": _simulado(),
+        "mensaje": (
+            "Actualizando Kaito. El servicio se reiniciará y esta página se "
+            "desconectará un momento: recárgala en 1–2 minutos."
+        ),
+    }
+
+
+def reiniciar_servicio() -> dict:
+    """`sudo systemctl restart kaito` — reinicia solo el servicio, no la Pi.
+
+    Corta la sesión unos segundos (mismo aviso que el cambio de WiFi, §7.4).
+    Responde antes de reiniciar; el `restart` va en un hilo daemon.
+    """
+    if _simulado():
+        return {"ok": True, "simulado": True,
+                "mensaje": "En la Pi el servicio se reiniciaría ahora."}
+
+    def _worker():
+        time.sleep(0.5)                        # deja que responda el fetch
+        _cmd(["sudo", "-n", "systemctl", "restart", "kaito"], timeout=30)
+
+    threading.Thread(target=_worker, daemon=True).start()
+    return {"ok": True,
+            "mensaje": ("Reiniciando el servicio. Esta página se desconectará "
+                        "unos segundos; recárgala enseguida.")}
+
+
+def _pin_correcto(pin: str) -> bool:
+    """Valida el PIN del reset contra `app_settings['pin_hash']` o, si no hay,
+    contra `AJUSTES_RESET_PIN` del `.env` (por defecto `_RESET_PIN_DEFECTO`)."""
+    pin = (pin or "").strip()
+    if not pin:
+        return False
+    h = settings_get("pin_hash")
+    if h:
+        try:
+            from werkzeug.security import check_password_hash
+            return check_password_hash(h, pin)
+        except Exception:  # noqa: BLE001
+            return False
+    esperado = os.getenv("AJUSTES_RESET_PIN", "").strip() or _RESET_PIN_DEFECTO
+    return hmac.compare_digest(pin, esperado)
+
+
+def reset_fabrica(pin: str) -> dict:
+    """Reset de fábrica: PIN -> copia de la BD -> borra BD, claves de
+    `app_settings` y conexiones de NetworkManager -> vuelve al onboarding
+    (§5, §11). Irreversible; la UI exige doble confirmación + PIN.
+
+    Fuera de la Pi (simulado) valida el PIN, hace la copia de seguridad y **no
+    borra nada**.
+    """
+    if not _pin_correcto(pin):
+        return {"ok": False, "error": "PIN incorrecto"}
+
+    try:                                        # §11: backup automático antes
+        respaldo = backup_bd()
+    except Exception:  # noqa: BLE001 — la capa de sistema nunca propaga
+        respaldo = None
+
+    if _simulado():
+        return {
+            "ok": True, "simulado": True, "respaldo": respaldo,
+            "mensaje": ("PIN correcto. En la Pi se borrarían la base de datos, "
+                        "los ajustes y las redes WiFi guardadas, y volvería el "
+                        "portal de configuración 'Kaitosan-Setup'."),
+        }
+
+    for con in (_cmd(["nmcli", "-g", "NAME", "con", "show"]) or "").splitlines():
+        con = con.strip()
+        if con:
+            _cmd(["nmcli", "con", "delete", con])
+
+    try:
+        if os.path.isfile(DB_PATH):
+            os.remove(DB_PATH)                  # se lleva también app_settings
+    except OSError as e:
+        return {"ok": False, "error": f"no se pudo borrar la BD: {e}",
+                "respaldo": respaldo}
+
+    _cmd(["sudo", "-n", "systemctl", "start", "kaitosan-wifi-connect"])
+
+    def _worker():
+        time.sleep(1)
+        _cmd(["sudo", "-n", "systemctl", "restart", "kaito"], timeout=30)
+
+    threading.Thread(target=_worker, daemon=True).start()
+    return {"ok": True, "respaldo": respaldo,
+            "mensaje": ("Reset completado. Kaito vuelve al modo de "
+                        "configuración inicial (WiFi 'Kaitosan-Setup').")}

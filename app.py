@@ -635,6 +635,30 @@ def ajustes_sistema_diagnostico():
                      download_name=os.path.basename(ruta))
 
 
+# --- Mantenimiento (Fase 11): actualizar / reiniciar servicio / reset (§7.2) --- #
+# Todas son fetch/JSON: la sesión se cae al reiniciar el servicio, así que la
+# respuesta se manda ANTES (el trabajo real va en un hilo daemon, ver
+# system_settings).
+
+@app.route("/admin/ajustes/sistema/actualizar", methods=["POST"])
+@login_requerido
+def ajustes_sistema_actualizar():
+    return jsonify(system_settings.actualizar())
+
+
+@app.route("/admin/ajustes/sistema/reiniciar-servicio", methods=["POST"])
+@login_requerido
+def ajustes_sistema_reiniciar_servicio():
+    return jsonify(system_settings.reiniciar_servicio())
+
+
+@app.route("/admin/ajustes/sistema/reset", methods=["POST"])
+@login_requerido
+def ajustes_sistema_reset():
+    pin = (request.get_json(silent=True) or {}).get("pin", "")
+    return jsonify(system_settings.reset_fabrica(pin))
+
+
 @app.route("/admin/perfil/añadir", methods=["POST"])
 @login_requerido
 def admin_perfil_añadir():
