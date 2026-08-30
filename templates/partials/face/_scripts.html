@@ -323,65 +323,7 @@
   iniciarParpadeo();
   iniciarBusqueda();
 
-  // ── Funciones del chat ──
-  document.getElementById("input").addEventListener("keypress", function (e) {
-    if (e.key === "Enter") enviarMensaje();
-  });
-
-  async function enviarMensaje() {
-    const input = document.getElementById("input");
-    const respuestaDiv = document.getElementById("respuesta");
-    const mensaje = input.value.trim();
-    if (!mensaje) return;
-    input.value = "";
-    respuestaDiv.style.display = "block";
-    respuestaDiv.textContent = "...";
-    try {
-      const response = await fetch("/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mensaje: mensaje }),
-      });
-      const data = await response.json();
-      if (data.respuesta) {
-        respuestaDiv.textContent = data.respuesta;
-      } else {
-        respuestaDiv.textContent = "Error: " + data.error;
-      }
-    } catch (error) {
-      respuestaDiv.textContent = "Error de conexión";
-    }
-  }
-
-  let grabando = false;
-
-  async function grabarVoz() {
-    if (grabando) return;
-    const btn = document.getElementById("btn-voz");
-    const respuestaDiv = document.getElementById("respuesta");
-    grabando = true;
-    btn.style.background = "#ff3333";
-    btn.textContent = "⏺️";
-    respuestaDiv.style.display = "block";
-    respuestaDiv.textContent = "🎤 Grabando 5 segundos...";
-    try {
-      const response = await fetch("/grabar", { method: "POST" });
-      const data = await response.json();
-      if (data.transcripcion) {
-        respuestaDiv.textContent = `📝 "${data.transcripcion}"`;
-      }
-      if (data.error) {
-        respuestaDiv.textContent = "❌ " + data.error;
-      }
-    } catch (error) {
-      respuestaDiv.textContent = "❌ Error de conexión";
-    } finally {
-      grabando = false;
-      btn.style.background = "#00cc44";
-      btn.textContent = "🎤";
-    }
-  }
-
+  // Muestra en pantalla lo que Kaito ha entendido tras el wakeword
   socket.on("transcripcion", function (data) {
     const respuestaDiv = document.getElementById("respuesta");
     respuestaDiv.style.display = "block";
