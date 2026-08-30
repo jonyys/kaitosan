@@ -11,8 +11,8 @@ from core.detection import PersonDetector
 from core.listener import VoiceListener
 from core.button import PowerButton
 from core.config import FLASK_SECRET_KEY
-from werkzeug.security import check_password_hash
-from core.settings_store import settings_get
+from werkzeug.security import check_password_hash, generate_password_hash
+from core.settings_store import settings_get, settings_set
 from core import system_settings
 from flask import flash, redirect, url_for, session, request
 from functools import wraps
@@ -489,6 +489,32 @@ def ajustes_brillo():
     _flash_resultado(system_settings.brillo_set(request.form.get("brillo", "")),
                      "Brillo actualizado")
     return redirect(url_for("ajustes"))
+
+@app.route("/admin/ajustes/cuenta", methods=["POST"])
+@login_requerido
+def ajustes_cuenta():
+    # Cambiar usuario y contraseña del panel (§4.5). Verifica la contraseña
+    # actual, guarda `admin_user` y `admin_pass_hash` en app_settings.
+    user = request.form.get("user", "").strip()
+    actual = request.form.get("password_actual", "")
+    nueva = request.form.get("password_nueva", "")
+
+    pass_hash = settings_get("admin_pass_hash")
+    if not pass_hash or not check_password_hash(pass_hash, actual):
+        flash("❌ La contraseña actual no es correcta", "error")
+        return redirect(url_for("ajustes"))
+    if not user:
+        flash("❌ El usuario no puede estar vacío", "error")
+        return redirect(url_for("ajustes"))
+
+    settings_set("admin_user", user)
+    if nueva:
+        settings_set("admin_pass_hash", generate_password_hash(nueva))
+        flash("✅ Usuario y contraseña actualizados", "success")
+    else:
+        flash("✅ Usuario actualizado", "success")
+    return redirect(url_for("ajustes"))
+
 
 @app.route("/admin/perfil/añadir", methods=["POST"])
 @login_requerido
