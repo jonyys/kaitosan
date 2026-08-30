@@ -1323,6 +1323,31 @@ def brillo_set(pct) -> dict:
     return {"ok": True, "valor": n}
 
 
+# Salvapantallas: minutos de inactividad antes de mostrar solo el reloj.
+# Se guarda en `app_settings`; el front del /reloj lo consume (§Fase pantalla).
+_INACTIVIDAD_DEFECTO = 5
+
+
+def pantalla_inactividad_get() -> int:
+    """Minutos de inactividad para el salvapantallas del /reloj. 1..120."""
+    try:
+        n = int((settings_get("screensaver_min") or "").strip())
+    except (TypeError, ValueError):
+        return _INACTIVIDAD_DEFECTO
+    return max(1, min(120, n))
+
+
+def pantalla_inactividad_set(valor) -> dict:
+    try:
+        n = int(str(valor).strip())
+    except (TypeError, ValueError):
+        return {"ok": False, "error": "valor de inactividad no válido"}
+    if not 1 <= n <= 120:
+        return {"ok": False, "error": "los minutos deben estar entre 1 y 120"}
+    settings_set("screensaver_min", str(n))
+    return {"ok": True, "valor": n}
+
+
 # --------------------------------------------------------------------------- #
 # Sistema
 # --------------------------------------------------------------------------- #

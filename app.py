@@ -456,6 +456,7 @@ def ajustes():
         zonas=system_settings.zona_listar(),
         volumen=system_settings.volumen_get(),
         brillo=system_settings.brillo_get(),
+        inactividad_min=system_settings.pantalla_inactividad_get(),
         salud=system_settings.salud(),
         admin_user=settings_get("admin_user"),
         audio_salidas=system_settings.audio_salidas(),
@@ -516,6 +517,14 @@ def ajustes_volumen():
 def ajustes_brillo():
     _flash_resultado(system_settings.brillo_set(request.form.get("brillo", "")),
                      "Brillo actualizado")
+    return redirect(url_for("ajustes"))
+
+@app.route("/admin/ajustes/pantalla/inactividad", methods=["POST"])
+@login_requerido
+def ajustes_pantalla_inactividad():
+    _flash_resultado(
+        system_settings.pantalla_inactividad_set(request.form.get("minutos", "")),
+        "Tiempo de inactividad actualizado")
     return redirect(url_for("ajustes"))
 
 @app.route("/admin/ajustes/audio/salida", methods=["POST"])

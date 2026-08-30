@@ -5,458 +5,233 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Reloj · Kaito</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700&display=swap">
+  {% include 'partials/admin/_estilos.html' %}
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      /* Paleta pastel de Kaito — misma que el panel y Ajustes (partials/admin/_estilos.html) */
-      --bg: #fff5f8;
-      --surface: #ffffff;
-      --surface2: #fff0f5;
-      --border: #f6d4e2;
-      --accent: #9d3564;      /* rosa-tinta: enlaces, foco, botón primario */
-      --accent2: #3fae86;     /* verde "conectado" */
-      --danger: #c85a5a;
-      --text: #5b3a4a;
-      --text-muted: #8a6b7a;
-      --alarm-color: #d98a2b;
-      --timer-color: #2f9d76;
-      --lavanda: #7e5bb0;     /* recordatorios */
-    }
-
-    body {
+    /* ── Salvapantallas: al entrar SOLO se ve el reloj a pantalla completa.
+       Al hacer scroll (recorrido = .reloj-spacer) el reloj se encoge dentro
+       de una cabecera FIJA y OPACA (del tono del fondo), y las cards aparecen
+       justo debajo — nada se mete bajo el reloj porque la cabecera es opaca. ── */
+    .clock-header {
+      position: fixed; inset: 0 0 auto 0; z-index: 60;
+      display: flex; align-items: center; justify-content: center;
+      height: 100vh;                       /* estado inicial: pantalla completa */
       background: var(--bg);
-      color: var(--text);
-      font-family: 'M PLUS Rounded 1c', 'Nunito', 'Segoe UI', system-ui, sans-serif;
-      min-height: 100vh;
-      padding: 24px;
+      border-bottom: 1px solid transparent;
     }
-
-    /* ── CABECERA ─────────────────────────────── */
-    header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 32px;
+    .clock-header.compact {
+      border-bottom-color: var(--border);
+      box-shadow: var(--sombra-sm);
     }
-
-    header a {
-      color: var(--text-muted);
-      text-decoration: none;
-      font-size: 14px;
-      padding: 6px 12px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      transition: color .2s, border-color .2s;
-    }
-    header a:hover { color: var(--accent); border-color: var(--accent); }
-
-    header h1 {
-      font-size: 18px;
-      font-weight: 600;
-      color: var(--text-muted);
-    }
-
-    /* ── RELOJ DIGITAL ───────────────────────── */
-    .clock-display {
-      text-align: center;
-      margin-bottom: 40px;
-      user-select: none;
-    }
-
+    .clock-inner { text-align: center; user-select: none; will-change: transform; transform-origin: center; }
     #hora {
-      font-size: clamp(72px, 14vw, 140px);
-      font-weight: 200;
-      letter-spacing: -2px;
-      color: var(--text);
-      font-variant-numeric: tabular-nums;
-      line-height: 1;
+      font-size: clamp(64px, 13vw, 132px);
+      font-weight: 200; letter-spacing: -2px;
+      color: var(--text); font-variant-numeric: tabular-nums; line-height: 1;
     }
-
     #fecha {
-      font-size: 16px;
-      color: var(--text-muted);
-      margin-top: 8px;
-      text-transform: capitalize;
-      letter-spacing: 1px;
-    }
-
-    /* ── LAYOUT PRINCIPAL ────────────────────── */
-    .panels {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 24px;
-      max-width: 960px;
-      margin: 0 auto;
-    }
-
-    @media (max-width: 640px) {
-      .panels { grid-template-columns: 1fr; }
-    }
-
-    /* ── PANEL GENÉRICO ──────────────────────── */
-    .panel {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 16px;
+      font-size: 16px; color: var(--text-soft);
+      margin-top: 8px; text-transform: capitalize; letter-spacing: 1px;
       overflow: hidden;
     }
+    .reloj-spacer { height: 100vh; }        /* recorrido de scroll para encoger el reloj */
+    .reloj-content { max-width: 1000px; margin: 0 auto; }
 
-    .panel-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 18px 20px 14px;
-      border-bottom: 1px solid var(--border);
+    .scroll-hint {
+      position: fixed; left: 0; right: 0; bottom: 22px;
+      text-align: center; font-size: 14px; color: var(--text-soft);
+      z-index: 61; pointer-events: none;
+      animation: hint-bob 1.6s ease-in-out infinite;
+    }
+    @keyframes hint-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(7px); } }
+
+    @media (prefers-reduced-motion: reduce) {
+      .reloj-spacer, .scroll-hint { display: none; }
+      .clock-header { position: static; height: auto; padding: 18px 0 12px; }
+      .clock-inner { transform: none !important; }
+      #hora { font-size: clamp(44px, 9vw, 72px); }
+      .reloj-content { padding-top: 0 !important; }
     }
 
-    .panel-title {
-      font-size: 13px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      color: var(--text-muted);
+    /* ── Cabecera nav + estado de sincronización ── */
+    .reloj-topbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .reloj-topbar h1 { margin: 0; }
+    .sync-line {
+      display: flex; align-items: center; font-size: 12px; color: var(--text-soft);
+      margin: 6px 0 clamp(16px, 4vw, 24px);
     }
-
-    .panel-title.alarmas { color: var(--alarm-color); }
-    .panel-title.timers  { color: var(--timer-color); }
-
-    .count-badge {
-      font-size: 11px;
-      font-weight: 700;
-      padding: 2px 8px;
-      border-radius: 99px;
-      background: var(--surface2);
-      color: var(--text-muted);
+    .sync-dot {
+      width: 7px; height: 7px; border-radius: 50%; background: var(--text-soft);
+      display: inline-block; margin-right: 6px; transition: background .3s;
     }
+    .sync-dot.live { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
 
-    .panel-body { padding: 16px 20px; }
-
-    /* ── LISTA DE ITEMS ──────────────────────── */
+    /* ── Lista de items (alarmas / timers / recordatorios) ── */
     .items-list { list-style: none; }
-
     .items-list li {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 0;
-      border-bottom: 1px solid var(--border);
-      animation: fadeIn .25s ease;
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 0; border-bottom: 1px solid var(--border);
+      animation: acc-fila .3s ease-out both;
     }
     .items-list li:last-child { border-bottom: none; }
+    .item-icon { color: var(--text-soft); display: flex; flex: none; }
+    .item-icon .ico { width: 20px; height: 20px; }
+    .item-value { flex: 1; font-size: 22px; font-weight: 300; font-variant-numeric: tabular-nums; letter-spacing: 1px; }
+    .item-value.alarm-value { color: var(--aviso-tinta); }
+    .item-value.timer-value { color: var(--ok-tinta); }
+    .item-sub { font-size: 11px; color: var(--text-soft); margin-top: 1px; }
+    .item-actions { display: flex; gap: 6px; flex: none; }
+    .item-actions .btn { min-height: 40px; padding: 8px 12px; }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-6px); }
-      to   { opacity: 1; transform: translateY(0); }
+    @media (prefers-reduced-motion: reduce) {
+      .items-list li { animation: none; }
     }
 
-    .item-icon {
-      font-size: 18px;
-      flex-shrink: 0;
-    }
+    /* ── Fila para añadir ── */
+    .add-form { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+    .add-form-row { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
+    .add-form-row .campo { display: flex; flex-direction: column; gap: 2px; }
+    .add-form-row .campo label { font-size: 12px; color: var(--text-soft); }
+    .add-form-row input { margin-bottom: 0; }
+    .add-form-row input[type="time"] { width: 130px; }
+    .add-form-row input[type="number"] { width: 84px; text-align: center; }
 
-    .item-value {
-      flex: 1;
-      font-size: 22px;
-      font-weight: 300;
-      font-variant-numeric: tabular-nums;
-      letter-spacing: 1px;
-    }
-    .item-value.alarm-value { color: var(--alarm-color); }
-    .item-value.timer-value { color: var(--timer-color); }
-
-    .item-sub {
-      font-size: 11px;
-      color: var(--text-muted);
-      margin-top: 1px;
-    }
-
-    .item-actions {
-      display: flex;
-      gap: 6px;
-      flex-shrink: 0;
-    }
-
-    .btn-icon {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-      cursor: pointer;
-      border-radius: 8px;
-      width: 32px;
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 15px;
-      transition: all .2s;
-    }
-    .btn-icon:hover { color: var(--text); border-color: var(--accent); }
-    .btn-icon.danger:hover { color: var(--danger); border-color: var(--danger); }
-
-    .empty-msg {
-      color: var(--text-muted);
-      font-size: 13px;
-      text-align: center;
-      padding: 20px 0;
-    }
-
-    /* ── FORMULARIO ADD ──────────────────────── */
-    .add-form {
-      margin-top: 16px;
-      padding-top: 16px;
-      border-top: 1px solid var(--border);
-    }
-
-    .add-form-row {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
-    .add-form input[type="time"],
-    .add-form input[type="number"] {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text);
-      font-size: 14px;
-      padding: 8px 12px;
-      outline: none;
-      transition: border-color .2s;
-      -webkit-appearance: none;
-    }
-    .add-form input:focus { border-color: var(--accent); }
-    .add-form input[type="time"] { width: 120px; }
-    .add-form input[type="number"] { width: 72px; text-align: center; }
-
-    .add-form label {
-      font-size: 12px;
-      color: var(--text-muted);
-    }
-
-    .btn-add {
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      padding: 8px 16px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: opacity .2s;
-      white-space: nowrap;
-    }
-    .btn-add:hover { opacity: .85; }
-    .btn-add.timer-btn { background: var(--timer-color); color: #fff; }
-    .btn-add.timer-btn:hover { opacity: .85; }
-
-    /* ── MODAL EDITAR ────────────────────────── */
+    /* ── Modal editar alarma ── */
     .modal-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
+      display: none; position: fixed; inset: 0; z-index: 100;
       background: rgba(91, 58, 74, .45);
-      z-index: 100;
-      align-items: center;
-      justify-content: center;
+      align-items: center; justify-content: center; padding: 20px;
     }
     .modal-overlay.open { display: flex; }
-
     .modal {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 28px;
-      min-width: 280px;
-      animation: fadeIn .2s ease;
+      background: var(--surface); border: 1px solid var(--border-fuerte);
+      border-radius: var(--radio); box-shadow: var(--sombra);
+      padding: 24px 28px; min-width: 260px; max-width: 92vw;
+      animation: cp-pop .35s cubic-bezier(.17, .89, .32, 1.28);
     }
+    .modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--rosa-tinta); }
+    .modal-actions { display: flex; gap: 10px; margin-top: 18px; justify-content: flex-end; }
 
-    .modal h3 {
-      font-size: 15px;
-      font-weight: 600;
-      margin-bottom: 16px;
-      color: var(--alarm-color);
-    }
-
-    .modal .add-form-row { justify-content: flex-start; }
-
-    .modal-actions {
-      display: flex;
-      gap: 8px;
-      margin-top: 16px;
-      justify-content: flex-end;
-    }
-
-    .btn-cancel {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-      border-radius: 8px;
-      padding: 8px 14px;
-      font-size: 14px;
-      cursor: pointer;
-    }
-    .btn-cancel:hover { color: var(--text); }
-
-    /* ── TOAST ───────────────────────────────── */
+    /* ── Toast de feedback en vivo (socket / acciones) ── */
     #toast {
-      position: fixed;
-      bottom: 24px;
-      right: 24px;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 12px 18px;
-      border-radius: 10px;
-      font-size: 13px;
-      opacity: 0;
-      transition: opacity .3s;
-      z-index: 200;
+      position: fixed; bottom: 24px; right: 24px; z-index: 200;
+      display: flex; align-items: center; gap: 8px;
+      background: var(--surface); border: 1px solid var(--border-fuerte);
+      color: var(--text); padding: 12px 18px; border-radius: var(--radio-sm);
+      font-size: 13px; font-weight: 500; box-shadow: var(--sombra);
+      opacity: 0; transform: translateY(6px); transition: opacity .3s, transform .3s;
       pointer-events: none;
     }
-    #toast.show { opacity: 1; }
-
-    /* ── SYNC DOT ────────────────────────────── */
-    .sync-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--text-muted);
-      display: inline-block;
-      margin-right: 6px;
-      transition: background .3s;
-    }
-    .sync-dot.live { background: var(--accent2); box-shadow: 0 0 6px var(--accent2); }
+    #toast.show { opacity: 1; transform: none; }
+    #toast .ico { width: 18px; height: 18px; flex: none; }
   </style>
 </head>
 <body>
+{% include 'partials/_iconos.html' %}
 
-<header>
-  <a href="/">← Kaito</a>
-  <h1>Reloj</h1>
-  <span style="margin-left: auto; font-size: 12px; color: var(--text-muted); display:flex;align-items:center;">
-    <span class="sync-dot" id="syncDot"></span>sincronizado con el robot
-  </span>
-</header>
-
-<!-- Reloj digital -->
-<div class="clock-display">
-  <div id="hora">--:--:--</div>
-  <div id="fecha"></div>
+<div class="scroll-hint" id="scrollHint">
+  desliza para ver alarmas y recordatorios
+  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+       stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+       style="display:block;margin:4px auto 0"><path d="m6 9 6 6 6-6"/></svg>
 </div>
 
-<!-- Paneles -->
-<div class="panels">
+<!-- Reloj digital: cabecera fija opaca; se encoge a una barra al hacer scroll -->
+<div class="clock-header" id="clockHeader">
+  <div class="clock-inner" id="clockInner">
+    <div id="hora">--:--:--</div>
+    <div id="fecha"></div>
+  </div>
+</div>
 
-  <!-- ALARMAS -->
-  <div class="panel">
-    <div class="panel-header">
-      <span class="panel-title alarmas">⏰ Alarmas</span>
-      <span class="count-badge" id="alarmas-count">0</span>
-    </div>
-    <div class="panel-body">
+<div class="reloj-spacer"></div>
+
+<div class="reloj-content" id="relojContent" style="padding-top:100vh">
+
+  <div class="reloj-topbar">
+    <h1><svg class="ico"><use href="#i-clock"/></svg> Reloj</h1>
+    <a href="/" style="margin-left:auto">
+      <button class="btn btn-yellow" style="font-size:13px"><svg class="ico"><use href="#i-home"/></svg></button>
+    </a>
+  </div>
+  <div class="sync-line"><span class="sync-dot" id="syncDot"></span> sincronizado con el robot</div>
+
+  <div class="grid">
+
+    <!-- ALARMAS -->
+    <div class="card">
+      <h2><svg class="ico"><use href="#i-clock"/></svg> Alarmas <span class="badge" id="alarmas-count">0</span></h2>
       <ul class="items-list" id="alarmas-list"></ul>
-      <div class="empty-msg" id="alarmas-empty" style="display:none">No hay alarmas programadas</div>
-
+      <p class="empty" id="alarmas-empty" style="display:none">No hay alarmas programadas</p>
       <div class="add-form">
         <div class="add-form-row">
-          <input type="time" id="nueva-hora" value="07:00">
-          <button class="btn-add" onclick="agregarAlarma()">+ Alarma</button>
+          <div class="campo">
+            <label for="nueva-hora">Hora</label>
+            <input type="time" id="nueva-hora" value="07:00">
+          </div>
+          <button class="btn btn-blue" onclick="agregarAlarma()"><svg class="ico"><use href="#i-plus"/></svg> Alarma</button>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- TEMPORIZADORES -->
-  <div class="panel">
-    <div class="panel-header">
-      <span class="panel-title timers">⏲️ Temporizadores</span>
-      <span class="count-badge" id="timers-count">0</span>
-    </div>
-    <div class="panel-body">
+    <!-- TEMPORIZADORES -->
+    <div class="card">
+      <h2><svg class="ico"><use href="#i-hourglass"/></svg> Temporizadores <span class="badge" id="timers-count">0</span></h2>
       <ul class="items-list" id="timers-list"></ul>
-      <div class="empty-msg" id="timers-empty" style="display:none">No hay temporizadores activos</div>
-
+      <p class="empty" id="timers-empty" style="display:none">No hay temporizadores activos</p>
       <div class="add-form">
         <div class="add-form-row">
-          <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+          <div class="campo">
+            <label for="timer-min">min</label>
             <input type="number" id="timer-min" value="5" min="0" max="999" placeholder="0">
-            <label>min</label>
           </div>
-          <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+          <div class="campo">
+            <label for="timer-sec">seg</label>
             <input type="number" id="timer-sec" value="0" min="0" max="59" placeholder="0">
-            <label>seg</label>
           </div>
-          <button class="btn-add timer-btn" onclick="agregarTemporizador()">+ Temporizador</button>
+          <button class="btn btn-blue" onclick="agregarTemporizador()"><svg class="ico"><use href="#i-plus"/></svg> Temporizador</button>
         </div>
       </div>
     </div>
-  </div>
 
-</div><!-- /panels -->
-
-<!-- Panel recordatorios (ancho completo) -->
-<div style="max-width:960px;margin:24px auto 0;">
-  <div class="panel">
-    <div class="panel-header">
-      <span class="panel-title" style="color:var(--lavanda)">📌 Recordatorios</span>
-      <span class="count-badge" id="rem-count">0</span>
-    </div>
-    <div class="panel-body">
+    <!-- RECORDATORIOS -->
+    <div class="card full">
+      <h2><svg class="ico"><use href="#i-bell"/></svg> Recordatorios <span class="badge" id="rem-count">0</span></h2>
       <ul class="items-list" id="rem-list"></ul>
-      <div class="empty-msg" id="rem-empty" style="display:none">No hay recordatorios pendientes</div>
-
+      <p class="empty" id="rem-empty" style="display:none">No hay recordatorios pendientes</p>
       <div class="add-form">
-        <div class="add-form-row" style="flex-wrap:wrap;gap:10px;align-items:flex-end;">
-          <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:160px;">
-            <label style="font-size:12px;color:var(--text-muted)">Recordatorio</label>
-            <input type="text" id="rem-texto" placeholder="Qué hay que recordar..."
-              style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;
-                     color:var(--text);font-size:14px;padding:8px 12px;outline:none;width:100%;
-                     transition:border-color .2s;"
-              onfocus="this.style.borderColor='var(--accent)'"
-              onblur="this.style.borderColor='var(--border)'">
+        <div class="add-form-row">
+          <div class="campo" style="flex:1;min-width:180px">
+            <label for="rem-texto">Recordatorio</label>
+            <input type="text" id="rem-texto" placeholder="Qué hay que recordar...">
           </div>
-          <div style="display:flex;flex-direction:column;gap:4px;">
-            <label style="font-size:12px;color:var(--text-muted)">Cuándo</label>
-            <input type="datetime-local" id="rem-fecha"
-              style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;
-                     color:var(--text);font-size:14px;padding:8px 12px;outline:none;
-                     transition:border-color .2s;color-scheme:light;"
-              onfocus="this.style.borderColor='var(--accent)'"
-              onblur="this.style.borderColor='var(--border)'">
+          <div class="campo">
+            <label for="rem-fecha">Cuándo</label>
+            <input type="datetime-local" id="rem-fecha" style="color-scheme:light">
           </div>
-          <button class="btn-add" style="background:var(--lavanda);color:#fff;align-self:flex-end;"
-                  onclick="agregarRecordatorio()">+ Recordatorio</button>
+          <button class="btn btn-blue" onclick="agregarRecordatorio()"><svg class="ico"><use href="#i-plus"/></svg> Recordatorio</button>
         </div>
       </div>
     </div>
-  </div>
-</div>
+
+  </div><!-- /grid -->
+</div><!-- /reloj-content -->
 
 <!-- Modal editar alarma -->
 <div class="modal-overlay" id="editModal">
   <div class="modal">
-    <h3>Modificar alarma</h3>
-    <div class="add-form">
-      <div class="add-form-row">
-        <input type="time" id="edit-hora" value="07:00">
-      </div>
-    </div>
+    <h3><svg class="ico"><use href="#i-wrench"/></svg> Modificar alarma</h3>
+    <input type="time" id="edit-hora" value="07:00">
     <div class="modal-actions">
-      <button class="btn-cancel" onclick="cerrarModal()">Cancelar</button>
-      <button class="btn-add" onclick="guardarEdicion()">Guardar</button>
+      <button class="btn btn-yellow" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn btn-blue" onclick="guardarEdicion()">Guardar</button>
     </div>
   </div>
 </div>
 
 <!-- Toast -->
 <div id="toast"></div>
+
+{% include 'partials/_confirm_pop.html' %}
 
 <script>
   // ── ESTADO LOCAL ────────────────────────────────────────────────────────
@@ -493,12 +268,12 @@
 
   socket.on('actualizar_reloj', (data) => {
     aplicarEstado(data);
-    mostrarToast('🔄 El robot actualizó el reloj');
+    mostrarToast('El robot actualizó el reloj', 'sync');
   });
 
   socket.on('actualizar_recordatorios', (data) => {
     aplicarEstadoRecordatorios(data);
-    mostrarToast('🔄 El robot actualizó los recordatorios');
+    mostrarToast('El robot actualizó los recordatorios', 'sync');
   });
 
   // ── CARGA INICIAL ───────────────────────────────────────────────────────
@@ -537,14 +312,14 @@
 
     list.innerHTML = activas.map(a => `
       <li>
-        <span class="item-icon">⏰</span>
+        <span class="item-icon">${ico('clock')}</span>
         <div style="flex:1">
           <div class="item-value alarm-value">${a.hora}</div>
           <div class="item-sub">activa</div>
         </div>
         <div class="item-actions">
-          <button class="btn-icon" title="Editar" onclick="abrirModal(${a.id}, '${a.hora}')">✏️</button>
-          <button class="btn-icon danger" title="Eliminar" onclick="eliminarAlarma(${a.id})">🗑️</button>
+          <button class="btn btn-yellow" title="Modificar" onclick="abrirModal(${a.id}, '${a.hora}')">${ico('wrench')}</button>
+          <button class="btn btn-red" title="Eliminar" onclick="eliminarAlarma(${a.id})">${ico('trash')}</button>
         </div>
       </li>
     `).join('');
@@ -572,13 +347,13 @@
 
     list.innerHTML = activos.map(t => `
       <li id="timer-item-${t.id}">
-        <span class="item-icon">⏲️</span>
+        <span class="item-icon">${ico('hourglass')}</span>
         <div style="flex:1">
           <div class="item-value timer-value" id="timer-val-${t.id}">${formatTimer(t)}</div>
           <div class="item-sub">total: ${fmtDuracion(t.duracion_total)}</div>
         </div>
         <div class="item-actions">
-          <button class="btn-icon danger" title="Cancelar" onclick="eliminarTemporizador(${t.id})">🗑️</button>
+          <button class="btn btn-red" title="Cancelar" onclick="eliminarTemporizador(${t.id})">${ico('trash')}</button>
         </div>
       </li>
     `).join('');
@@ -631,17 +406,18 @@
       });
       const data = await res.json();
       aplicarEstado(data);
-      mostrarToast(`✅ ${data.mensaje}`);
-    } catch(e) { mostrarToast('❌ Error al crear la alarma'); }
+      mostrarToast(data.mensaje, 'ok');
+    } catch(e) { mostrarToast('Error al crear la alarma', 'err'); }
   }
 
   async function eliminarAlarma(id) {
+    if (!await window.confirmar('¿Borrar esta alarma?')) return;
     try {
       const res = await fetch(`/reloj/alarmas/${id}`, {method: 'DELETE'});
       const data = await res.json();
       aplicarEstado(data);
-      mostrarToast('🗑️ Alarma eliminada');
-    } catch(e) { mostrarToast('❌ Error al eliminar'); }
+      mostrarToast('Alarma eliminada', 'ok');
+    } catch(e) { mostrarToast('Error al eliminar', 'err'); }
   }
 
   function abrirModal(id, hora) {
@@ -666,9 +442,9 @@
       });
       const data = await res.json();
       aplicarEstado(data);
-      mostrarToast(`✅ ${data.mensaje}`);
+      mostrarToast(data.mensaje, 'ok');
       cerrarModal();
-    } catch(e) { mostrarToast('❌ Error al modificar'); }
+    } catch(e) { mostrarToast('Error al modificar', 'err'); }
   }
 
   // ── ACCIONES TEMPORIZADORES ─────────────────────────────────────────────
@@ -676,7 +452,7 @@
     const minutos = parseInt(document.getElementById('timer-min').value) || 0;
     const segundos = parseInt(document.getElementById('timer-sec').value) || 0;
     if (minutos === 0 && segundos === 0) {
-      mostrarToast('⚠️ Introduce un tiempo mayor a 0'); return;
+      mostrarToast('Introduce un tiempo mayor a 0', 'warn'); return;
     }
     try {
       const res = await fetch('/reloj/temporizadores', {
@@ -686,24 +462,26 @@
       });
       const data = await res.json();
       aplicarEstado(data);
-      mostrarToast(`✅ ${data.mensaje}`);
-    } catch(e) { mostrarToast('❌ Error al crear el temporizador'); }
+      mostrarToast(data.mensaje, 'ok');
+    } catch(e) { mostrarToast('Error al crear el temporizador', 'err'); }
   }
 
   async function eliminarTemporizador(id) {
+    if (!await window.confirmar('¿Cancelar este temporizador?', { ok: 'Sí, cancelar' })) return;
     try {
       const res = await fetch(`/reloj/temporizadores/${id}`, {method: 'DELETE'});
       const data = await res.json();
       aplicarEstado(data);
-      mostrarToast('🗑️ Temporizador cancelado');
-    } catch(e) { mostrarToast('❌ Error al cancelar'); }
+      mostrarToast('Temporizador cancelado', 'ok');
+    } catch(e) { mostrarToast('Error al cancelar', 'err'); }
   }
 
   // ── TOAST ────────────────────────────────────────────────────────────────
   let toastTimer = null;
-  function mostrarToast(msg) {
+  function mostrarToast(msg, tipo) {
+    const iconos = { ok: 'check-circle', err: 'x-circle', warn: 'warn', sync: 'refresh' };
     const el = document.getElementById('toast');
-    el.textContent = msg;
+    el.innerHTML = ico(iconos[tipo] || 'check-circle') + '<span>' + esc(msg) + '</span>';
     el.classList.add('show');
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
@@ -754,16 +532,15 @@
     empty.style.display = 'none';
 
     list.innerHTML = todos.map(r => `
-      <li style="opacity:${r.completado ? '0.45' : '1'}">
-        <span class="item-icon">${r.completado ? '✅' : '📌'}</span>
+      <li style="opacity:${r.completado ? '.45' : '1'}">
+        <span class="item-icon">${r.completado ? ico('check-circle') : ico('bell')}</span>
         <div style="flex:1">
-          <div style="font-size:15px;color:${r.completado ? 'var(--text-muted)' : 'var(--lavanda)'};
-                      text-decoration:${r.completado ? 'line-through' : 'none'}">${r.texto}</div>
+          <div style="font-size:15px;${r.completado ? 'text-decoration:line-through;color:var(--text-soft)' : 'color:var(--text)'}">${esc(r.texto)}</div>
           <div class="item-sub">${fmtFecha(r.fecha_hora)}${r.completado ? ' · completado' : ''}</div>
         </div>
         ${!r.completado ? `
         <div class="item-actions">
-          <button class="btn-icon danger" title="Eliminar" onclick="eliminarRecordatorio(${r.id})">🗑️</button>
+          <button class="btn btn-red" title="Eliminar" onclick="eliminarRecordatorio(${r.id})">${ico('trash')}</button>
         </div>` : ''}
       </li>
     `).join('');
@@ -780,8 +557,8 @@
   async function agregarRecordatorio() {
     const texto = document.getElementById('rem-texto').value.trim();
     const fecha = document.getElementById('rem-fecha').value;
-    if (!texto) { mostrarToast('⚠️ Escribe qué hay que recordar'); return; }
-    if (!fecha) { mostrarToast('⚠️ Indica cuándo'); return; }
+    if (!texto) { mostrarToast('Escribe qué hay que recordar', 'warn'); return; }
+    if (!fecha) { mostrarToast('Indica cuándo', 'warn'); return; }
     try {
       const res = await fetch('/reloj/recordatorios', {
         method: 'POST',
@@ -789,21 +566,22 @@
         body: JSON.stringify({texto, fecha_hora: fecha})
       });
       const data = await res.json();
-      if (data.error) { mostrarToast(`❌ ${data.error}`); return; }
+      if (data.error) { mostrarToast(data.error, 'err'); return; }
       aplicarEstadoRecordatorios(data);
-      mostrarToast('✅ Recordatorio guardado');
+      mostrarToast('Recordatorio guardado', 'ok');
       document.getElementById('rem-texto').value = '';
       document.getElementById('rem-fecha').value = '';
-    } catch(e) { mostrarToast('❌ Error al crear el recordatorio'); }
+    } catch(e) { mostrarToast('Error al crear el recordatorio', 'err'); }
   }
 
   async function eliminarRecordatorio(id) {
+    if (!await window.confirmar('¿Borrar este recordatorio?')) return;
     try {
       const res = await fetch(`/reloj/recordatorios/${id}`, {method: 'DELETE'});
       const data = await res.json();
       aplicarEstadoRecordatorios(data);
-      mostrarToast('🗑️ Recordatorio eliminado');
-    } catch(e) { mostrarToast('❌ Error al eliminar'); }
+      mostrarToast('Recordatorio eliminado', 'ok');
+    } catch(e) { mostrarToast('Error al eliminar', 'err'); }
   }
 
   // ── POLLING DE RESPALDO (cada 5s si el socket no emitió) ─────────────────
@@ -824,6 +602,58 @@
   // ── INICIAR ──────────────────────────────────────────────────────────────
   cargarEstado();
   cargarRecordatorios();
+</script>
+
+<script>
+  // Salvapantallas: el reloj vive en una cabecera FIJA y OPACA (.clock-header).
+  // Al entrar ocupa toda la pantalla; al hacer scroll (recorrido = .reloj-spacer)
+  // la cabecera se encoge a una barra compacta y el contenido queda justo debajo.
+  // Como la cabecera es opaca (del tono del fondo), nada se mete bajo el reloj:
+  // el padding-top del contenido = alto actual de la cabecera + hueco.
+  (function () {
+    var header  = document.getElementById('clockHeader');
+    var inner   = document.getElementById('clockInner');
+    var fecha   = document.getElementById('fecha');
+    var hint    = document.getElementById('scrollHint');
+    var content = document.getElementById('relojContent');
+    var spacer  = document.querySelector('.reloj-spacer');
+    if (!header || !inner) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      if (content) content.style.paddingTop = '';
+      return;
+    }
+
+    var BAR = 84;          // alto de la barra compacta (px) — sube = barra más alta
+    var MIN_SCALE = 0.34;  // tamaño del reloj encogido
+    var GAP = 12;          // hueco entre la barra y la primera card
+
+    function frame() {
+      var vh = window.innerHeight || 1;
+      var dist = (spacer && spacer.offsetHeight) || vh;
+      var p = Math.min(Math.max(window.scrollY / dist, 0), 1);
+      var h = vh + (BAR - vh) * p;
+      var scale = 1 + (MIN_SCALE - 1) * p;
+      header.style.height = h.toFixed(1) + 'px';
+      inner.style.transform = 'scale(' + scale.toFixed(3) + ')';
+      header.classList.toggle('compact', p >= 0.999);
+      if (fecha) {
+        fecha.style.opacity = Math.max(0, 1 - p * 4).toFixed(2);
+        fecha.style.height = p > 0.5 ? '0' : '';
+        fecha.style.marginTop = p > 0.5 ? '0' : '';
+      }
+      if (hint) hint.style.opacity = Math.max(0, 1 - p * 4).toFixed(2);
+      if (content) content.style.paddingTop = (h + GAP).toFixed(1) + 'px';
+    }
+
+    var ticking = false;
+    window.addEventListener('scroll', function () {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(function () { frame(); ticking = false; });
+    }, { passive: true });
+    window.addEventListener('resize', frame);
+    frame();
+  })();
 </script>
 </body>
 </html>

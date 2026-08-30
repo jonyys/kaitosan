@@ -1,24 +1,42 @@
-{# Se oculta entera si no hay backlight controlable (p. ej. monitor HDMI), §5 / §11 #}
-{% if brillo.soportado %}
-{% set pct = (brillo.valor / brillo.max * 100)|round|int if brillo.max else 0 %}
 <div class="card">
     <h2><svg class="ico"><use href="#i-sun"/></svg> Pantalla</h2>
-    <div class="fila">
-        <span class="et">Brillo</span>
-        <span class="val">{{ pct }}%</span>
-    </div>
-    <div class="medidor"><span style="width: {{ pct }}%"></span></div>
 
-    <form method="POST" action="/admin/ajustes/brillo" style="margin-top:14px">
-        <label class="et" for="bri">Ajustar brillo</label>
-        <input type="range" id="bri" name="brillo" min="10" max="100" step="5"
-               value="{{ pct }}"
-               oninput="document.getElementById('bri-val').textContent = this.value + '%'">
+    {# --- Brillo (solo si hay backlight controlable, §5/§11) --- #}
+    {% if brillo.soportado %}
+    {% set pct = (brillo.valor / brillo.max * 100)|round|int if brillo.max else 0 %}
+    <form method="POST" action="/admin/ajustes/brillo">
         <div class="fila">
-            <span class="et">Nuevo valor</span>
+            <span class="et">Brillo</span>
             <span class="val" id="bri-val">{{ pct }}%</span>
         </div>
+        <input type="range" id="bri" name="brillo" min="10" max="100" step="5"
+               value="{{ pct }}" style="width:100%; margin-bottom:8px"
+               oninput="document.getElementById('bri-val').textContent = this.value + '%'">
         <button class="btn btn-green">Guardar brillo</button>
     </form>
+    {% else %}
+    <div class="fila">
+        <span class="et">Brillo</span>
+        <span class="val">no ajustable en esta pantalla</span>
+    </div>
+    {% endif %}
+
+    {# --- Salvapantallas: minutos de inactividad hasta mostrar solo el reloj --- #}
+    <form method="POST" action="/admin/ajustes/pantalla/inactividad" style="margin-top:20px">
+        <label class="et" for="inact">Tiempo de inactividad (salvapantallas)</label>
+        <p class="et" style="color:var(--text-soft); margin:4px 0 8px">
+            Minutos sin actividad antes de que la pantalla del robot muestre solo el reloj.
+        </p>
+        <div class="fila">
+            <span class="et">Minutos</span>
+            <input type="number" name="minutos" id="inact" min="1" max="120" step="1"
+                   value="{{ inactividad_min }}" style="max-width:6rem; margin:0">
+        </div>
+        <button class="btn btn-green" style="margin-top:10px">Guardar</button>
+    </form>
+
+    {# --- Sitio reservado para más ajustes de pantalla --- #}
+    <p class="et" style="color:var(--text-soft); margin-top:20px">
+        Más ajustes de pantalla (rotación, tema, tiempo hasta apagar) — próximamente.
+    </p>
 </div>
-{% endif %}
