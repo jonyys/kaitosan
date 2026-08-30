@@ -432,6 +432,7 @@ def ajustes():
     # más abajo. En el portátil todo son datos simulados y no se toca el sistema.
     return render_template(
         "ajustes.html",
+        wifi=system_settings.wifi_estado(),
         hora=system_settings.hora_estado(),
         zonas=system_settings.zona_listar(),
         volumen=system_settings.volumen_get(),
@@ -553,6 +554,45 @@ def ajustes_modelos_guardar():
         "tools": datos.get("tools", []),
     }
     return jsonify(system_settings.groq_seleccion_set(sel))
+
+
+# --- WiFi (Fase 13): API JSON + fetch. Cambiar de red tumba la sesión, así que
+# `conectar` responde ANTES y el watchdog de reversión va en un hilo (§7.2, §7.4). --- #
+
+@app.route("/admin/ajustes/wifi")
+@login_requerido
+def ajustes_wifi():
+    return jsonify({
+        "estado": system_settings.wifi_estado(),
+        "guardadas": system_settings.wifi_guardadas(),
+    })
+
+
+@app.route("/admin/ajustes/wifi/escanear")
+@login_requerido
+def ajustes_wifi_escanear():
+    return jsonify(system_settings.wifi_escanear())
+
+
+@app.route("/admin/ajustes/wifi/conectar", methods=["POST"])
+@login_requerido
+def ajustes_wifi_conectar():
+    datos = request.get_json(silent=True) or {}
+    return jsonify(system_settings.wifi_conectar(
+        datos.get("ssid", ""), datos.get("psk", "")))
+
+
+@app.route("/admin/ajustes/wifi/olvidar", methods=["POST"])
+@login_requerido
+def ajustes_wifi_olvidar():
+    datos = request.get_json(silent=True) or {}
+    return jsonify(system_settings.wifi_olvidar(datos.get("ssid", "")))
+
+
+@app.route("/admin/ajustes/wifi/portal", methods=["POST"])
+@login_requerido
+def ajustes_wifi_portal():
+    return jsonify(system_settings.wifi_abrir_portal())
 
 
 @app.route("/admin/ajustes/cuenta", methods=["POST"])

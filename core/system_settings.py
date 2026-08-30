@@ -54,7 +54,16 @@ guarda el commit anterior, pero se salta `pip install` y el `restart`;
 `reset_fabrica()` valida el PIN y no borra nada.
     actualizar()          reiniciar_servicio()      reset_fabrica(pin)
 
-WiFi como API JSON, Bluetooth y onboarding llegan en fases posteriores.
+Fase 13: WiFi real en la Pi (§5 notas WiFi, §7.2 bloque WiFi, §7.4). Cambiar de
+red **tumba la conexión** con la que se ve la página, así que `wifi_conectar()`
+responde antes de tocar nada: el `nmcli connect` y un **watchdog de reversión**
+a 60 s corren en un hilo daemon. Si tras el cambio no hay conectividad plena,
+vuelve al SSID anterior y, en último caso, deja que el portal
+`kaitosan-wifi-connect` levante la red de seguridad.
+    wifi_estado()      wifi_escanear()      wifi_guardadas()
+    wifi_conectar(ssid, psk)   wifi_olvidar(ssid)   wifi_abrir_portal()
+
+Bluetooth y onboarding llegan en fases posteriores.
 """
 
 import glob
@@ -247,6 +256,159 @@ def wifi_estado() -> dict:
                 "ip": None, "error": str(e)}
 
     return {"conectado": conectado, "ssid": ssid, "senal": senal, "ip": ip}
+
+
+# Aviso para la UI cuando se cambia de red (§7.4.2): la sesión puede caerse.
+_WIFI_AVISO = (
+    "Kaito se está conectando a «{ssid}». Si pierdes esta página, conéctate a "
+    "esa misma red y vuelve a entrar en http://kaitosan.local:5000"
+)
+
+
+def wifi_escanear() -> list:
+    """Redes WiFi visibles -> [{ssid, senal, seguridad, en_uso}] (una por SSID).
+
+    `nmcli -t -f SSID,SIGNAL,SECURITY,IN-USE dev wifi list --rescan yes` (§5).
+    """
+    if _simulado():
+        return [
+            {"ssid": "MiFibra-A1B2",       "senal": 74, "seguridad": "WPA2", "en_uso": True},
+            {"ssid": "MOVISTAR_5G_3F2A",   "senal": 58, "seguridad": "WPA2", "en_uso": False},
+            {"ssid": "Vodafone-2C10",      "senal": 41, "seguridad": "WPA2", "en_uso": False},
+            {"ssid": "Casa de la abuela",  "senal": 33, "seguridad": "WPA2", "en_uso": False},
+            {"ssid": "Invitados",          "senal": 66, "seguridad": "abierta", "en_uso": False},
+        ]
+
+    salida = _cmd(
+        ["nmcli", "-t", "-f", "SSID,SIGNAL,SECURITY,IN-USE",
+         "dev", "wifi", "list", "--rescan", "yes"],
+        timeout=25,
+    )
+    redes, vistos = [], set()
+    for linea in (salida or "").splitlines():
+        campos = _split_terse(linea)
+        if len(campos) < 4:
+            continue
+        ssid = campos[0].strip()
+        if not ssid or ssid in vistos:            # oculta ("") y duplicados fuera
+            continue
+        vistos.add(ssid)
+        redes.append({
+            "ssid": ssid,
+            "senal": int(campos[1]) if campos[1].isdigit() else None,
+            "seguridad": campos[2].strip() or "abierta",
+            "en_uso": campos[3].strip() == "*",
+        })
+    redes.sort(key=lambda r: r["senal"] or 0, reverse=True)
+    return redes
+
+
+def wifi_guardadas() -> list:
+    """Nombres de las conexiones WiFi ya guardadas en NetworkManager."""
+    if _simulado():
+        return ["MiFibra-A1B2", "Casa de la abuela", "Oficina"]
+
+    salida = _cmd(["nmcli", "-t", "-f", "NAME,TYPE", "connection", "show"])
+    guardadas = []
+    for linea in (salida or "").splitlines():
+        campos = _split_terse(linea)
+        if len(campos) >= 2 and campos[1].strip() in ("802-11-wireless", "wifi"):
+            nombre = campos[0].strip()
+            if nombre:
+                guardadas.append(nombre)
+    return guardadas
+
+
+def _conectividad_plena() -> bool:
+    """True si `nmcli -t -f CONNECTIVITY g` dice `full` (§7.4.3)."""
+    return (_cmd(["nmcli", "-t", "-f", "CONNECTIVITY", "g"]) or "").strip() == "full"
+
+
+def _wifi_conectar_worker(ssid: str, psk: str, anterior) -> None:
+    """Hilo daemon: cambia de red y revierte si a los 60 s no hay conexión plena.
+
+    1. `nmcli dev wifi connect`. 2. espera 60 s. 3. si no hay conectividad
+    `full`, borra el perfil recién creado (contraseña mal) y vuelve a
+    `anterior`. 4. si aun así no hay red, arranca el portal de onboarding.
+    """
+    args = ["nmcli", "dev", "wifi", "connect", ssid]
+    if psk:
+        args += ["password", psk]
+    _cmd(args, timeout=45)
+
+    time.sleep(60)
+    if _conectividad_plena():
+        return
+
+    if anterior and anterior != ssid:
+        _cmd(["nmcli", "connection", "delete", ssid])      # perfil que ha fallado
+        _cmd(["nmcli", "connection", "up", anterior], timeout=45)
+        time.sleep(10)
+        if _conectividad_plena():
+            return
+
+    # Última red de seguridad: el portal «Kaitosan-Setup» (§7.4.3, §3.4).
+    _cmd(["sudo", "-n", "systemctl", "start", "kaitosan-wifi-connect"])
+
+
+def wifi_conectar(ssid: str, psk: str = "") -> dict:
+    """Conecta a `ssid`. OJO: desconecta la red actual (§5, §7.4).
+
+    Responde de inmediato; el `nmcli connect` y el watchdog de reversión a 60 s
+    corren en un hilo daemon (§7.4.1). `mensaje` es el aviso para la UI (§7.4.2).
+    """
+    ssid = (ssid or "").strip()
+    if not ssid:
+        return {"ok": False, "error": "falta el nombre de la red (SSID)"}
+
+    anterior = wifi_estado().get("ssid")
+
+    if _simulado():
+        return {"ok": True, "simulado": True, "ssid": ssid,
+                "mensaje": _WIFI_AVISO.format(ssid=ssid)}
+
+    threading.Thread(
+        target=_wifi_conectar_worker,
+        args=(ssid, psk or "", anterior),
+        daemon=True,
+    ).start()
+    return {"ok": True, "ssid": ssid, "mensaje": _WIFI_AVISO.format(ssid=ssid)}
+
+
+def wifi_olvidar(ssid: str) -> dict:
+    """Borra la conexión guardada `ssid` de NetworkManager."""
+    ssid = (ssid or "").strip()
+    if not ssid:
+        return {"ok": False, "error": "falta el nombre de la red"}
+    if _simulado():
+        return {"ok": True, "simulado": True}
+    if _cmd(["nmcli", "connection", "delete", ssid]) is None:
+        return {"ok": False, "error": "no se pudo olvidar la red (¿existe?)"}
+    return {"ok": True}
+
+
+def wifi_abrir_portal() -> dict:
+    """Recuperación (§3.4): baja el WiFi actual y arranca `kaitosan-wifi-connect`
+    para reconfigurar la red desde el portal «Kaitosan-Setup». Tumba la sesión.
+    """
+    if _simulado():
+        return {"ok": True, "simulado": True,
+                "mensaje": ("En la Pi se abriría ahora el portal «Kaitosan-Setup»: "
+                            "conéctate a esa red WiFi desde el móvil para elegir "
+                            "una red.")}
+
+    def _worker():
+        time.sleep(0.5)                            # deja responder al fetch
+        actual = wifi_estado().get("ssid")
+        if actual:
+            _cmd(["nmcli", "connection", "down", actual], timeout=30)
+        _cmd(["sudo", "-n", "systemctl", "start", "kaitosan-wifi-connect"], timeout=30)
+
+    threading.Thread(target=_worker, daemon=True).start()
+    return {"ok": True,
+            "mensaje": ("Abriendo el portal «Kaitosan-Setup». Esta página se "
+                        "desconectará: conéctate a esa red WiFi desde el móvil "
+                        "para configurar una red nueva.")}
 
 
 # --------------------------------------------------------------------------- #

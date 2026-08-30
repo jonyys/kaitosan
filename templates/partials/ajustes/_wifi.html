@@ -1,0 +1,253 @@
+<div class="card full">
+    <h2>📶 WiFi</h2>
+
+    {# Estado actual — server-rendered: se ve sin JS (p. ej. en la pantalla del robot) #}
+    <div class="fila">
+        <span class="et">Estado</span>
+        <span class="val" id="wifi-estado">
+            {% if wifi and wifi.conectado %}✅ conectado{% else %}❌ sin conexión{% endif %}
+        </span>
+    </div>
+    <div class="fila">
+        <span class="et">Red actual</span>
+        <span class="val" id="wifi-ssid">{{ (wifi and wifi.ssid) or '—' }}</span>
+    </div>
+    {% if wifi and wifi.senal is not none %}
+    <div class="fila">
+        <span class="et">Señal</span>
+        <span class="val" id="wifi-senal">{{ wifi.senal }}%</span>
+    </div>
+    <div class="medidor"><span id="wifi-senal-bar" style="width: {{ wifi.senal }}%"></span></div>
+    {% endif %}
+    <div class="fila">
+        <span class="et">IP</span>
+        <span class="val" id="wifi-ip">{{ (wifi and wifi.ip) or '—' }}</span>
+    </div>
+
+    <p id="wifi-msg" class="et" style="color:var(--text-soft); min-height:1.4em; margin:10px 0 0"></p>
+
+    {# Buscar redes y conectarse #}
+    <div class="actions" style="margin-top:12px">
+        <button type="button" class="btn btn-yellow" id="wifi-scan-btn">🔍 Buscar redes</button>
+    </div>
+    <div id="wifi-lista"></div>
+
+    {# Conexión manual (red oculta o fuera de alcance al escanear) #}
+    <details style="margin-top:14px">
+        <summary class="et" style="cursor:pointer; min-height:44px; display:flex; align-items:center">
+            Conectar a otra red a mano
+        </summary>
+        <label class="et" for="wifi-man-ssid" style="display:block; margin-top:8px">Nombre de la red (SSID)</label>
+        <input type="text" id="wifi-man-ssid" autocomplete="off">
+        <label class="et" for="wifi-man-psk" style="display:block">Contraseña (déjala vacía si es abierta)</label>
+        <input type="password" id="wifi-man-psk" autocomplete="off">
+        <button type="button" class="btn btn-green" id="wifi-man-btn">Conectar</button>
+    </details>
+
+    {# Redes guardadas #}
+    <h2 style="margin-top:20px">Redes guardadas</h2>
+    <div id="wifi-guardadas"><p class="empty">Cargando…</p></div>
+
+    {# Recuperación: portal de configuración (§3.4) #}
+    <hr style="border:none; border-top:1px solid var(--border); margin:22px 0">
+    <label class="et" style="display:block; color:var(--peligro)">Abrir portal de configuración</label>
+    <p class="et" style="color:var(--text-soft); margin:4px 0 10px">
+        Baja el WiFi actual y levanta la red <code>Kaitosan-Setup</code> para elegir
+        otra red desde el móvil. <strong>Esta página se desconectará.</strong>
+    </p>
+    <button type="button" class="btn btn-red" id="wifi-portal-btn">📡 Abrir «Kaitosan-Setup»</button>
+</div>
+
+<style>
+    .wifi-red {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 56px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--border);
+    }
+    .wifi-red:last-child { border-bottom: 0; }
+    .wifi-red .nom { flex: 1 1 auto; font-weight: 500; word-break: break-word; }
+    .wifi-red .sig { flex: 0 0 auto; color: var(--text-soft); font-weight: 700; font-size: 12px; }
+    .wifi-red .btn { flex: 0 0 auto; min-height: 44px; padding: 8px 14px; font-size: 13px; }
+</style>
+
+<script>
+(function () {
+    var msg          = document.getElementById('wifi-msg');
+    var lista        = document.getElementById('wifi-lista');
+    var guardadasBox = document.getElementById('wifi-guardadas');
+
+    var AVISO_CAIDA =
+        'Vas a cambiar de red WiFi. Kaito se desconectará de la red actual y esta '
+        + 'página puede dejar de responder. Después, conéctate a la red nueva y '
+        + 'vuelve a http://kaitosan.local:5000\n\n¿Continuar?';
+
+    function pintarEstado(e) {
+        if (!e) return;
+        document.getElementById('wifi-estado').textContent =
+            e.conectado ? '✅ conectado' : '❌ sin conexión';
+        document.getElementById('wifi-ssid').textContent = e.ssid || '—';
+        var ip = document.getElementById('wifi-ip');
+        if (ip) ip.textContent = e.ip || '—';
+        var s = document.getElementById('wifi-senal');
+        if (s && e.senal != null) s.textContent = e.senal + '%';
+        var bar = document.getElementById('wifi-senal-bar');
+        if (bar && e.senal != null) bar.style.width = e.senal + '%';
+    }
+
+    function pintarGuardadas(nombres) {
+        guardadasBox.innerHTML = '';
+        if (!nombres || !nombres.length) {
+            guardadasBox.innerHTML = '<p class="empty">No hay redes guardadas.</p>';
+            return;
+        }
+        nombres.forEach(function (n) {
+            var row = document.createElement('div');
+            row.className = 'wifi-red';
+            var nom = document.createElement('span');
+            nom.className = 'nom';
+            nom.textContent = n;
+            var btn = document.createElement('button');
+            btn.className = 'btn btn-red';
+            btn.textContent = 'Olvidar';
+            btn.onclick = function () { olvidar(n, btn); };
+            row.appendChild(nom);
+            row.appendChild(btn);
+            guardadasBox.appendChild(row);
+        });
+    }
+
+    function cargar() {
+        fetch('/admin/ajustes/wifi')
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                pintarEstado(d.estado);
+                pintarGuardadas(d.guardadas);
+            })
+            .catch(function () {
+                guardadasBox.innerHTML =
+                    '<p class="empty">No se pudo cargar el estado del WiFi.</p>';
+            });
+    }
+
+    function escanear(btn) {
+        btn.disabled = true;
+        msg.textContent = 'Buscando redes…';
+        lista.innerHTML = '';
+        fetch('/admin/ajustes/wifi/escanear')
+            .then(function (r) { return r.json(); })
+            .then(function (redes) {
+                if (!redes || !redes.length) {
+                    msg.textContent = 'No se ha encontrado ninguna red.';
+                    return;
+                }
+                msg.textContent = redes.length + ' redes encontradas.';
+                redes.forEach(function (red) {
+                    var abierta = !red.seguridad || red.seguridad === 'abierta';
+                    var row = document.createElement('div');
+                    row.className = 'wifi-red';
+
+                    var nom = document.createElement('span');
+                    nom.className = 'nom';
+                    nom.textContent = (abierta ? '' : '🔒 ') + red.ssid
+                        + (red.en_uso ? '  ·  en uso' : '');
+
+                    var sig = document.createElement('span');
+                    sig.className = 'sig';
+                    sig.textContent = (red.senal != null ? red.senal + '%' : '');
+
+                    var btnC = document.createElement('button');
+                    btnC.className = 'btn btn-green';
+                    btnC.textContent = 'Conectar';
+                    btnC.onclick = function () { pedirYConectar(red.ssid, abierta, btnC); };
+
+                    row.appendChild(nom);
+                    row.appendChild(sig);
+                    row.appendChild(btnC);
+                    lista.appendChild(row);
+                });
+            })
+            .catch(function () { msg.textContent = '❌ error de red al escanear.'; })
+            .finally(function () { btn.disabled = false; });
+    }
+
+    function pedirYConectar(ssid, abierta, btn) {
+        var psk = '';
+        if (!abierta) {
+            psk = prompt('Contraseña de «' + ssid + '»:');
+            if (psk === null) return;
+        }
+        enviarConexion(ssid, psk, btn);
+    }
+
+    function enviarConexion(ssid, psk, btn) {
+        if (!confirm(AVISO_CAIDA)) return;
+        if (btn) btn.disabled = true;
+        msg.textContent = 'Conectando a «' + ssid + '»…';
+        fetch('/admin/ajustes/wifi/conectar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ssid: ssid, psk: psk })
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                msg.textContent = (d.ok ? '📶 ' : '❌ ') + (d.mensaje || d.error || '');
+            })
+            .catch(function () {
+                msg.textContent = '⚠️ Se perdió la conexión (es normal al cambiar de '
+                    + 'red). Conéctate a la red nueva y vuelve a '
+                    + 'http://kaitosan.local:5000';
+            })
+            .finally(function () { if (btn) btn.disabled = false; });
+    }
+
+    function olvidar(ssid, btn) {
+        if (!confirm('¿Olvidar la red «' + ssid + '»?')) return;
+        btn.disabled = true;
+        fetch('/admin/ajustes/wifi/olvidar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ssid: ssid })
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                if (d.ok) { msg.textContent = '✅ Red «' + ssid + '» olvidada.'; cargar(); }
+                else {
+                    msg.textContent = '❌ ' + (d.error || 'no se pudo olvidar');
+                    btn.disabled = false;
+                }
+            })
+            .catch(function () { msg.textContent = '❌ error de red.'; btn.disabled = false; });
+    }
+
+    document.getElementById('wifi-scan-btn').onclick = function () { escanear(this); };
+
+    document.getElementById('wifi-man-btn').onclick = function () {
+        var ssid = document.getElementById('wifi-man-ssid').value.trim();
+        if (!ssid) { alert('Escribe el nombre de la red.'); return; }
+        enviarConexion(ssid, document.getElementById('wifi-man-psk').value, this);
+    };
+
+    document.getElementById('wifi-portal-btn').onclick = function () {
+        if (!confirm('Se abrirá la red «Kaitosan-Setup» y esta página se '
+            + 'desconectará. ¿Continuar?')) return;
+        var btn = this;
+        btn.disabled = true;
+        msg.textContent = 'Abriendo el portal…';
+        fetch('/admin/ajustes/wifi/portal', { method: 'POST' })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                msg.textContent = (d.ok ? '📡 ' : '❌ ') + (d.mensaje || d.error || '');
+            })
+            .catch(function () {
+                msg.textContent = '⚠️ Conexión perdida. Busca la red WiFi '
+                    + '«Kaitosan-Setup» en el móvil.';
+            })
+            .finally(function () { btn.disabled = false; });
+    };
+
+    cargar();
+})();
+</script>
