@@ -2,7 +2,8 @@ from ai.groq_provider import GroqProvider
 from ai.gemini_provider import GeminiProvider
 
 class FallbackProvider:
-    def __init__(self, model="openai/gpt-oss-120b"):
+    def __init__(self, model=None):
+        # model=None -> GroqProvider usa el modelo principal de Ajustes → Modelos.
         self.groq = GroqProvider(model=model)
         self.gemini = GeminiProvider()
 

@@ -1,23 +1,54 @@
 from groq import Groq
-from core.config import GROQ_API_KEY, DEFAULT_MODEL, MAX_TOKENS, TEMPERATURE
+from core.config import (
+    GROQ_API_KEY, DEFAULT_MODEL, MODEL_SENSEI, MAX_TOKENS, TEMPERATURE,
+    MODELOS_ALTERNATIVOS, MODELOS_TOOLS, groq_seleccion,
+)
 from core.token_tracker import TokenTracker
 
 
+def _seleccion_validada() -> dict:
+    """`config.groq_seleccion()` descartando los modelos que ya no están activos
+    en la API (retirados / renombrados) — PLAN_AJUSTES §5 nota "Modelos de Groq".
+
+    Si no se puede consultar la lista real (sin red o sin API key) se devuelve
+    la selección tal cual: el `_saltar_modelo()` de abajo cubre el caso en
+    caliente cuando un modelo responde `decommissioned` / `model_not_found`.
+    """
+    sel = groq_seleccion()
+    try:
+        from core.system_settings import groq_modelos
+        ids = {m["id"] for m in groq_modelos()}
+    except Exception:
+        ids = set()
+    if not ids:
+        return sel
+
+    if sel["principal"] not in ids and DEFAULT_MODEL in ids:
+        sel["principal"] = DEFAULT_MODEL
+    if sel["sensei"] not in ids and MODEL_SENSEI in ids:
+        sel["sensei"] = MODEL_SENSEI
+    sel["alternativos"] = (
+        [m for m in sel["alternativos"] if m in ids]
+        or [m for m in MODELOS_ALTERNATIVOS if m in ids]
+        or sel["alternativos"]
+    )
+    sel["tools"] = (
+        [m for m in sel["tools"] if m in ids]
+        or [m for m in MODELOS_TOOLS if m in ids]
+        or sel["tools"]
+    )
+    return sel
+
+
 class GroqProvider:
-    def __init__(self, model=DEFAULT_MODEL):
+    def __init__(self, model=None):
         self.client = Groq(api_key=GROQ_API_KEY, max_retries=0)
-        self.model = model
-        self.modelos_alternativos = [
-            "openai/gpt-oss-20b",
-            "qwen/qwen3.8-27b",
-        ]
+        sel = _seleccion_validada()
+        # `model` explícito (p.ej. el sensei) manda; si no, el principal de Ajustes.
+        self.model = model or sel["principal"]
+        self.modelos_alternativos = sel["alternativos"]
         # Modelos capaces de manejar tool calls correctamente
-        self.modelos_tools = [
-            "openai/gpt-oss-120b",
-            "qwen/qwen3.8-27b",
-            "openai/gpt-oss-20b",
-            "groq/compound",
-        ]
+        self.modelos_tools = sel["tools"]
         self.tracker = TokenTracker()
 
     @staticmethod

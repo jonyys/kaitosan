@@ -8,7 +8,7 @@ from ai.skills.alarm import AlarmSkill
 from ai.skills.reminder import ReminderSkill
 from ai.tools import TOOLS, ToolDispatcher
 
-from core.config import MODEL_SENSEI
+from core.config import groq_seleccion
 from core.japanese_memory import JapaneseMemory
 from core.memory import DB_PATH, Memory
 from ai.sensei.profesor import ProfesorJapones, SALUDOS, SALUDOS_CONV, CAMBIO_A_ESTUDIO, DESPEDIDAS
@@ -22,7 +22,7 @@ class Brain:
     def __init__(self, state_manager, socketio):
         self.state = state_manager
         self.socketio = socketio
-        self.provider = FallbackProvider(model="openai/gpt-oss-120b")
+        self.provider = FallbackProvider()  # modelo principal de Ajustes → Modelos
         self.memory = Memory()
         self.jap_memory = JapaneseMemory(DB_PATH)
         self.session_id = None
@@ -39,8 +39,8 @@ class Brain:
         self.reminder = self.dispatcher.reminder
         self.alarm = self.dispatcher.alarm
         # El profesor usa su propio proveedor: puede convenirle un modelo distinto
-        # al del router (ver MODEL_SENSEI en config).
-        provider_sensei = FallbackProvider(model=MODEL_SENSEI)
+        # al del router (ver "sensei" en Ajustes → Modelos / config.groq_seleccion()).
+        provider_sensei = FallbackProvider(model=groq_seleccion()["sensei"])
         self.profesor = ProfesorJapones(self.jap_memory, provider_sensei, self.memory, self.socketio)
         self._emitir_desactivar_sensei = False
 

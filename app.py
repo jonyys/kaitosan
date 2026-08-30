@@ -528,6 +528,29 @@ def ajustes_audio_probar():
     return jsonify(resultado)
 
 
+@app.route("/admin/ajustes/modelos")
+@login_requerido
+def ajustes_modelos():
+    # Fase 9: lista en vivo desde api.groq.com + selección guardada (§7.2).
+    return jsonify({
+        "disponibles": system_settings.groq_modelos(),
+        "seleccion": system_settings.groq_seleccion_get(),
+    })
+
+
+@app.route("/admin/ajustes/modelos", methods=["POST"])
+@login_requerido
+def ajustes_modelos_guardar():
+    datos = request.get_json(silent=True) or {}
+    sel = {
+        "principal": datos.get("principal", ""),
+        "sensei": datos.get("sensei", ""),
+        "alternativos": datos.get("alternativos", []),
+        "tools": datos.get("tools", []),
+    }
+    return jsonify(system_settings.groq_seleccion_set(sel))
+
+
 @app.route("/admin/ajustes/cuenta", methods=["POST"])
 @login_requerido
 def ajustes_cuenta():

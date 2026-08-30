@@ -1,0 +1,138 @@
+<div class="card full">
+    <h2>🧠 Modelos de IA</h2>
+    <p class="et" style="color:var(--text-soft); margin:0 0 12px">
+        Modelos de Groq que usa Kaito. La lista sale de tu API key en vivo; lo que
+        guardes aquí manda sobre los valores por defecto del código.
+    </p>
+
+    <p id="modelos-msg" class="et" style="min-height:1.4em"></p>
+
+    <form id="modelos-form" style="display:none">
+        <label class="et" for="mod-principal">Modelo principal (charla)</label>
+        <select id="mod-principal" name="principal"></select>
+
+        <label class="et" for="mod-sensei" style="display:block; margin-top:14px">
+            Modelo del sensei (japonés)
+        </label>
+        <select id="mod-sensei" name="sensei"></select>
+
+        <fieldset style="border:1px solid var(--border); border-radius:var(--radio-sm); padding:12px; margin-top:16px">
+            <legend class="et" style="padding:0 6px">Alternativos (reserva ante rate limit)</legend>
+            <div id="mod-alternativos" class="mod-lista"></div>
+        </fieldset>
+
+        <fieldset style="border:1px solid var(--border); border-radius:var(--radio-sm); padding:12px; margin-top:12px">
+            <legend class="et" style="padding:0 6px">Con herramientas (tool calls)</legend>
+            <div id="mod-tools" class="mod-lista"></div>
+        </fieldset>
+
+        <button class="btn btn-green" type="submit" style="margin-top:16px">Guardar modelos</button>
+    </form>
+</div>
+
+<style>
+    .mod-lista { display:flex; flex-direction:column; gap:2px; }
+    .mod-lista label {
+        display:flex; align-items:center; gap:10px;
+        min-height:44px; font-weight:500;
+    }
+    .mod-lista input[type="checkbox"] { flex:0 0 auto; }
+    .mod-tok { color:var(--text-soft); font-weight:700; font-size:12px; margin-left:auto; }
+</style>
+
+<script>
+(function () {
+    var msg = document.getElementById('modelos-msg');
+    var form = document.getElementById('modelos-form');
+
+    function fmtTok(n) {
+        if (!n) return '';
+        return n >= 1000 ? (n / 1000).toFixed(1) + 'k hoy' : n + ' hoy';
+    }
+
+    function opciones(sel, modelos, elegido) {
+        sel.innerHTML = '';
+        modelos.forEach(function (m) {
+            var o = document.createElement('option');
+            o.value = m.id;
+            var t = fmtTok(m.tokens_hoy);
+            o.textContent = t ? (m.id + ' — ' + t) : m.id;
+            if (m.id === elegido) o.selected = true;
+            sel.appendChild(o);
+        });
+    }
+
+    function checklist(cont, modelos, elegidos) {
+        cont.innerHTML = '';
+        modelos.forEach(function (m) {
+            var lab = document.createElement('label');
+            var cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.value = m.id;
+            cb.checked = elegidos.indexOf(m.id) !== -1;
+            var nombre = document.createElement('span');
+            nombre.textContent = m.id;
+            lab.appendChild(cb);
+            lab.appendChild(nombre);
+            var t = fmtTok(m.tokens_hoy);
+            if (t) {
+                var s = document.createElement('span');
+                s.className = 'mod-tok';
+                s.textContent = t;
+                lab.appendChild(s);
+            }
+            cont.appendChild(lab);
+        });
+    }
+
+    function marcados(id) {
+        return Array.prototype.slice
+            .call(document.querySelectorAll('#' + id + ' input:checked'))
+            .map(function (cb) { return cb.value; });
+    }
+
+    fetch('/admin/ajustes/modelos')
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+            var modelos = d.disponibles || [];
+            if (!modelos.length) {
+                msg.textContent = '⚠️ No se pudo leer la lista de modelos '
+                    + '(¿falta GROQ_API_KEY o no hay red?).';
+                return;
+            }
+            var s = d.seleccion || {};
+            opciones(document.getElementById('mod-principal'), modelos, s.principal);
+            opciones(document.getElementById('mod-sensei'), modelos, s.sensei);
+            checklist(document.getElementById('mod-alternativos'), modelos, s.alternativos || []);
+            checklist(document.getElementById('mod-tools'), modelos, s.tools || []);
+            msg.textContent = modelos.length + ' modelos disponibles.';
+            form.style.display = '';
+        })
+        .catch(function () { msg.textContent = '❌ error de red al cargar los modelos'; });
+
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var btn = form.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        msg.textContent = 'Guardando…';
+        fetch('/admin/ajustes/modelos', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                principal: document.getElementById('mod-principal').value,
+                sensei: document.getElementById('mod-sensei').value,
+                alternativos: marcados('mod-alternativos'),
+                tools: marcados('mod-tools')
+            })
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+            msg.textContent = d.ok
+                ? '✅ Modelos guardados. Se aplican al reiniciar el servicio.'
+                : '❌ ' + (d.error || 'no se pudo guardar');
+        })
+        .catch(function () { msg.textContent = '❌ error de red'; })
+        .finally(function () { btn.disabled = false; });
+    });
+})();
+</script>

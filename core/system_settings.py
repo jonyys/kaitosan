@@ -32,17 +32,25 @@ arranque de audio la lee **antes** que los `*_HINT` del `.env`.
     micro_ganancia_get()   micro_ganancia_set(pct)
     audio_probar_salida()  audio_probar_micro()
 
-WiFi como API JSON, Bluetooth, modelos y mantenimiento llegan en fases
-posteriores.
+Fase 9: selección de modelos de Groq. `groq_modelos()` hace un GET real a
+`api.groq.com/openai/v1/models` (HTTP puro: **funciona también en el portátil**,
+no se simula) y cachea la lista ~1 h. La selección se guarda en `app_settings`
+(`groq_models`, JSON) y `core/config.groq_seleccion()` la aplica sobre los
+valores de fábrica de `config.py`.
+    groq_modelos()          groq_seleccion_get()      groq_seleccion_set(sel)
+
+WiFi como API JSON, Bluetooth y mantenimiento llegan en fases posteriores.
 """
 
 import glob
+import json
 import os
 import platform
 import re
 import shutil
 import socket
 import subprocess
+import time
 from datetime import datetime
 
 from core.settings_store import settings_get, settings_set
@@ -542,6 +550,127 @@ def audio_probar_micro() -> dict:
     except Exception as e:  # noqa: BLE001
         return {"ok": False, "error": f"no se pudo probar el micrófono: {e}"}
     return {"ok": True}
+
+
+# --------------------------------------------------------------------------- #
+# Modelos de IA (Groq) — §2.1, §5 nota "Modelos de Groq", §11
+# --------------------------------------------------------------------------- #
+# Cache por proceso de la lista de modelos (la API cambia poco; el plan pide ~1 h).
+_GROQ_CACHE: dict = {"ts": 0.0, "datos": None}
+_GROQ_CACHE_SEG = 3600
+
+# Subcadenas que descartan un modelo del desplegable de chat: audio (whisper/tts)
+# y clasificadores de seguridad (guard). El resto de modelos `active` entran.
+_GROQ_EXCLUIR = ("whisper", "tts", "guard", "playai")
+
+
+def groq_modelos(forzar: bool = False) -> list:
+    """Modelos de chat disponibles para la API key configurada.
+
+    `GET https://api.groq.com/openai/v1/models` con `Authorization: Bearer`.
+    Filtra `active != false` y excluye los de audio / guard. Cachea ~1 h por
+    proceso. Es HTTP puro, así que **no se simula**: en el portátil devuelve la
+    lista real. Devuelve `[]` si no hay API key o la red falla.
+
+        [{id, context_window, owned_by, tokens_hoy}]
+    """
+    ahora = time.time()
+    if (not forzar and _GROQ_CACHE["datos"] is not None
+            and ahora - _GROQ_CACHE["ts"] < _GROQ_CACHE_SEG):
+        return _GROQ_CACHE["datos"]
+
+    from core.config import GROQ_API_KEY
+    if not GROQ_API_KEY:
+        return []
+
+    try:
+        import requests
+        r = requests.get(
+            "https://api.groq.com/openai/v1/models",
+            headers={"Authorization": f"Bearer {GROQ_API_KEY}"},
+            timeout=10,
+        )
+        r.raise_for_status()
+        data = r.json().get("data", [])
+    except Exception:  # noqa: BLE001 — la capa de sistema nunca propaga
+        return _GROQ_CACHE["datos"] or []
+
+    tokens_hoy = {}
+    try:
+        from core.token_tracker import TokenTracker
+        tokens_hoy = TokenTracker().consultar().get("tokens", {})
+    except Exception:  # noqa: BLE001
+        pass
+
+    modelos = []
+    for m in data:
+        mid = (m.get("id") or "").strip()
+        if not mid or m.get("active") is False:
+            continue
+        if any(x in mid.lower() for x in _GROQ_EXCLUIR):
+            continue
+        modelos.append({
+            "id": mid,
+            "context_window": m.get("context_window"),
+            "owned_by": m.get("owned_by"),
+            "tokens_hoy": tokens_hoy.get(mid, 0),
+        })
+    modelos.sort(key=lambda x: x["id"])
+
+    _GROQ_CACHE.update(ts=ahora, datos=modelos)
+    return modelos
+
+
+def groq_seleccion_get() -> dict:
+    """Selección efectiva actual: {principal, sensei, alternativos:[...], tools:[...]}.
+
+    Es lo guardado en `app_settings` con los huecos rellenados por los valores
+    de fábrica de `core/config.py` (ver `groq_seleccion()` allí).
+    """
+    from core.config import groq_seleccion
+    return groq_seleccion()
+
+
+def groq_seleccion_set(sel: dict) -> dict:
+    """Valida `sel` contra `groq_modelos()` y lo guarda en `app_settings['groq_models']`.
+
+    - `principal` y `sensei` son obligatorios y deben existir en la lista real
+      (si se pudo consultar); si no, se rechaza.
+    - de `alternativos` y `tools` se descartan en silencio los ids que ya no
+      estén activos (no se deja guardar un id retirado).
+    """
+    if not isinstance(sel, dict):
+        return {"ok": False, "error": "selección no válida"}
+
+    principal = (sel.get("principal") or "").strip()
+    sensei = (sel.get("sensei") or "").strip()
+    alternativos = list(dict.fromkeys(
+        str(m).strip() for m in (sel.get("alternativos") or []) if str(m).strip()
+    ))
+    tools = list(dict.fromkeys(
+        str(m).strip() for m in (sel.get("tools") or []) if str(m).strip()
+    ))
+
+    if not principal or not sensei:
+        return {"ok": False, "error": "elige un modelo principal y uno para el sensei"}
+
+    ids = {m["id"] for m in groq_modelos()}
+    if ids:
+        desconocidos = [x for x in (principal, sensei) if x not in ids]
+        if desconocidos:
+            return {"ok": False,
+                    "error": "modelo no disponible: " + ", ".join(desconocidos)}
+        alternativos = [m for m in alternativos if m in ids]
+        tools = [m for m in tools if m in ids]
+
+    payload = {
+        "principal": principal,
+        "sensei": sensei,
+        "alternativos": alternativos,
+        "tools": tools,
+    }
+    settings_set("groq_models", json.dumps(payload))
+    return {"ok": True, "seleccion": payload}
 
 
 # --------------------------------------------------------------------------- #

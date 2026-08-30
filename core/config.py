@@ -1,3 +1,4 @@
+import json
 import os
 from dotenv import load_dotenv
 
@@ -15,6 +16,59 @@ TEMPERATURE_SENSEI = 0.3  # respuestas del profesor — más deterministas para 
 # se enrolla: p.ej. MODEL_SENSEI=qwen/qwen3.8-27b).
 MODEL_SENSEI = os.getenv("MODEL_SENSEI", "openai/gpt-oss-120b")
 REASONING_EFFORT_SENSEI = os.getenv("REASONING_EFFORT_SENSEI", "low")
+
+# Modelos de reserva (si el principal da rate limit / cae) y modelos aptos para
+# tool calls. Son la **semilla de fábrica**: la selección guardada en
+# Ajustes → Modelos (clave `groq_models` de app_settings) la sobrescribe.
+MODELOS_ALTERNATIVOS = [
+    "openai/gpt-oss-20b",
+    "qwen/qwen3.8-27b",
+]
+MODELOS_TOOLS = [
+    "openai/gpt-oss-120b",
+    "qwen/qwen3.8-27b",
+    "openai/gpt-oss-20b",
+    "groq/compound",
+]
+
+
+def groq_seleccion() -> dict:
+    """Selección **efectiva** de modelos de Groq (PLAN_AJUSTES §2.1).
+
+    Devuelve `{principal, sensei, alternativos:[...], tools:[...]}`. Lee la clave
+    `groq_models` de `app_settings` (la que guarda Ajustes → Modelos) y, para
+    cada campo que falte o esté vacío, usa el valor de fábrica de este módulo.
+    Nunca lanza: ante cualquier problema devuelve los valores de fábrica.
+    """
+    fabrica = {
+        "principal": DEFAULT_MODEL,
+        "sensei": MODEL_SENSEI,
+        "alternativos": list(MODELOS_ALTERNATIVOS),
+        "tools": list(MODELOS_TOOLS),
+    }
+    try:
+        from core.settings_store import settings_get
+        crudo = settings_get("groq_models")
+        guardado = json.loads(crudo) if crudo else {}
+    except Exception:  # noqa: BLE001 — config nunca debe romper por esto
+        return fabrica
+    if not isinstance(guardado, dict):
+        return fabrica
+
+    sel = dict(fabrica)
+    for campo in ("principal", "sensei"):
+        v = guardado.get(campo)
+        if isinstance(v, str) and v.strip():
+            sel[campo] = v.strip()
+    for campo in ("alternativos", "tools"):
+        v = guardado.get(campo)
+        if isinstance(v, list):
+            limpio = list(dict.fromkeys(
+                m.strip() for m in v if isinstance(m, str) and m.strip()
+            ))
+            if limpio:
+                sel[campo] = limpio
+    return sel
 
 # Gemini
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
