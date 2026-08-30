@@ -36,7 +36,11 @@
     detenerBusqueda();
 
     function elegirMovimiento() {
-      if (!face.classList.contains("idle")) return;
+      if (
+        !face.classList.contains("idle") &&
+        !face.classList.contains("thinking")
+      )
+        return;
 
       const mov = busquedas[Math.floor(Math.random() * busquedas.length)];
       // Seleccionamos ojos normales Y sensei
@@ -273,17 +277,40 @@
         iniciarBusqueda();
       }
 
+      if (data.estado === "thinking") {
+        iniciarBusqueda();
+      }
+
       setTimeout(() => {
         face.classList.remove("transition");
       }, 450);
     });
   });
 
+  const senseiJp = document.getElementById("sensei-jp");
+
+  function mostrarJaponesSensei(frases) {
+    senseiJp.textContent = "";
+    if (!frases || !frases.length) {
+      senseiJp.style.display = "none";
+      return;
+    }
+    frases.forEach((f) => {
+      const linea = document.createElement("div");
+      linea.textContent = f;
+      senseiJp.appendChild(linea);
+    });
+    senseiJp.style.display = "block";
+  }
+
+  socket.on("sensei_japones", (data) => mostrarJaponesSensei(data.frases));
+
   socket.on("modo_sensei", function (data) {
     if (data.activo) {
       face.classList.add("sensei");
     } else {
       face.classList.remove("sensei");
+      mostrarJaponesSensei(null);
     }
   });
 

@@ -561,9 +561,26 @@
     animation: listenMouth 6s ease-in-out infinite;
   }
 
-  /* THINKING */
+  /* THINKING — cara quieta: solo respiración sutil, parpadeo y los 3 puntos */
   .thinking {
-    animation: thinkingEnter 0.45s ease forwards;
+    animation: breathing 5s ease-in-out infinite;
+  }
+  .thinking .eye-left,
+  .thinking .eye-right,
+  .thinking .eye-sensei-left,
+  .thinking .eye-sensei-right {
+    animation: idleBlink 5s ease-in-out infinite;
+  }
+  .thinking .eyebrow-left,
+  .thinking .eyebrow-right,
+  .thinking .eyebrow-sensei-left,
+  .thinking .eyebrow-sensei-right,
+  .thinking .mouth,
+  .thinking .mouth-single,
+  .thinking .mouth-sensei,
+  .thinking .mouth-sensei path,
+  .thinking path.mouth-sensei {
+    animation: none;
   }
 
   /* Puntos suspensivos encima de la cabeza mientras piensa */
@@ -610,112 +627,6 @@
     30% {
       opacity: 1;
       transform: translateY(-8px) scale(1);
-    }
-  }
-
-  .thinking .eye-left {
-    animation:
-      thinkingEyeEnter 0.45s ease forwards,
-      thinkingEyeLeft 4.8s ease-in-out 0.45s infinite;
-  }
-
-  .thinking .eye-right {
-    animation:
-      thinkingEyeEnterRight 0.45s ease forwards,
-      thinkingEyeRight 4.8s ease-in-out 0.45s infinite;
-  }
-
-  @keyframes thinkingEnter {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(0.7deg);
-    }
-  }
-
-  @keyframes thinkingEyeEnter {
-    from {
-      transform: translate(0, 0);
-    }
-    to {
-      transform: translate(-6px, -6px);
-    }
-  }
-
-  @keyframes thinkingEyeEnterRight {
-    from {
-      transform: translate(0, 0);
-    }
-    to {
-      transform: translate(-6px, -6px);
-    }
-  }
-
-  .thinking .eyebrow-left {
-    animation: thinkingBrowLeft 3.8s ease-in-out infinite;
-  }
-
-  .thinking .eyebrow-right {
-    animation: thinkingBrowRight 3.8s ease-in-out infinite;
-  }
-
-  .thinking .mouth {
-    animation: thinkingMouth 3.8s ease-in-out infinite;
-  }
-  @keyframes thinkingEyeLeft {
-    0%,
-    30% {
-      transform: translate(-10px, -12px) scaleY(1);
-    }
-    45%,
-    100% {
-      transform: translate(-2px, 4px) scaleY(0.82);
-    }
-  }
-  @keyframes thinkingEyeRight {
-    0%,
-    30% {
-      transform: translate(-10px, -12px) scaleY(1);
-    }
-
-    45%,
-    100% {
-      transform: translate(-2px, 4px) scaleY(0.82);
-    }
-  }
-
-  @keyframes thinkingBrowLeft {
-    0%,
-    30% {
-      transform: translateY(-7px) rotate(-6deg);
-    }
-
-    45%,
-    100% {
-      transform: translateY(2px) rotate(3deg);
-    }
-  }
-  @keyframes thinkingBrowRight {
-    0%,
-    30% {
-      transform: translateY(-2px) rotate(1deg);
-    }
-
-    45%,
-    100% {
-      transform: translateY(3px) rotate(-5deg);
-    }
-  }
-  @keyframes thinkingMouth {
-    0%,
-    30% {
-      transform: translateX(5px) translateY(-1px) rotate(2deg) scaleX(0.94);
-    }
-
-    45%,
-    100% {
-      transform: translateX(0) translateY(0) scaleX(0.98);
     }
   }
 
@@ -969,29 +880,8 @@
   }
 
   /* =====================
-   THINKING
+   THINKING — sin movimiento; parpadeo y quietud se controlan en la sección THINKING de arriba
    ===================== */
-  .thinking .eye-sensei-left {
-    animation:
-      thinkingEyeEnter 0.45s ease forwards,
-      thinkingEyeLeft 4.8s ease-in-out 0.45s infinite;
-  }
-  .thinking .eye-sensei-right {
-    animation:
-      thinkingEyeEnterRight 0.45s ease forwards,
-      thinkingEyeRight 4.8s ease-in-out 0.45s infinite;
-  }
-  .thinking .eyebrow-sensei-left {
-    animation: thinkingBrowLeft 3.8s ease-in-out infinite;
-  }
-  .thinking .eyebrow-sensei-right {
-    animation: thinkingBrowRight 3.8s ease-in-out infinite;
-  }
-  .thinking .mouth-sensei path,
-  .thinking .mouth-sensei.mouth-active path,
-  .thinking path.mouth-sensei {
-    animation: thinkingMouth 3.8s ease-in-out infinite;
-  }
 
   /* =====================
    SPEAKING (boca)

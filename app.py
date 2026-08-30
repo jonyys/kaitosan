@@ -23,6 +23,7 @@ from datetime import timedelta, date
 from audio.recorder import Recorder
 from ai.speech_to_text import SpeechToText, transcribir_para_turno
 from ai.text_to_speech import TextToSpeech
+from ai.sensei.kana import bloques_japones
 from core.token_tracker import TokenTracker
 
 
@@ -47,6 +48,14 @@ tts = TextToSpeech()
 tts.socketio = socketio
 
 voice_listener = VoiceListener(recorder, stt, brain, tts, state, socketio)
+
+
+def emitir_japones_sensei(respuesta: str):
+    """En modo sensei, manda a la cara los trozos 【…】 en solo kana (hiragana/
+    katakana, nunca kanji) para mostrarlos en una card. Fuera de sensei, nada."""
+    if not brain.profesor.esta_activo():
+        return
+    socketio.emit("sensei_japones", {"frases": bloques_japones(respuesta)})
 
 
 @app.route("/")
@@ -76,6 +85,7 @@ def chat():
 
         # Emitir mensaje (sin cambiar estado todavía)
         socketio.emit("mensaje", {"texto": respuesta})
+        emitir_japones_sensei(respuesta)
 
         # Callback que se ejecuta cuando el audio empieza de verdad
         def al_iniciar_audio():
@@ -142,6 +152,7 @@ def grabar():
         # Hablando
         # Emitir mensaje (sin cambiar estado todavía)
         socketio.emit("mensaje", {"texto": respuesta})
+        emitir_japones_sensei(respuesta)
 
         # Callback que se ejecuta cuando el audio empieza de verdad
         def al_iniciar_audio():

@@ -5,27 +5,32 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Reloj · Kaito</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700&display=swap">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #0a0a0f;
-      --surface: #11111a;
-      --surface2: #1a1a27;
-      --border: #2a2a40;
-      --accent: #5b8fff;
-      --accent2: #7ef8c8;
-      --danger: #ff5b6a;
-      --text: #e8e8f0;
-      --text-muted: #7070a0;
-      --alarm-color: #ffd966;
-      --timer-color: #7ef8c8;
+      /* Paleta pastel de Kaito — misma que el panel y Ajustes (partials/admin/_estilos.html) */
+      --bg: #fff5f8;
+      --surface: #ffffff;
+      --surface2: #fff0f5;
+      --border: #f6d4e2;
+      --accent: #9d3564;      /* rosa-tinta: enlaces, foco, botón primario */
+      --accent2: #3fae86;     /* verde "conectado" */
+      --danger: #c85a5a;
+      --text: #5b3a4a;
+      --text-muted: #8a6b7a;
+      --alarm-color: #d98a2b;
+      --timer-color: #2f9d76;
+      --lavanda: #7e5bb0;     /* recordatorios */
     }
 
     body {
       background: var(--bg);
       color: var(--text);
-      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-family: 'M PLUS Rounded 1c', 'Nunito', 'Segoe UI', system-ui, sans-serif;
       min-height: 100vh;
       padding: 24px;
     }
@@ -247,7 +252,7 @@
       white-space: nowrap;
     }
     .btn-add:hover { opacity: .85; }
-    .btn-add.timer-btn { background: #2a7a5e; color: var(--timer-color); }
+    .btn-add.timer-btn { background: var(--timer-color); color: #fff; }
     .btn-add.timer-btn:hover { opacity: .85; }
 
     /* ── MODAL EDITAR ────────────────────────── */
@@ -255,7 +260,7 @@
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,.7);
+      background: rgba(91, 58, 74, .45);
       z-index: 100;
       align-items: center;
       justify-content: center;
@@ -399,7 +404,7 @@
 <div style="max-width:960px;margin:24px auto 0;">
   <div class="panel">
     <div class="panel-header">
-      <span class="panel-title" style="color:#c77dff">📌 Recordatorios</span>
+      <span class="panel-title" style="color:var(--lavanda)">📌 Recordatorios</span>
       <span class="count-badge" id="rem-count">0</span>
     </div>
     <div class="panel-body">
@@ -422,11 +427,11 @@
             <input type="datetime-local" id="rem-fecha"
               style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;
                      color:var(--text);font-size:14px;padding:8px 12px;outline:none;
-                     transition:border-color .2s;color-scheme:dark;"
+                     transition:border-color .2s;color-scheme:light;"
               onfocus="this.style.borderColor='var(--accent)'"
               onblur="this.style.borderColor='var(--border)'">
           </div>
-          <button class="btn-add" style="background:#5a2d82;color:#c77dff;align-self:flex-end;"
+          <button class="btn-add" style="background:var(--lavanda);color:#fff;align-self:flex-end;"
                   onclick="agregarRecordatorio()">+ Recordatorio</button>
         </div>
       </div>
@@ -752,7 +757,7 @@
       <li style="opacity:${r.completado ? '0.45' : '1'}">
         <span class="item-icon">${r.completado ? '✅' : '📌'}</span>
         <div style="flex:1">
-          <div style="font-size:15px;color:${r.completado ? 'var(--text-muted)' : '#c77dff'};
+          <div style="font-size:15px;color:${r.completado ? 'var(--text-muted)' : 'var(--lavanda)'};
                       text-decoration:${r.completado ? 'line-through' : 'none'}">${r.texto}</div>
           <div class="item-sub">${fmtFecha(r.fecha_hora)}${r.completado ? ' · completado' : ''}</div>
         </div>
