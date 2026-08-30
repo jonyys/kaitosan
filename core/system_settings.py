@@ -810,6 +810,35 @@ def micro_ganancia_set(pct) -> dict:
     return {"ok": False, "error": "no se encontró un control de ganancia de micrófono"}
 
 
+_WW_UMBRAL_DEF = 0.5
+_WW_UMBRAL_MIN = 0.05
+_WW_UMBRAL_MAX = 0.95
+
+
+def wakeword_umbral_get() -> float:
+    """Umbral de confianza del detector de wakeword ("Kaito"), 0.05..0.95.
+
+    Se guarda en `app_settings` (no toca el sistema), así que funciona igual en
+    la Pi y en el portátil. `audio/wakeword.py` lo relee en cada ciclo."""
+    try:
+        v = float(settings_get("wakeword_umbral", _WW_UMBRAL_DEF))
+    except (TypeError, ValueError):
+        v = _WW_UMBRAL_DEF
+    return max(_WW_UMBRAL_MIN, min(_WW_UMBRAL_MAX, round(v, 2)))
+
+
+def wakeword_umbral_set(valor) -> dict:
+    try:
+        v = round(float(str(valor).replace(",", ".")), 2)
+    except (TypeError, ValueError):
+        return {"ok": False, "error": "umbral no válido"}
+    if not _WW_UMBRAL_MIN <= v <= _WW_UMBRAL_MAX:
+        return {"ok": False,
+                "error": f"el umbral debe estar entre {_WW_UMBRAL_MIN} y {_WW_UMBRAL_MAX}"}
+    settings_set("wakeword_umbral", f"{v:.2f}")
+    return {"ok": True, "valor": v}
+
+
 def _primer_micro_real():
     """Primer dispositivo de captura 'real' (USB o tarjeta por los pines),
     saltándose los plugins de ALSA y el audio integrado. -> índice o None."""
@@ -1516,6 +1545,53 @@ def logs(n: int = 200) -> str:
     return salida.strip() or "(sin entradas de log)"
 
 
+# Marcadores de las líneas que imprime el flujo de voz por consola (wakeword,
+# transcripción de Whisper, respuesta hablada, sensei…). El resto del journal
+# (accesos HTTP, socket.io, errores de ALSA) se descarta.
+_MARCADORES_CONV = (
+    "[WAKEWORD]", "🎙", "🎤", "🔄 Transcribiendo", "✅ Transcripción",
+    "🗣", "🤖 Kaito", "💬", "🎌", "🎯", "🙅", "🈳", "🧹 Historial",
+    "❌ Error transcribiendo",
+)
+_RE_JOURNAL = re.compile(r"\w{3}\s+\d+\s+(\d{2}:\d{2}:\d{2})\s+\S+\s+\S+?:\s?(.*)")
+
+
+def logs_conversacion(escanear: int = 3000) -> str:
+    """Como `logs()` pero solo las líneas del flujo de conversación, con la
+    hora al principio. `escanear` = cuántas líneas del journal mirar antes de
+    filtrar (las líneas de conversación son escasas entre el ruido HTTP)."""
+    try:
+        escanear = max(100, min(20000, int(escanear)))
+    except (TypeError, ValueError):
+        escanear = 3000
+
+    if _simulado():
+        h = datetime.now().strftime("%H:%M:%S")
+        return "\n".join([
+            f"{h}  [WAKEWORD] 'kaito' detectado (confidence: 0.61)",
+            f"{h}  🎤 Escuchando... (para al detectar silencio)",
+            f"{h}  🔄 Transcribiendo con Groq Whisper...",
+            f"{h}  ✅ Transcripción: ¿qué hora es?",
+            f"{h}  🤖 Kaito: Son las nueve y cuarto.",
+        ])
+
+    salida = _cmd(
+        ["journalctl", "-u", "kaito", "-n", str(escanear), "--no-pager"], timeout=20
+    )
+    if salida is None:
+        return "(no se pudieron leer los logs: journalctl no disponible o sin permisos)"
+
+    fuera = []
+    for ln in salida.splitlines():
+        if not any(m in ln for m in _MARCADORES_CONV):
+            continue
+        m = _RE_JOURNAL.match(ln)
+        fuera.append(f"{m.group(1)}  {m.group(2)}" if m else ln)
+    return "\n".join(fuera) or (
+        f"(sin líneas de conversación en las últimas {escanear} del log)"
+    )
+
+
 def _es_sqlite(ruta: str) -> bool:
     """True si `ruta` es un fichero SQLite íntegro (cabecera + integrity_check)."""
     try:
@@ -1619,11 +1695,12 @@ def diagnostico_zip() -> str:
                    "Diagnóstico de Kaito\n"
                    f"Generado: {datetime.now().isoformat(timespec='seconds')}\n"
                    f"Modo simulado: {_simulado()}\n\n"
-                   "Las claves del .env van ofuscadas. Revisa logs.txt por si "
+                   "Las claves del .env van ofuscadas. Revisa los .log por si "
                    "acaso antes de compartir este archivo.\n")
         z.writestr("salud.json",
                    json.dumps(salud(), indent=2, ensure_ascii=False))
-        z.writestr("logs.txt", logs(500))
+        z.writestr("logs-servicio.log", logs(1000))
+        z.writestr("logs-conversacion.log", logs_conversacion())
 
         crudo_env = _leer_archivo(os.path.join(BASE_DIR, ".env"))
         if crudo_env is not None:

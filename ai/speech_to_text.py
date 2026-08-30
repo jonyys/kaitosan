@@ -38,6 +38,27 @@ def _norm_jp(s: str) -> str:
 _RE_JP_CHARS = re.compile(r'[぀-ヿ㐀-䶿一-鿿ｦ-ﾝ]')
 _RE_LATIN = re.compile(r'[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]')
 
+# Whisper "rellena" el silencio con un agradecimiento: si el micro se activa
+# sin querer y nadie habla, la transcripción suele salir como un simple
+# "Gracias" / "Thank you". Si eso llega y no ha habido ningún turno en los
+# últimos STT_AGRADECIMIENTO_TIMEOUT_SEG segundos, se descarta (no se responde).
+STT_AGRADECIMIENTO_TIMEOUT_SEG = 120
+
+_AGRADECIMIENTOS = frozenset({
+    "gracias", "muchas gracias", "gracias a todos", "gracias por ver",
+    "gracias por ver el video", "gracias por ver el vídeo", "gracias por vernos",
+    "thank you", "thanks", "thank you very much", "thanks a lot",
+    "thank you so much", "thanks for watching", "thank you for watching",
+    "thanks for watching the video",
+})
+
+
+def _es_agradecimiento_corto(texto: str) -> bool:
+    """True si la transcripción es solo un 'gracias'/'thank you' — la
+    alucinación típica de Whisper al activarse sin que nadie hable."""
+    t = " ".join(re.sub(r"[^\w\s]", "", (texto or "").lower()).split())
+    return bool(t) and t in _AGRADECIMIENTOS
+
 
 def _es_mayormente_japones(texto: str) -> bool:
     """True si la transcripción es japonés (kana/kanji) con, como mucho, alguna
@@ -278,7 +299,27 @@ class SpeechToText:
 
 
 def transcribir_para_turno(stt: SpeechToText, archivo: str, *, sensei_activo: bool,
-                           modo_conv: bool, referencia: str = None):
+                           modo_conv: bool, referencia: str = None,
+                           segundos_desde_turno: float = None):
+    """Transcribe un turno y descarta la alucinación de agradecimiento de Whisper.
+
+    Si `segundos_desde_turno` (tiempo desde la última pregunta/respuesta) supera
+    STT_AGRADECIMIENTO_TIMEOUT_SEG y lo transcrito es solo "gracias"/"thank you",
+    devuelve `("", None)` para que el llamante no responda.
+    """
+    texto, pron = _ruta_transcripcion(
+        stt, archivo, sensei_activo=sensei_activo, modo_conv=modo_conv, referencia=referencia)
+    if (texto and segundos_desde_turno is not None
+            and segundos_desde_turno > STT_AGRADECIMIENTO_TIMEOUT_SEG
+            and _es_agradecimiento_corto(texto)):
+        print(f"🙅 Ignorada alucinación de Whisper «{texto}» "
+              f"({segundos_desde_turno:.0f}s sin actividad)")
+        return "", None
+    return texto, pron
+
+
+def _ruta_transcripcion(stt: SpeechToText, archivo: str, *, sensei_activo: bool,
+                        modo_conv: bool, referencia: str = None):
     """Enruta la transcripción de un turno.
 
     - Sensei estructurado + hay `referencia` (el profesor pidió repetir una frase):
@@ -309,3 +350,14 @@ def transcribir_para_turno(stt: SpeechToText, archivo: str, *, sensei_activo: bo
         return stt.transcribir(archivo, idioma=None), None
 
     return stt.transcribir(archivo, idioma="es"), None
+
+
+if __name__ == "__main__":
+    # Autocomprobación del filtro de alucinación (python -m ai.speech_to_text).
+    for s in ["Gracias", "  gracias.  ", "¡Muchas gracias!", "Thank you.",
+              "thanks for watching", "THANK YOU"]:
+        assert _es_agradecimiento_corto(s), s
+    for s in ["gracias por la ayuda", "pon una alarma", "thank you for the alarm",
+              "", "gracias kaito"]:
+        assert not _es_agradecimiento_corto(s), s
+    print("✅ _es_agradecimiento_corto OK")

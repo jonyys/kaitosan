@@ -1,5 +1,6 @@
 import json
 import random
+import time
 from ai.prompts import cargar_prompt
 from ai.fallback_provider import FallbackProvider
 from ai.search_provider import SearchProvider
@@ -43,6 +44,9 @@ class Brain:
         provider_sensei = FallbackProvider(model=groq_seleccion()["sensei"])
         self.profesor = ProfesorJapones(self.jap_memory, provider_sensei, self.memory, self.socketio)
         self._emitir_desactivar_sensei = False
+        # Momento del último turno (pregunta o respuesta). Lo usa el filtro de
+        # alucinación de Whisper en transcribir_para_turno.
+        self.ultimo_turno_ts = 0.0
 
     def _iniciar_sesion(self):
         self.session_id = self.memory.iniciar_sesion()
@@ -54,9 +58,15 @@ class Brain:
         print(f"✅ Sesión {self.session_id} iniciada")
 
     def responder(self, mensaje: str, pron_contexto: str = None) -> tuple[str, bool]:
-        """Devuelve siempre (respuesta, lento_extra).
+        """Devuelve siempre (respuesta, lento_extra). Marca el turno para el
+        filtro de alucinación de Whisper (ver transcribir_para_turno)."""
+        try:
+            return self._responder(mensaje, pron_contexto=pron_contexto)
+        finally:
+            self.ultimo_turno_ts = time.monotonic()
 
-        `pron_contexto` — resumen de pronunciación (Azure) del audio de este
+    def _responder(self, mensaje: str, pron_contexto: str = None) -> tuple[str, bool]:
+        """`pron_contexto` — resumen de pronunciación (Azure) del audio de este
         turno; solo se usa cuando el modo sensei está activo.
         """
 

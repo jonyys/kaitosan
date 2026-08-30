@@ -49,6 +49,22 @@
         <button class="btn btn-green">Guardar ganancia</button>
     </form>
 
+    {# --- Umbral de activación del wakeword ("Kaito") --- #}
+    <form method="POST" action="/admin/ajustes/audio/wakeword-umbral" style="margin-top:20px">
+        <div class="fila">
+            <span class="et">Umbral de activación de «Ey, Kaito san»</span>
+            <span class="val" id="ww-val">{{ '%.2f'|format(wakeword_umbral) }}</span>
+        </div>
+        <input type="range" id="ww" name="umbral" min="0.05" max="0.95" step="0.05"
+               value="{{ wakeword_umbral }}" style="width:100%; margin-bottom:8px"
+               oninput="document.getElementById('ww-val').textContent = (+this.value).toFixed(2)">
+        <p class="et" style="color:var(--text-soft); margin:0 0 8px">
+            Más bajo = se activa más fácil pero también con ruido o silencio. Más alto = hay que
+            vocalizar «Ey, Kaito san» con claridad. Por defecto 0.50.
+        </p>
+        <button class="btn btn-green">Guardar umbral</button>
+    </form>
+
     {# --- Pruebas (Fase 8) — fetch, sin recargar (§7.2) --- #}
     <div class="actions" style="margin-top:20px">
         <button type="button" class="btn btn-yellow"

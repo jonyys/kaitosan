@@ -1,8 +1,17 @@
 import atexit
 import os
 import signal
+import sys
 import tempfile
 import threading
+import time
+
+# stdout/stderr en line-buffering: bajo systemd, Python usa búfer de bloque
+# (~8 KB) y los print() de la conversación no llegan al journal hasta que se
+# llena o el proceso reinicia. Así aparecen al instante en `journalctl -u kaito`.
+for _s in (sys.stdout, sys.stderr):
+    if hasattr(_s, "reconfigure"):
+        _s.reconfigure(line_buffering=True)
 from flask import Flask, render_template, request, jsonify, Response, send_file
 from werkzeug.utils import secure_filename
 from flask_socketio import SocketIO
@@ -134,6 +143,7 @@ def grabar():
             sensei_activo=brain.profesor.esta_activo(),
             modo_conv=brain.profesor.modo_conv,
             referencia=getattr(brain.profesor, "ultima_frase_objetivo", None),
+            segundos_desde_turno=time.monotonic() - brain.ultimo_turno_ts,
         )
 
         if not texto:
@@ -464,6 +474,7 @@ def ajustes():
         audio_output=settings_get("audio_output"),
         audio_input=settings_get("audio_input"),
         micro_ganancia=system_settings.micro_ganancia_get(),
+        wakeword_umbral=system_settings.wakeword_umbral_get(),
     )
 
 
@@ -548,6 +559,14 @@ def ajustes_audio_entrada():
 def ajustes_audio_micro_ganancia():
     _flash_resultado(system_settings.micro_ganancia_set(request.form.get("ganancia", "")),
                      "Ganancia del micrófono actualizada")
+    return redirect(url_for("ajustes"))
+
+
+@app.route("/admin/ajustes/audio/wakeword-umbral", methods=["POST"])
+@login_requerido
+def ajustes_audio_wakeword_umbral():
+    _flash_resultado(system_settings.wakeword_umbral_set(request.form.get("umbral", "")),
+                     "Umbral de activación de «Kaito» actualizado")
     return redirect(url_for("ajustes"))
 
 
@@ -700,15 +719,24 @@ def ajustes_cuenta():
 
 # --- Mantenimiento (Fase 10): salud, logs y copia de seguridad (§7.2) --- #
 
+def _resp_logs(texto: str, descargar: bool, nombre: str) -> Response:
+    cab = {"Content-Disposition": f"attachment; filename={nombre}"} if descargar else {}
+    return Response(texto, mimetype="text/plain; charset=utf-8", headers=cab)
+
+
 @app.route("/admin/ajustes/sistema/logs")
 @login_requerido
 def ajustes_sistema_logs():
-    try:
-        n = int(request.args.get("n", 200))
-    except ValueError:
-        n = 200
-    return Response(system_settings.logs(n),
-                    mimetype="text/plain; charset=utf-8")
+    descargar = bool(request.args.get("descargar"))
+    n = 2000 if descargar else 500
+    return _resp_logs(system_settings.logs(n), descargar, "kaito-servicio.log")
+
+
+@app.route("/admin/ajustes/sistema/logs-conversacion")
+@login_requerido
+def ajustes_sistema_logs_conversacion():
+    return _resp_logs(system_settings.logs_conversacion(),
+                      bool(request.args.get("descargar")), "kaito-conversacion.log")
 
 
 @app.route("/admin/ajustes/sistema/backup")

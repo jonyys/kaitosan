@@ -25,6 +25,8 @@ TimeoutStopSec=20
 # Un solo hilo para las librerías nativas (ONNX Runtime, OpenBLAS, OpenCV):
 # evita que cada inferencia del wakeword y cada frame de detección se repartan
 # entre los 4 núcleos y disparen la temperatura.
+# Sin búfer en stdout: los print() de la conversación llegan al journal al vuelo.
+Environment=PYTHONUNBUFFERED=1
 Environment=OMP_NUM_THREADS=1
 Environment=OPENBLAS_NUM_THREADS=1
 Environment=OPENCV_FOR_THREADS_NUM=1

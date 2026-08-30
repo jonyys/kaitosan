@@ -11,7 +11,19 @@ import pyaudio
 from livekit.wakeword import WakeWordModel  # re-exportado (lo usan los tests)
 
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "kaito.onnx")
-THRESHOLD = 0.1
+# Umbral de confianza por defecto. El valor real se lee de los ajustes
+# (Ajustes → Sonido) en cada ciclo de escucha vía `_umbral_actual()`, así que
+# un cambio aplica sin reiniciar. 0.1 disparaba con cualquier ruido (silencio
+# transcrito como "Gracias"); 0.5 es el punto sano.
+THRESHOLD_DEF = float(os.getenv("WAKEWORD_THRESHOLD", "0.5"))
+
+
+def _umbral_actual() -> float:
+    try:
+        from core.system_settings import wakeword_umbral_get
+        return wakeword_umbral_get()
+    except Exception:  # noqa: BLE001 — sin ajustes (tests/arranque): usa el def.
+        return THRESHOLD_DEF
 
 # WAKEWORD_DEBUG=true imprime la puntuación máxima de cada ventana de 2 s para
 # ver en los logs si el modelo te está oyendo (aunque no llegue al umbral).
@@ -303,7 +315,7 @@ class WakeWordDetector:
         loop = asyncio.get_running_loop()
         while not self._stop_event.is_set():
             try:
-                async with _WakeWordListener(model, threshold=THRESHOLD) as listener:
+                async with _WakeWordListener(model, threshold=_umbral_actual()) as listener:
                     detection = await listener.wait_for_detection()
                 print(f"[WAKEWORD] '{detection.name}' detectado (confidence: {detection.confidence:.3f})")
                 await loop.run_in_executor(None, self._on_detected)
