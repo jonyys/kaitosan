@@ -45,9 +45,11 @@
         border-bottom: 1px solid var(--border);
     }
     .bt-dev:last-child { border-bottom: 0; }
-    .bt-dev .nom { flex: 1 1 60%; font-weight: 500; word-break: break-word; }
+    .bt-dev .nom { flex: 1 1 40%; min-width: 45%; font-weight: 500; word-break: break-word; }
     .bt-dev .sig { flex: 0 0 auto; color: var(--text-soft); font-weight: 700; font-size: 12px; }
-    .bt-dev .btn { flex: 0 0 auto; min-height: 44px; padding: 8px 14px; font-size: 13px; }
+    /* Los botones de acción van juntos: si no caben, wrapan como grupo, nunca sueltos. */
+    .bt-dev .bt-acciones { flex: 0 0 auto; display: flex; flex-wrap: nowrap; gap: 8px; margin-left: auto; }
+    .bt-dev .btn { flex: 0 0 auto; min-height: 44px; padding: 8px 14px; font-size: 13px; white-space: nowrap; }
     #bt-radio-estado.ok  { color: var(--ok-tinta);      font-weight: 700; }
     #bt-radio-estado.err { color: var(--peligro-tinta); font-weight: 700; }
 </style>
@@ -91,13 +93,16 @@
             row.appendChild(sig);
         }
 
+        var grupo = document.createElement('div');
+        grupo.className = 'bt-acciones';
         acciones.forEach(function (a) {
             var b = document.createElement('button');
             b.className = 'btn ' + a.clase;
             b.textContent = a.texto;
             b.onclick = function () { a.fn(b); };
-            row.appendChild(b);
+            grupo.appendChild(b);
         });
+        row.appendChild(grupo);
         return row;
     }
 
@@ -122,8 +127,9 @@
     function conectar(mac, btn)     { accion('/admin/ajustes/bluetooth/conectar', mac, btn, 'conectado'); }
     function desconectar(mac, btn)  { accion('/admin/ajustes/bluetooth/desconectar', mac, btn, 'desconectado'); }
     function olvidar(mac, nombre, btn) {
-        if (!confirm('¿Olvidar «' + (nombre || mac) + '»?')) return;
-        accion('/admin/ajustes/bluetooth/olvidar', mac, btn, 'olvidado');
+        window.confirmar('¿Olvidar «' + (nombre || mac) + '»?').then(function (ok) {
+            if (ok) accion('/admin/ajustes/bluetooth/olvidar', mac, btn, 'olvidado');
+        });
     }
 
     function pintarEmparejados(devs) {
