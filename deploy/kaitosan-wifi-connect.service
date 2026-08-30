@@ -1,0 +1,45 @@
+# Portal de onboarding WiFi de Kaito (balena-wifi-connect).
+# Solo se levanta cuando la Pi NO tiene conexion: crea el WiFi
+# "Kaitosan-Setup" y sirve onboarding/ui/index.html para que Laura meta su red.
+# PLAN_AJUSTES.md §3.4.
+#
+# Instalacion en la Pi (§3.2 / §3.3):
+#   # 1) binario ARM oficial (aarch64 en Pi 4/5 de 64 bits)
+#   cd /tmp
+#   curl -Ls https://github.com/balena-os/wifi-connect/releases/latest/download/wifi-connect-aarch64-unknown-linux-gnu.tar.gz -o wc.tar.gz
+#   sudo mkdir -p /opt/wifi-connect
+#   sudo tar -xzf wc.tar.gz -C /opt/wifi-connect
+#   # 2) UI de Kaito (versionada en el repo) en lugar de la de ejemplo
+#   sudo rm -rf /opt/wifi-connect/ui
+#   sudo cp -r /home/kaitosan/robot/onboarding/ui /opt/wifi-connect/ui
+#   # 3) el servicio
+#   sudo install -m 0644 deploy/kaitosan-wifi-connect.service /etc/systemd/system/kaitosan-wifi-connect.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable kaitosan-wifi-connect
+#
+# Prueba (§3.5):
+#   sudo nmcli radio wifi off && sudo systemctl start kaitosan-wifi-connect
+#   -> con el movil, conectate a "Kaitosan-Setup", elige tu red y comprueba
+#      que el AP se apaga al conectar.
+
+[Unit]
+Description=Kaito WiFi onboarding portal
+After=NetworkManager.service
+Wants=NetworkManager.service
+
+[Service]
+Type=simple
+# Espera a que NetworkManager termine de intentar conectarse.
+ExecStartPre=/usr/bin/nm-online -s -q --timeout=30
+# Aborta el arranque si YA hay conexion (asi el portal solo aparece si hace falta).
+ExecStartPre=/bin/bash -c '/usr/bin/nmcli -t -f STATE g | grep -q "connected" && exit 1 || exit 0'
+ExecStart=/opt/wifi-connect/wifi-connect \
+  --portal-ssid "Kaitosan-Setup" \
+  --portal-listening-port 80 \
+  --activity-timeout 0 \
+  --ui-directory /opt/wifi-connect/ui
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

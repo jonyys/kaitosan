@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light">
+<title>Kaito — Configurar WiFi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700&display=swap">
+<style>
+    /* ================================================================
+       Portal de onboarding de Kaito — servido por balena-wifi-connect.
+       Fichero único, sin framework. Contrato (PLAN_AJUSTES §3.3):
+         GET  /networks  -> [ {ssid, security} | "ssid" ... ]
+         POST /connect   -> { ssid, identity:"", passphrase }
+       Paleta pastel de Kaito (§13) — mismos tokens que el panel de admin.
+       ================================================================ */
+    :root {
+        --bg:            #fff5f8;
+        --bg-alt:        #ffeaf2;
+        --surface:       #ffffff;
+        --surface-2:     #fff0f5;
+        --border:        #f6d4e2;
+        --border-fuerte: #efb9d0;
+        --text:          #5b3a4a;
+        --text-soft:     #8a6b7a;
+        --text-faint:    #c8aeba;
+        --rosa:          #f7b8d2;
+        --rosa-medio:    #f090b6;
+        --rosa-accion:   #d9568c;
+        --rosa-tinta:    #9d3564;
+        --ok-bg:         #e7f7f0;   --ok: #3fae86;   --ok-tinta: #1c7355;
+        --peligro-bg:    #fdecec;   --peligro: #c85a5a;   --peligro-tinta: #a83232;
+        --radio:         18px;
+        --radio-sm:      12px;
+        --radio-pill:    999px;
+        --sombra:        0 8px 24px rgba(217, 86, 140, 0.15);
+        --sombra-sm:     0 2px 8px  rgba(217, 86, 140, 0.12);
+        --toque:         48px;
+        --fuente: 'M PLUS Rounded 1c', 'Nunito', 'Segoe UI', system-ui, sans-serif;
+    }
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+
+    body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--fuente);
+        font-size: 16px;
+        line-height: 1.6;
+        padding: clamp(16px, 5vw, 32px) clamp(14px, 4vw, 28px);
+        touch-action: manipulation;
+        min-height: 100vh;
+    }
+
+    .wrap { max-width: 30rem; margin: 0 auto; }
+
+    header { text-align: center; margin-bottom: clamp(18px, 6vw, 28px); }
+    .logo { font-size: clamp(40px, 13vw, 56px); line-height: 1; }
+    h1 {
+        color: var(--rosa-tinta);
+        font-weight: 700;
+        font-size: clamp(20px, 5.5vw, 26px);
+        margin-top: 6px;
+    }
+    .sub { color: var(--text-soft); font-size: 15px; margin-top: 4px; }
+
+    .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radio);
+        box-shadow: var(--sombra);
+        padding: clamp(18px, 5vw, 24px);
+    }
+
+    h2 {
+        color: var(--rosa-tinta);
+        font-weight: 700;
+        font-size: clamp(16px, 4.5vw, 19px);
+        margin-bottom: 14px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 8px;
+    }
+
+    /* ---- Lista de redes: "filas de ajuste", zona táctil grande ---- */
+    .redes { list-style: none; }
+    .red {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        min-height: 56px;
+        padding: 12px 4px;
+        border: none;
+        border-bottom: 1px solid var(--border);
+        background: transparent;
+        color: var(--text);
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+    }
+    .red:last-child { border-bottom: 0; }
+    .red:active { background: var(--surface-2); }
+    .red .nom { flex: 1 1 auto; font-weight: 500; word-break: break-word; }
+    .red .sig { flex: 0 0 auto; color: var(--text-soft); font-weight: 700; font-size: 12px; }
+    .red .lock { flex: 0 0 auto; opacity: .7; }
+
+    /* ---- Controles nativos ---- */
+    label { display: block; font-weight: 500; margin: 12px 0 4px; }
+    input[type="text"], input[type="password"] {
+        width: 100%;
+        min-height: var(--toque);
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: var(--radio-sm);
+        color: var(--text);
+        padding: 10px 12px;
+        font-size: 16px;
+    }
+    input:focus {
+        outline: none;
+        border-color: var(--rosa-accion);
+        box-shadow: 0 0 0 3px rgba(217, 86, 140, .25);
+    }
+    ::placeholder { color: var(--text-faint); }
+
+    .ver-pass { display: flex; align-items: center; gap: 8px; margin: 8px 0 0; font-weight: 400; }
+    .ver-pass input { width: 22px; height: 22px; accent-color: var(--rosa-accion); }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        min-height: var(--toque);
+        margin-top: 16px;
+        padding: 12px 18px;
+        border: none;
+        border-radius: var(--radio-pill);
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 16px;
+        font-weight: 700;
+        box-shadow: var(--sombra-sm);
+        transition: transform .08s ease, filter .15s ease;
+    }
+    .btn:active { transform: scale(.98); }
+    .btn[disabled] { opacity: .6; cursor: default; }
+    .btn-primario {
+        background: var(--rosa-tinta);
+        background-image: linear-gradient(135deg, rgba(255,255,255,.14), rgba(255,255,255,0));
+        color: #fff;
+    }
+    .btn-sec {
+        background: var(--surface-2);
+        color: var(--rosa-tinta);
+        border: 1px solid var(--border-fuerte);
+        box-shadow: none;
+    }
+
+    .link {
+        display: inline-block;
+        margin-top: 14px;
+        color: var(--rosa-accion);
+        font-weight: 700;
+        text-decoration: none;
+        min-height: 44px;
+        line-height: 44px;
+        cursor: pointer;
+    }
+
+    details { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 6px; }
+    summary {
+        cursor: pointer;
+        font-weight: 500;
+        color: var(--rosa-tinta);
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+    }
+
+    .msg {
+        margin-top: 14px;
+        padding: 11px 15px;
+        border-radius: var(--radio-sm);
+        font-size: 14px;
+        font-weight: 500;
+    }
+    .msg-info    { background: var(--bg-alt);     border: 1px solid var(--border-fuerte); color: var(--rosa-tinta); }
+    .msg-ok      { background: var(--ok-bg);      border: 1px solid var(--ok);      color: var(--ok-tinta); }
+    .msg-error   { background: var(--peligro-bg); border: 1px solid var(--peligro); color: var(--peligro-tinta); }
+    .empty { color: var(--text-soft); font-style: italic; text-align: center; padding: 20px; }
+
+    .spinner {
+        display: inline-block;
+        width: 18px; height: 18px;
+        margin-right: 8px;
+        border: 3px solid var(--rosa);
+        border-top-color: var(--rosa-tinta);
+        border-radius: 50%;
+        vertical-align: -4px;
+        animation: giro .8s linear infinite;
+    }
+    @keyframes giro { to { transform: rotate(360deg); } }
+
+    [hidden] { display: none !important; }
+    .pie { text-align: center; color: var(--text-faint); font-size: 12px; margin-top: 22px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+    <header>
+        <div class="logo">🤖🌸</div>
+        <h1>Kaito</h1>
+        <p class="sub">Vamos a conectar a Kaito a tu WiFi</p>
+    </header>
+
+    <!-- Pantalla 1: elegir red -->
+    <section class="card" id="pantalla-lista">
+        <h2>Elige tu red WiFi</h2>
+        <ul class="redes" id="redes"><li class="empty">Buscando redes…</li></ul>
+        <button type="button" class="btn btn-sec" id="btn-rescan">🔄 Buscar de nuevo</button>
+
+        <details id="manual">
+            <summary>Mi red no aparece / es una red oculta</summary>
+            <label for="man-ssid">Nombre de la red (SSID)</label>
+            <input type="text" id="man-ssid" autocomplete="off" autocapitalize="none" spellcheck="false">
+            <button type="button" class="btn btn-sec" id="btn-man">Continuar</button>
+        </details>
+    </section>
+
+    <!-- Pantalla 2: contraseña -->
+    <section class="card" id="pantalla-pass" hidden>
+        <h2>Conectar a «<span id="pass-ssid"></span>»</h2>
+        <div id="pass-campo">
+            <label for="pass">Contraseña del WiFi</label>
+            <input type="password" id="pass" autocomplete="off" autocapitalize="none" spellcheck="false">
+            <label class="ver-pass"><input type="checkbox" id="ver-pass"> Ver contraseña</label>
+        </div>
+        <p id="pass-abierta" class="msg msg-info" hidden>Esta red no tiene contraseña.</p>
+        <button type="button" class="btn btn-primario" id="btn-conectar">Conectar</button>
+        <a class="link" id="btn-volver">← Elegir otra red</a>
+    </section>
+
+    <!-- Pantalla 3: conectando -->
+    <section class="card" id="pantalla-fin" hidden>
+        <h2>Conectando…</h2>
+        <p class="msg msg-info" id="fin-msg">
+            <span class="spinner"></span>
+            Kaito está conectándose a «<span id="fin-ssid"></span>».
+        </p>
+        <p class="sub" style="margin-top:14px">
+            Esta red de configuración <b>«Kaitosan-Setup»</b> se apagará en unos
+            segundos. Cuando eso pase:
+        </p>
+        <ol class="sub" style="margin:8px 0 0 20px">
+            <li>Vuelve a conectar el móvil a tu WiFi de casa.</li>
+            <li>Abre <b>http://kaitosan.local:5000</b> en el navegador.</li>
+        </ol>
+        <p class="sub" style="margin-top:14px">
+            Si Kaito no aparece en unos minutos, vuelve a acercarte a la red
+            «Kaitosan-Setup» y prueba otra vez.
+        </p>
+        <a class="link" id="btn-reintentar" hidden>← Volver a empezar</a>
+    </section>
+
+    <p class="pie">Kaito · asistente de japonés</p>
+</div>
+
+<script>
+(function () {
+    "use strict";
+
+    var $ = function (id) { return document.getElementById(id); };
+    var pantallas = { lista: $("pantalla-lista"), pass: $("pantalla-pass"), fin: $("pantalla-fin") };
+
+    function mostrar(nombre) {
+        Object.keys(pantallas).forEach(function (k) {
+            pantallas[k].hidden = (k !== nombre);
+        });
+        window.scrollTo(0, 0);
+    }
+
+    // --- Normaliza la respuesta de /networks (strings u objetos) --------------
+    function normaliza(items) {
+        var out = [], vistos = {};
+        (items || []).forEach(function (n) {
+            var ssid = (typeof n === "string") ? n : (n && (n.ssid || n.SSID));
+            if (!ssid || vistos[ssid]) return;
+            vistos[ssid] = 1;
+            var sec = (typeof n === "object" && n)
+                ? (n.security || n.security_type || n.Security || "")
+                : "";
+            var senal = (typeof n === "object" && n)
+                ? (n.signal || n.signal_level || n.strength || null) : null;
+            out.push({
+                ssid: ssid,
+                abierta: !sec || /^(none|open|--)?$/i.test(String(sec)),
+                senal: senal
+            });
+        });
+        return out;
+    }
+
+    // Datos de ejemplo para maquetar el fichero en el portátil (PLAN §3.5):
+    // si /networks no responde (abriendo el index.html a pelo), se usan estos.
+    var DEMO = [
+        { ssid: "MiFibra-A1B2", security: "wpa2", signal: 82 },
+        { ssid: "MOVISTAR_5G_3F2A", security: "wpa2", signal: 61 },
+        { ssid: "Vodafone-2C10", security: "wpa2", signal: 44 },
+        { ssid: "Invitados", security: "", signal: 70 }
+    ];
+
+    function pintarRedes(redes) {
+        var ul = $("redes");
+        ul.innerHTML = "";
+        if (!redes.length) {
+            ul.innerHTML = '<li class="empty">No se ha encontrado ninguna red. '
+                + 'Acércate al router y pulsa «Buscar de nuevo».</li>';
+            return;
+        }
+        redes.forEach(function (r) {
+            var li = document.createElement("li");
+            var b = document.createElement("button");
+            b.type = "button";
+            b.className = "red";
+            var nom = document.createElement("span");
+            nom.className = "nom";
+            nom.textContent = r.ssid;
+            var lock = document.createElement("span");
+            lock.className = "lock";
+            lock.textContent = r.abierta ? "" : "🔒";
+            var sig = document.createElement("span");
+            sig.className = "sig";
+            sig.textContent = (r.senal != null) ? r.senal + "%" : "";
+            b.appendChild(nom);
+            b.appendChild(sig);
+            b.appendChild(lock);
+            b.addEventListener("click", function () { elegir(r.ssid, r.abierta); });
+            li.appendChild(b);
+            ul.appendChild(li);
+        });
+    }
+
+    function cargarRedes() {
+        var ul = $("redes");
+        ul.innerHTML = '<li class="empty">Buscando redes…</li>';
+        $("btn-rescan").disabled = true;
+        fetch("/networks", { headers: { "Accept": "application/json" } })
+            .then(function (r) {
+                if (!r.ok) throw new Error("HTTP " + r.status);
+                return r.json();
+            })
+            .then(function (data) { pintarRedes(normaliza(data)); })
+            .catch(function () {
+                // Sin backend (maqueta local) -> datos de ejemplo.
+                pintarRedes(normaliza(DEMO));
+            })
+            .then(function () { $("btn-rescan").disabled = false; });
+    }
+
+    // --- Pantalla de contraseña --------------------------------------------
+    var sel = { ssid: "", abierta: false };
+
+    function elegir(ssid, abierta) {
+        sel.ssid = ssid;
+        sel.abierta = !!abierta;
+        $("pass-ssid").textContent = ssid;
+        $("fin-ssid").textContent = ssid;
+        $("pass").value = "";
+        $("ver-pass").checked = false;
+        $("pass").type = "password";
+        $("pass-campo").hidden = sel.abierta;
+        $("pass-abierta").hidden = !sel.abierta;
+        limpiaMsg();
+        mostrar("pass");
+        if (!sel.abierta) setTimeout(function () { $("pass").focus(); }, 50);
+    }
+
+    function limpiaMsg() {
+        var m = $("pass-msg");
+        if (m) m.remove();
+    }
+
+    function ponMsg(texto, clase) {
+        limpiaMsg();
+        var p = document.createElement("p");
+        p.id = "pass-msg";
+        p.className = "msg " + (clase || "msg-error");
+        p.textContent = texto;
+        $("btn-conectar").insertAdjacentElement("beforebegin", p);
+    }
+
+    function conectar() {
+        var pass = $("pass").value;
+        if (!sel.abierta && pass.length < 8) {
+            ponMsg("La contraseña del WiFi suele tener 8 caracteres o más.");
+            return;
+        }
+        $("btn-conectar").disabled = true;
+        ponMsg("Enviando…", "msg-info");
+
+        var cuerpo = JSON.stringify({
+            ssid: sel.ssid,
+            identity: "",
+            passphrase: sel.abierta ? "" : pass
+        });
+
+        // El AP se apaga en cuanto NetworkManager conecta, así que puede que
+        // esta petición no llegue a responder: eso NO es un error.
+        fetch("/connect", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: cuerpo
+        }).then(function () {
+            irAFin();
+        }).catch(function () {
+            irAFin();
+        });
+
+        // Por si /connect tarda: pasa a la pantalla final a los 3 s igualmente.
+        setTimeout(irAFin, 3000);
+    }
+
+    var finHecho = false;
+    function irAFin() {
+        if (finHecho) return;
+        finHecho = true;
+        mostrar("fin");
+        // A los 20 s ofrecemos reintentar por si la red estaba mal.
+        setTimeout(function () {
+            var m = $("fin-msg");
+            m.className = "msg msg-info";
+            m.innerHTML = "Si sigues viendo la red «Kaitosan-Setup», es que la "
+                + "contraseña no era correcta.";
+            $("btn-reintentar").hidden = false;
+        }, 20000);
+    }
+
+    // --- Eventos ----------------------------------------------------------
+    $("btn-rescan").addEventListener("click", cargarRedes);
+
+    $("ver-pass").addEventListener("change", function () {
+        $("pass").type = this.checked ? "text" : "password";
+    });
+
+    $("btn-conectar").addEventListener("click", conectar);
+    $("pass").addEventListener("keydown", function (e) {
+        if (e.key === "Enter") conectar();
+    });
+
+    $("btn-volver").addEventListener("click", function () {
+        limpiaMsg();
+        mostrar("lista");
+    });
+
+    $("btn-man").addEventListener("click", function () {
+        var ssid = $("man-ssid").value.trim();
+        if (!ssid) { $("man-ssid").focus(); return; }
+        elegir(ssid, false);
+    });
+
+    $("btn-reintentar").addEventListener("click", function () {
+        finHecho = false;
+        $("btn-reintentar").hidden = true;
+        cargarRedes();
+        mostrar("lista");
+    });
+
+    cargarRedes();
+})();
+</script>
+</body>
+</html>
