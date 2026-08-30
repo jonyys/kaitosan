@@ -1,5 +1,5 @@
 <div class="card full">
-    <h2>🛠️ Mantenimiento</h2>
+    <h2><svg class="ico"><use href="#i-wrench"/></svg> Mantenimiento</h2>
 
     {# --- Salud del sistema (Fase 10) --- #}
     <div class="fila">
@@ -9,7 +9,7 @@
     <div class="fila">
         <span class="et">Estado térmico / tensión</span>
         <span class="val">
-            {% if salud.throttled.hay_problema %}⚠️ {{ salud.throttled.texto }}
+            {% if salud.throttled.hay_problema %}<svg class="ico"><use href="#i-warn"/></svg> {{ salud.throttled.texto }}
             {% else %}{{ salud.throttled.texto }}{% endif %}
         </span>
     </div>
@@ -47,7 +47,7 @@
             <option value="200" selected>200 líneas</option>
             <option value="500">500 líneas</option>
         </select>
-        <button type="button" class="btn btn-yellow" onclick="cargarLogs(this)">📜 Cargar logs</button>
+        <button type="button" class="btn btn-yellow" onclick="cargarLogs(this)"><svg class="ico"><use href="#i-logs"/></svg> Cargar logs</button>
     </div>
     <pre id="logs-salida" style="display:none; max-height:340px; overflow:auto;
          background:var(--surface-2); border:1px solid var(--border);
@@ -56,8 +56,8 @@
 
     {# --- Copia de seguridad (Fase 10) --- #}
     <div class="actions" style="margin-top:20px">
-        <a class="btn btn-yellow" href="/admin/ajustes/sistema/backup">💾 Descargar copia de la BD</a>
-        <a class="btn btn-yellow" href="/admin/ajustes/sistema/diagnostico">🩺 Descargar diagnóstico (.zip)</a>
+        <a class="btn btn-yellow" href="/admin/ajustes/sistema/backup"><svg class="ico"><use href="#i-save"/></svg> Descargar copia de la BD</a>
+        <a class="btn btn-yellow" href="/admin/ajustes/sistema/diagnostico"><svg class="ico"><use href="#i-stethoscope"/></svg> Descargar diagnóstico (.zip)</a>
     </div>
     <p class="et" style="color:var(--text-soft); margin:4px 0 0">
         El diagnóstico ofusca las claves del <code>.env</code>. Revísalo antes de compartirlo.
@@ -73,36 +73,10 @@
         <button class="btn btn-red">Restaurar base de datos</button>
     </form>
 
-    {# --- Actualizar / reiniciar servicio (Fase 11) — fetch; cae la sesión --- #}
-    <hr style="border:none; border-top:1px solid var(--border); margin:22px 0">
-    <label class="et" style="display:block">Actualizar y reiniciar</label>
-    <p class="et" style="color:var(--text-soft); margin:4px 0 10px">
-        Al actualizar o reiniciar el servicio, esta página se desconectará
-        <strong>un momento</strong>. Vuelve a entrar en
-        <code>http://kaitosan.local:5000</code> pasado un minuto.
+    <p class="et" style="color:var(--text-soft); margin:20px 0 0">
+        Actualizar y reiniciar el servicio están en el menú
+        <svg class="ico"><use href="#i-wrench"/></svg> de la cabecera del panel.
     </p>
-    <div class="actions">
-        <button type="button" class="btn btn-yellow" onclick="mantAccion(this, 'actualizar')">⬆️ Actualizar Kaito</button>
-        <button type="button" class="btn btn-yellow" onclick="mantAccion(this, 'reiniciar-servicio')">🔄 Reiniciar servicio</button>
-    </div>
-    <pre id="mant-salida" style="display:none; max-height:260px; overflow:auto;
-         background:var(--surface-2); border:1px solid var(--border);
-         border-radius:var(--radio-sm); padding:12px; font-size:12px;
-         white-space:pre-wrap; word-break:break-word"></pre>
-
-    {# --- Reset de fábrica (Fase 11) — doble confirmación + PIN (§5, §11) --- #}
-    <hr style="border:none; border-top:1px solid var(--border); margin:22px 0">
-    <label class="et" for="reset-pin" style="display:block; color:var(--peligro)">Reset de fábrica</label>
-    <p class="et" style="color:var(--text-soft); margin:4px 0 10px">
-        Borra la base de datos, los ajustes y las redes WiFi guardadas. Kaito
-        vuelve al modo de configuración inicial. <strong>Es irreversible</strong>
-        (se guarda una copia de la BD justo antes).
-    </p>
-    <div class="actions">
-        <input type="password" id="reset-pin" inputmode="numeric" autocomplete="off"
-               placeholder="PIN" style="max-width:7rem">
-        <button type="button" class="btn btn-red" onclick="resetFabrica(this)">🧨 Reset de fábrica</button>
-    </div>
 </div>
 
 <script>
@@ -115,61 +89,7 @@ function cargarLogs(btn) {
     fetch('/admin/ajustes/sistema/logs?n=' + encodeURIComponent(n))
         .then(function (r) { return r.text(); })
         .then(function (t) { pre.textContent = t || '(sin salida)'; })
-        .catch(function () { pre.textContent = '❌ error de red al cargar los logs'; })
-        .finally(function () { btn.disabled = false; });
-}
-
-function mantAccion(btn, accion) {
-    var textos = {
-        'actualizar': '¿Actualizar Kaito ahora? Se hará git pull + instalación de ' +
-                      'dependencias y se reiniciará el servicio. La sesión se cortará un momento.',
-        'reiniciar-servicio': '¿Reiniciar el servicio de Kaito? La sesión se cortará unos segundos.'
-    };
-    if (!confirm(textos[accion])) return;
-    var pre = document.getElementById('mant-salida');
-    btn.disabled = true;
-    pre.style.display = '';
-    pre.textContent = 'Enviando…';
-    fetch('/admin/ajustes/sistema/' + accion, { method: 'POST' })
-        .then(function (r) { return r.json(); })
-        .then(function (d) {
-            var txt = (d.ok ? '✅ ' : '❌ ') + (d.mensaje || d.error || '');
-            if (d.commit_anterior) txt += '\n\nVersión anterior guardada: ' + d.commit_anterior;
-            if (d.log) txt += '\n\nÚltimos commits:\n' + d.log;
-            pre.textContent = txt;
-        })
-        .catch(function () {
-            pre.textContent = '⚠️ Se perdió la conexión (es normal si el servicio ya se ' +
-                              'está reiniciando). Recarga la página en un minuto.';
-        })
-        .finally(function () { btn.disabled = false; });
-}
-
-function resetFabrica(btn) {
-    var pin = document.getElementById('reset-pin').value.trim();
-    if (!pin) { alert('Escribe el PIN para confirmar el reset.'); return; }
-    if (!confirm('RESET DE FÁBRICA: se borrará la base de datos, los ajustes y las ' +
-                 'redes WiFi. Es irreversible. ¿Seguro?')) return;
-    if (!confirm('Última confirmación. Kaito volverá al modo de configuración inicial. ' +
-                 '¿Continuar?')) return;
-    var pre = document.getElementById('mant-salida');
-    btn.disabled = true;
-    pre.style.display = '';
-    pre.textContent = 'Enviando…';
-    fetch('/admin/ajustes/sistema/reset', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin: pin })
-    })
-        .then(function (r) { return r.json(); })
-        .then(function (d) {
-            pre.textContent = (d.ok ? '✅ ' : '❌ ') + (d.mensaje || d.error || '');
-            document.getElementById('reset-pin').value = '';
-        })
-        .catch(function () {
-            pre.textContent = '⚠️ Se perdió la conexión. Si el PIN era correcto, el ' +
-                              'reset está en marcha.';
-        })
+        .catch(function () { pre.innerHTML = ico('x-circle') + ' error de red al cargar los logs'; })
         .finally(function () { btn.disabled = false; });
 }
 </script>

@@ -1,5 +1,5 @@
 <div class="card full">
-    <h2>🧠 Modelos de IA</h2>
+    <h2><svg class="ico"><use href="#i-chip"/></svg> Modelos de IA</h2>
     <p class="et" style="color:var(--text-soft); margin:0 0 12px">
         Modelos de Groq que usa Kaito. La lista sale de tu API key en vivo; lo que
         guardes aquí manda sobre los valores por defecto del código.
@@ -96,7 +96,7 @@
         .then(function (d) {
             var modelos = d.disponibles || [];
             if (!modelos.length) {
-                msg.textContent = '⚠️ No se pudo leer la lista de modelos '
+                msg.innerHTML = ico('warn') + ' No se pudo leer la lista de modelos '
                     + '(¿falta GROQ_API_KEY o no hay red?).';
                 return;
             }
@@ -108,7 +108,7 @@
             msg.textContent = modelos.length + ' modelos disponibles.';
             form.style.display = '';
         })
-        .catch(function () { msg.textContent = '❌ error de red al cargar los modelos'; });
+        .catch(function () { msg.innerHTML = ico('x-circle') + ' error de red al cargar los modelos'; });
 
     form.addEventListener('submit', function (e) {
         e.preventDefault();
@@ -127,11 +127,11 @@
         })
         .then(function (r) { return r.json(); })
         .then(function (d) {
-            msg.textContent = d.ok
-                ? '✅ Modelos guardados. Se aplican al reiniciar el servicio.'
-                : '❌ ' + (d.error || 'no se pudo guardar');
+            msg.innerHTML = d.ok
+                ? ico('check-circle') + ' Modelos guardados. Se aplican al reiniciar el servicio.'
+                : ico('x-circle') + ' ' + esc(d.error || 'no se pudo guardar');
         })
-        .catch(function () { msg.textContent = '❌ error de red'; })
+        .catch(function () { msg.innerHTML = ico('x-circle') + ' error de red'; })
         .finally(function () { btn.disabled = false; });
     });
 })();

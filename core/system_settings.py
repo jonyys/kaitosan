@@ -592,9 +592,31 @@ _AUDIO_ENTRADAS_FAKE = [
 ]
 
 
+# Subcadenas de dispositivos ALSA que NO son tarjetas físicas elegibles: plugins
+# y salidas virtuales de ALSA/Pulse, más el audio integrado de la Raspberry (HDMI
+# y minijack) que este montaje no usa. Todo lo demás sí se muestra: un micro USB,
+# o un altavoz/DAC I2S conectado a los pines (hifiberry, max98357a, voicecard...).
+# ponytail: denylist por subcadena; ajústala si cuela ruido o falta una tarjeta.
+_AUDIO_OCULTAR_HINTS = (
+    "sysdefault", "default", "pulse", "pipewire", "dmix", "dsnoop",
+    "samplerate", "speexrate", "upmix", "vdownmix", "dummy", "jack", "oss",
+    "hdmi", "vc4-hdmi", "vc4hdmi", "bcm2835",
+    "surround", "iec958", "spdif", "null", "front:", "center_lfe", "side:",
+)
+
+
+def _audio_oculto(nombre: str) -> bool:
+    n = (nombre or "").lower()
+    return any(h in n for h in _AUDIO_OCULTAR_HINTS)
+
+
 def _audio_dispositivos_reales(entrada: bool) -> list:
     """Enumera tarjetas de audio con `sounddevice` (reutiliza la autodetección
-    del resto del proyecto). Devuelve [] si `sounddevice` no está disponible."""
+    del resto del proyecto). Devuelve [] si `sounddevice` no está disponible.
+
+    Se descartan los plugins virtuales de ALSA y el audio integrado de la
+    Raspberry (HDMI / minijack); quedan las tarjetas reales conectadas (USB o
+    DAC/altavoz por los pines) y la que esté seleccionada ahora mismo."""
     try:
         import sounddevice as sd
     except Exception:  # noqa: BLE001 — la capa de sistema nunca propaga
@@ -608,6 +630,8 @@ def _audio_dispositivos_reales(entrada: bool) -> list:
                 continue
             nombre = (d.get("name") or "").strip()
             if not nombre or nombre in vistos:
+                continue
+            if _audio_oculto(nombre) and not (pref and pref in nombre.lower()):
                 continue
             vistos.add(nombre)
             salidas.append({
@@ -632,11 +656,21 @@ def _resolver_indice(pref: str, entrada: bool):
         return None
     clave = "max_input_channels" if entrada else "max_output_channels"
     try:
-        for i, d in enumerate(sd.query_devices()):
-            if d.get(clave, 0) > 0 and pref in (d.get("name") or "").lower():
-                return i
+        candidatos = [
+            (i, (d.get("name") or "").lower())
+            for i, d in enumerate(sd.query_devices())
+            if d.get(clave, 0) > 0
+        ]
     except Exception:  # noqa: BLE001
         return None
+    # Coincidencia exacta antes que por subcadena (evita colarse en otro
+    # dispositivo cuyo nombre contenga el mismo texto).
+    for i, nombre in candidatos:
+        if nombre == pref:
+            return i
+    for i, nombre in candidatos:
+        if pref in nombre:
+            return i
     return None
 
 
@@ -759,6 +793,39 @@ def micro_ganancia_set(pct) -> dict:
     return {"ok": False, "error": "no se encontró un control de ganancia de micrófono"}
 
 
+def _primer_micro_real():
+    """Primer dispositivo de captura 'real' (USB o tarjeta por los pines),
+    saltándose los plugins de ALSA y el audio integrado. -> índice o None."""
+    try:
+        import sounddevice as sd
+        for i, d in enumerate(sd.query_devices()):
+            if d.get("max_input_channels", 0) > 0 and not _audio_oculto(d.get("name") or ""):
+                return i
+    except Exception:  # noqa: BLE001
+        pass
+    return None
+
+
+def _sr_dispositivo(dev, entrada: bool) -> int:
+    """Sample rate por defecto del dispositivo: no forzamos uno que no acepte
+    (un micro USB suele ser 48000, no 44100 -> InputStream con -9985/-9997)."""
+    try:
+        import sounddevice as sd
+        info = sd.query_devices(dev, "input" if entrada else "output")
+        return int(info.get("default_samplerate") or 48000)
+    except Exception:  # noqa: BLE001
+        return 48000
+
+
+def _msg_audio_error(accion: str, e: Exception) -> str:
+    s = str(e).lower()
+    if "-9985" in s or "-9996" in s or "unavailable" in s or "no default" in s:
+        return (f"no se pudo {accion}: el dispositivo de audio no está disponible "
+                "(¿está conectado y elegido en el desplegable de dispositivos? "
+                "¿lo está usando Kaito u otra app ahora mismo?)")
+    return f"no se pudo {accion}: {e}"
+
+
 def audio_probar_salida() -> dict:
     """Reproduce un tono corto por la salida activa."""
     if _simulado():
@@ -769,18 +836,24 @@ def audio_probar_salida() -> dict:
     except Exception as e:  # noqa: BLE001
         return {"ok": False, "error": f"audio no disponible: {e}"}
     try:
-        sr = 44100
+        dev = _resolver_indice(audio_salida_preferida(), entrada=False)
+        try:
+            nombre = sd.query_devices(dev)["name"] if dev is not None else "(predeterminado del sistema)"
+        except Exception:  # noqa: BLE001
+            nombre = str(dev)
+        sr = _sr_dispositivo(dev, entrada=False)
         t = np.linspace(0, 0.6, int(sr * 0.6), endpoint=False)
         tono = (0.2 * np.sin(2 * np.pi * 660 * t)).astype("float32")
-        sd.play(tono, sr, device=_resolver_indice(audio_salida_preferida(), entrada=False))
+        sd.play(tono, sr, device=dev)
         sd.wait()
     except Exception as e:  # noqa: BLE001
-        return {"ok": False, "error": f"no se pudo reproducir el tono: {e}"}
-    return {"ok": True}
+        return {"ok": False, "error": _msg_audio_error("reproducir el tono", e)}
+    return {"ok": True, "dispositivo": nombre}
 
 
 def audio_probar_micro() -> dict:
-    """Graba 2 s por el micrófono activo y los reproduce por la salida activa."""
+    """Graba 2 s por el micrófono activo y los reproduce por la salida activa.
+    Resuelve el micro igual que el grabador real (audio.recorder)."""
     if _simulado():
         return {"ok": True, "simulado": True}
     try:
@@ -788,14 +861,33 @@ def audio_probar_micro() -> dict:
     except Exception as e:  # noqa: BLE001
         return {"ok": False, "error": f"audio no disponible: {e}"}
     try:
-        sr = 44100
-        grab = sd.rec(int(sr * 2), samplerate=sr, channels=1, dtype="float32",
-                      device=_resolver_indice(audio_entrada_preferida(), entrada=True))
+        from audio.recorder import buscar_microfono
+        dev_in = buscar_microfono()
+    except Exception:  # noqa: BLE001
+        dev_in = _resolver_indice(audio_entrada_preferida(), entrada=True)
+    # Si no hay micro elegido o se resolvió a un plugin de ALSA / el audio
+    # integrado (que no captura -> -9985), usa la 1ª tarjeta de captura real.
+    try:
+        nombre = sd.query_devices(dev_in)["name"] if dev_in is not None else ""
+    except Exception:  # noqa: BLE001
+        nombre = ""
+    if dev_in is None or _audio_oculto(nombre):
+        alt = _primer_micro_real()
+        if alt is not None:
+            dev_in = alt
+    # Ni preferencia válida ni ninguna tarjeta de captura: no hay micro.
+    if dev_in is None and _primer_micro_real() is None:
+        return {"ok": False, "error": "no se detecta ningún micrófono conectado "
+                "(ninguna tarjeta de captura; revisa el cable USB o `arecord -l`)"}
+    try:
+        sr = _sr_dispositivo(dev_in, entrada=True)
+        grab = sd.rec(int(sr * 2), samplerate=sr, channels=1, dtype="float32", device=dev_in)
         sd.wait()
-        sd.play(grab, sr, device=_resolver_indice(audio_salida_preferida(), entrada=False))
+        dev_out = _resolver_indice(audio_salida_preferida(), entrada=False)
+        sd.play(grab, sr, device=dev_out)
         sd.wait()
     except Exception as e:  # noqa: BLE001
-        return {"ok": False, "error": f"no se pudo probar el micrófono: {e}"}
+        return {"ok": False, "error": _msg_audio_error("probar el micrófono", e)}
     return {"ok": True}
 
 
@@ -898,9 +990,45 @@ def bt_radio(on: bool) -> dict:
     """Enciende / apaga el adaptador Bluetooth (`bluetoothctl power on|off`)."""
     if _simulado():
         return {"ok": True, "simulado": True}
-    if _bt(["power", "on" if on else "off"]) is None:
-        return {"ok": False, "error": "no se pudo cambiar el adaptador Bluetooth"}
-    return {"ok": True}
+    # Al encender, primero quita un posible bloqueo por rfkill (típico en la Pi).
+    if on:
+        _cmd(["rfkill", "unblock", "bluetooth"])
+
+    # `org.bluez.Error.Busy` suele ser transitorio (adaptador inicializándose):
+    # reintenta una vez tras una pausa breve.
+    salida = ""
+    for intento in range(3):
+        try:
+            p = subprocess.run(
+                ["bluetoothctl", "power", "on" if on else "off"],
+                capture_output=True, text=True, timeout=15,
+            )
+        except FileNotFoundError:
+            return {"ok": False, "error": "bluetoothctl no está instalado"}
+        except (subprocess.TimeoutExpired, OSError) as e:
+            return {"ok": False, "error": f"no se pudo cambiar el adaptador Bluetooth: {e}"}
+        salida = (p.stdout + p.stderr).strip()
+        baja = salida.lower()
+        if "succeeded" in baja or (p.returncode == 0 and "fail" not in baja):
+            return {"ok": True}
+        if "busy" in baja and intento < 2:
+            time.sleep(1.2)
+            continue
+        break
+    baja = salida.lower()
+
+    if "busy" in baja:
+        detalle = ("el adaptador está ocupado (otro gestor lo controla o aún se está "
+                   "iniciando). Prueba `sudo systemctl restart bluetooth` y reintenta")
+    elif "no default controller" in baja:
+        detalle = "no hay controlador Bluetooth (¿está `bluetooth.service` activo y el hardware habilitado?)"
+    elif "blocked" in baja:
+        detalle = "el adaptador está bloqueado (rfkill). Ejecuta `sudo rfkill unblock bluetooth`"
+    elif "denied" in baja or "not authorized" in baja:
+        detalle = "permiso denegado: el usuario del panel debe estar en el grupo `bluetooth`"
+    else:
+        detalle = salida.splitlines()[-1] if salida else f"código {p.returncode}"
+    return {"ok": False, "error": f"no se pudo cambiar el adaptador Bluetooth: {detalle}"}
 
 
 def bt_escanear(seg: int = 10) -> list:

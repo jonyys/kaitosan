@@ -12,100 +12,59 @@
         .ajustes-wrap { max-width: 34rem; margin: 0 auto; }
         .ajustes-wrap h1 { justify-content: space-between; flex-wrap: wrap; }
 
-        .volver {
-            display: inline-block;
-            min-height: 44px;
-            padding: 10px 14px;
-            font-size: 14px;
-            font-weight: 700;
-            border-radius: var(--radio-pill);
-            background: var(--surface-2);
-            border: 1px solid var(--border-fuerte);
-        }
-
-        .fila {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: space-between;
-            gap: 4px 14px;
-            min-height: 56px;
-            padding: 12px 0;
-            border-bottom: 1px solid var(--border);
-        }
-        .fila:last-child { border-bottom: 0; padding-bottom: 0; }
-        .fila .et  { font-weight: 500; }
-        .fila .val { color: var(--text-soft); font-weight: 700; text-align: right; }
-
-        /* Medidor (§13.4): pista sobre --bg-alt, relleno rosa → rosa-medio */
-        .medidor {
-            height: 10px;
-            margin-top: 2px;
-            border-radius: var(--radio-pill);
-            background: var(--bg-alt);
-            overflow: hidden;
-        }
-        .medidor > span {
-            display: block;
-            height: 100%;
-            background: linear-gradient(90deg, var(--rosa), var(--rosa-medio));
-        }
+        /* .fila y .medidor viven en partials/admin/_estilos.html (compartido). */
 
         /* Pantalla del robot (~480×480, circular): el contenido cabe en el
            cuadrado central seguro y nada queda pegado al borde (§13.3.B).
            La vista "modo robot" reducida es la Fase 5b. */
         @media (max-width: 520px) {
             .ajustes-wrap { max-width: 340px; }
-            .ajustes-wrap h1 { flex-direction: column; text-align: center; gap: 10px; }
         }
     </style>
 </head>
 <body>
+{% include 'partials/_iconos.html' %}
+{% include 'partials/_confirm_pop.html' %}
 
 <div class="ajustes-wrap">
 
     <h1>
-        <span>⚙️ Kaito — Ajustes</span>
-        <a class="volver" href="/admin">← Panel</a>
+        <span><svg class="ico"><use href="#i-gear"/></svg> Kaito — Ajustes</span>
+        <a href="/admin"><button class="btn btn-yellow" style="font-size:13px"><svg class="ico"><use href="#i-home"/></svg></button></a>
     </h1>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% for category, message in messages %}
-            <div class="alert alert-{{ category }}">{{ message }}</div>
-        {% endfor %}
-    {% endwith %}
+    {% include 'partials/_flash_pop.html' %}
 
     <div class="acc-list">
-        <details class="acc"><summary>📶 WiFi</summary>
+        <details class="acc"><summary><svg class="ico"><use href="#i-wifi"/></svg> WiFi</summary>
             {% include 'partials/ajustes/_wifi.html' %}
         </details>
-        <details class="acc"><summary>🔵 Bluetooth</summary>
+        <details class="acc"><summary><svg class="ico"><use href="#i-bluetooth"/></svg> Bluetooth</summary>
             {% include 'partials/ajustes/_bluetooth.html' %}
         </details>
-        <details class="acc"><summary>🕐 Hora y fecha</summary>
+        <details class="acc"><summary><svg class="ico"><use href="#i-clock"/></svg> Hora y fecha</summary>
             {% include 'partials/ajustes/_hora.html' %}
         </details>
-        <details class="acc"><summary>🔊 Sonido</summary>
+        <details class="acc"><summary><svg class="ico"><use href="#i-sound"/></svg> Sonido</summary>
             {% include 'partials/ajustes/_sonido.html' %}
         </details>
         {% if brillo.soportado %}
-        <details class="acc"><summary>💡 Pantalla</summary>
+        <details class="acc"><summary><svg class="ico"><use href="#i-sun"/></svg> Pantalla</summary>
             {% include 'partials/ajustes/_pantalla.html' %}
         </details>
         {% endif %}
-        <details class="acc"><summary>🧠 Modelos de IA</summary>
+        <details class="acc"><summary><svg class="ico"><use href="#i-chip"/></svg> Modelos de IA</summary>
             {% include 'partials/ajustes/_modelos.html' %}
         </details>
-        <details class="acc"><summary>🖥️ Sistema</summary>
-            {% include 'partials/ajustes/_sistema.html' %}
-        </details>
-        <details class="acc"><summary>🛠️ Mantenimiento</summary>
+        <details class="acc"><summary><svg class="ico"><use href="#i-wrench"/></svg> Mantenimiento</summary>
             {% include 'partials/ajustes/_mantenimiento.html' %}
         </details>
-        <details class="acc"><summary>🔑 Cuenta del panel</summary>
+        <details class="acc"><summary><svg class="ico"><use href="#i-key"/></svg> Cuenta del panel</summary>
             {% include 'partials/ajustes/_cuenta.html' %}
         </details>
     </div>
+
+    {% include 'partials/ajustes/_reset_fabrica.html' %}
 
 </div>
 

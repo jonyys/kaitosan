@@ -1,17 +1,42 @@
 <div class="card">
-    <h2>📊 Consumo diario de tokens</h2>
+    <h2><svg class="ico"><use href="#i-chart"/></svg> Consumo de tokens</h2>
+
     {% if uso_tokens %}
     <table>
-        <tr><th>Modelo</th><th>Tokens gastados</th></tr>
-        {% for modelo, cantidad in uso_tokens.items() %}
-        <tr><td><strong>{{ modelo }}</strong></td><td>{{ cantidad }}</td></tr>
-        {% endfor %}
+        <thead>
+            <tr><th>Modelo</th><th style="text-align:right">Tokens hoy</th></tr>
+        </thead>
+        <tbody>
+            {% for modelo, cantidad in uso_tokens.items() %}
+            <tr>
+                <td>{{ modelo }}</td>
+                <td style="text-align:right; font-weight:700; color:var(--rosa-tinta)">{{ '{:,}'.format(cantidad) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        {% if uso_tokens|length > 1 %}
+        <tfoot>
+            <tr>
+                <td style="font-weight:700; border-top:2px solid var(--border-fuerte)">Total</td>
+                <td style="text-align:right; font-weight:700; border-top:2px solid var(--border-fuerte)">{{ '{:,}'.format(uso_tokens.values()|sum) }}</td>
+            </tr>
+        </tfoot>
+        {% endif %}
     </table>
     {% else %}
     <p class="empty">Aún no se han consumido tokens hoy</p>
     {% endif %}
-    <h2 style="margin-top:20px">🎤 Audio transcrito hoy</h2>
-    <p style="font-size:24px; font-weight:700; color:var(--rosa-tinta)">{{ uso_audio }} segundos</p>
-    <h2 style="margin-top:20px">☁️ Uso de Azure este mes</h2>
-    <p style="font-size:24px; font-weight:700; color:var(--rosa-tinta)">{{ uso_azure }} segundos (≈ {{ (uso_azure / 60)|round(1) }} min)</p>
+
+    <table style="margin-top:14px">
+        <tbody>
+            <tr>
+                <td><svg class="ico"><use href="#i-mic"/></svg> Audio transcrito hoy</td>
+                <td style="text-align:right">{{ uso_audio }} s&nbsp;·&nbsp;{{ (uso_audio / 60)|round(1) }} min</td>
+            </tr>
+            <tr>
+                <td><svg class="ico"><use href="#i-cloud"/></svg> Uso de Azure este mes</td>
+                <td style="text-align:right">{{ uso_azure }} s&nbsp;·&nbsp;{{ (uso_azure / 60)|round(1) }} min</td>
+            </tr>
+        </tbody>
+    </table>
 </div>

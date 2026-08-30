@@ -1,5 +1,5 @@
-<div class="card">
-    <h2>🕐 Hora y fecha</h2>
+<div class="card" id="hora">
+    <h2><svg class="ico"><use href="#i-clock"/></svg> Hora y fecha</h2>
     <div class="fila">
         <span class="et">Hora del sistema</span>
         <span class="val">{{ (hora.hora or '')|replace('T', ' ') or '—' }}</span>
@@ -10,11 +10,11 @@
     </div>
     <div class="fila">
         <span class="et">Hora automática (NTP)</span>
-        <span class="val">{{ '✅ activada' if hora.ntp else '❌ desactivada' }}</span>
+        <span class="val {% if hora.ntp %}ok{% else %}err{% endif %}">{% if hora.ntp %}<svg class="ico"><use href="#i-check-circle"/></svg> activada{% else %}<svg class="ico"><use href="#i-x-circle"/></svg> desactivada{% endif %}</span>
     </div>
     <div class="fila">
         <span class="et">Zona automática por ubicación</span>
-        <span class="val">{{ '✅ activada' if hora.tz_auto else '❌ desactivada' }}</span>
+        <span class="val {% if hora.tz_auto %}ok{% else %}err{% endif %}">{% if hora.tz_auto %}<svg class="ico"><use href="#i-check-circle"/></svg> activada{% else %}<svg class="ico"><use href="#i-x-circle"/></svg> desactivada{% endif %}</span>
     </div>
 
     <h2 style="margin-top:20px">Cambiar hora</h2>
@@ -26,7 +26,7 @@
         </select>
         <label class="et" for="hora-dt">Fecha y hora (solo en modo manual)</label>
         <input type="datetime-local" id="hora-dt" name="datetime"
-               value="{{ (hora.hora or '')[:16] }}">
+               value="{{ (hora.hora or '')[:16] }}" {{ 'disabled' if hora.ntp }}>
         <button class="btn btn-green">Guardar hora</button>
     </form>
 
@@ -48,3 +48,20 @@
         <button class="btn btn-green">Guardar zona</button>
     </form>
 </div>
+
+<style>
+    #hora .val.ok  { color: var(--ok-tinta);      font-weight: 700; }
+    #hora .val.err { color: var(--peligro-tinta); font-weight: 700; }
+</style>
+
+<script>
+(function () {
+    // En modo NTP el selector de fecha/hora manual va deshabilitado.
+    var modo = document.getElementById('hora-modo');
+    var dt = document.getElementById('hora-dt');
+    if (!modo || !dt) return;
+    function sync() { dt.disabled = (modo.value === 'ntp'); }
+    modo.addEventListener('change', sync);
+    sync();
+})();
+</script>

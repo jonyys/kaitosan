@@ -1,0 +1,30 @@
+<div class="card full">
+    <h2><svg class="ico"><use href="#i-clock"/></svg> Alarmas</h2>
+    <div class="actions">
+        <a href="/reloj"><button class="btn btn-yellow" style="font-size:13px"><svg class="ico"><use href="#i-clock"/></svg></button></a>
+        <form method="POST" action="/admin/alarmas/borrar-todo"
+              onsubmit="return confirm('¿Borrar todas las alarmas?')">
+            <button class="btn btn-red"><svg class="ico"><use href="#i-trash"/></svg> Borrar todas</button>
+        </form>
+    </div>
+    {% if lista_alarmas %}
+    <table>
+        <tr><th>ID</th><th>Hora</th><th>Estado</th><th></th></tr>
+        {% for a in lista_alarmas %}
+        <tr>
+            <td>#{{ a.id }}</td>
+            <td>{{ a.hora }}</td>
+            <td>{% if a.activa %}<svg class="ico"><use href="#i-check-circle"/></svg> Activa{% else %}<svg class="ico"><use href="#i-x-circle"/></svg> Inactiva{% endif %}</td>
+            <td>
+                <form method="POST" action="/admin/alarmas/borrar/{{ a.id }}"
+                      onsubmit="return confirm('¿Borrar esta alarma?')">
+                    <button class="btn btn-red"><svg class="ico"><use href="#i-trash"/></svg></button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p class="empty">No hay alarmas</p>
+    {% endif %}
+</div>

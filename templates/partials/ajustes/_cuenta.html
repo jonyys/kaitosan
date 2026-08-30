@@ -1,31 +1,47 @@
 <div class="card">
-    <h2>🔑 Cuenta del panel</h2>
-    <div class="fila">
-        <span class="et">Usuario</span>
-        <span class="val">{{ admin_user or 'laura' }}</span>
-    </div>
-    <div class="fila">
-        <span class="et">Contraseña</span>
-        <span class="val">••••••••</span>
-    </div>
+  <h2>
+    <svg class="ico"><use href="#i-key" /></svg> Cuenta del panel
+  </h2>
+  <div class="fila">
+    <span class="et">Nombre de usuario</span>
+    <span class="val">{{ admin_user or 'laura' }}</span>
+  </div>
 
-    <h2 style="margin-top:20px">Cambiar usuario y contraseña</h2>
-    <form method="POST" action="/admin/ajustes/cuenta">
-        <label class="et" for="cuenta-user">Usuario</label>
-        <input type="text" id="cuenta-user" name="user"
-               value="{{ admin_user or 'laura' }}" autocomplete="username" required>
+  <h2 style="margin-top: 20px">Cambiar usuario y contraseña</h2>
+  <form method="POST" action="/admin/ajustes/cuenta">
+    <label class="et" for="cuenta-user">Usuario</label>
+    <input
+      type="text"
+      id="cuenta-user"
+      name="user"
+      value="{{ admin_user or 'laura' }}"
+      autocomplete="username"
+      required
+    />
 
-        <label class="et" for="cuenta-actual">Contraseña actual</label>
-        <input type="password" id="cuenta-actual" name="password_actual"
-               autocomplete="current-password" required>
+    <label class="et" for="cuenta-actual">Contraseña actual</label>
+    <input
+      type="password"
+      id="cuenta-actual"
+      name="password_actual"
+      autocomplete="current-password"
+      required
+    />
 
-        <label class="et" for="cuenta-nueva">Contraseña nueva</label>
-        <input type="password" id="cuenta-nueva" name="password_nueva"
-               autocomplete="new-password">
-        <p class="empty" style="text-align:left; font-style:normal; padding:4px 0 8px">
-            Déjala vacía si solo quieres cambiar el nombre de usuario.
-        </p>
+    <label class="et" for="cuenta-nueva">Contraseña nueva</label>
+    <input
+      type="password"
+      id="cuenta-nueva"
+      name="password_nueva"
+      autocomplete="new-password"
+    />
+    <p
+      class="empty"
+      style="text-align: left; font-style: normal; padding: 4px 0 8px"
+    >
+      Déjala vacía si solo quieres cambiar el nombre de usuario.
+    </p>
 
-        <button class="btn btn-green">Guardar cuenta</button>
-    </form>
+    <button class="btn btn-green">Guardar cuenta</button>
+  </form>
 </div>

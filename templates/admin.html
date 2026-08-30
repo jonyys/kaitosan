@@ -1,58 +1,233 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Kaito — Panel de Control</title>
     {% include 'partials/admin/_estilos.html' %}
-</head>
-<body>
+    <style>
+      .hdr-menu {
+        position: relative;
+      }
+      .hdr-menu > summary {
+        display: inline-flex;
+        align-items: center;
+        list-style: none;
+      }
+      .hdr-menu > summary::-webkit-details-marker {
+        display: none;
+      }
+      .hdr-menu-panel {
+        position: absolute;
+        right: 0;
+        top: calc(100% + 6px);
+        z-index: 40;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: 6px;
+        min-width: 220px;
+        background: var(--surface);
+        border: 1px solid var(--border-fuerte);
+        border-radius: var(--radio-sm);
+        box-shadow: var(--sombra);
+      }
+      .hdr-menu-panel button {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        text-align: left;
+        padding: 10px;
+        border: 0;
+        border-radius: var(--radio-sm);
+        background: transparent;
+        color: var(--text);
+        font: inherit;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      .hdr-menu-panel button:hover {
+        background: var(--surface-2);
+      }
+      #servicio-msg {
+        max-width: 900px;
+        margin: 0 auto 12px;
+        text-align: center;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    {% include 'partials/_iconos.html' %}
 
-<h1 style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap">
-    <span>🤖 Kaito — Panel de Control</span>
-    <span style="display:flex; gap:8px; flex-wrap:wrap">
+    <h1
+      style="
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      "
+    >
+      <span>Kaito — Panel de Control</span>
+      <span style="display: flex; gap: 8px; flex-wrap: wrap">
+        <details class="hdr-menu">
+          <summary
+            class="btn btn-yellow"
+            style="font-size: 13px"
+            title="Servicio"
+          >
+            <svg class="ico"><use href="#i-download" /></svg>
+          </summary>
+          <div class="hdr-menu-panel">
+            <button type="button" onclick="servicioAccion(this, 'actualizar')">
+              <svg class="ico"><use href="#i-download" /></svg> Actualizar Kaito
+            </button>
+            <button
+              type="button"
+              onclick="servicioAccion(this, 'reiniciar-servicio')"
+            >
+              <svg class="ico"><use href="#i-refresh" /></svg> Reiniciar
+              servicio
+            </button>
+          </div>
+        </details>
         <a href="/admin/ajustes">
-            <button class="btn btn-yellow" style="font-size:13px">⚙️ Ajustes</button>
+          <button class="btn btn-yellow" style="font-size: 13px">
+            <svg class="ico"><use href="#i-gear" /></svg>
+          </button>
         </a>
-        <a href="/admin/logout">
-            <button class="btn btn-red" style="font-size:13px">🔒 Cerrar sesión</button>
+        <a href="/japones">
+          <button class="btn btn-blue" style="font-size: 13px">
+            <svg class="ico"><use href="#i-lang" /></svg>
+          </button>
         </a>
-    </span>
-</h1>
+        <a href="/admin/logout" onclick="return confirmarSalir(event);">
+          <button class="btn btn-red" style="font-size: 13px">
+            <svg class="ico"><use href="#i-lock" /></svg>
+          </button>
+        </a>
+      </span>
+    </h1>
 
-<div class="acc-list">
-    <details class="acc">
-        <summary>📊 Consumo de tokens</summary>
+    <p id="servicio-msg" class="et" hidden></p>
+
+    <div class="acc-list">
+      <details class="acc">
+        <summary>
+          <svg class="ico"><use href="#i-chart" /></svg> Consumo de tokens
+        </summary>
         {% include 'partials/admin/_tokens.html' %}
-    </details>
+      </details>
 
-    <details class="acc">
-        <summary>👤 Perfil de Laura <span class="count">({{ perfil|length }})</span></summary>
+      <details class="acc">
+        <summary>
+          <svg class="ico"><use href="#i-user" /></svg> Perfil de Laura
+          <span class="count">({{ perfil|length }})</span>
+        </summary>
         {% include 'partials/admin/_perfil.html' %}
-    </details>
+      </details>
 
-    <details class="acc">
-        <summary>📅 Sesiones <span class="count">({{ sesiones|length }})</span></summary>
+      <details class="acc">
+        <summary>
+          <svg class="ico"><use href="#i-calendar" /></svg> Sesiones
+          <span class="count">({{ sesiones|length }})</span>
+        </summary>
         {% include 'partials/admin/_sesiones.html' %}
-    </details>
+      </details>
 
-    <details class="acc">
-        <summary>💬 Conversaciones <span class="count">({{ mensajes|length }})</span></summary>
+      <details class="acc">
+        <summary>
+          <svg class="ico"><use href="#i-chat" /></svg> Conversaciones
+          <span class="count">({{ mensajes|length }})</span>
+        </summary>
         {% include 'partials/admin/_mensajes.html' %}
-    </details>
+      </details>
 
-    <details class="acc">
-        <summary>🎌 Japonés</summary>
+      <details class="acc">
+        <summary>
+          <svg class="ico"><use href="#i-lang" /></svg> Japonés
+        </summary>
         {% include 'partials/admin/_japones.html' %}
-    </details>
+      </details>
 
-    <details class="acc">
-        <summary>📌 Recordatorios <span class="count">({{ lista_recordatorios|length }})</span></summary>
+      <details class="acc">
+        <summary>
+          <svg class="ico"><use href="#i-bell" /></svg> Recordatorios
+          <span class="count">({{ lista_recordatorios|length }})</span>
+        </summary>
         {% include 'partials/admin/_recordatorios.html' %}
-    </details>
-</div>
+      </details>
 
-{% include 'partials/_panel_scripts.html' %}
+      <details class="acc">
+        <summary>
+          <svg class="ico"><use href="#i-clock" /></svg> Alarmas
+          <span class="count">({{ lista_alarmas|length }})</span>
+        </summary>
+        {% include 'partials/admin/_alarmas.html' %}
+      </details>
 
-</body>
+      <details class="acc">
+        <summary>
+          <svg class="ico"><use href="#i-monitor" /></svg> Sistema
+        </summary>
+        {% include 'partials/ajustes/_sistema.html' %}
+      </details>
+    </div>
+
+    {% include 'partials/_panel_scripts.html' %}
+
+    <script>
+      function _pedirConfirmacion(mensaje) {
+        return window.confirmar
+          ? window.confirmar(mensaje, { ok: "Sí" })
+          : Promise.resolve(window.confirm(mensaje));
+      }
+
+      function confirmarSalir(e) {
+        e.preventDefault();
+        _pedirConfirmacion("¿Cerrar sesión?").then(function (ok) {
+          if (ok) location.href = "/admin/logout";
+        });
+        return false;
+      }
+
+      function servicioAccion(btn, accion) {
+        var pregunta =
+          accion === "actualizar"
+            ? "¿Actualizar Kaito? git pull + dependencias + reinicio del servicio. La sesión se cortará un momento."
+            : "¿Reiniciar el servicio de Kaito? La sesión se cortará unos segundos.";
+        _pedirConfirmacion(pregunta).then(function (ok) {
+          if (!ok) return;
+          btn.disabled = true;
+          btn.closest("details").open = false;
+          var m = document.getElementById("servicio-msg");
+          m.hidden = false;
+          m.textContent = "Enviando…";
+          fetch("/admin/ajustes/sistema/" + accion, { method: "POST" })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (d) {
+              var txt =
+                (d.ok ? ico("check-circle") + " " : ico("x-circle") + " ") +
+                esc(d.mensaje || d.error || "");
+              if (d.log) txt += "\n\nÚltimos commits:\n" + esc(d.log);
+              m.innerHTML = txt;
+            })
+            .catch(function () {
+              m.innerHTML =
+                ico("warn") +
+                " Se perdió la conexión (normal si el servicio ya se está " +
+                "reiniciando). Vuelve a http://kaitosan.local:5000 pasado un minuto.";
+            })
+            .finally(function () {
+              btn.disabled = false;
+            });
+        });
+      }
+    </script>
+  </body>
 </html>

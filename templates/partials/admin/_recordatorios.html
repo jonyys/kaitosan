@@ -1,9 +1,10 @@
 <div class="card full">
-    <h2>📌 Recordatorios</h2>
+    <h2><svg class="ico"><use href="#i-bell"/></svg> Recordatorios</h2>
     <div class="actions">
+        <a href="/reloj"><button class="btn btn-yellow" style="font-size:13px"><svg class="ico"><use href="#i-clock"/></svg></button></a>
         <form method="POST" action="/admin/recordatorios/borrar-todo"
               onsubmit="return confirm('¿Borrar todos los recordatorios?')">
-            <button class="btn btn-red">🗑️ Borrar todos</button>
+            <button class="btn btn-red"><svg class="ico"><use href="#i-trash"/></svg> Borrar todos</button>
         </form>
     </div>
     {% if lista_recordatorios %}
@@ -15,11 +16,11 @@
             <td>{{ r.texto }}</td>
             <td>{{ r.fecha_hora }}</td>
             <td>{{ r.creado }}</td>
-            <td>{% if r.completado %}✅ Completado{% else %}⏳ Pendiente{% endif %}</td>
+            <td>{% if r.completado %}<svg class="ico"><use href="#i-check-circle"/></svg> Completado{% else %}<svg class="ico"><use href="#i-hourglass"/></svg> Pendiente{% endif %}</td>
             <td>
                 <form method="POST" action="/admin/recordatorios/borrar/{{ r.id }}"
                       onsubmit="return confirm('¿Borrar este recordatorio?')">
-                    <button class="btn btn-red">🗑️</button>
+                    <button class="btn btn-red"><svg class="ico"><use href="#i-trash"/></svg></button>
                 </form>
             </td>
         </tr>

@@ -418,6 +418,9 @@ def admin():
         })
     rem_db.close()
 
+    # --- Alarmas (en memoria, mismo origen que /reloj/alarmas) ---
+    lista_alarmas = brain.alarm._estado_serializable()["alarmas"]
+
     tracker = TokenTracker()
     uso = tracker.consultar()
     tokens = uso.get("tokens", {})
@@ -425,6 +428,7 @@ def admin():
     azure_mes = tracker.azure_stt_segundos_mes()
 
     return render_template("admin.html",
+                            sistema=system_settings.sistema_info(),
                             perfil=perfil,
                             sesiones=sesiones,
                             mensajes=mensajes,
@@ -433,6 +437,7 @@ def admin():
                             jap_grammar=jap_grammar,
                             jap_sessions=jap_sessions,
                             lista_recordatorios=lista_recordatorios,
+                            lista_alarmas=lista_alarmas,
                             uso_tokens=tokens,
                             uso_audio=audio,
                             uso_azure=azure_mes)
@@ -451,7 +456,6 @@ def ajustes():
         zonas=system_settings.zona_listar(),
         volumen=system_settings.volumen_get(),
         brillo=system_settings.brillo_get(),
-        sistema=system_settings.sistema_info(),
         salud=system_settings.salud(),
         admin_user=settings_get("admin_user"),
         audio_salidas=system_settings.audio_salidas(),
@@ -1101,6 +1105,31 @@ def admin_rem_borrar_todo():
     db.commit()
     db.close()
     flash("✅ Todos los recordatorios borrados", "success")
+    return redirect(url_for("admin"))
+
+@app.route("/admin/alarmas/borrar/<int:alarma_id>", methods=["POST"])
+@login_requerido
+def admin_alarma_borrar(alarma_id):
+    alarma = next((a for a in brain.alarm.alarmas if a["id"] == alarma_id), None)
+    if not alarma:
+        flash("❌ Alarma no encontrada", "error")
+        return redirect(url_for("admin"))
+    if alarma.get("timer"):
+        alarma["timer"].cancel()
+    brain.alarm.alarmas.remove(alarma)
+    brain.alarm._emitir_estado()
+    flash("✅ Alarma borrada", "success")
+    return redirect(url_for("admin"))
+
+@app.route("/admin/alarmas/borrar-todo", methods=["POST"])
+@login_requerido
+def admin_alarma_borrar_todo():
+    for a in list(brain.alarm.alarmas):
+        if a.get("timer"):
+            a["timer"].cancel()
+    brain.alarm.alarmas.clear()
+    brain.alarm._emitir_estado()
+    flash("✅ Todas las alarmas borradas", "success")
     return redirect(url_for("admin"))
 
 _apagado = False

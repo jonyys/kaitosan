@@ -1,22 +1,15 @@
 <div class="card">
-    <h2>🔊 Sonido</h2>
+    <h2><svg class="ico"><use href="#i-sound"/></svg> Sonido</h2>
 
     {# --- Volumen (Fase 6) --- #}
-    <div class="fila">
-        <span class="et">Volumen</span>
-        <span class="val">{{ volumen }}%</span>
-    </div>
-    <div class="medidor"><span style="width: {{ volumen }}%"></span></div>
-
-    <form method="POST" action="/admin/ajustes/volumen" style="margin-top:14px">
-        <label class="et" for="vol">Ajustar volumen</label>
-        <input type="range" id="vol" name="volumen" min="0" max="100" step="5"
-               value="{{ volumen }}"
-               oninput="document.getElementById('vol-val').textContent = this.value + '%'">
+    <form method="POST" action="/admin/ajustes/volumen">
         <div class="fila">
-            <span class="et">Nuevo valor</span>
+            <span class="et">Volumen</span>
             <span class="val" id="vol-val">{{ volumen }}%</span>
         </div>
+        <input type="range" id="vol" name="volumen" min="0" max="100" step="5"
+               value="{{ volumen }}" style="width:100%; margin-bottom:8px"
+               oninput="document.getElementById('vol-val').textContent = this.value + '%'">
         <button class="btn btn-green">Guardar volumen</button>
     </form>
 
@@ -46,23 +39,22 @@
 
     {# --- Ganancia del micrófono (Fase 8) --- #}
     <form method="POST" action="/admin/ajustes/audio/micro-ganancia" style="margin-top:20px">
-        <label class="et" for="mic-gain">Ganancia del micrófono</label>
-        <input type="range" id="mic-gain" name="ganancia" min="0" max="100" step="5"
-               value="{{ micro_ganancia }}"
-               oninput="document.getElementById('mic-gain-val').textContent = this.value + '%'">
         <div class="fila">
-            <span class="et">Nuevo valor</span>
+            <span class="et">Ganancia del micrófono</span>
             <span class="val" id="mic-gain-val">{{ micro_ganancia }}%</span>
         </div>
+        <input type="range" id="mic-gain" name="ganancia" min="0" max="100" step="5"
+               value="{{ micro_ganancia }}" style="width:100%; margin-bottom:8px"
+               oninput="document.getElementById('mic-gain-val').textContent = this.value + '%'">
         <button class="btn btn-green">Guardar ganancia</button>
     </form>
 
     {# --- Pruebas (Fase 8) — fetch, sin recargar (§7.2) --- #}
     <div class="actions" style="margin-top:20px">
         <button type="button" class="btn btn-yellow"
-                onclick="probarAudio('salida', this)">▶️ Probar sonido</button>
+                onclick="probarAudio('salida', this)"><svg class="ico"><use href="#i-play"/></svg> Probar sonido</button>
         <button type="button" class="btn btn-yellow"
-                onclick="probarAudio('micro', this)">🎤 Probar micro</button>
+                onclick="probarAudio('micro', this)"><svg class="ico"><use href="#i-mic"/></svg> Probar micro</button>
     </div>
     <p id="audio-prueba-msg" class="et" style="min-height:1.4em"></p>
 </div>
@@ -82,14 +74,15 @@ function probarAudio(tipo, btn) {
     .then(function (r) { return r.json(); })
     .then(function (d) {
         if (d.ok) {
-            msg.textContent = d.simulado
-                ? '✅ OK (modo simulado: no suena nada de verdad)'
-                : '✅ Prueba completada';
+            var extra = d.dispositivo ? ' — sonando por: ' + esc(d.dispositivo) : '';
+            msg.innerHTML = d.simulado
+                ? ico('check-circle') + ' OK (modo simulado: no suena nada de verdad)'
+                : ico('check-circle') + ' Prueba completada' + extra;
         } else {
-            msg.textContent = '❌ ' + (d.error || 'no se pudo completar la prueba');
+            msg.innerHTML = ico('x-circle') + ' ' + esc(d.error || 'no se pudo completar la prueba');
         }
     })
-    .catch(function () { msg.textContent = '❌ error de red'; })
+    .catch(function () { msg.innerHTML = ico('x-circle') + ' error de red'; })
     .finally(function () { btn.disabled = false; });
 }
 </script>

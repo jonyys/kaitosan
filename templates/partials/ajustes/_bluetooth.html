@@ -1,11 +1,11 @@
 <div class="card full">
-    <h2>🔵 Bluetooth</h2>
+    <h2><svg class="ico"><use href="#i-bluetooth"/></svg> Bluetooth</h2>
 
     {# Estado actual — server-rendered: se ve sin JS (p. ej. en la pantalla del robot) #}
     <div class="fila">
         <span class="et">Adaptador</span>
-        <span class="val" id="bt-radio-estado">
-            {% if bt and bt.adaptador_on %}✅ encendido{% else %}❌ apagado{% endif %}
+        <span class="val {% if bt and bt.adaptador_on %}ok{% else %}err{% endif %}" id="bt-radio-estado">
+            {% if bt and bt.adaptador_on %}<svg class="ico"><use href="#i-check-circle"/></svg> encendido{% else %}<svg class="ico"><use href="#i-x-circle"/></svg> apagado{% endif %}
         </span>
     </div>
     <div class="fila">
@@ -19,7 +19,7 @@
 
     <div class="actions" style="margin-top:12px">
         <button type="button" class="btn btn-yellow" id="bt-radio-btn"></button>
-        <button type="button" class="btn btn-yellow" id="bt-scan-btn">🔍 Buscar dispositivos</button>
+        <button type="button" class="btn btn-yellow" id="bt-scan-btn"><svg class="ico"><use href="#i-search"/></svg> Buscar dispositivos</button>
     </div>
     <div id="bt-lista"></div>
 
@@ -29,7 +29,7 @@
 
     <p class="et" style="color:var(--text-soft); margin:14px 0 0">
         Un altavoz o auriculares Bluetooth, una vez conectados, aparecen como
-        salida elegible en <strong>🔊 Sonido</strong>. Si se apagan o se alejan,
+        salida elegible en <strong><svg class="ico"><use href="#i-sound"/></svg> Sonido</strong>. Si se apagan o se alejan,
         Kaito vuelve solo a la tarjeta de audio local.
     </p>
 </div>
@@ -48,6 +48,8 @@
     .bt-dev .nom { flex: 1 1 60%; font-weight: 500; word-break: break-word; }
     .bt-dev .sig { flex: 0 0 auto; color: var(--text-soft); font-weight: 700; font-size: 12px; }
     .bt-dev .btn { flex: 0 0 auto; min-height: 44px; padding: 8px 14px; font-size: 13px; }
+    #bt-radio-estado.ok  { color: var(--ok-tinta);      font-weight: 700; }
+    #bt-radio-estado.err { color: var(--peligro-tinta); font-weight: 700; }
 </style>
 
 <script>
@@ -60,14 +62,16 @@
     var conectadosEl = document.getElementById('bt-conectados');
     var adaptadorOn  = {{ 'true' if (bt and bt.adaptador_on) else 'false' }};
 
-    var ICONO = { 'audio': '🔊', 'teléfono': '📱', 'ratón': '🖱️',
-                  'teclado': '⌨️', 'ordenador': '💻', 'otro': '📦' };
+    var ICONO = { 'audio': 'sound', 'teléfono': 'phone', 'ratón': 'mouse',
+                  'teclado': 'keyboard', 'ordenador': 'computer', 'otro': 'box' };
 
-    function tarjetaTipo(t) { return ICONO[t] || ICONO.otro; }
+    function tarjetaTipo(t) { return ico(ICONO[t] || ICONO.otro); }
 
     function pintarRadio() {
-        radioEstado.textContent = adaptadorOn ? '✅ encendido' : '❌ apagado';
-        radioBtn.textContent = adaptadorOn ? '📴 Apagar Bluetooth' : '📶 Encender Bluetooth';
+        radioEstado.classList.toggle('ok', adaptadorOn);
+        radioEstado.classList.toggle('err', !adaptadorOn);
+        radioEstado.innerHTML = adaptadorOn ? ico('check-circle') + ' encendido' : ico('x-circle') + ' apagado';
+        radioBtn.innerHTML = adaptadorOn ? ico('power') + ' Apagar Bluetooth' : ico('bluetooth') + ' Encender Bluetooth';
     }
 
     function fila(dev, acciones) {
@@ -76,8 +80,8 @@
 
         var nom = document.createElement('span');
         nom.className = 'nom';
-        nom.textContent = tarjetaTipo(dev.tipo) + ' ' + (dev.nombre || dev.mac)
-            + (dev.conectado ? '  ·  conectado' : (dev.emparejado ? '  ·  emparejado' : ''));
+        nom.innerHTML = tarjetaTipo(dev.tipo) + ' ' + esc((dev.nombre || dev.mac)
+            + (dev.conectado ? '  ·  conectado' : (dev.emparejado ? '  ·  emparejado' : '')));
         row.appendChild(nom);
 
         if (dev.rssi != null) {
@@ -107,11 +111,11 @@
         })
             .then(function (r) { return r.json(); })
             .then(function (d) {
-                msg.textContent = (d.ok ? '✅ ' : '❌ ')
-                    + (d.mensaje || d.error || (d.ok ? txtOk : 'no se pudo completar'));
+                msg.innerHTML = (d.ok ? ico('check-circle') + ' ' : ico('x-circle') + ' ')
+                    + esc(d.mensaje || d.error || (d.ok ? txtOk : 'no se pudo completar'));
                 cargar();
             })
-            .catch(function () { msg.textContent = '❌ error de red.'; })
+            .catch(function () { msg.innerHTML = ico('x-circle') + ' error de red.'; })
             .finally(function () { if (btn) btn.disabled = false; });
     }
 
@@ -183,7 +187,7 @@
                     lista.appendChild(fila(dev, acciones));
                 });
             })
-            .catch(function () { msg.textContent = '❌ error de red al escanear.'; })
+            .catch(function () { msg.innerHTML = ico('x-circle') + ' error de red al escanear.'; })
             .finally(function () { btn.disabled = false; });
     }
 
@@ -197,10 +201,10 @@
         })
             .then(function (r) { return r.json(); })
             .then(function (d) {
-                if (!d.ok) msg.textContent = '❌ ' + (d.error || 'no se pudo cambiar');
+                if (!d.ok) msg.innerHTML = ico('x-circle') + ' ' + esc(d.error || 'no se pudo cambiar');
                 cargar();
             })
-            .catch(function () { msg.textContent = '❌ error de red.'; })
+            .catch(function () { msg.innerHTML = ico('x-circle') + ' error de red.'; })
             .finally(function () { btn.disabled = false; });
     };
 

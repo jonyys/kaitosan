@@ -1,9 +1,9 @@
 <div class="card">
-    <h2>👤 Perfil de Laura</h2>
+    <h2><svg class="ico"><use href="#i-user"/></svg> Perfil de Laura</h2>
     <div class="actions">
         <form method="POST" action="/admin/perfil/borrar-todo"
               onsubmit="return confirm('¿Borrar todo el perfil?')">
-            <button class="btn btn-red">🗑️ Borrar todo</button>
+            <button class="btn btn-red"><svg class="ico"><use href="#i-trash"/></svg> Borrar todo</button>
         </form>
     </div>
     {% if perfil %}
@@ -16,7 +16,7 @@
             <td>
                 <form method="POST" action="/admin/perfil/borrar/{{ item.id }}"
                       onsubmit="return confirm('¿Borrar este dato?')">
-                    <button class="btn btn-red">🗑️</button>
+                    <button class="btn btn-red"><svg class="ico"><use href="#i-trash"/></svg></button>
                 </form>
             </td>
         </tr>
@@ -25,7 +25,7 @@
     {% else %}
     <p class="empty">No hay datos en el perfil</p>
     {% endif %}
-    <h2 style="margin-top:20px">➕ Añadir / Editar dato</h2>
+    <h2 style="margin-top:20px"><svg class="ico"><use href="#i-plus"/></svg> Añadir / Editar dato</h2>
     <form method="POST" action="/admin/perfil/añadir">
         <div class="form-row">
             <input type="text" name="key" placeholder="clave (ej: hobby)">

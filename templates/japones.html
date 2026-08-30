@@ -7,6 +7,12 @@
     {% include 'partials/admin/_estilos.html' %}
     <style>
         /* Paleta pastel de Kaito (§13): tokens en partials/admin/_estilos.html */
+
+        /* Todo el contenido al mismo ancho (como .acc-list y como el resto de páginas). */
+        .jp-wrap { max-width: 900px; margin: 0 auto; }
+        .jp-wrap .acc-list { max-width: none; }
+        .tabla-scroll { overflow-x: auto; }
+
         .stats-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -59,14 +65,7 @@
             margin-bottom: 14px;
         }
         .section-header h2 { margin-bottom: 0; border: none; }
-        .nav-back {
-            display: inline-block;
-            color: var(--text-soft);
-            text-decoration: none;
-            font-size: 14px;
-            margin-bottom: 18px;
-        }
-        .nav-back:hover { color: var(--rosa-accion); }
+        .jp-wrap h1 { justify-content: space-between; flex-wrap: wrap; }
         .summary-box {
             background: var(--surface-2);
             border: 1px solid var(--border);
@@ -149,9 +148,14 @@
     </style>
 </head>
 <body>
+{% include 'partials/_iconos.html' %}
 
-<a href="/admin" class="nav-back">← Volver al panel de admin</a>
-<h1>🎌 Panel de Japonés</h1>
+<div class="jp-wrap">
+
+<h1>
+    <span><svg class="ico"><use href="#i-lang"/></svg> Panel de Japonés</span>
+    <a href="/admin"><button class="btn btn-yellow" style="font-size:13px"><svg class="ico"><use href="#i-home"/></svg></button></a>
+</h1>
 
 {% include 'partials/_panel_scripts.html' %}
 
@@ -218,10 +222,10 @@
 
 {# ── Vocabulario ── #}
 <details class="acc">
-<summary>📚 Vocabulario ({{ total_vocab }})</summary>
+<summary><svg class="ico"><use href="#i-book"/></svg> Vocabulario ({{ total_vocab }})</summary>
 <div class="card full">
     <div class="section-header">
-        <h2>📚 Vocabulario ({{ total_vocab }})</h2>
+        <h2><svg class="ico"><use href="#i-book"/></svg> Vocabulario ({{ total_vocab }})</h2>
         <form method="post" action="/japones/vocabulario/borrar-todo"
               onsubmit="return confirm('¿Borrar TODO el vocabulario? Esta acción no se puede deshacer.')">
             <button class="btn btn-red">Borrar todo</button>
@@ -246,7 +250,7 @@
             <th>EF</th>
             <th>Intervalo</th>
             <th>Próx. repaso</th>
-            <th>✓&nbsp;/&nbsp;✗</th>
+            <th><svg class="ico"><use href="#i-check"/></svg>&nbsp;/&nbsp;<svg class="ico"><use href="#i-x"/></svg></th>
             <th></th>
         </tr>
         {% for v in vocab %}
@@ -272,14 +276,14 @@
                     <summary title="Acciones">⋯</summary>
                     <div class="rowmenu-panel">
                         <form method="post" action="/japones/vocabulario/marcar-aprendido/{{ v.id }}">
-                            <button type="submit">✓ Aprendida al 100%</button>
+                            <button type="submit"><svg class="ico"><use href="#i-check"/></svg> Aprendida al 100%</button>
                         </form>
                         <form method="post" action="/japones/vocabulario/resetear-srs/{{ v.id }}">
-                            <button type="submit">↺ Resetear a 0</button>
+                            <button type="submit"><svg class="ico"><use href="#i-undo"/></svg> Resetear a 0</button>
                         </form>
                         <form method="post" action="/japones/vocabulario/borrar/{{ v.id }}"
                               onsubmit="return confirm('¿Borrar {{ v.word | replace("'", "\\'") }}?')">
-                            <button type="submit" class="peligro">🗑 Eliminar</button>
+                            <button type="submit" class="peligro"><svg class="ico"><use href="#i-trash"/></svg> Eliminar</button>
                         </form>
                     </div>
                 </details>
@@ -295,10 +299,10 @@
 
 {# ── Gramática ── #}
 <details class="acc">
-<summary>🧩 Gramática ({{ total_grammar }})</summary>
+<summary><svg class="ico"><use href="#i-puzzle"/></svg> Gramática ({{ total_grammar }})</summary>
 <div class="card full">
     <div class="section-header">
-        <h2>🧩 Gramática ({{ total_grammar }})</h2>
+        <h2><svg class="ico"><use href="#i-puzzle"/></svg> Gramática ({{ total_grammar }})</h2>
         <form method="post" action="/japones/gramatica/borrar-todo"
               onsubmit="return confirm('¿Borrar TODA la gramática?')">
             <button class="btn btn-red">Borrar todo</button>
@@ -323,7 +327,7 @@
             <th>EF</th>
             <th>Intervalo</th>
             <th>Próx. repaso</th>
-            <th>✓&nbsp;/&nbsp;✗</th>
+            <th><svg class="ico"><use href="#i-check"/></svg>&nbsp;/&nbsp;<svg class="ico"><use href="#i-x"/></svg></th>
             <th></th>
         </tr>
         {% for g in grammar %}
@@ -356,14 +360,14 @@
                     <summary title="Acciones">⋯</summary>
                     <div class="rowmenu-panel">
                         <form method="post" action="/japones/gramatica/marcar-aprendido/{{ g.id }}">
-                            <button type="submit">✓ Aprendida al 100%</button>
+                            <button type="submit"><svg class="ico"><use href="#i-check"/></svg> Aprendida al 100%</button>
                         </form>
                         <form method="post" action="/japones/gramatica/resetear-srs/{{ g.id }}">
-                            <button type="submit">↺ Resetear a 0</button>
+                            <button type="submit"><svg class="ico"><use href="#i-undo"/></svg> Resetear a 0</button>
                         </form>
                         <form method="post" action="/japones/gramatica/borrar/{{ g.id }}"
                               onsubmit="return confirm('¿Borrar {{ g.point | replace("'", "\\'") }}?')">
-                            <button type="submit" class="peligro">🗑 Eliminar</button>
+                            <button type="submit" class="peligro"><svg class="ico"><use href="#i-trash"/></svg> Eliminar</button>
                         </form>
                     </div>
                 </details>
@@ -379,10 +383,10 @@
 
 {# ── Sesiones ── #}
 <details class="acc">
-<summary>📅 Sesiones ({{ total_sessions }})</summary>
+<summary><svg class="ico"><use href="#i-calendar"/></svg> Sesiones ({{ total_sessions }})</summary>
 <div class="card full">
     <div class="section-header">
-        <h2>📅 Sesiones ({{ total_sessions }})</h2>
+        <h2><svg class="ico"><use href="#i-calendar"/></svg> Sesiones ({{ total_sessions }})</h2>
         <form method="post" action="/japones/sesiones/borrar-todo"
               onsubmit="return confirm('¿Borrar TODAS las sesiones de japonés?')">
             <button class="btn btn-red">Borrar todo</button>
@@ -390,6 +394,7 @@
     </div>
 
     {% if sessions %}
+    <div class="tabla-scroll">
     <table class="sess-table">
         <tr>
             <th>#</th>
@@ -415,12 +420,13 @@
             <td>
                 <form method="post" action="/japones/sesiones/borrar/{{ s.id }}"
                       onsubmit="return confirm('¿Borrar sesión #{{ s.id }}?')">
-                    <button class="btn btn-red">✕</button>
+                    <button class="btn btn-red"><svg class="ico"><use href="#i-x"/></svg></button>
                 </form>
             </td>
         </tr>
         {% endfor %}
     </table>
+    </div>
     {% else %}
     <p class="empty">Sin sesiones registradas</p>
     {% endif %}
@@ -428,5 +434,7 @@
 </details>
 
 </div>{# /acc-list #}
+
+</div>{# /jp-wrap #}
 </body>
 </html>

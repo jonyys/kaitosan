@@ -1,11 +1,11 @@
 <div class="card full">
-    <h2>📶 WiFi</h2>
+    <h2><svg class="ico"><use href="#i-wifi"/></svg> WiFi</h2>
 
     {# Estado actual — server-rendered: se ve sin JS (p. ej. en la pantalla del robot) #}
     <div class="fila">
         <span class="et">Estado</span>
-        <span class="val" id="wifi-estado">
-            {% if wifi and wifi.conectado %}✅ conectado{% else %}❌ sin conexión{% endif %}
+        <span class="val{% if wifi and wifi.conectado %} ok{% endif %}" id="wifi-estado">
+            {% if wifi and wifi.conectado %}<svg class="ico"><use href="#i-check-circle"/></svg> conectado{% else %}<svg class="ico"><use href="#i-x-circle"/></svg> sin conexión{% endif %}
         </span>
     </div>
     <div class="fila">
@@ -28,21 +28,9 @@
 
     {# Buscar redes y conectarse #}
     <div class="actions" style="margin-top:12px">
-        <button type="button" class="btn btn-yellow" id="wifi-scan-btn">🔍 Buscar redes</button>
+        <button type="button" class="btn btn-yellow" id="wifi-scan-btn"><svg class="ico"><use href="#i-search"/></svg> Buscar redes</button>
     </div>
     <div id="wifi-lista"></div>
-
-    {# Conexión manual (red oculta o fuera de alcance al escanear) #}
-    <details style="margin-top:14px">
-        <summary class="et" style="cursor:pointer; min-height:44px; display:flex; align-items:center">
-            Conectar a otra red a mano
-        </summary>
-        <label class="et" for="wifi-man-ssid" style="display:block; margin-top:8px">Nombre de la red (SSID)</label>
-        <input type="text" id="wifi-man-ssid" autocomplete="off">
-        <label class="et" for="wifi-man-psk" style="display:block">Contraseña (déjala vacía si es abierta)</label>
-        <input type="password" id="wifi-man-psk" autocomplete="off">
-        <button type="button" class="btn btn-green" id="wifi-man-btn">Conectar</button>
-    </details>
 
     {# Redes guardadas #}
     <h2 style="margin-top:20px">Redes guardadas</h2>
@@ -55,7 +43,7 @@
         Baja el WiFi actual y levanta la red <code>Kaitosan-Setup</code> para elegir
         otra red desde el móvil. <strong>Esta página se desconectará.</strong>
     </p>
-    <button type="button" class="btn btn-red" id="wifi-portal-btn">📡 Abrir «Kaitosan-Setup»</button>
+    <button type="button" class="btn btn-red" id="wifi-portal-btn"><svg class="ico"><use href="#i-antenna"/></svg> Abrir «Kaitosan-Setup»</button>
 </div>
 
 <style>
@@ -71,6 +59,7 @@
     .wifi-red .nom { flex: 1 1 auto; font-weight: 500; word-break: break-word; }
     .wifi-red .sig { flex: 0 0 auto; color: var(--text-soft); font-weight: 700; font-size: 12px; }
     .wifi-red .btn { flex: 0 0 auto; min-height: 44px; padding: 8px 14px; font-size: 13px; }
+    #wifi-estado.ok { color: var(--ok-tinta); font-weight: 700; }
 </style>
 
 <script>
@@ -84,10 +73,15 @@
         + 'página puede dejar de responder. Después, conéctate a la red nueva y '
         + 'vuelve a http://kaitosan.local:5000\n\n¿Continuar?';
 
+    // "netplan-wlan0-MOVISTAR-WIFI6-A950"  ->  "MOVISTAR-WIFI6-A950"
+    function nombreRed(n) { return String(n).replace(/^netplan-[^-]+-/, ''); }
+
     function pintarEstado(e) {
         if (!e) return;
-        document.getElementById('wifi-estado').textContent =
-            e.conectado ? '✅ conectado' : '❌ sin conexión';
+        var est = document.getElementById('wifi-estado');
+        est.classList.toggle('ok', !!e.conectado);
+        est.innerHTML =
+            e.conectado ? ico('check-circle') + ' conectado' : ico('x-circle') + ' sin conexión';
         document.getElementById('wifi-ssid').textContent = e.ssid || '—';
         var ip = document.getElementById('wifi-ip');
         if (ip) ip.textContent = e.ip || '—';
@@ -108,7 +102,7 @@
             row.className = 'wifi-red';
             var nom = document.createElement('span');
             nom.className = 'nom';
-            nom.textContent = n;
+            nom.textContent = nombreRed(n);
             var btn = document.createElement('button');
             btn.className = 'btn btn-red';
             btn.textContent = 'Olvidar';
@@ -151,7 +145,7 @@
 
                     var nom = document.createElement('span');
                     nom.className = 'nom';
-                    nom.textContent = (abierta ? '' : '🔒 ') + red.ssid
+                    nom.innerHTML = (abierta ? '' : ico('lock') + ' ') + esc(red.ssid)
                         + (red.en_uso ? '  ·  en uso' : '');
 
                     var sig = document.createElement('span');
@@ -169,7 +163,7 @@
                     lista.appendChild(row);
                 });
             })
-            .catch(function () { msg.textContent = '❌ error de red al escanear.'; })
+            .catch(function () { msg.innerHTML = ico('x-circle') + ' error de red al escanear.'; })
             .finally(function () { btn.disabled = false; });
     }
 
@@ -193,10 +187,10 @@
         })
             .then(function (r) { return r.json(); })
             .then(function (d) {
-                msg.textContent = (d.ok ? '📶 ' : '❌ ') + (d.mensaje || d.error || '');
+                msg.innerHTML = (d.ok ? ico('wifi') + ' ' : ico('x-circle') + ' ') + esc(d.mensaje || d.error || '');
             })
             .catch(function () {
-                msg.textContent = '⚠️ Se perdió la conexión (es normal al cambiar de '
+                msg.innerHTML = ico('warn') + ' Se perdió la conexión (es normal al cambiar de '
                     + 'red). Conéctate a la red nueva y vuelve a '
                     + 'http://kaitosan.local:5000';
             })
@@ -204,31 +198,28 @@
     }
 
     function olvidar(ssid, btn) {
-        if (!confirm('¿Olvidar la red «' + ssid + '»?')) return;
-        btn.disabled = true;
-        fetch('/admin/ajustes/wifi/olvidar', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ssid: ssid })
-        })
-            .then(function (r) { return r.json(); })
-            .then(function (d) {
-                if (d.ok) { msg.textContent = '✅ Red «' + ssid + '» olvidada.'; cargar(); }
-                else {
-                    msg.textContent = '❌ ' + (d.error || 'no se pudo olvidar');
-                    btn.disabled = false;
-                }
+        var nombre = nombreRed(ssid);
+        window.confirmar('¿Olvidar la red «' + nombre + '»?').then(function (ok) {
+            if (!ok) return;
+            btn.disabled = true;
+            fetch('/admin/ajustes/wifi/olvidar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ssid: ssid })
             })
-            .catch(function () { msg.textContent = '❌ error de red.'; btn.disabled = false; });
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    if (d.ok) { msg.innerHTML = ico('check-circle') + ' Red «' + esc(nombre) + '» olvidada.'; cargar(); }
+                    else {
+                        msg.innerHTML = ico('x-circle') + ' ' + esc(d.error || 'no se pudo olvidar');
+                        btn.disabled = false;
+                    }
+                })
+                .catch(function () { msg.innerHTML = ico('x-circle') + ' error de red.'; btn.disabled = false; });
+        });
     }
 
     document.getElementById('wifi-scan-btn').onclick = function () { escanear(this); };
-
-    document.getElementById('wifi-man-btn').onclick = function () {
-        var ssid = document.getElementById('wifi-man-ssid').value.trim();
-        if (!ssid) { alert('Escribe el nombre de la red.'); return; }
-        enviarConexion(ssid, document.getElementById('wifi-man-psk').value, this);
-    };
 
     document.getElementById('wifi-portal-btn').onclick = function () {
         if (!confirm('Se abrirá la red «Kaitosan-Setup» y esta página se '
@@ -239,10 +230,10 @@
         fetch('/admin/ajustes/wifi/portal', { method: 'POST' })
             .then(function (r) { return r.json(); })
             .then(function (d) {
-                msg.textContent = (d.ok ? '📡 ' : '❌ ') + (d.mensaje || d.error || '');
+                msg.innerHTML = (d.ok ? ico('antenna') + ' ' : ico('x-circle') + ' ') + esc(d.mensaje || d.error || '');
             })
             .catch(function () {
-                msg.textContent = '⚠️ Conexión perdida. Busca la red WiFi '
+                msg.innerHTML = ico('warn') + ' Conexión perdida. Busca la red WiFi '
                     + '«Kaitosan-Setup» en el móvil.';
             })
             .finally(function () { btn.disabled = false; });

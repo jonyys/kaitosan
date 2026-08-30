@@ -2,7 +2,7 @@
 {% if brillo.soportado %}
 {% set pct = (brillo.valor / brillo.max * 100)|round|int if brillo.max else 0 %}
 <div class="card">
-    <h2>💡 Pantalla</h2>
+    <h2><svg class="ico"><use href="#i-sun"/></svg> Pantalla</h2>
     <div class="fila">
         <span class="et">Brillo</span>
         <span class="val">{{ pct }}%</span>

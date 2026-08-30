@@ -1,0 +1,40 @@
+<style>
+    /* Mensaje de resultado del servidor (flash) como pop-up centrado.
+       La base .flash-pop y el keyframe cp-pop están en _confirm_pop.html. */
+    .flash-pop .flash-msg { margin: 0 0 16px; font-weight: 700; font-size: 16px; }
+    .flash-pop .flash-success { color: var(--ok-tinta); }
+    .flash-pop .flash-error   { color: var(--peligro-tinta); }
+    .flash-pop form { margin: 0; }
+    .flash-pop form button {
+        min-height: 40px; padding: 8px 24px;
+        border: 0; border-radius: var(--radio-pill);
+        background: var(--rosa-tinta); color: #fff;
+        font: inherit; font-weight: 700; cursor: pointer;
+        animation: cp-pop .35s cubic-bezier(.17, .89, .32, 1.28);
+    }
+</style>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <dialog id="flash-pop" class="flash-pop">
+        {% for category, message in messages %}
+        <p class="flash-msg flash-{{ category }}">{{ message }}</p>
+        {% endfor %}
+        <form method="dialog"><button>OK</button></form>
+    </dialog>
+    <script>
+    (function () {
+        var d = document.getElementById('flash-pop');
+        if (!d || !d.showModal) return;
+        // Si el diálogo de confirmación ya mostró "Eliminado", no repitas el pop-up
+        // (salvo que haya un error que enseñar).
+        var k = 'flashDone:' + location.pathname;
+        var done = sessionStorage.getItem(k);
+        sessionStorage.removeItem(k);
+        if (done && Date.now() - (+done) < 5000 && !d.querySelector('.flash-error')) return;
+        d.showModal();
+        setTimeout(function () { if (d.open) d.close(); }, 2500);
+    })();
+    </script>
+    {% endif %}
+{% endwith %}

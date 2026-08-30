@@ -1,0 +1,50 @@
+<div class="card full" style="margin-top:20px; border-color:var(--peligro)">
+    <label class="et" for="reset-pin" style="display:block; color:var(--peligro); font-weight:700">Reset de fábrica</label>
+    <p class="et" style="color:var(--text-soft); margin:4px 0 10px">
+        Borra la base de datos, los ajustes y las redes WiFi guardadas. Kaito vuelve
+        al modo de configuración inicial. <strong>Es irreversible</strong> (se guarda
+        una copia de la BD justo antes).
+    </p>
+    <div class="actions">
+        <input type="password" id="reset-pin" inputmode="numeric" autocomplete="off"
+               placeholder="PIN" style="max-width:7rem">
+        <button type="button" class="btn btn-red" onclick="resetFabrica(this)"><svg class="ico"><use href="#i-bomb"/></svg> Reset de fábrica</button>
+    </div>
+    <pre id="reset-salida" style="display:none; max-height:200px; overflow:auto;
+         background:var(--surface-2); border:1px solid var(--border);
+         border-radius:var(--radio-sm); padding:12px; font-size:12px;
+         white-space:pre-wrap; word-break:break-word"></pre>
+</div>
+
+<script>
+function resetFabrica(btn) {
+    var pin = document.getElementById('reset-pin').value.trim();
+    if (!pin) { alert('Escribe el PIN para confirmar el reset.'); return; }
+    window.confirmar(
+        'RESET DE FÁBRICA — se borrará la base de datos, los ajustes y las redes WiFi '
+        + 'guardadas. Es irreversible. ¿Seguro?',
+        { ok: 'Sí, borrar todo' }
+    ).then(function (ok) {
+        if (!ok) return;
+        btn.disabled = true;
+        var pre = document.getElementById('reset-salida');
+        pre.style.display = '';
+        pre.textContent = 'Enviando…';
+        fetch('/admin/ajustes/sistema/reset', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pin: pin })
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                pre.innerHTML = (d.ok ? ico('check-circle') + ' ' : ico('x-circle') + ' ') + esc(d.mensaje || d.error || '');
+                document.getElementById('reset-pin').value = '';
+            })
+            .catch(function () {
+                pre.innerHTML = ico('warn') + ' Se perdió la conexión. Si el PIN era correcto, el '
+                    + 'reset está en marcha.';
+            })
+            .finally(function () { btn.disabled = false; });
+    });
+}
+</script>

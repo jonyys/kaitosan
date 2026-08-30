@@ -1,5 +1,5 @@
 <div class="card full">
-    <h2>💬 Conversaciones</h2>
+    <h2><svg class="ico"><use href="#i-chat"/></svg> Conversaciones</h2>
     <form method="GET" action="/admin" style="margin-bottom:15px">
         <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
             <select name="sesion_id" style="flex:1; min-width:180px; margin-bottom:0">
@@ -20,13 +20,13 @@
         {% for m in mensajes %}
         <tr>
             <td><span class="badge">#{{ m.session_id }}</span></td>
-            <td>{% if m.role == 'user' %}👤 Laura{% else %}🤖 Kaito{% endif %}</td>
+            <td>{% if m.role == 'user' %}<svg class="ico"><use href="#i-user"/></svg> Laura{% else %}<svg class="ico"><use href="#i-bot"/></svg> Kaito{% endif %}</td>
             <td>{{ m.content }}</td>
             <td style="white-space:nowrap">{{ m.created_at }}</td>
             <td>
                 <form method="POST" action="/admin/mensajes/borrar/{{ m.id }}"
                       onsubmit="return confirm('¿Borrar este mensaje?')">
-                    <button class="btn btn-red">🗑️</button>
+                    <button class="btn btn-red"><svg class="ico"><use href="#i-trash"/></svg></button>
                 </form>
             </td>
         </tr>
