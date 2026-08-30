@@ -21,6 +21,10 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
 # Flask
 FLASK_SECRET_KEY = os.getenv("FLASK_SECRET_KEY", "fallback_key")
+# Usuario/contraseña del panel: solo semilla inicial. En el primer arranque se
+# copian (con hash) a la tabla app_settings; a partir de ahí manda la BD y se
+# cambian desde Ajustes. Ver core/settings_store.py.
+ADMIN_USER = os.getenv("ADMIN_USER", "laura")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "kaito123")
 
 # Sensei — ritmo de introducción

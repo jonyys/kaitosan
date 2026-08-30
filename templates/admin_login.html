@@ -75,10 +75,15 @@
         {% endif %}
 
         <form method="POST">
+            <input type="text"
+                   name="user"
+                   placeholder="Usuario"
+                   autocomplete="username"
+                   autofocus>
             <input type="password"
                    name="password"
                    placeholder="Contraseña"
-                   autofocus>
+                   autocomplete="current-password">
             <button type="submit">Entrar</button>
         </form>
     </div>

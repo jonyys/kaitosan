@@ -10,7 +10,9 @@ from core.brain import Brain
 from core.detection import PersonDetector
 from core.listener import VoiceListener
 from core.button import PowerButton
-from core.config import FLASK_SECRET_KEY, ADMIN_PASSWORD
+from core.config import FLASK_SECRET_KEY
+from werkzeug.security import check_password_hash
+from core.settings_store import settings_get
 from flask import flash, redirect, url_for, session, request
 from functools import wraps
 from datetime import timedelta, date
@@ -276,12 +278,16 @@ def login_requerido(f):
 @app.route("/admin/login", methods=["GET", "POST"])
 def admin_login():
     if request.method == "POST":
-        if request.form.get("password") == ADMIN_PASSWORD:
+        user = request.form.get("user", "").strip()
+        pwd = request.form.get("password", "")
+        pass_hash = settings_get("admin_pass_hash")
+        if user == settings_get("admin_user") and pass_hash \
+                and check_password_hash(pass_hash, pwd):
             session.permanent = True
             session["admin_logged_in"] = True
             return redirect(url_for("admin"))
         return render_template("admin_login.html",
-                               error="Contraseña incorrecta")
+                               error="Usuario o contraseña incorrectos")
     return render_template("admin_login.html")
 
 @app.route("/admin/logout")
