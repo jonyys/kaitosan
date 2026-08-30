@@ -1,0 +1,12 @@
+// Deja que kaitosan cambie hora, zona horaria y NTP sin pedir contrasena.
+// Cubre tambien a tzupdate, que por debajo llama a timedatectl set-timezone.
+// Instalar en /etc/polkit-1/rules.d/51-kaito-timedate.rules
+
+polkit.addRule(function(action, subject) {
+  if ((action.id === "org.freedesktop.timedate1.set-time" ||
+       action.id === "org.freedesktop.timedate1.set-timezone" ||
+       action.id === "org.freedesktop.timedate1.set-ntp") &&
+      subject.user === "kaitosan") {
+    return polkit.Result.YES;
+  }
+});

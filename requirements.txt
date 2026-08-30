@@ -10,3 +10,4 @@ pykakasi
 google-generativeai
 python-dotenv
 livekit-wakeword[listener]
+tzupdate

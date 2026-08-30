@@ -1,0 +1,12 @@
+// Deja que kaitosan reinicie, apague y cambie el hostname sin pedir contrasena.
+// Instalar en /etc/polkit-1/rules.d/52-kaito-power.rules
+
+polkit.addRule(function(action, subject) {
+  if ((action.id === "org.freedesktop.login1.reboot" ||
+       action.id === "org.freedesktop.login1.power-off" ||
+       action.id === "org.freedesktop.hostname1.set-static-hostname" ||
+       action.id === "org.freedesktop.hostname1.set-hostname") &&
+      subject.user === "kaitosan") {
+    return polkit.Result.YES;
+  }
+});

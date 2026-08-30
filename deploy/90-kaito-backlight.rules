@@ -1,0 +1,13 @@
+# Da permiso de escritura al grupo "video" sobre el brillo de la pantalla oficial.
+# Con kaitosan en el grupo "video", la app escribe /sys/class/backlight/*/brightness
+# directamente, sin sudo.
+# Instalar en /etc/udev/rules.d/90-kaito-backlight.rules y recargar:
+#   sudo udevadm control --reload && sudo udevadm trigger --subsystem-match=backlight
+#
+# Nota: este equipo no expone ninguna pantalla en /sys/class/backlight/ ahora mismo
+# (monitor HDMI / sin DSI). La regla queda lista para cuando se conecte la pantalla
+# oficial; hasta entonces brillo_get() debe devolver {soportado: false}.
+
+SUBSYSTEM=="backlight", ACTION=="add", \
+  RUN+="/bin/chgrp video /sys%p/brightness", \
+  RUN+="/bin/chmod g+w /sys%p/brightness"

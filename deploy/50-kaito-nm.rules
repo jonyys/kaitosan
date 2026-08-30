@@ -1,0 +1,11 @@
+// Deja que el usuario del servicio (kaitosan) gestione NetworkManager
+// sin pedir contrasena: cambiar de WiFi, escanear, olvidar redes, abrir el portal.
+// Instalar en /etc/polkit-1/rules.d/50-kaito-nm.rules
+// (Bookworm/trixie, polkit con reglas JS. En Bullseye/polkit 0.105 usar .pkla.)
+
+polkit.addRule(function(action, subject) {
+  if (action.id.indexOf("org.freedesktop.NetworkManager.") === 0 &&
+      subject.user === "kaitosan") {
+    return polkit.Result.YES;
+  }
+});

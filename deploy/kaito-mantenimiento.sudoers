@@ -1,0 +1,9 @@
+# Unico privilegio de root que necesitan "Actualizar Kaito" y "Reiniciar servicio".
+# Instalar con visudo para validar la sintaxis:
+#   sudo install -m 0440 -o root -g root deploy/kaito-mantenimiento.sudoers /etc/sudoers.d/kaito-mantenimiento
+#   sudo visudo -cf /etc/sudoers.d/kaito-mantenimiento
+#
+# git pull, pip install, journalctl -u kaito, la copia de la BD y el zip de
+# diagnostico corren como kaitosan sin sudo.
+
+kaitosan ALL=(root) NOPASSWD: /usr/bin/systemctl restart kaito, /usr/bin/systemctl restart kaito.service

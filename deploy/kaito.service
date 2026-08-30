@@ -1,0 +1,25 @@
+# Servicio systemd de sistema para Kaitosan.
+# Instalar en /etc/systemd/system/kaito.service, luego:
+#   sudo systemctl daemon-reload && sudo systemctl enable --now kaito
+#
+# Nota: el usuario de este equipo es "kaitosan" y el checkout vive en
+# /home/kaitosan/robot (el PLAN_AJUSTES.md usa "kaito" / "/home/kaito/kaitosan"
+# como marcador; §1 dice ajustar el nombre).
+
+[Unit]
+Description=Kaitosan
+After=network-online.target sound.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=kaitosan
+SupplementaryGroups=audio video
+WorkingDirectory=/home/kaitosan/robot
+ExecStart=/home/kaitosan/robot/venv/bin/python app.py
+Restart=on-failure
+KillSignal=SIGTERM
+TimeoutStopSec=20
+
+[Install]
+WantedBy=multi-user.target
