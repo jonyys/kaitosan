@@ -1,0 +1,12 @@
+{# Se oculta entera si no hay backlight controlable (p. ej. monitor HDMI), §5 / §11 #}
+{% if brillo.soportado %}
+{% set pct = (brillo.valor / brillo.max * 100)|round|int if brillo.max else 0 %}
+<div class="card">
+    <h2>💡 Pantalla</h2>
+    <div class="fila">
+        <span class="et">Brillo</span>
+        <span class="val">{{ pct }}%</span>
+    </div>
+    <div class="medidor"><span style="width: {{ pct }}%"></span></div>
+</div>
+{% endif %}

@@ -1,0 +1,19 @@
+<div class="card">
+    <h2>🕐 Hora y fecha</h2>
+    <div class="fila">
+        <span class="et">Hora del sistema</span>
+        <span class="val">{{ (hora.hora or '')|replace('T', ' ') or '—' }}</span>
+    </div>
+    <div class="fila">
+        <span class="et">Zona horaria</span>
+        <span class="val">{{ hora.zona or '—' }}</span>
+    </div>
+    <div class="fila">
+        <span class="et">Hora automática (NTP)</span>
+        <span class="val">{{ '✅ activada' if hora.ntp else '❌ desactivada' }}</span>
+    </div>
+    <div class="fila">
+        <span class="et">Zona automática por ubicación</span>
+        <span class="val">{{ '✅ activada' if hora.tz_auto else '❌ desactivada' }}</span>
+    </div>
+</div>

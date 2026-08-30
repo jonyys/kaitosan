@@ -1,0 +1,26 @@
+<div class="card">
+    <h2>🖥️ Sistema</h2>
+    <div class="fila">
+        <span class="et">Nombre del equipo</span>
+        <span class="val">{{ sistema.hostname or '—' }}</span>
+    </div>
+    <div class="fila">
+        <span class="et">Modelo</span>
+        <span class="val">{{ sistema.modelo or '—' }}</span>
+    </div>
+    <div class="fila">
+        <span class="et">Encendida desde hace</span>
+        <span class="val">{{ sistema.uptime or '—' }}</span>
+    </div>
+    <div class="fila">
+        <span class="et">Temperatura CPU</span>
+        <span class="val">{{ (sistema.temperatura ~ ' °C') if sistema.temperatura is not none else '—' }}</span>
+    </div>
+    {% if sistema.disco and sistema.disco.pct is not none %}
+    <div class="fila">
+        <span class="et">Disco</span>
+        <span class="val">{{ sistema.disco.usado_gb }} / {{ sistema.disco.total_gb }} GB ({{ sistema.disco.pct }}%)</span>
+    </div>
+    <div class="medidor"><span style="width: {{ sistema.disco.pct }}%"></span></div>
+    {% endif %}
+</div>

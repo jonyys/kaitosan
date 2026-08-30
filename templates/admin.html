@@ -8,11 +8,16 @@
 </head>
 <body>
 
-<h1 style="display:flex; justify-content:space-between; align-items:center">
+<h1 style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap">
     <span>🤖 Kaito — Panel de Control</span>
-    <a href="/admin/logout">
-        <button class="btn btn-red" style="font-size:13px">🔒 Cerrar sesión</button>
-    </a>
+    <span style="display:flex; gap:8px; flex-wrap:wrap">
+        <a href="/admin/ajustes">
+            <button class="btn btn-yellow" style="font-size:13px">⚙️ Ajustes</button>
+        </a>
+        <a href="/admin/logout">
+            <button class="btn btn-red" style="font-size:13px">🔒 Cerrar sesión</button>
+        </a>
+    </span>
 </h1>
 
 {% with messages = get_flashed_messages(with_categories=true) %}

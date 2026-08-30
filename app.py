@@ -13,6 +13,7 @@ from core.button import PowerButton
 from core.config import FLASK_SECRET_KEY
 from werkzeug.security import check_password_hash
 from core.settings_store import settings_get
+from core import system_settings
 from flask import flash, redirect, url_for, session, request
 from functools import wraps
 from datetime import timedelta, date
@@ -419,6 +420,21 @@ def admin():
                             lista_recordatorios=lista_recordatorios,
                             uso_tokens=tokens,
                             uso_audio=audio)
+
+@app.route("/admin/ajustes")
+@login_requerido
+def ajustes():
+    # Fase 5: página + ruta GET. Solo lecturas de la capa de sistema (Fase 3);
+    # en el portátil salen los datos simulados. Escrituras y WiFi/BT/modelos/
+    # mantenimiento llegan en fases posteriores (§9).
+    return render_template(
+        "ajustes.html",
+        hora=system_settings.hora_estado(),
+        volumen=system_settings.volumen_get(),
+        brillo=system_settings.brillo_get(),
+        sistema=system_settings.sistema_info(),
+        admin_user=settings_get("admin_user"),
+    )
 
 @app.route("/admin/perfil/añadir", methods=["POST"])
 @login_requerido
