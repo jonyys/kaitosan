@@ -1102,8 +1102,10 @@ if __name__ == "__main__":
         # allow_unsafe_werkzeug: bajo systemd no hay TTY y Flask-SocketIO se niega
         # a usar el servidor Werkzeug sin este flag (a mano sí arranca). Kaito es
         # un aparato de un solo usuario en la LAN, el server de Werkzeug basta.
-        socketio.run(app, host="0.0.0.0", port=5000, debug=False,
-                     allow_unsafe_werkzeug=True)
+        # FLASK_DEBUG controla el modo debug del servidor (por defecto activado).
+        _debug = os.getenv("FLASK_DEBUG", "true").strip().lower() in ("1", "true", "yes", "on")
+        socketio.run(app, host="0.0.0.0", port=5000, debug=_debug,
+                     use_reloader=False, allow_unsafe_werkzeug=True)
     except (KeyboardInterrupt, SystemExit):
         pass
     finally:

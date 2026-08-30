@@ -22,7 +22,17 @@ def buscar_microfono():
         for i, d in devs:
             if d["max_input_channels"] > 0 and h.lower() in d["name"].lower():
                 return i
-    raise RuntimeError(f"No se encontró micrófono ({' ni '.join(hints)})")
+    # PortAudio a veces no expone las tarjetas de captura por nombre (solo
+    # 'default'/'sysdefault', que /etc/asound.conf enruta al micro correcto).
+    # Antes de rendirse, prueba con 'default' y, si no, deja que sounddevice
+    # use su dispositivo de entrada por defecto.
+    for i, d in devs:
+        if d["max_input_channels"] > 0 and d["name"].lower() in ("default", "sysdefault"):
+            print(f"⚠️ Micrófono '{' / '.join(hints)}' no encontrado por nombre; "
+                  f"usando '{d['name']}'")
+            return i
+    print(f"⚠️ Micrófono '{' / '.join(hints)}' no encontrado; usando el de por defecto")
+    return None
 
 class Recorder:
     def __init__(self, device=None, sample_rate=SAMPLE_RATE_DEVICE):

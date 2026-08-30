@@ -21,5 +21,18 @@ Restart=on-failure
 KillSignal=SIGTERM
 TimeoutStopSec=20
 
+# --- Límites de CPU / temperatura (Pi 4 con disipador pasivo) ---
+# Un solo hilo para las librerías nativas (ONNX Runtime, OpenBLAS, OpenCV):
+# evita que cada inferencia del wakeword y cada frame de detección se repartan
+# entre los 4 núcleos y disparen la temperatura.
+Environment=OMP_NUM_THREADS=1
+Environment=OPENBLAS_NUM_THREADS=1
+Environment=OPENCV_FOR_THREADS_NUM=1
+# Tope duro: como mucho ~2 núcleos de los 4. Deja siempre 2 libres para el
+# kiosco (Chromium) y el sistema, y corta de raíz el escenario "314% clavado".
+CPUQuota=200%
+# Menos prioridad que el resto para que, si compite, ceda antes.
+Nice=5
+
 [Install]
 WantedBy=multi-user.target
