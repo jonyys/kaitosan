@@ -6,30 +6,32 @@
     <title>Panel Japonés — Kaitosan</title>
     {% include 'partials/admin/_estilos.html' %}
     <style>
+        /* Paleta pastel de Kaito (§13): tokens en partials/admin/_estilos.html */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 14px;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
             margin-bottom: 20px;
         }
         .stat-card {
-            background: #111;
-            border: 1px solid #222;
-            border-radius: 12px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radio-sm);
+            box-shadow: var(--sombra-sm);
             padding: 18px;
             text-align: center;
         }
         .stat-number {
-            font-size: 34px;
+            font-size: clamp(26px, 7vw, 34px);
             font-weight: 700;
-            color: #0096ff;
+            color: var(--rosa-tinta);
             display: block;
         }
-        .stat-due { color: #ffaa00; }
-        .stat-ok  { color: #00cc44; }
+        .stat-due { color: var(--aviso-tinta); }
+        .stat-ok  { color: var(--ok-tinta); }
         .stat-label {
             font-size: 11px;
-            color: #555;
+            color: var(--text-soft);
             margin-top: 5px;
         }
         .progress-row {
@@ -38,50 +40,53 @@
             gap: 10px;
             margin-bottom: 8px;
         }
-        .progress-label { font-size: 12px; color: #888; width: 80px; }
-        .progress-count { font-size: 12px; color: #888; width: 28px; text-align: right; }
+        .progress-label { font-size: 12px; color: var(--text-soft); width: 80px; }
+        .progress-count { font-size: 12px; color: var(--text-soft); width: 28px; text-align: right; }
         .progress-bar-bg {
             flex: 1;
-            background: #1a1a1a;
+            background: var(--bg-alt);
             border-radius: 5px;
             height: 7px;
             overflow: hidden;
         }
-        .progress-bar-fill { height: 100%; border-radius: 5px; }
+        .progress-bar-fill { height: 100%; border-radius: 5px; background: var(--rosa-medio); }
         .section-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
             margin-bottom: 14px;
         }
         .section-header h2 { margin-bottom: 0; border: none; }
         .nav-back {
             display: inline-block;
-            color: #555;
+            color: var(--text-soft);
             text-decoration: none;
-            font-size: 13px;
+            font-size: 14px;
             margin-bottom: 18px;
         }
-        .nav-back:hover { color: #0096ff; }
+        .nav-back:hover { color: var(--rosa-accion); }
         .summary-box {
-            background: #1a1a1a;
-            border-radius: 8px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radio-sm);
             padding: 12px 14px;
-            color: #aaa;
+            color: var(--text);
             font-size: 13px;
             line-height: 1.7;
             white-space: pre-wrap;
         }
         .due-badge {
-            background: #2a1a00;
-            color: #ffaa00;
-            border-radius: 10px;
+            background: var(--aviso-bg);
+            color: var(--aviso-tinta);
+            border-radius: var(--radio-pill);
             font-size: 10px;
-            padding: 1px 6px;
-            font-weight: 600;
+            padding: 1px 7px;
+            font-weight: 700;
         }
-        @media (max-width: 768px) {
-            .stats-grid { grid-template-columns: 1fr 1fr; }
+        @media (min-width: 640px) {
+            .stats-grid { grid-template-columns: repeat(4, 1fr); gap: 14px; }
         }
     </style>
 </head>
@@ -128,21 +133,21 @@
     <div class="progress-row">
         <span class="progress-label">Aprendiendo</span>
         <div class="progress-bar-bg">
-            <div class="progress-bar-fill" style="width:{{ (n_learning / total_vocab * 100)|round }}%; background:#44cc44;"></div>
+            <div class="progress-bar-fill" style="width:{{ (n_learning / total_vocab * 100)|round }}%; background:var(--rosa);"></div>
         </div>
         <span class="progress-count">{{ n_learning }}</span>
     </div>
     <div class="progress-row">
         <span class="progress-label">Aprendida</span>
         <div class="progress-bar-bg">
-            <div class="progress-bar-fill" style="width:{{ (n_learned / total_vocab * 100)|round }}%; background:#0096ff;"></div>
+            <div class="progress-bar-fill" style="width:{{ (n_learned / total_vocab * 100)|round }}%; background:var(--rosa-medio);"></div>
         </div>
         <span class="progress-count">{{ n_learned }}</span>
     </div>
     <div class="progress-row">
         <span class="progress-label">Dominada</span>
         <div class="progress-bar-bg">
-            <div class="progress-bar-fill" style="width:{{ (n_mastered / total_vocab * 100)|round }}%; background:#ffaa00;"></div>
+            <div class="progress-bar-fill" style="width:{{ (n_mastered / total_vocab * 100)|round }}%; background:var(--rosa-accion);"></div>
         </div>
         <span class="progress-count">{{ n_mastered }}</span>
     </div>
@@ -265,7 +270,7 @@
             <td>
                 <div style="display:flex;align-items:center;gap:6px;">
                     <div class="progress-bar-bg" style="width:60px;flex:none;">
-                        <div class="progress-bar-fill" style="width:{{ (g.mastery or 0)|round }}%;background:#0096ff;"></div>
+                        <div class="progress-bar-fill" style="width:{{ (g.mastery or 0)|round }}%;background:var(--rosa-medio);"></div>
                     </div>
                     <span style="font-size:11px;color:#666;">{{ (g.mastery or 0)|round }}%</span>
                 </div>
@@ -327,7 +332,7 @@
         <tr>
             <td style="color:#555;">#{{ s.id }}</td>
             <td>{{ s.started_at }}</td>
-            <td>{{ s.ended_at or '<span style="color:#44cc44;">Activa</span>' }}</td>
+            <td>{{ s.ended_at or '<span style="color:var(--ok-tinta);font-weight:700;">Activa</span>' }}</td>
             <td>{{ s.words_learned or 0 }}</td>
             <td style="color:#888;">{{ s.grammar_practiced or '—' }}</td>
             <td style="font-size:12px;color:#888;max-width:320px;">

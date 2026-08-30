@@ -8,17 +8,17 @@
 
     {# Stats row #}
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">
-        <div style="background:#1a1a1a;border-radius:8px;padding:14px;text-align:center;">
-            <div style="font-size:26px;font-weight:700;color:#0096ff;">{{ jap_vocab|length }}</div>
-            <div style="font-size:11px;color:#555;margin-top:4px;">palabras</div>
+        <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radio-sm);padding:14px;text-align:center;">
+            <div style="font-size:26px;font-weight:700;color:var(--rosa-tinta);">{{ jap_vocab|length }}</div>
+            <div style="font-size:11px;color:var(--text-soft);margin-top:4px;">palabras</div>
         </div>
-        <div style="background:#1a1a1a;border-radius:8px;padding:14px;text-align:center;">
-            <div style="font-size:26px;font-weight:700;color:#888;">{{ jap_grammar|length }}</div>
-            <div style="font-size:11px;color:#555;margin-top:4px;">gramática</div>
+        <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radio-sm);padding:14px;text-align:center;">
+            <div style="font-size:26px;font-weight:700;color:var(--text);">{{ jap_grammar|length }}</div>
+            <div style="font-size:11px;color:var(--text-soft);margin-top:4px;">gramática</div>
         </div>
-        <div style="background:#1a1a1a;border-radius:8px;padding:14px;text-align:center;">
-            <div style="font-size:26px;font-weight:700;color:#00cc44;">{{ jap_sessions|length }}</div>
-            <div style="font-size:11px;color:#555;margin-top:4px;">sesiones</div>
+        <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radio-sm);padding:14px;text-align:center;">
+            <div style="font-size:26px;font-weight:700;color:var(--ok-tinta);">{{ jap_sessions|length }}</div>
+            <div style="font-size:11px;color:var(--text-soft);margin-top:4px;">sesiones</div>
         </div>
     </div>
 
@@ -27,10 +27,10 @@
     {% set n_learning = jap_vocab | selectattr('status', 'equalto', 'learning') | list | length %}
     {% set n_learned  = jap_vocab | selectattr('status', 'equalto', 'learned')  | list | length %}
     {% set n_mastered = jap_vocab | selectattr('status', 'equalto', 'mastered') | list | length %}
-    <div style="margin-bottom:16px;font-size:12px;color:#666;">
-        <span style="color:#44cc44;">● {{ n_learning }} aprendiendo</span> &nbsp;
-        <span style="color:#0096ff;">● {{ n_learned }} aprendida</span> &nbsp;
-        <span style="color:#ffaa00;">● {{ n_mastered }} dominada</span>
+    <div style="margin-bottom:16px;font-size:12px;color:var(--text-soft);">
+        <span style="color:var(--ok-tinta);">● {{ n_learning }} aprendiendo</span> &nbsp;
+        <span style="color:var(--rosa-tinta);">● {{ n_learned }} aprendida</span> &nbsp;
+        <span style="color:var(--aviso-tinta);">● {{ n_mastered }} dominada</span>
     </div>
     {% endif %}
 
@@ -38,8 +38,8 @@
     {% set sessions_con_resumen = jap_sessions | selectattr('summary') | list %}
     {% if sessions_con_resumen %}
     {% set ultima = sessions_con_resumen[0] %}
-    <div style="margin-bottom:6px;font-size:11px;color:#555;">Última sesión — {{ ultima.started_at }}</div>
-    <div style="background:#1a1a1a;border-radius:6px;padding:10px 12px;color:#999;font-size:13px;line-height:1.6;">
+    <div style="margin-bottom:6px;font-size:11px;color:var(--text-soft);">Última sesión — {{ ultima.started_at }}</div>
+    <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radio-sm);padding:10px 12px;color:var(--text);font-size:13px;line-height:1.6;">
         {{ ultima.summary[:250] }}{% if ultima.summary|length > 250 %}…{% endif %}
     </div>
     {% else %}

@@ -1,10 +1,8 @@
 <div class="card full">
     <h2>💬 Conversaciones</h2>
     <form method="GET" action="/admin" style="margin-bottom:15px">
-        <div style="display:flex; gap:8px; align-items:center">
-            <select name="sesion_id"
-                    style="background:#1a1a1a; border:1px solid #333;
-                           color:white; padding:8px; border-radius:6px">
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+            <select name="sesion_id" style="flex:1; min-width:180px; margin-bottom:0">
                 <option value="">Todas las sesiones</option>
                 {% for s in sesiones %}
                 <option value="{{ s.id }}" {% if sesion_filtro == s.id|string %}selected{% endif %}>

@@ -1,108 +1,240 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700&display=swap">
 <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-        background: #0a0a0a;
-        color: #fff;
-        font-family: 'Segoe UI', sans-serif;
-        padding: 20px;
+    /* ================================================================
+       Paleta pastel de Kaito — PLAN_AJUSTES §13
+       Tokens compartidos por el panel viejo, la página de Ajustes y la
+       UI de onboarding. Móvil primero (§13.3.A): diseñado a ~390px y
+       ampliado hacia arriba; el escritorio solo tiene que funcionar.
+       ================================================================ */
+    :root {
+        /* superficies */
+        --bg:            #fff5f8;
+        --bg-alt:        #ffeaf2;
+        --surface:       #ffffff;
+        --surface-2:     #fff0f5;
+        --border:        #f6d4e2;
+        --border-fuerte: #efb9d0;
+
+        /* texto (nada de negro puro) */
+        --text:          #5b3a4a;
+        --text-soft:     #8a6b7a;   /* §13.5: bajado de #9a7f8c para llegar a AA sobre blanco */
+        --text-faint:    #c8aeba;   /* solo placeholders / estado vacío decorativo */
+
+        /* rosas */
+        --rosa:          #f7b8d2;
+        --rosa-medio:    #f090b6;
+        --rosa-accion:   #d9568c;   /* anillo de foco, enlaces sobre claro */
+        --rosa-tinta:    #9d3564;   /* títulos y texto sobre rosa claro; botón primario */
+
+        /* acentos que combinan */
+        --lavanda:       #cdbdec;
+        --melocoton:     #ffd6be;
+        --menta:         #b7e6d1;
+
+        /* estados (…-tinta = variante con contraste AA para texto, §13.5) */
+        --ok:            #3fae86;   --ok-bg:      #e7f7f0;   --ok-tinta:      #1c7355;
+        --aviso:         #d98a2b;   --aviso-bg:   #fff4e2;   --aviso-tinta:   #9a5a11;
+        --peligro:       #c85a5a;   --peligro-bg: #fdecec;   --peligro-tinta: #a83232;
+
+        /* forma */
+        --radio:         18px;
+        --radio-sm:      12px;
+        --radio-pill:    999px;
+        --sombra:        0 8px 24px rgba(217, 86, 140, 0.15);
+        --sombra-sm:     0 2px 8px  rgba(217, 86, 140, 0.12);
+
+        /* toque (§13.3.A: áreas ≥ 48px) */
+        --toque:         48px;
+        --fuente: 'M PLUS Rounded 1c', 'Nunito', 'Segoe UI', system-ui, sans-serif;
     }
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { -webkit-text-size-adjust: 100%; }
+
+    body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--fuente);
+        font-size: 16px;                 /* base ≥ 16px: iOS no hace zoom al enfocar inputs */
+        line-height: 1.6;
+        padding: clamp(14px, 4vw, 28px);
+        touch-action: manipulation;      /* mata el zoom por doble toque (§13.3.B) */
+    }
+
+    /* ---- Títulos ---- */
     h1 {
-        color: #0096ff;
-        margin-bottom: 30px;
-        font-size: 24px;
+        color: var(--rosa-tinta);
+        font-weight: 700;
+        font-size: clamp(20px, 5vw, 26px);
+        margin-bottom: clamp(18px, 5vw, 30px);
         display: flex;
         align-items: center;
         gap: 10px;
     }
     h2 {
-        color: #0096ff;
+        color: var(--rosa-tinta);
+        font-weight: 700;
+        font-size: clamp(16px, 4vw, 19px);
         margin-bottom: 15px;
-        font-size: 18px;
-        border-bottom: 1px solid #222;
+        border-bottom: 1px solid var(--border);
         padding-bottom: 8px;
     }
+    a { color: var(--rosa-accion); }
+
+    /* ---- Rejilla: una columna en móvil, dos solo en pantallas anchas ---- */
     .grid {
         display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 20px;
+        grid-template-columns: 1fr;
+        gap: 16px;
         margin-bottom: 20px;
     }
     .card {
-        background: #111;
-        border: 1px solid #222;
-        border-radius: 12px;
-        padding: 20px;
+        background: var(--surface);
+        border: 1px solid var(--border);   /* visible, no solo sombra (§13.4) */
+        border-radius: var(--radio);
+        box-shadow: var(--sombra);
+        padding: clamp(16px, 4vw, 24px);
+        overflow-x: auto;                  /* tablas anchas hacen scroll dentro, no rompen la página */
     }
-    .card.full { grid-column: 1 / -1; }
+    @media (min-width: 640px) {
+        .grid { grid-template-columns: 1fr 1fr; gap: 20px; }
+        .card.full { grid-column: 1 / -1; }
+    }
+
+    /* ---- Tablas (panel viejo). En Ajustes se usan "filas de ajuste", no tablas ---- */
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    @media (max-width: 639px) { table { min-width: 480px; } }
     th {
-        background: #1a1a2e;
-        color: #0096ff;
+        background: var(--bg-alt);
+        color: var(--rosa-tinta);
         padding: 10px;
         text-align: left;
-        font-weight: 600;
+        font-weight: 700;
     }
     td {
-        padding: 8px 10px;
-        border-bottom: 1px solid #1a1a1a;
+        padding: 9px 10px;
+        border-bottom: 1px solid var(--border);
         vertical-align: top;
         max-width: 400px;
         word-wrap: break-word;
     }
-    tr:hover td { background: #1a1a1a; }
-    .btn {
-        padding: 6px 14px;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 12px;
-        font-weight: 600;
-        transition: opacity 0.2s;
+    @media (hover: hover) {
+        tr:hover td { background: var(--surface-2); }
     }
-    .btn:hover { opacity: 0.8; }
-    .btn-red { background: #ff3333; color: white; }
-    .btn-blue { background: #0096ff; color: white; }
-    .btn-green { background: #00cc44; color: white; }
-    .btn-yellow { background: #ffaa00; color: black; }
-    input[type="text"], textarea {
-        background: #1a1a1a;
-        border: 1px solid #333;
-        border-radius: 6px;
-        color: white;
-        padding: 8px 12px;
-        font-size: 13px;
+
+    /* ---- Botones: pill grandes, feedback al tocar, sin depender de :hover ---- */
+    .btn {
+        min-height: var(--toque);
+        padding: 12px 18px;
+        border: none;
+        border-radius: var(--radio-pill);
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 15px;
+        font-weight: 700;
+        line-height: 1.2;
+        box-shadow: var(--sombra-sm);
+        transition: transform .08s ease, filter .15s ease;
+    }
+    .btn:active { transform: scale(.98); }
+    @media (hover: hover) {
+        .btn:hover { filter: brightness(1.03); transform: translateY(-1px); }
+    }
+
+    /* primario (btn-blue / btn-green): rosa-tinta sólido, blanco 700 → AA */
+    .btn-blue, .btn-green {
+        background: var(--rosa-tinta);
+        background-image: linear-gradient(135deg, rgba(255,255,255,.14), rgba(255,255,255,0));
+        color: #fff;
+    }
+    /* secundario */
+    .btn-yellow {
+        background: var(--surface-2);
+        color: var(--rosa-tinta);
+        border: 1px solid var(--border-fuerte);
+        box-shadow: none;
+    }
+    /* peligro: nunca rojo saturado; texto con contraste AA */
+    .btn-red {
+        background: var(--peligro-bg);
+        color: var(--peligro-tinta);
+        border: 1px solid var(--peligro);
+        box-shadow: none;
+    }
+
+    /* ---- Controles nativos (§13.3.A): time, number, range, select, color… ---- */
+    input, select, textarea, button { font-family: inherit; }
+    input[type="text"],
+    input[type="password"],
+    input[type="search"],
+    input[type="number"],
+    input[type="time"],
+    input[type="date"],
+    input[type="datetime-local"],
+    select,
+    textarea {
         width: 100%;
+        min-height: var(--toque);
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: var(--radio-sm);
+        color: var(--text);
+        padding: 10px 12px;
+        font-size: 16px;                  /* evita el zoom de iOS */
         margin-bottom: 8px;
     }
-    textarea { height: 80px; resize: vertical; }
-    .actions { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; }
+    textarea { min-height: 80px; resize: vertical; line-height: 1.5; }
+    input:focus, select:focus, textarea:focus {
+        outline: none;
+        border-color: var(--rosa-accion);
+        box-shadow: 0 0 0 3px rgba(217, 86, 140, .25);
+    }
+    input[type="range"] { accent-color: var(--rosa-accion); height: var(--toque); }
+    input[type="checkbox"], input[type="radio"] { accent-color: var(--rosa-accion); width: 22px; height: 22px; }
+    ::placeholder { color: var(--text-faint); }
+
+    /* ---- Utilidades ---- */
+    .actions { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
     .badge {
-        background: #1a1a2e;
-        color: #0096ff;
-        padding: 2px 8px;
-        border-radius: 10px;
+        background: var(--bg-alt);
+        color: var(--rosa-tinta);
+        padding: 3px 10px;
+        border-radius: var(--radio-pill);
         font-size: 11px;
-        font-weight: 600;
+        font-weight: 700;
     }
     .alert {
-        padding: 10px 15px;
-        border-radius: 8px;
+        padding: 11px 15px;
+        border-radius: var(--radio-sm);
         margin-bottom: 15px;
-        font-size: 13px;
+        font-size: 14px;
+        font-weight: 500;
     }
-    .alert-success { background: #0d3320; border: 1px solid #00cc44; color: #00cc44; }
-    .alert-error { background: #330d0d; border: 1px solid #ff3333; color: #ff3333; }
-    .empty { color: #444; font-style: italic; text-align: center; padding: 20px; }
+    .alert-success { background: var(--ok-bg);      border: 1px solid var(--ok);      color: var(--ok-tinta); }
+    .alert-error   { background: var(--peligro-bg); border: 1px solid var(--peligro); color: var(--peligro-tinta); }
+    .empty { color: var(--text-soft); font-style: italic; text-align: center; padding: 20px; }
+
+    /* ---- Fila de formulario: apilada en móvil, 3 columnas solo en ancho ---- */
     .form-row {
         display: grid;
-        grid-template-columns: 1fr 2fr auto;
+        grid-template-columns: 1fr;
         gap: 8px;
         align-items: start;
         margin-bottom: 8px;
     }
-    @media (max-width: 768px) {
-        .grid { grid-template-columns: 1fr; }
-        .card.full { grid-column: 1; }
-        .form-row { grid-template-columns: 1fr; }
+    @media (min-width: 640px) {
+        .form-row { grid-template-columns: 1fr 2fr auto; }
+    }
+
+    /* ---- Barra "Guardar" fija abajo en formularios largos (§13.3.A) ---- */
+    .guardar-fijo {
+        position: sticky;
+        bottom: 0;
+        background: linear-gradient(to top, var(--bg) 70%, transparent);
+        padding: 12px 0 4px;
+        margin-top: 8px;
     }
 </style>
