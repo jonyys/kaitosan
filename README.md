@@ -48,6 +48,21 @@ Cómo desarrollar localmente
   python app.py
   ```
 
+Instalar en la Raspberry Pi (Ajustes de la Pi)
+- El panel de Ajustes (`/admin/ajustes`) controla WiFi, Bluetooth, hora, audio,
+  brillo, modelos de IA y mantenimiento desde el móvil (`http://kaitosan.local:5000`).
+- Requisitos: Raspberry Pi OS **Bookworm** (NetworkManager por defecto).
+- Puesta a punto de una pasada, sobre un checkout del repo en la Pi:
+  ```bash
+  sudo deploy/install.sh            # unidades systemd, permisos polkit/udev/sudoers,
+                                    # hostname kaitosan.local, grupos, venv
+  sudo deploy/install.sh --kiosk    # + autostart de Chromium en la pantalla del robot
+  sudo deploy/install.sh --wifi-connect  # + binario balena-wifi-connect (onboarding WiFi)
+  ```
+- Onboarding WiFi: si la Pi se queda sin conexión, levanta sola la red
+  `Kaitosan-Setup` (`onboarding/ui/`, servida por `balena-wifi-connect`) para
+  elegir red desde el móvil. Ver `PLAN_AJUSTES.md` §3 y `deploy/`.
+
 Pruebas
 - Ejecutar todas las pruebas con `pytest`:
   ```bash

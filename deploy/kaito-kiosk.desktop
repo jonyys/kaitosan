@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Kaito Kiosk
+Comment=Abre el panel de Kaito a pantalla completa en la pantalla del robot (PLAN_AJUSTES §8.3)
+Exec=/usr/local/bin/kaito-kiosk.sh
+Terminal=false
+X-GNOME-Autostart-enabled=true
