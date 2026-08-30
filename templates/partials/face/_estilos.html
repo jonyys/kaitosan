@@ -81,6 +81,7 @@
 
   /* CEJAS */
   .eyebrows {
+    position: relative;
     display: flex;
     justify-content: center;
     gap: 170px; /* un poco más juntas */
@@ -562,9 +563,54 @@
 
   /* THINKING */
   .thinking {
-    animation:
-      thinkingEnter 0.45s ease forwards,
-      thinkingHead 5s ease-in-out 0.45s infinite;
+    animation: thinkingEnter 0.45s ease forwards;
+  }
+
+  /* Puntos suspensivos encima de la cabeza mientras piensa */
+  .thinking-dots {
+    position: absolute;
+    bottom: calc(100% + 24px);
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 24px;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .thinking-dots span {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #b6f2e6, #2f7f8f 70%);
+    box-shadow: 0 0 18px rgba(120, 230, 255, 0.55);
+    opacity: 0.2;
+  }
+  .thinking .thinking-dots {
+    opacity: 1;
+    visibility: visible;
+  }
+  .thinking .thinking-dots span {
+    animation: thinkingDot 1.4s ease-in-out infinite;
+  }
+  .thinking .thinking-dots span:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+  .thinking .thinking-dots span:nth-child(3) {
+    animation-delay: 0.4s;
+  }
+  @keyframes thinkingDot {
+    0%,
+    60%,
+    100% {
+      opacity: 0.2;
+      transform: translateY(0) scale(0.85);
+    }
+    30% {
+      opacity: 1;
+      transform: translateY(-8px) scale(1);
+    }
   }
 
   .thinking .eye-left {
@@ -616,21 +662,6 @@
 
   .thinking .mouth {
     animation: thinkingMouth 3.8s ease-in-out infinite;
-  }
-  @keyframes thinkingHead {
-    0%,
-    100% {
-      transform: rotate(-0.8deg);
-    }
-    25% {
-      transform: rotate(0.6deg);
-    }
-    50% {
-      transform: rotate(1deg);
-    }
-    75% {
-      transform: rotate(-0.5deg);
-    }
   }
   @keyframes thinkingEyeLeft {
     0%,
