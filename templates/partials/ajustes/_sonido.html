@@ -5,4 +5,16 @@
         <span class="val">{{ volumen }}%</span>
     </div>
     <div class="medidor"><span style="width: {{ volumen }}%"></span></div>
+
+    <form method="POST" action="/admin/ajustes/volumen" style="margin-top:14px">
+        <label class="et" for="vol">Ajustar volumen</label>
+        <input type="range" id="vol" name="volumen" min="0" max="100" step="5"
+               value="{{ volumen }}"
+               oninput="document.getElementById('vol-val').textContent = this.value + '%'">
+        <div class="fila">
+            <span class="et">Nuevo valor</span>
+            <span class="val" id="vol-val">{{ volumen }}%</span>
+        </div>
+        <button class="btn btn-green">Guardar volumen</button>
+    </form>
 </div>

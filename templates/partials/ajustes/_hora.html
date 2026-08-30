@@ -16,4 +16,35 @@
         <span class="et">Zona automática por ubicación</span>
         <span class="val">{{ '✅ activada' if hora.tz_auto else '❌ desactivada' }}</span>
     </div>
+
+    <h2 style="margin-top:20px">Cambiar hora</h2>
+    <form method="POST" action="/admin/ajustes/hora">
+        <label class="et" for="hora-modo">Modo</label>
+        <select id="hora-modo" name="modo">
+            <option value="ntp" {{ 'selected' if hora.ntp }}>Automática (NTP)</option>
+            <option value="manual" {{ 'selected' if not hora.ntp }}>Manual</option>
+        </select>
+        <label class="et" for="hora-dt">Fecha y hora (solo en modo manual)</label>
+        <input type="datetime-local" id="hora-dt" name="datetime"
+               value="{{ (hora.hora or '')[:16] }}">
+        <button class="btn btn-green">Guardar hora</button>
+    </form>
+
+    <h2 style="margin-top:20px">Cambiar zona horaria</h2>
+    <form method="POST" action="/admin/ajustes/zona">
+        <label class="et" style="display:flex; align-items:center; gap:10px;">
+            <input type="checkbox" name="auto" value="1" {{ 'checked' if hora.tz_auto }}>
+            Detectar por ubicación
+        </label>
+        <p class="empty" style="text-align:left; font-style:normal; padding:4px 0 8px">
+            Al activarlo se hace 1 consulta a un servicio de geolocalización por IP.
+        </p>
+        <label class="et" for="zona-tz">O elige una zona</label>
+        <select id="zona-tz" name="tz">
+            {% for z in zonas %}
+            <option value="{{ z }}" {{ 'selected' if z == hora.zona }}>{{ z }}</option>
+            {% endfor %}
+        </select>
+        <button class="btn btn-green">Guardar zona</button>
+    </form>
 </div>

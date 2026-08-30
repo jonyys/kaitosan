@@ -16,8 +16,15 @@ Fase 3: solo las funciones de **lectura**.
     brillo_get()    -> {soportado, valor, max}
     sistema_info()  -> {hostname, modelo, uptime, temperatura, disco}
 
-Las escrituras (hora/zona/volumen/brillo…), WiFi como API JSON, Bluetooth,
-audio, modelos y mantenimiento llegan en fases posteriores.
+Fase 6: escrituras **estáticas** (hora, zona, volumen, brillo). Cada una valida
+la entrada, devuelve `{"ok": bool, ...}` o `{"ok": False, "error": "..."}` y en
+modo simulado no toca nada del sistema real.
+    hora_set_ntp(on)      hora_set_manual(iso)
+    zona_listar()         zona_set(tz)          zona_auto(on)
+    volumen_set(pct)      brillo_set(pct)
+
+WiFi como API JSON, Bluetooth, audio, modelos y mantenimiento llegan en fases
+posteriores.
 """
 
 import glob
@@ -29,7 +36,7 @@ import socket
 import subprocess
 from datetime import datetime
 
-from core.settings_store import settings_get
+from core.settings_store import settings_get, settings_set
 
 _BOOL_TRUE = ("1", "true", "yes", "si", "sí", "on")
 
@@ -121,6 +128,22 @@ def _tz_auto() -> bool:
     return settings_get("tz_auto") == "1"
 
 
+def _clamp_pct(valor) -> int | None:
+    """Normaliza un porcentaje a un entero 0..100; None si no es un número."""
+    try:
+        n = int(round(float(valor)))
+    except (TypeError, ValueError):
+        return None
+    return max(0, min(100, n))
+
+
+# Formato aceptado para la hora manual: 'YYYY-MM-DD HH:MM[:SS]' (o con 'T').
+_RE_FECHA = re.compile(r"^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2})?$")
+
+# Cache por proceso de `timedatectl list-timezones` (lista larga y estable).
+_ZONAS_CACHE: "list[str] | None" = None
+
+
 # --------------------------------------------------------------------------- #
 # WiFi
 # --------------------------------------------------------------------------- #
@@ -195,6 +218,80 @@ def hora_estado() -> dict:
     }
 
 
+def hora_set_ntp(on: bool) -> dict:
+    """Activa/desactiva la sincronización horaria automática (NTP)."""
+    if _simulado():
+        return {"ok": True, "simulado": True}
+    if _cmd(["timedatectl", "set-ntp", "true" if on else "false"]) is None:
+        return {"ok": False, "error": "no se pudo cambiar la hora automática"}
+    return {"ok": True}
+
+
+def hora_set_manual(iso: str) -> dict:
+    """Fija la hora del sistema. Requiere NTP apagado (se apaga antes)."""
+    crudo = (iso or "").strip()
+    if not _RE_FECHA.match(crudo):
+        return {"ok": False, "error": "formato de fecha no válido (YYYY-MM-DD HH:MM)"}
+    texto = crudo.replace("T", " ")
+    if len(texto) == 16:                       # sin segundos -> añadir ':00'
+        texto += ":00"
+    if _simulado():
+        return {"ok": True, "simulado": True}
+    _cmd(["timedatectl", "set-ntp", "false"])  # set-time falla si NTP está activo
+    if _cmd(["timedatectl", "set-time", texto]) is None:
+        return {"ok": False, "error": "no se pudo fijar la hora"}
+    return {"ok": True}
+
+
+def zona_listar() -> list:
+    """Lista de zonas horarias para el desplegable (y lista blanca de validación)."""
+    global _ZONAS_CACHE
+    if _ZONAS_CACHE is not None:
+        return _ZONAS_CACHE
+    if _simulado():
+        _ZONAS_CACHE = [
+            "Europe/Madrid", "Atlantic/Canary", "Europe/London", "Europe/Lisbon",
+            "Europe/Paris", "Europe/Berlin", "Europe/Rome", "America/New_York",
+            "America/Chicago", "America/Denver", "America/Los_Angeles",
+            "America/Mexico_City", "America/Bogota", "America/Lima",
+            "America/Argentina/Buenos_Aires", "America/Sao_Paulo",
+            "Asia/Tokyo", "Asia/Shanghai", "Asia/Kolkata", "Australia/Sydney",
+            "UTC",
+        ]
+        return _ZONAS_CACHE
+    zonas = [ln.strip() for ln in (_cmd(["timedatectl", "list-timezones"]) or "").splitlines() if ln.strip()]
+    if zonas:
+        _ZONAS_CACHE = zonas
+    return zonas
+
+
+def zona_set(tz: str) -> dict:
+    """Fija la zona horaria manual (validada contra `zona_listar()`)."""
+    tz = (tz or "").strip()
+    if not tz or tz not in zona_listar():
+        return {"ok": False, "error": "zona horaria desconocida"}
+    if _simulado():
+        return {"ok": True, "simulado": True}
+    if _cmd(["timedatectl", "set-timezone", tz]) is None:
+        return {"ok": False, "error": "no se pudo fijar la zona horaria"}
+    return {"ok": True}
+
+
+def zona_auto(on: bool) -> dict:
+    """on -> `tzupdate` (geolocaliza por IP). Guarda la preferencia en app_settings.
+
+    Ojo: con `on` se hace 1 petición saliente a un servicio de geolocalización.
+    """
+    settings_set("tz_auto", "1" if on else "0")
+    if not on:
+        return {"ok": True}
+    if _simulado():
+        return {"ok": True, "simulado": True}
+    if _cmd(["tzupdate"], timeout=30) is None:
+        return {"ok": False, "error": "tzupdate no está disponible o no hay red"}
+    return {"ok": True}
+
+
 # --------------------------------------------------------------------------- #
 # Sonido
 # --------------------------------------------------------------------------- #
@@ -218,6 +315,29 @@ def volumen_get() -> int:
     except Exception:  # noqa: BLE001
         pass
     return 50
+
+
+def volumen_set(pct) -> dict:
+    """Fija el volumen de la tarjeta de salida (0..100) con `amixer -M sset`."""
+    n = _clamp_pct(pct)
+    if n is None:
+        return {"ok": False, "error": "valor de volumen no válido"}
+    if _simulado():
+        return {"ok": True, "simulado": True, "valor": n}
+
+    forzado = os.getenv("AJUSTES_MIXER_CONTROL", "").strip()
+    controles = [forzado] if forzado else [
+        "Master", "PCM", "Speaker", "Playback", "Digital", "Headphone",
+    ]
+    try:
+        for control in controles:
+            if _cmd(["amixer", "-M", "sget", control]) is None:
+                continue
+            if _cmd(["amixer", "-M", "sset", control, f"{n}%"]) is not None:
+                return {"ok": True, "valor": n}
+    except Exception:  # noqa: BLE001
+        pass
+    return {"ok": False, "error": "no se encontró un control de volumen"}
 
 
 # --------------------------------------------------------------------------- #
@@ -245,6 +365,32 @@ def brillo_get() -> dict:
         return {"soportado": False, "valor": None, "max": None}
 
     return {"soportado": True, "valor": valor, "max": maximo}
+
+
+def brillo_set(pct) -> dict:
+    """Fija el brillo (0..100 %) escribiendo en `/sys/class/backlight/*/brightness`."""
+    n = _clamp_pct(pct)
+    if n is None:
+        return {"ok": False, "error": "valor de brillo no válido"}
+    if _simulado():
+        return {"ok": True, "simulado": True, "valor": n}
+
+    carpetas = sorted(glob.glob("/sys/class/backlight/*"))
+    if not carpetas:
+        return {"ok": False, "error": "no hay pantalla con brillo controlable"}
+    base = carpetas[0]
+    try:
+        maximo = int((_leer_archivo(os.path.join(base, "max_brightness")) or "").strip())
+    except ValueError:
+        return {"ok": False, "error": "no se pudo leer max_brightness"}
+
+    destino = max(1, round(maximo * n / 100))   # nunca 0 -> pantalla en negro
+    try:
+        with open(os.path.join(base, "brightness"), "w", encoding="utf-8") as f:
+            f.write(str(destino))
+    except OSError as e:
+        return {"ok": False, "error": f"no se pudo escribir el brillo: {e}"}
+    return {"ok": True, "valor": n}
 
 
 # --------------------------------------------------------------------------- #

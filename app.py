@@ -424,17 +424,71 @@ def admin():
 @app.route("/admin/ajustes")
 @login_requerido
 def ajustes():
-    # Fase 5: página + ruta GET. Solo lecturas de la capa de sistema (Fase 3);
-    # en el portátil salen los datos simulados. Escrituras y WiFi/BT/modelos/
-    # mantenimiento llegan en fases posteriores (§9).
+    # Fase 5: página + ruta GET (lecturas de la capa de sistema, Fase 3).
+    # Fase 6: escrituras estáticas (hora, zona, volumen, brillo) -> rutas POST
+    # más abajo. En el portátil todo son datos simulados y no se toca el sistema.
     return render_template(
         "ajustes.html",
         hora=system_settings.hora_estado(),
+        zonas=system_settings.zona_listar(),
         volumen=system_settings.volumen_get(),
         brillo=system_settings.brillo_get(),
         sistema=system_settings.sistema_info(),
         admin_user=settings_get("admin_user"),
     )
+
+
+def _flash_resultado(resultado, ok_msg):
+    """Traduce el `dict` de `system_settings` a un `flash()` (§7.2, bloque estático)."""
+    if resultado.get("ok"):
+        flash("✅ " + ok_msg, "success")
+    else:
+        flash("❌ " + resultado.get("error", "no se pudo completar la acción"), "error")
+
+
+@app.route("/admin/ajustes/hora", methods=["POST"])
+@login_requerido
+def ajustes_hora():
+    if request.form.get("modo") == "manual":
+        system_settings.hora_set_ntp(False)
+        fecha = request.form.get("datetime", "").strip()
+        if fecha:
+            _flash_resultado(system_settings.hora_set_manual(fecha), "Hora actualizada")
+        else:
+            flash("✅ Hora automática (NTP) desactivada", "success")
+    else:
+        _flash_resultado(system_settings.hora_set_ntp(True),
+                         "Hora automática (NTP) activada")
+    return redirect(url_for("ajustes"))
+
+
+@app.route("/admin/ajustes/zona", methods=["POST"])
+@login_requerido
+def ajustes_zona():
+    if request.form.get("auto"):
+        _flash_resultado(system_settings.zona_auto(True),
+                         "Zona horaria automática activada")
+    else:
+        system_settings.zona_auto(False)
+        _flash_resultado(system_settings.zona_set(request.form.get("tz", "")),
+                         "Zona horaria fijada")
+    return redirect(url_for("ajustes"))
+
+
+@app.route("/admin/ajustes/volumen", methods=["POST"])
+@login_requerido
+def ajustes_volumen():
+    _flash_resultado(system_settings.volumen_set(request.form.get("volumen", "")),
+                     "Volumen actualizado")
+    return redirect(url_for("ajustes"))
+
+
+@app.route("/admin/ajustes/brillo", methods=["POST"])
+@login_requerido
+def ajustes_brillo():
+    _flash_resultado(system_settings.brillo_set(request.form.get("brillo", "")),
+                     "Brillo actualizado")
+    return redirect(url_for("ajustes"))
 
 @app.route("/admin/perfil/añadir", methods=["POST"])
 @login_requerido

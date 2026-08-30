@@ -8,5 +8,17 @@
         <span class="val">{{ pct }}%</span>
     </div>
     <div class="medidor"><span style="width: {{ pct }}%"></span></div>
+
+    <form method="POST" action="/admin/ajustes/brillo" style="margin-top:14px">
+        <label class="et" for="bri">Ajustar brillo</label>
+        <input type="range" id="bri" name="brillo" min="10" max="100" step="5"
+               value="{{ pct }}"
+               oninput="document.getElementById('bri-val').textContent = this.value + '%'">
+        <div class="fila">
+            <span class="et">Nuevo valor</span>
+            <span class="val" id="bri-val">{{ pct }}%</span>
+        </div>
+        <button class="btn btn-green">Guardar brillo</button>
+    </form>
 </div>
 {% endif %}
