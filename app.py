@@ -433,6 +433,7 @@ def ajustes():
     return render_template(
         "ajustes.html",
         wifi=system_settings.wifi_estado(),
+        bt=system_settings.bt_estado(),
         hora=system_settings.hora_estado(),
         zonas=system_settings.zona_listar(),
         volumen=system_settings.volumen_get(),
@@ -593,6 +594,56 @@ def ajustes_wifi_olvidar():
 @login_requerido
 def ajustes_wifi_portal():
     return jsonify(system_settings.wifi_abrir_portal())
+
+
+# --- Bluetooth (Fase 14): mismo patrón que WiFi — API JSON + fetch (§7.2). El
+# escaneo y el emparejado son asíncronos, así que van por fetch, no form-POST. --- #
+
+@app.route("/admin/ajustes/bluetooth")
+@login_requerido
+def ajustes_bluetooth():
+    return jsonify({
+        "estado": system_settings.bt_estado(),
+        "emparejados": system_settings.bt_emparejados(),
+    })
+
+
+@app.route("/admin/ajustes/bluetooth/escanear")
+@login_requerido
+def ajustes_bluetooth_escanear():
+    try:
+        seg = int(request.args.get("seg", 10))
+    except ValueError:
+        seg = 10
+    return jsonify(system_settings.bt_escanear(seg))
+
+
+@app.route("/admin/ajustes/bluetooth/conectar", methods=["POST"])
+@login_requerido
+def ajustes_bluetooth_conectar():
+    datos = request.get_json(silent=True) or {}
+    return jsonify(system_settings.bt_conectar(datos.get("mac", "")))
+
+
+@app.route("/admin/ajustes/bluetooth/desconectar", methods=["POST"])
+@login_requerido
+def ajustes_bluetooth_desconectar():
+    datos = request.get_json(silent=True) or {}
+    return jsonify(system_settings.bt_desconectar(datos.get("mac", "")))
+
+
+@app.route("/admin/ajustes/bluetooth/olvidar", methods=["POST"])
+@login_requerido
+def ajustes_bluetooth_olvidar():
+    datos = request.get_json(silent=True) or {}
+    return jsonify(system_settings.bt_olvidar(datos.get("mac", "")))
+
+
+@app.route("/admin/ajustes/bluetooth/radio", methods=["POST"])
+@login_requerido
+def ajustes_bluetooth_radio():
+    datos = request.get_json(silent=True) or {}
+    return jsonify(system_settings.bt_radio(bool(datos.get("on"))))
 
 
 @app.route("/admin/ajustes/cuenta", methods=["POST"])

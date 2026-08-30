@@ -1,0 +1,15 @@
+// Deja que el usuario del servicio (kaitosan) gestione Bluetooth (BlueZ) sin
+// pedir contrasena: encender/apagar el adaptador, escanear, emparejar,
+// conectar, desconectar y olvidar dispositivos.
+// Instalar en /etc/polkit-1/rules.d/53-kaito-bluez.rules
+//
+// Con el grupo "bluetooth" y la config por defecto de BlueZ suele bastar sin
+// esta regla; anadirla solo si bluetoothctl responde "Authentication required"
+// (PLAN_AJUSTES §6.7). En Bullseye/polkit 0.105 usar .pkla.
+
+polkit.addRule(function(action, subject) {
+  if (action.id.indexOf("org.bluez.") === 0 &&
+      subject.user === "kaitosan") {
+    return polkit.Result.YES;
+  }
+});

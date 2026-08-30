@@ -63,7 +63,15 @@ vuelve al SSID anterior y, en último caso, deja que el portal
     wifi_estado()      wifi_escanear()      wifi_guardadas()
     wifi_conectar(ssid, psk)   wifi_olvidar(ssid)   wifi_abrir_portal()
 
-Bluetooth y onboarding llegan en fases posteriores.
+Fase 14: Bluetooth real en la Pi (§2.1, §5 nota Bluetooth, §6.7, §7.2 bloque
+Bluetooth). `bluetoothctl` en modo no interactivo (subcomandos, nunca
+`shell=True`). Mismo patrón que WiFi: API JSON + `fetch`. Al conectar un
+dispositivo de audio aparece como salida elegible en `audio_salidas()`; si se
+apaga o sale de rango, `audio_salida_preferida()` cae a la tarjeta local.
+    bt_estado()        bt_radio(on)         bt_escanear(seg=10)
+    bt_emparejados()   bt_conectar(mac)     bt_desconectar(mac)   bt_olvidar(mac)
+
+El onboarding WiFi (`balena-wifi-connect`) llega en una fase posterior.
 """
 
 import glob
@@ -633,11 +641,29 @@ def _resolver_indice(pref: str, entrada: bool):
 
 
 def audio_salidas() -> list:
-    """[{id, nombre, en_uso}] — tarjetas de salida elegibles."""
+    """[{id, nombre, en_uso, bt_mac?}] — tarjetas de salida + altavoces BT conectados.
+
+    Los altavoces Bluetooth conectados ahora mismo se añaden como salida
+    elegible (§5 nota Bluetooth). Llevan `bt_mac` para poder volver a la tarjeta
+    local si el dispositivo se apaga (ver `audio_salida_preferida()`).
+    """
     guardada = (settings_get("audio_output") or "").strip()
     if _simulado():
-        return [{**s, "en_uso": s["id"] == guardada} for s in _AUDIO_SALIDAS_FAKE]
-    return _audio_dispositivos_reales(entrada=False)
+        salidas = [{**s, "en_uso": s["id"] == guardada} for s in _AUDIO_SALIDAS_FAKE]
+        for d in _BT_ESTADO_FAKE["conectados"]:
+            if d["tipo"] == "audio":
+                salidas.append({"id": d["nombre"], "nombre": d["nombre"] + " (Bluetooth)",
+                                "en_uso": d["nombre"] == guardada, "bt_mac": d["mac"]})
+        return salidas
+
+    salidas = _audio_dispositivos_reales(entrada=False)
+    nombres = {s["id"].lower() for s in salidas}
+    for d in _bt_audio_conectados():
+        if d["nombre"].lower() not in nombres:
+            salidas.append({"id": d["nombre"], "nombre": d["nombre"] + " (Bluetooth)",
+                            "en_uso": bool(guardada) and guardada == d["nombre"],
+                            "bt_mac": d["mac"]})
+    return salidas
 
 
 def audio_entradas() -> list:
@@ -652,9 +678,14 @@ def audio_salida_set(valor) -> dict:
     """Guarda la salida elegida en `app_settings` (sustituye AUDIO_OUTPUT_HINT).
     Cadena vacía = volver a la autodetección del `.env`."""
     valor = (valor or "").strip()
-    if valor and valor not in {s["id"] for s in audio_salidas()}:
+    salidas = audio_salidas()
+    if valor and valor not in {s["id"] for s in salidas}:
         return {"ok": False, "error": "dispositivo de salida desconocido"}
     settings_set("audio_output", valor)
+    # Recuerda si la salida elegida es un altavoz Bluetooth, para poder caer a la
+    # tarjeta local cuando se apague / salga de rango (§5 nota Bluetooth).
+    bt_mac = next((s.get("bt_mac", "") for s in salidas if s["id"] == valor), "")
+    settings_set("audio_output_bt_mac", bt_mac or "")
     return {"ok": True, "valor": valor}
 
 
@@ -670,10 +701,16 @@ def audio_entrada_set(valor) -> dict:
 
 def audio_salida_preferida() -> str:
     """Subcadena para elegir el altavoz: preferencia guardada y, si está vacía,
-    `AUDIO_OUTPUT_HINT` del `.env` (que pasa a ser semilla / override de fábrica)."""
+    `AUDIO_OUTPUT_HINT` del `.env` (que pasa a ser semilla / override de fábrica).
+
+    Si la preferencia guardada es un altavoz Bluetooth que ahora mismo no está
+    conectado (apagado / fuera de rango), se ignora y se cae a la tarjeta local
+    (§5 nota Bluetooth, "fallback obligatorio")."""
     guardada = (settings_get("audio_output") or "").strip()
     if guardada:
-        return guardada
+        bt_mac = (settings_get("audio_output_bt_mac") or "").strip()
+        if not bt_mac or _bt_mac_conectado(bt_mac):
+            return guardada
     from core.config import AUDIO_OUTPUT_HINT
     return AUDIO_OUTPUT_HINT
 
@@ -760,6 +797,199 @@ def audio_probar_micro() -> dict:
     except Exception as e:  # noqa: BLE001
         return {"ok": False, "error": f"no se pudo probar el micrófono: {e}"}
     return {"ok": True}
+
+
+# --------------------------------------------------------------------------- #
+# Bluetooth (BlueZ / bluetoothctl) — Fase 14 (§2.1, §5 nota Bluetooth, §6.7)
+# --------------------------------------------------------------------------- #
+# `bluetoothctl` de Bookworm (bluez 5.66) acepta subcomandos no interactivos:
+#   show | power on|off | --timeout N scan on | devices [Paired|Connected]
+#   info <mac> | pair <mac> | trust <mac> | connect <mac> | disconnect <mac>
+#   remove <mac>
+# Siempre como lista de argumentos, nunca `shell=True` (§5).
+_RE_MAC = re.compile(r"^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$")
+
+_BT_ESTADO_FAKE = {
+    "adaptador_on": True,
+    "conectados": [
+        {"mac": "AA:BB:CC:11:22:33", "nombre": "Altavoz salón", "tipo": "audio"},
+    ],
+}
+_BT_ESCANEO_FAKE = [
+    {"mac": "AA:BB:CC:11:22:33", "nombre": "Altavoz salón", "tipo": "audio",
+     "emparejado": True,  "conectado": True,  "rssi": -47},
+    {"mac": "DE:AD:BE:EF:00:01", "nombre": "JBL Go 3", "tipo": "audio",
+     "emparejado": False, "conectado": False, "rssi": -63},
+    {"mac": "12:34:56:78:9A:BC", "nombre": "Mi Band 7", "tipo": "otro",
+     "emparejado": False, "conectado": False, "rssi": -71},
+]
+
+
+def _mac_valida(mac) -> bool:
+    return bool(_RE_MAC.match((mac or "").strip()))
+
+
+def _bt(args: list, timeout: int = 15):
+    """`bluetoothctl <args...>` -> stdout (str) o None."""
+    return _cmd(["bluetoothctl", *args], timeout=timeout)
+
+
+def _bt_tipo(info: str) -> str:
+    """Clasifica un dispositivo a partir de la salida de `bluetoothctl info`."""
+    txt = (info or "").lower()
+    if ("icon: audio" in txt or "audio sink" in txt or "a2dp" in txt
+            or "headset" in txt or "handsfree" in txt):
+        return "audio"
+    m = re.search(r"icon:\s*(\S+)", txt)
+    if m:
+        return {"input-mouse": "ratón", "input-keyboard": "teclado",
+                "phone": "teléfono", "computer": "ordenador"}.get(m.group(1), "otro")
+    return "otro"
+
+
+def _bt_parse_info(mac: str) -> dict:
+    """`bluetoothctl info <mac>` -> {mac, nombre, tipo, emparejado, conectado, rssi}."""
+    info = _bt(["info", mac], timeout=10) or ""
+    m = re.search(r"^\s*(?:Name|Alias):\s*(.+)$", info, re.MULTILINE)
+    nombre = m.group(1).strip() if m else mac
+    m = re.search(r"RSSI:\s*(-?\d+)", info)
+    rssi = int(m.group(1)) if m else None
+    return {
+        "mac": mac,
+        "nombre": nombre,
+        "tipo": _bt_tipo(info),
+        "emparejado": bool(re.search(r"Paired:\s*yes", info)),
+        "conectado": bool(re.search(r"Connected:\s*yes", info)),
+        "rssi": rssi,
+    }
+
+
+def _bt_listar(filtro: str = "") -> list:
+    """MACs conocidas por BlueZ. `filtro` opcional: 'Paired' o 'Connected'."""
+    salida = _bt(["devices", filtro] if filtro else ["devices"])
+    if salida is None and filtro:                 # bluez viejo sin filtro
+        salida = _bt(["devices"])
+    macs = []
+    for linea in (salida or "").splitlines():
+        m = re.match(r"Device\s+(\S+)", linea.strip())
+        if m and _mac_valida(m.group(1)):
+            macs.append(m.group(1))
+    return macs
+
+
+def bt_estado() -> dict:
+    """{adaptador_on: bool, conectados: [{mac, nombre, tipo}]}"""
+    if _simulado():
+        return json.loads(json.dumps(_BT_ESTADO_FAKE))     # copia defensiva
+
+    show = _bt(["show"]) or ""
+    adaptador_on = bool(re.search(r"Powered:\s*yes", show))
+    conectados = []
+    if adaptador_on:
+        for mac in _bt_listar("Connected"):
+            d = _bt_parse_info(mac)
+            if d["conectado"]:
+                conectados.append({"mac": d["mac"], "nombre": d["nombre"],
+                                   "tipo": d["tipo"]})
+    return {"adaptador_on": adaptador_on, "conectados": conectados}
+
+
+def bt_radio(on: bool) -> dict:
+    """Enciende / apaga el adaptador Bluetooth (`bluetoothctl power on|off`)."""
+    if _simulado():
+        return {"ok": True, "simulado": True}
+    if _bt(["power", "on" if on else "off"]) is None:
+        return {"ok": False, "error": "no se pudo cambiar el adaptador Bluetooth"}
+    return {"ok": True}
+
+
+def bt_escanear(seg: int = 10) -> list:
+    """Descubre dispositivos cercanos.
+
+    [{mac, nombre, tipo, emparejado, conectado, rssi}] ordenado por señal.
+    """
+    try:
+        seg = max(3, min(30, int(seg)))
+    except (TypeError, ValueError):
+        seg = 10
+    if _simulado():
+        return json.loads(json.dumps(_BT_ESCANEO_FAKE))
+
+    _bt(["--timeout", str(seg), "scan", "on"], timeout=seg + 12)
+    dispositivos = [_bt_parse_info(mac) for mac in dict.fromkeys(_bt_listar())]
+    dispositivos.sort(key=lambda d: (d["rssi"] is None, -(d["rssi"] or -999)))
+    return dispositivos
+
+
+def bt_emparejados() -> list:
+    """Dispositivos ya emparejados -> [{mac, nombre, tipo, emparejado, conectado, rssi}]."""
+    if _simulado():
+        return [d for d in json.loads(json.dumps(_BT_ESCANEO_FAKE)) if d["emparejado"]]
+    return [_bt_parse_info(mac) for mac in _bt_listar("Paired")]
+
+
+def bt_conectar(mac: str) -> dict:
+    """Empareja, marca como de confianza y conecta, en ese orden (§5)."""
+    if not _mac_valida(mac):
+        return {"ok": False, "error": "dirección Bluetooth no válida"}
+    mac = mac.strip()
+    if _simulado():
+        return {"ok": True, "simulado": True, "es_audio": True,
+                "mensaje": "En la Pi se emparejaría y conectaría el dispositivo."}
+
+    _bt(["pair", mac], timeout=30)                 # puede fallar si ya está emparejado
+    _bt(["trust", mac], timeout=10)
+    _bt(["connect", mac], timeout=30)
+
+    d = _bt_parse_info(mac)
+    if not d["conectado"]:
+        return {"ok": False, "error": "no se pudo conectar con el dispositivo"}
+    es_audio = d["tipo"] == "audio"
+    return {
+        "ok": True,
+        "es_audio": es_audio,
+        "mensaje": ("Conectado. Ya puedes elegirlo como altavoz en «Sonido»."
+                    if es_audio else "Dispositivo conectado."),
+    }
+
+
+def bt_desconectar(mac: str) -> dict:
+    """Desconecta un dispositivo sin borrar el emparejamiento."""
+    if not _mac_valida(mac):
+        return {"ok": False, "error": "dirección Bluetooth no válida"}
+    if _simulado():
+        return {"ok": True, "simulado": True}
+    if _bt(["disconnect", mac.strip()], timeout=20) is None:
+        return {"ok": False, "error": "no se pudo desconectar"}
+    return {"ok": True}
+
+
+def bt_olvidar(mac: str) -> dict:
+    """`bluetoothctl remove <mac>` — borra el emparejamiento."""
+    if not _mac_valida(mac):
+        return {"ok": False, "error": "dirección Bluetooth no válida"}
+    if _simulado():
+        return {"ok": True, "simulado": True}
+    if _bt(["remove", mac.strip()], timeout=15) is None:
+        return {"ok": False, "error": "no se pudo olvidar el dispositivo"}
+    return {"ok": True}
+
+
+def _bt_audio_conectados() -> list:
+    """[{mac, nombre, tipo}] de los dispositivos de audio BT conectados ahora."""
+    try:
+        return [d for d in bt_estado().get("conectados", []) if d["tipo"] == "audio"]
+    except Exception:  # noqa: BLE001 — la capa de sistema nunca propaga
+        return []
+
+
+def _bt_mac_conectado(mac: str) -> bool:
+    """True si `mac` está conectado ahora mismo (fallback de audio, §5)."""
+    if not _mac_valida(mac):
+        return False
+    if _simulado():
+        return any(d["mac"] == mac for d in _BT_ESTADO_FAKE["conectados"])
+    return bool(re.search(r"Connected:\s*yes", _bt(["info", mac.strip()], timeout=8) or ""))
 
 
 # --------------------------------------------------------------------------- #

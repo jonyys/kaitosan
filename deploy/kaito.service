@@ -14,7 +14,7 @@ Wants=network-online.target
 [Service]
 Type=simple
 User=kaitosan
-SupplementaryGroups=audio video
+SupplementaryGroups=audio video bluetooth
 WorkingDirectory=/home/kaitosan/robot
 ExecStart=/home/kaitosan/robot/venv/bin/python app.py
 Restart=on-failure

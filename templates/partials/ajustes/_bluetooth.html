@@ -1,0 +1,212 @@
+<div class="card full">
+    <h2>🔵 Bluetooth</h2>
+
+    {# Estado actual — server-rendered: se ve sin JS (p. ej. en la pantalla del robot) #}
+    <div class="fila">
+        <span class="et">Adaptador</span>
+        <span class="val" id="bt-radio-estado">
+            {% if bt and bt.adaptador_on %}✅ encendido{% else %}❌ apagado{% endif %}
+        </span>
+    </div>
+    <div class="fila">
+        <span class="et">Conectados</span>
+        <span class="val" id="bt-conectados">
+            {% if bt and bt.conectados %}{{ bt.conectados | map(attribute='nombre') | join(', ') }}{% else %}—{% endif %}
+        </span>
+    </div>
+
+    <p id="bt-msg" class="et" style="color:var(--text-soft); min-height:1.4em; margin:10px 0 0"></p>
+
+    <div class="actions" style="margin-top:12px">
+        <button type="button" class="btn btn-yellow" id="bt-radio-btn"></button>
+        <button type="button" class="btn btn-yellow" id="bt-scan-btn">🔍 Buscar dispositivos</button>
+    </div>
+    <div id="bt-lista"></div>
+
+    {# Dispositivos emparejados #}
+    <h2 style="margin-top:20px">Emparejados</h2>
+    <div id="bt-emparejados"><p class="empty">Cargando…</p></div>
+
+    <p class="et" style="color:var(--text-soft); margin:14px 0 0">
+        Un altavoz o auriculares Bluetooth, una vez conectados, aparecen como
+        salida elegible en <strong>🔊 Sonido</strong>. Si se apagan o se alejan,
+        Kaito vuelve solo a la tarjeta de audio local.
+    </p>
+</div>
+
+<style>
+    .bt-dev {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px 10px;
+        min-height: 56px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--border);
+    }
+    .bt-dev:last-child { border-bottom: 0; }
+    .bt-dev .nom { flex: 1 1 60%; font-weight: 500; word-break: break-word; }
+    .bt-dev .sig { flex: 0 0 auto; color: var(--text-soft); font-weight: 700; font-size: 12px; }
+    .bt-dev .btn { flex: 0 0 auto; min-height: 44px; padding: 8px 14px; font-size: 13px; }
+</style>
+
+<script>
+(function () {
+    var msg          = document.getElementById('bt-msg');
+    var lista        = document.getElementById('bt-lista');
+    var emparejadosBox = document.getElementById('bt-emparejados');
+    var radioBtn     = document.getElementById('bt-radio-btn');
+    var radioEstado  = document.getElementById('bt-radio-estado');
+    var conectadosEl = document.getElementById('bt-conectados');
+    var adaptadorOn  = {{ 'true' if (bt and bt.adaptador_on) else 'false' }};
+
+    var ICONO = { 'audio': '🔊', 'teléfono': '📱', 'ratón': '🖱️',
+                  'teclado': '⌨️', 'ordenador': '💻', 'otro': '📦' };
+
+    function tarjetaTipo(t) { return ICONO[t] || ICONO.otro; }
+
+    function pintarRadio() {
+        radioEstado.textContent = adaptadorOn ? '✅ encendido' : '❌ apagado';
+        radioBtn.textContent = adaptadorOn ? '📴 Apagar Bluetooth' : '📶 Encender Bluetooth';
+    }
+
+    function fila(dev, acciones) {
+        var row = document.createElement('div');
+        row.className = 'bt-dev';
+
+        var nom = document.createElement('span');
+        nom.className = 'nom';
+        nom.textContent = tarjetaTipo(dev.tipo) + ' ' + (dev.nombre || dev.mac)
+            + (dev.conectado ? '  ·  conectado' : (dev.emparejado ? '  ·  emparejado' : ''));
+        row.appendChild(nom);
+
+        if (dev.rssi != null) {
+            var sig = document.createElement('span');
+            sig.className = 'sig';
+            sig.textContent = dev.rssi + ' dBm';
+            row.appendChild(sig);
+        }
+
+        acciones.forEach(function (a) {
+            var b = document.createElement('button');
+            b.className = 'btn ' + a.clase;
+            b.textContent = a.texto;
+            b.onclick = function () { a.fn(b); };
+            row.appendChild(b);
+        });
+        return row;
+    }
+
+    function accion(url, mac, btn, txtOk) {
+        if (btn) btn.disabled = true;
+        msg.textContent = 'Un momento…';
+        fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mac: mac })
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                msg.textContent = (d.ok ? '✅ ' : '❌ ')
+                    + (d.mensaje || d.error || (d.ok ? txtOk : 'no se pudo completar'));
+                cargar();
+            })
+            .catch(function () { msg.textContent = '❌ error de red.'; })
+            .finally(function () { if (btn) btn.disabled = false; });
+    }
+
+    function conectar(mac, btn)     { accion('/admin/ajustes/bluetooth/conectar', mac, btn, 'conectado'); }
+    function desconectar(mac, btn)  { accion('/admin/ajustes/bluetooth/desconectar', mac, btn, 'desconectado'); }
+    function olvidar(mac, nombre, btn) {
+        if (!confirm('¿Olvidar «' + (nombre || mac) + '»?')) return;
+        accion('/admin/ajustes/bluetooth/olvidar', mac, btn, 'olvidado');
+    }
+
+    function pintarEmparejados(devs) {
+        emparejadosBox.innerHTML = '';
+        if (!devs || !devs.length) {
+            emparejadosBox.innerHTML = '<p class="empty">No hay dispositivos emparejados.</p>';
+            return;
+        }
+        devs.forEach(function (dev) {
+            var acciones = dev.conectado
+                ? [{ clase: 'btn-yellow', texto: 'Desconectar',
+                     fn: function (b) { desconectar(dev.mac, b); } }]
+                : [{ clase: 'btn-green', texto: 'Conectar',
+                     fn: function (b) { conectar(dev.mac, b); } }];
+            acciones.push({ clase: 'btn-red', texto: 'Olvidar',
+                            fn: function (b) { olvidar(dev.mac, dev.nombre, b); } });
+            emparejadosBox.appendChild(fila(dev, acciones));
+        });
+    }
+
+    function cargar() {
+        fetch('/admin/ajustes/bluetooth')
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                var e = d.estado || {};
+                adaptadorOn = !!e.adaptador_on;
+                pintarRadio();
+                conectadosEl.textContent =
+                    (e.conectados && e.conectados.length)
+                        ? e.conectados.map(function (c) { return c.nombre; }).join(', ')
+                        : '—';
+                pintarEmparejados(d.emparejados);
+            })
+            .catch(function () {
+                emparejadosBox.innerHTML =
+                    '<p class="empty">No se pudo cargar el estado del Bluetooth.</p>';
+            });
+    }
+
+    function escanear(btn) {
+        btn.disabled = true;
+        msg.textContent = 'Buscando dispositivos… (unos 10 s)';
+        lista.innerHTML = '';
+        fetch('/admin/ajustes/bluetooth/escanear')
+            .then(function (r) { return r.json(); })
+            .then(function (devs) {
+                if (!devs || !devs.length) {
+                    msg.textContent = 'No se ha encontrado ningún dispositivo.';
+                    return;
+                }
+                msg.textContent = devs.length + ' dispositivos encontrados.';
+                devs.forEach(function (dev) {
+                    var acciones = [];
+                    if (dev.conectado) {
+                        acciones.push({ clase: 'btn-yellow', texto: 'Desconectar',
+                            fn: function (b) { desconectar(dev.mac, b); } });
+                    } else {
+                        acciones.push({ clase: 'btn-green', texto: dev.emparejado ? 'Conectar' : 'Emparejar',
+                            fn: function (b) { conectar(dev.mac, b); } });
+                    }
+                    lista.appendChild(fila(dev, acciones));
+                });
+            })
+            .catch(function () { msg.textContent = '❌ error de red al escanear.'; })
+            .finally(function () { btn.disabled = false; });
+    }
+
+    radioBtn.onclick = function () {
+        var btn = this;
+        btn.disabled = true;
+        fetch('/admin/ajustes/bluetooth/radio', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ on: !adaptadorOn })
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                if (!d.ok) msg.textContent = '❌ ' + (d.error || 'no se pudo cambiar');
+                cargar();
+            })
+            .catch(function () { msg.textContent = '❌ error de red.'; })
+            .finally(function () { btn.disabled = false; });
+    };
+
+    document.getElementById('bt-scan-btn').onclick = function () { escanear(this); };
+
+    pintarRadio();
+    cargar();
+})();
+</script>
