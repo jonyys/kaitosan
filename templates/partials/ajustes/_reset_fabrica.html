@@ -2,12 +2,10 @@
     <h2>Reset de fábrica</h2>
     <p class="et" style="color:var(--text-soft); margin:4px 0 10px">
         Borra la base de datos, los ajustes y las redes WiFi guardadas. Kaito vuelve
-        al modo de configuración inicial. <strong>Es irreversible</strong> (se guarda
-        una copia de la BD justo antes).
+        al modo de configuración inicial. <strong>Es irreversible.</strong> Antes de
+        continuar te ofrecerá descargar una copia de la base de datos.
     </p>
     <div class="actions">
-        <input type="password" id="reset-pin" inputmode="numeric" autocomplete="off"
-               placeholder="PIN" style="max-width:7rem">
         <button type="button" class="btn btn-red" onclick="resetFabrica(this)"><svg class="ico"><use href="#i-bomb"/></svg> Reset de fábrica</button>
     </div>
     <pre id="reset-salida" style="display:none; max-height:200px; overflow:auto;
@@ -17,34 +15,68 @@
 </div>
 
 <script>
-function resetFabrica(btn) {
-    var pin = document.getElementById('reset-pin').value.trim();
-    if (!pin) { alert('Escribe el PIN para confirmar el reset.'); return; }
-    window.confirmar(
+// Descarga la BD dejando elegir la ruta (File System Access API) o, si el
+// navegador no la soporta, con una descarga normal. -> true si se guardó.
+async function descargarBackupBD() {
+    var nombre = 'kaito-' + new Date().toISOString().slice(0, 19).replace(/[:T]/g, '') + '.db';
+    try {
+        var resp = await fetch('/admin/ajustes/sistema/backup');
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        var blob = await resp.blob();
+        if (window.showSaveFilePicker) {
+            var handle = await window.showSaveFilePicker({
+                suggestedName: nombre,
+                types: [{ description: 'Base de datos SQLite', accept: { 'application/octet-stream': ['.db'] } }]
+            });
+            var w = await handle.createWritable();
+            await w.write(blob);
+            await w.close();
+        } else {
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url; a.download = nombre;
+            document.body.appendChild(a); a.click(); a.remove();
+            URL.revokeObjectURL(url);
+        }
+        return true;
+    } catch (e) {
+        if (e && e.name === 'AbortError') return false;   // canceló el diálogo de guardar
+        alert('No se pudo descargar la copia: ' + e);
+        return false;
+    }
+}
+
+async function resetFabrica(btn) {
+    var seguro = await window.confirmar(
         'RESET DE FÁBRICA — se borrará la base de datos, los ajustes y las redes WiFi '
-        + 'guardadas. Es irreversible. ¿Seguro?',
-        { ok: 'Sí, borrar todo' }
-    ).then(function (ok) {
-        if (!ok) return;
-        btn.disabled = true;
-        var pre = document.getElementById('reset-salida');
-        pre.style.display = '';
-        pre.textContent = 'Enviando…';
-        fetch('/admin/ajustes/sistema/reset', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ pin: pin })
+        + 'guardadas. Es irreversible. ¿Seguro que quieres continuar?',
+        { ok: 'Sí, continuar' }
+    );
+    if (!seguro) return;
+
+    var quiereCopia = await window.confirmar(
+        'Muy recomendable: descarga una copia de la base de datos antes del reset '
+        + '(podrás restaurarla después). ¿Descargarla ahora?',
+        { ok: 'Descargar y continuar', no: 'Continuar sin copia' }
+    );
+    if (quiereCopia) {
+        var guardada = await descargarBackupBD();
+        if (!guardada) return;   // no se guardó la copia: no seguimos con el reset
+    }
+
+    btn.disabled = true;
+    var pre = document.getElementById('reset-salida');
+    pre.style.display = '';
+    pre.textContent = 'Enviando…';
+    fetch('/admin/ajustes/sistema/reset', { method: 'POST' })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+            pre.innerHTML = (d.ok ? ico('check-circle') + ' ' : ico('x-circle') + ' ') + esc(d.mensaje || d.error || '');
         })
-            .then(function (r) { return r.json(); })
-            .then(function (d) {
-                pre.innerHTML = (d.ok ? ico('check-circle') + ' ' : ico('x-circle') + ' ') + esc(d.mensaje || d.error || '');
-                document.getElementById('reset-pin').value = '';
-            })
-            .catch(function () {
-                pre.innerHTML = ico('warn') + ' Se perdió la conexión. Si el PIN era correcto, el '
-                    + 'reset está en marcha.';
-            })
-            .finally(function () { btn.disabled = false; });
-    });
+        .catch(function () {
+            pre.innerHTML = ico('warn') + ' Se perdió la conexión. Si el PIN era correcto, el '
+                + 'reset está en marcha.';
+        })
+        .finally(function () { btn.disabled = false; });
 }
 </script>

@@ -763,8 +763,7 @@ def ajustes_sistema_reiniciar_servicio():
 @app.route("/admin/ajustes/sistema/reset", methods=["POST"])
 @login_requerido
 def ajustes_sistema_reset():
-    pin = (request.get_json(silent=True) or {}).get("pin", "")
-    return jsonify(system_settings.reset_fabrica(pin))
+    return jsonify(system_settings.reset_fabrica())
 
 
 @app.route("/admin/perfil/añadir", methods=["POST"])

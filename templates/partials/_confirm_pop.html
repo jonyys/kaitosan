@@ -41,8 +41,8 @@
 </dialog>
 
 <script>
-    // window.confirmar(mensaje, { ok, hechoMsg }) -> Promise<boolean>
-    //   ok:      texto del botón de confirmar (por defecto "Sí, borrar")
+    // window.confirmar(mensaje, { ok, no, hechoMsg }) -> Promise<boolean>
+    //   ok / no: texto de los botones (por defecto "Sí, borrar" / "Cancelar")
     //   hechoMsg: si se pasa, al confirmar el pop-up cambia a ese texto ~650 ms
     //             antes de resolver (para acciones que recargan la página).
     window.confirmar = function (mensaje, opts) {
@@ -54,6 +54,7 @@
         var no = cp.querySelector('.cp-no');
         cp.querySelector('.cp-msg').textContent = mensaje;
         yes.textContent = opts.ok || 'Sí, borrar';
+        no.textContent = opts.no || 'Cancelar';
         ask.hidden = false;
         done.hidden = true;
         if (!cp.showModal) return Promise.resolve(window.confirm(mensaje));

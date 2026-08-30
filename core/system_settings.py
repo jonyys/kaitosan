@@ -51,8 +51,8 @@ Fase 11: actualizar / reiniciar servicio / reset de fábrica (§5 notas
 daemon y las funciones responden **antes** de tocar nada (la sesión se cae al
 reiniciar el servicio). Fuera de la Pi: `actualizar()` sí hace el `git pull` y
 guarda el commit anterior, pero se salta `pip install` y el `restart`;
-`reset_fabrica()` valida el PIN y no borra nada.
-    actualizar()          reiniciar_servicio()      reset_fabrica(pin)
+`reset_fabrica()` hace la copia de seguridad y no borra nada.
+    actualizar()          reiniciar_servicio()      reset_fabrica()
 
 Fase 13: WiFi real en la Pi (§5 notas WiFi, §7.2 bloque WiFi, §7.4). Cambiar de
 red **tumba la conexión** con la que se ve la página, así que `wifi_conectar()`
@@ -75,7 +75,6 @@ El onboarding WiFi (`balena-wifi-connect`) llega en una fase posterior.
 """
 
 import glob
-import hmac
 import json
 import os
 import platform
@@ -1617,11 +1616,6 @@ def diagnostico_zip() -> str:
 # --------------------------------------------------------------------------- #
 # Mantenimiento — actualizar / reiniciar servicio / reset (Fase 11, §5, §11)
 # --------------------------------------------------------------------------- #
-# PIN por defecto para el reset de fábrica cuando no hay `pin_hash` guardado ni
-# `AJUSTES_RESET_PIN` en el `.env`. El reset es irreversible: la UI pide doble
-# confirmación y aquí se re-valida el PIN.
-_RESET_PIN_DEFECTO = "1234"
-
 # Estado de la última actualización, para que la UI pueda consultarlo si quiere.
 _ACTUALIZAR_ESTADO: dict = {"en_curso": False, "pasos": None}
 
@@ -1710,34 +1704,13 @@ def reiniciar_servicio() -> dict:
                         "unos segundos; recárgala enseguida.")}
 
 
-def _pin_correcto(pin: str) -> bool:
-    """Valida el PIN del reset contra `app_settings['pin_hash']` o, si no hay,
-    contra `AJUSTES_RESET_PIN` del `.env` (por defecto `_RESET_PIN_DEFECTO`)."""
-    pin = (pin or "").strip()
-    if not pin:
-        return False
-    h = settings_get("pin_hash")
-    if h:
-        try:
-            from werkzeug.security import check_password_hash
-            return check_password_hash(h, pin)
-        except Exception:  # noqa: BLE001
-            return False
-    esperado = os.getenv("AJUSTES_RESET_PIN", "").strip() or _RESET_PIN_DEFECTO
-    return hmac.compare_digest(pin, esperado)
+def reset_fabrica() -> dict:
+    """Reset de fábrica: copia de la BD -> borra BD, claves de `app_settings` y
+    conexiones de NetworkManager -> vuelve al onboarding (§5, §11). Irreversible;
+    la UI exige doble confirmación y ofrece descargar una copia antes.
 
-
-def reset_fabrica(pin: str) -> dict:
-    """Reset de fábrica: PIN -> copia de la BD -> borra BD, claves de
-    `app_settings` y conexiones de NetworkManager -> vuelve al onboarding
-    (§5, §11). Irreversible; la UI exige doble confirmación + PIN.
-
-    Fuera de la Pi (simulado) valida el PIN, hace la copia de seguridad y **no
-    borra nada**.
+    Fuera de la Pi (simulado) hace la copia de seguridad y **no borra nada**.
     """
-    if not _pin_correcto(pin):
-        return {"ok": False, "error": "PIN incorrecto"}
-
     try:                                        # §11: backup automático antes
         respaldo = backup_bd()
     except Exception:  # noqa: BLE001 — la capa de sistema nunca propaga
