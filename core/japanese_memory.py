@@ -265,6 +265,8 @@ class JapaneseMemory:
             ).fetchall()
             due_count = conn.execute(
                 "SELECT COUNT(*) FROM japanese_vocabulary WHERE next_review <= date('now')"
+            ).fetchone()[0] + conn.execute(
+                "SELECT COUNT(*) FROM japanese_grammar WHERE next_review <= date('now')"
             ).fetchone()[0]
             last_session = conn.execute(
                 """SELECT summary FROM japanese_sessions
@@ -275,12 +277,18 @@ class JapaneseMemory:
                 "WHERE times_reviewed >= 3 AND CAST(errors AS REAL) / times_reviewed > 0.4 "
                 "ORDER BY CAST(errors AS REAL) / times_reviewed DESC LIMIT 5"
             ).fetchall()
+            weak_gram = conn.execute(
+                "SELECT grammar_point, errors FROM japanese_grammar "
+                "WHERE times_seen >= 3 AND CAST(errors AS REAL) / times_seen > 0.4 "
+                "ORDER BY CAST(errors AS REAL) / times_seen DESC LIMIT 5"
+            ).fetchall()
 
         return {
             "vocab_by_status": dict(vocab_counts),
             "due_count": due_count,
             "last_session_summary": last_session[0] if last_session else None,
             "weak_points": [{"word": w, "errors": e} for w, e in weak],
+            "weak_grammar": [{"punto": g, "errors": e} for g, e in weak_gram],
         }
 
     # ── Perfil para el agente general ───────────────────────────────────────

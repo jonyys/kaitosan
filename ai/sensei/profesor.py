@@ -315,7 +315,7 @@ class ProfesorJapones:
 
         perfil_jap = self.jap_memory.resumen_perfil()
         lineas_r = [perfil_general] if perfil_general else []
-        lineas_r.append(f"Palabras en cola de repaso (SRS): {perfil_jap['due_count']}")
+        lineas_r.append(f"Ítems en cola de repaso (SRS): {perfil_jap['due_count']}")
 
         if perfil_jap.get("vocab_by_status"):
             estados = ", ".join(
@@ -330,7 +330,13 @@ class ProfesorJapones:
             puntos = ", ".join(
                 f"{w['word']} ({w['errors']} errores)" for w in perfil_jap["weak_points"]
             )
-            lineas_r.append(f"Puntos débiles: {puntos}")
+            lineas_r.append(f"Puntos débiles (vocabulario): {puntos}")
+
+        if perfil_jap.get("weak_grammar"):
+            puntos_g = ", ".join(
+                f"{g['punto']} ({g['errors']} errores)" for g in perfil_jap["weak_grammar"]
+            )
+            lineas_r.append(f"Puntos débiles (gramática): {puntos_g}")
 
         recuerdas_de_laura = "\n".join(lineas_r)
 
