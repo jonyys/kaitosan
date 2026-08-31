@@ -156,10 +156,6 @@ def grabar():
         # Responde con Groq (siempre devuelve (respuesta, lento_extra))
         respuesta, lento_extra = brain.responder(texto, pron_contexto=pron_ctx)
 
-        #state.cambiar("speaking")
-        socketio.emit("mensaje", {"texto": respuesta})
-
-        # Hablando
         # Emitir mensaje (sin cambiar estado todavía)
         socketio.emit("mensaje", {"texto": respuesta})
         emitir_japones_sensei(respuesta)
