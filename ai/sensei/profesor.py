@@ -10,7 +10,7 @@ import threading
 from datetime import datetime
 
 from ai.prompts import cargar_prompt
-from ai.sensei.curriculum import siguiente_items_nuevos
+from ai.sensei.curriculum import ITEM_POR_JP, siguiente_items_nuevos
 from core.config import (
     MAX_ITEMS_NUEVOS,
     MAX_TOKENS_SENSEI,
@@ -115,6 +115,22 @@ def _extraer_frase_objetivo(texto: str):
     # 【】 ("Repite: 【…】"). Así que el objetivo es el ÚLTIMO bloque, no el más
     # largo (antes cogía 【お元気ですか】 en vez de 【晴れた】 por tener más letras).
     return bloques[-1]
+
+
+def _lineas_foco(jp, meaning, sufijo=""):
+    """Líneas del FOCO para un ítem: glosa + ejemplo, literal y uso del temario.
+
+    Los ítems de repaso vienen de la BD sin esos campos; se buscan por jp en el
+    temario. Sin ellos Kaito solo tiene la glosa y se inventa el resto."""
+    info = ITEM_POR_JP.get(jp, {})
+    lineas = [f"  - 【{jp}】 {meaning}{sufijo}"]
+    if info.get("ejemplo"):
+        literal = f"  ({info['literal']})" if info.get("literal") else ""
+        lineas.append(f"      ejemplo: {info['ejemplo']}{literal}")
+    if info.get("uso"):
+        lineas.append(f"      uso: {info['uso']}")
+    return lineas
+
 
 _EXTRACCION_PROMPT = cargar_prompt("extraccion_sesion")
 
@@ -352,22 +368,21 @@ class ProfesorJapones:
             lineas_f.append("Vocabulario para repasar hoy:")
             for item in due_vocab:
                 jp = item.get("jp") or item.get("word", "")
-                meaning = item.get("meaning", "")
-                lineas_f.append(f"  - 【{jp}】 {meaning}")
+                lineas_f += _lineas_foco(jp, item.get("meaning", ""))
 
         if due_gram:
             lineas_f.append("Gramática para repasar hoy:")
             for item in due_gram:
                 jp = item.get("jp") or item.get("grammar_point", "")
                 meaning = item.get("meaning") or item.get("description", "")
-                lineas_f.append(f"  - 【{jp}】 {meaning}")
+                lineas_f += _lineas_foco(jp, meaning)
 
         if nuevos:
             lineas_f.append(f"Ítems nuevos a introducir ({len(nuevos)}):")
             for nuevo in nuevos:
-                lineas_f.append(
-                    f"  - 【{nuevo['jp']}】 — {nuevo['meaning']}"
-                    f" (unidad: {nuevo['unidad']})"
+                lineas_f += _lineas_foco(
+                    nuevo["jp"], nuevo["meaning"],
+                    sufijo=f" (unidad: {nuevo['unidad']})",
                 )
         elif due_count >= THROTTLE_DUE:
             lineas_f.append(
