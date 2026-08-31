@@ -86,6 +86,12 @@ ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "kaito123")
 MAX_ITEMS_NUEVOS = 2   # ítems nuevos por sesión (configurable hasta 3)
 THROTTLE_DUE = 12      # si hay ≥ N repasos vencidos, no introducir ítems nuevos
 
+# Nivel de inmersión (1→4): cuánto japonés habla Kaito. Se calcula solo a partir
+# del vocabulario dominado (learned + mastered); estos son los umbrales de salto.
+# NIVEL_INMERSION=3 en el entorno lo fija a mano para probar.
+NIVEL_INMERSION_UMBRALES = (15, 40, 80)
+NIVEL_INMERSION_FORZADO = int(os.getenv("NIVEL_INMERSION", "0")) or None
+
 # Busqueda en internet
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "")
 

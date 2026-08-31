@@ -13,6 +13,8 @@ from ai.prompts import cargar_prompt
 from ai.sensei.curriculum import ITEM_POR_JP, siguiente_items_nuevos, unidad_actual
 from core.config import (
     MAX_ITEMS_NUEVOS,
+    NIVEL_INMERSION_FORZADO,
+    NIVEL_INMERSION_UMBRALES,
     MAX_TOKENS_SENSEI,
     MAX_TOKENS_EXPLICACION,
     REASONING_EFFORT_SENSEI,
@@ -80,6 +82,17 @@ _PISTAS_PRODUCCION = (
     "completa la frase", "puedes decir", "puedes decirla", "vuelve a decir",
     "pronuncia", "a ver cómo suena", "dímelo",
 )
+
+
+def _nivel_inmersion(perfil_jap: dict) -> int:
+    """Nivel de inmersión 1→4 a partir del vocabulario que Laura ya domina.
+
+    Sube solo según avanza; NIVEL_INMERSION_FORZADO lo fija a mano para probar."""
+    if NIVEL_INMERSION_FORZADO:
+        return max(1, min(4, NIVEL_INMERSION_FORZADO))
+    estados = perfil_jap.get("vocab_by_status") or {}
+    dominado = estados.get("learned", 0) + estados.get("mastered", 0)
+    return 1 + sum(dominado >= umbral for umbral in NIVEL_INMERSION_UMBRALES)
 
 
 def _limpiar_objetivo(s: str) -> str:
@@ -153,6 +166,7 @@ class ProfesorJapones:
 
         self.activo = False
         self.registro = "clase"
+        self.nivel_inmersion = 1    # lo recalcula _montar_estado() cada turno
         self.timer = None
         self.session_id = None
         self.mensajes = []          # historial propio de la sesión sensei (solo user/assistant)
@@ -267,6 +281,10 @@ class ProfesorJapones:
         prompt_base = prompt_base.replace("{REGISTRO}", self.registro)
 
         recuerdas, foco = self._montar_estado()
+        # Cuánto japonés puede hablar: lo fija el progreso de Laura, no el prompt.
+        prompt_base = prompt_base.replace(
+            "{NIVEL_INMERSION}", str(self.nivel_inmersion)
+        )
 
         # Inyección de slots (Phase 4) o bloque extra de contexto (compatibilidad)
         if "{RECUERDAS_DE_LAURA}" in prompt_base and "{FOCO_DE_HOY}" in prompt_base:
@@ -343,6 +361,7 @@ class ProfesorJapones:
             perfil_general = ""
 
         perfil_jap = self.jap_memory.resumen_perfil()
+        self.nivel_inmersion = _nivel_inmersion(perfil_jap)
         lineas_r = [perfil_general] if perfil_general else []
         lineas_r.append(f"Ítems en cola de repaso (SRS): {perfil_jap['due_count']}")
 
