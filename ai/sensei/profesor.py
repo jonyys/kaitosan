@@ -77,13 +77,6 @@ _PISTAS_PRODUCCION = (
     "completa la frase", "puedes decir", "puedes decirla", "vuelve a decir",
     "pronuncia", "a ver cómo suena", "dímelo",
 )
-# Señales de que el turno espera una respuesta EN ESPAÑOL (sí/no, comprensión):
-# ahí NO hay frase objetivo y no debe evaluarse pronunciación.
-_PISTAS_COMPRENSION = (
-    "sí o no", "si o no", "responde sí", "responde si", "contesta sí", "contesta si",
-    "¿entiendes", "¿lo entiendes", "¿comprendes", "¿qué significa", "¿que significa",
-    "¿sabes qué", "¿sabes que", "¿verdad?", "¿de acuerdo?", "¿vale?", "en español",
-)
 
 
 def _limpiar_objetivo(s: str) -> str:
@@ -95,14 +88,13 @@ def _extraer_frase_objetivo(texto: str):
     la evaluación de pronunciación del turno siguiente.
 
     Devuelve None salvo que el turno pida producción explícita ('repite',
-    'cómo dirías'…) y NO sea una pregunta de comprensión / sí-no (en ese caso
-    Laura responde en español y no hay que puntuar nada)."""
+    'cómo dirías'…). Manda la petición de producción: las muletillas de cierre
+    ("¿vale?", "¿de acuerdo?") ya no vetan el objetivo, y sin petición no hay
+    nada que puntuar aunque el turno pregunte por el significado."""
     if not texto:
         return None
 
     bajo = texto.lower()
-    if any(p in bajo for p in _PISTAS_COMPRENSION):
-        return None
     if not any(p in bajo for p in _PISTAS_PRODUCCION):
         return None
 
