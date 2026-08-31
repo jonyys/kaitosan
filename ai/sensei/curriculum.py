@@ -1098,59 +1098,50 @@ UMBRAL_PREREQ_DEFECTO = 0.75
 ITEM_POR_JP = {item["jp"]: item for unit in CURRICULUM for item in unit["items"]}
 
 
-def _fraccion_aprendida(jap_memory, unit_id):
+def _snapshot_reps(jap_memory):
+    """Un solo viaje a la BD: {(kind, jp): reps} de todo lo que Laura ya tiene.
+
+    El recorrido del temario preguntaba ítem a ítem (~360 conexiones por turno);
+    con la foto en memoria son dos consultas y una conexión.
+    """
+    with jap_memory._conectar() as conn:
+        snap = {("vocabulario", w): r or 0
+                for w, r in conn.execute("SELECT word, reps FROM japanese_vocabulary")}
+        snap.update({("gramatica", g): r or 0
+                     for g, r in conn.execute("SELECT grammar_point, reps FROM japanese_grammar")})
+    return snap
+
+
+def _clave(item):
+    return ("vocabulario" if item["kind"] == "vocabulario" else "gramatica", item["jp"])
+
+
+def _fraccion_aprendida(unit_id, reps):
     """Fracción de ítems de una unidad que el alumno tiene aprendidos (reps >= 2)."""
     unit = next((u for u in CURRICULUM if u["id"] == unit_id), None)
     if not unit or not unit["items"]:
         return 0.0
-    aprendidas = 0
-    with jap_memory._conectar() as conn:
-        for item in unit["items"]:
-            if item["kind"] == "vocabulario":
-                row = conn.execute(
-                    "SELECT reps FROM japanese_vocabulary WHERE word = ?", (item["jp"],)
-                ).fetchone()
-            else:
-                row = conn.execute(
-                    "SELECT reps FROM japanese_grammar WHERE grammar_point = ?", (item["jp"],)
-                ).fetchone()
-            if row and (row[0] or 0) >= 2:
-                aprendidas += 1
+    aprendidas = sum(1 for item in unit["items"] if reps.get(_clave(item), 0) >= 2)
     return aprendidas / len(unit["items"])
 
 
-def _gate_met(jap_memory, unit):
+def _gate_met(unit, reps):
     prereq = unit.get("prerequisito")
     if not prereq:
         return True
-    return _fraccion_aprendida(jap_memory, prereq) >= unit.get("umbral_prereq", UMBRAL_PREREQ_DEFECTO)
-
-
-def _already_taught(jap_memory, item):
-    """Devuelve True si el ítem ya está registrado en la BD de Laura."""
-    with jap_memory._conectar() as conn:
-        if item["kind"] == "vocabulario":
-            row = conn.execute(
-                "SELECT id FROM japanese_vocabulary WHERE word = ?",
-                (item["jp"],),
-            ).fetchone()
-        else:
-            row = conn.execute(
-                "SELECT id FROM japanese_grammar WHERE grammar_point = ?",
-                (item["jp"],),
-            ).fetchone()
-    return row is not None
+    return _fraccion_aprendida(prereq, reps) >= unit.get("umbral_prereq", UMBRAL_PREREQ_DEFECTO)
 
 
 def unidad_actual(jap_memory):
     """La unidad que Laura tiene abierta: la primera con la puerta cumplida que
     aún no está aprendida del todo. Si las tiene todas, la última abierta."""
+    reps = _snapshot_reps(jap_memory)
     abierta = None
     for unit in CURRICULUM:
-        if not _gate_met(jap_memory, unit):
+        if not _gate_met(unit, reps):
             break
         abierta = unit
-        if _fraccion_aprendida(jap_memory, unit["id"]) < 1.0:
+        if _fraccion_aprendida(unit["id"], reps) < 1.0:
             return unit
     return abierta
 
@@ -1161,19 +1152,19 @@ def siguiente_items_nuevos(jap_memory, n=1):
 
     Retorna lista de dicts {kind, jp, reading?, meaning, tipo?, unidad}.
     """
+    reps = _snapshot_reps(jap_memory)
     result = []
     seen = set()  # ítems elegidos en esta llamada pero aún no en BD
     for unit in CURRICULUM:
-        if not _gate_met(jap_memory, unit):
+        if not _gate_met(unit, reps):
             continue
         for item in unit["items"]:
-            if item["jp"] in seen:
+            if item["jp"] in seen or _clave(item) in reps:
                 continue
-            if not _already_taught(jap_memory, item):
-                result.append({**item, "unidad": unit["nombre"]})
-                seen.add(item["jp"])
-                if len(result) >= n:
-                    return result
+            result.append({**item, "unidad": unit["nombre"]})
+            seen.add(item["jp"])
+            if len(result) >= n:
+                return result
     return result
 
 
