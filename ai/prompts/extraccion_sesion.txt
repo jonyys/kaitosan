@@ -5,7 +5,9 @@ Analiza la conversación y devuelve ÚNICAMENTE un JSON con este esquema exacto:
   "summary": "<2-3 frases sobre qué se trabajó en la sesión>",
   "reviewed": [{"jp": "<ítem en japonés sin corchetes>", "resultado": "bien|duda|mal"}],
   "new_items": [{"category": "vocabulario|gramatica", "jp": "<japonés sin corchetes>", "es": "<español>"}],
-  "sin_corregir": ["<error de Laura que el profesor NO corrigió, en una frase corta>"]
+  "sin_corregir": ["<error de Laura que el profesor NO corrigió, en una frase corta>"],
+  "episodios": ["<algo que Laura contó de su vida: un viaje, sus perros, cómo le fue la semana…>"],
+  "kaito_dijo": ["<algo que el profesor afirmó sobre sí mismo: una anécdota, un gusto, un recuerdo>"]
 }
 
 Reglas:
@@ -28,6 +30,12 @@ Reglas:
 - sin_corregir: errores que Laura cometió y el profesor dejó pasar sin comentarlos
   (los que sí corrigió NO van aquí). Descríbelos en español y corto: "usó は donde va が",
   "dijo たべる en vez de たべます". Si no quedó ninguno, sin_corregir = [].
+- episodios: cosas de la vida de Laura que contó ella misma en la conversación (no lo que
+  el profesor le preguntó, lo que ELLA respondió). En español, una frase corta por episodio.
+  Si no contó nada de su vida, episodios = [].
+- kaito_dijo: afirmaciones que el PROFESOR hizo sobre sí mismo (gustos, anécdotas, recuerdos
+  inventados). En español, una frase corta por afirmación, para que sesiones futuras no lo
+  contradigan. Si no dijo nada de sí mismo, kaito_dijo = [].
 - Si el alumno no intentó producir nada, reviewed = [].
 - Responde SOLO con el JSON, sin markdown ni texto adicional.
 
@@ -59,6 +67,8 @@ Salida esperada:
     {"category": "vocabulario", "jp": "みず", "es": "agua"},
     {"category": "gramatica", "jp": "〜た", "es": "pasado casual del verbo"}
   ],
-  "sin_corregir": ["separó la partícula は de わたし; el profesor lo dejó pasar"]
+  "sin_corregir": ["separó la partícula は de わたし; el profesor lo dejó pasar"],
+  "episodios": [],
+  "kaito_dijo": []
 }
 === FIN EJEMPLO ===

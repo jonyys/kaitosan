@@ -371,8 +371,17 @@ class ProfesorJapones:
             )
             lineas_r.append(f"Vocabulario por estado: {estados}")
 
-        if perfil_jap.get("last_session_summary"):
-            lineas_r.append(f"Última sesión: {perfil_jap['last_session_summary']}")
+        if perfil_jap.get("last_sessions"):
+            lineas_r.append("Últimas sesiones:")
+            lineas_r += [f"  - {s}" for s in perfil_jap["last_sessions"]]
+
+        if perfil_jap.get("episodios_laura"):
+            lineas_r.append("Lo que Laura ha contado de su vida:")
+            lineas_r += [f"  - {e}" for e in perfil_jap["episodios_laura"]]
+
+        if perfil_jap.get("anecdotas_kaito"):
+            lineas_r.append("Lo que TÚ (Kaito) ya has contado de ti mismo — no te contradigas:")
+            lineas_r += [f"  - {a}" for a in perfil_jap["anecdotas_kaito"]]
 
         if perfil_jap.get("sin_corregir"):
             lineas_r.append(f"Quedó sin corregir: {perfil_jap['sin_corregir']}")
@@ -599,6 +608,10 @@ class ProfesorJapones:
                 e.strip() for e in data.get("sin_corregir", []) if e and e.strip()
             ),
         )
+        # Memoria episódica: lo que Laura contó de su vida, y lo que Kaito
+        # afirmó de sí mismo (para que no se contradiga entre sesiones).
+        self.jap_memory.guardar_episodios(session_id, data.get("episodios", []))
+        self.jap_memory.guardar_anecdotas_kaito(session_id, data.get("kaito_dijo", []))
 
     def _construir_transcript(self) -> str:
         lines = []
@@ -656,4 +669,6 @@ class ProfesorJapones:
         data.setdefault("reviewed", [])
         data.setdefault("new_items", [])
         data.setdefault("sin_corregir", [])
+        data.setdefault("episodios", [])
+        data.setdefault("kaito_dijo", [])
         return data

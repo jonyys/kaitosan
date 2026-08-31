@@ -47,6 +47,20 @@ class JapaneseMemory:
                     errors_noted TEXT,
                     summary TEXT
                 );
+
+                CREATE TABLE IF NOT EXISTS laura_episodios (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    session_id INTEGER,
+                    episodio TEXT NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                );
+
+                CREATE TABLE IF NOT EXISTS kaito_anecdotas (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    session_id INTEGER,
+                    anecdota TEXT NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                );
             """)
         self._migrar_srs()
 
@@ -257,6 +271,28 @@ class JapaneseMemory:
                 (now, summary, words_learned, grammar_practiced, errors_noted, session_id),
             )
 
+    def guardar_episodios(self, session_id, episodios: list):
+        """Guarda lo que Laura contó de su vida en la sesión (memoria episódica)."""
+        episodios = [e.strip() for e in (episodios or []) if e and e.strip()]
+        if not episodios:
+            return
+        with self._conectar() as conn:
+            conn.executemany(
+                "INSERT INTO laura_episodios (session_id, episodio) VALUES (?, ?)",
+                [(session_id, e) for e in episodios],
+            )
+
+    def guardar_anecdotas_kaito(self, session_id, anecdotas: list):
+        """Guarda lo que Kaito ha afirmado sobre sí mismo, para no contradecirse."""
+        anecdotas = [a.strip() for a in (anecdotas or []) if a and a.strip()]
+        if not anecdotas:
+            return
+        with self._conectar() as conn:
+            conn.executemany(
+                "INSERT INTO kaito_anecdotas (session_id, anecdota) VALUES (?, ?)",
+                [(session_id, a) for a in anecdotas],
+            )
+
     def resumen_perfil(self) -> dict:
         """Versión ligera de obtener_perfil_completo para el orquestador."""
         with self._conectar() as conn:
@@ -268,10 +304,16 @@ class JapaneseMemory:
             ).fetchone()[0] + conn.execute(
                 "SELECT COUNT(*) FROM japanese_grammar WHERE next_review <= date('now')"
             ).fetchone()[0]
-            last_session = conn.execute(
+            last_sessions = conn.execute(
                 """SELECT summary FROM japanese_sessions
-                   WHERE summary IS NOT NULL ORDER BY started_at DESC LIMIT 1"""
-            ).fetchone()
+                   WHERE summary IS NOT NULL ORDER BY started_at DESC LIMIT 3"""
+            ).fetchall()
+            episodios = conn.execute(
+                "SELECT episodio FROM laura_episodios ORDER BY created_at DESC LIMIT 5"
+            ).fetchall()
+            anecdotas_kaito = conn.execute(
+                "SELECT anecdota FROM kaito_anecdotas ORDER BY created_at DESC LIMIT 8"
+            ).fetchall()
             # Errores que el profesor decidió no comentar en su momento: se
             # arrastran a la sesión siguiente en vez de perderse.
             sin_corregir = conn.execute(
@@ -293,7 +335,11 @@ class JapaneseMemory:
         return {
             "vocab_by_status": dict(vocab_counts),
             "due_count": due_count,
-            "last_session_summary": last_session[0] if last_session else None,
+            "last_sessions": [s for (s,) in last_sessions],
+            # compat: el resumen más reciente solo, para quien aún lee esta clave.
+            "last_session_summary": last_sessions[0][0] if last_sessions else None,
+            "episodios_laura": [e for (e,) in episodios],
+            "anecdotas_kaito": [a for (a,) in anecdotas_kaito],
             "sin_corregir": sin_corregir[0] if sin_corregir else None,
             "weak_points": [{"word": w, "errors": e} for w, e in weak],
             "weak_grammar": [{"punto": g, "errors": e} for g, e in weak_gram],
