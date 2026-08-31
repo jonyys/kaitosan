@@ -25,6 +25,7 @@ from core.config import (
 # ── Constantes ────────────────────────────────────────────────────────────────
 
 MAX_TURNOS = 10  # pares user/assistant conservados en el contexto del LLM
+TURNOS_POR_ITEM_FOCO = 3  # turnos que un ítem due se mantiene arriba del FOCO antes de ceder paso al siguiente
 
 SALUDOS = [
     "Modo Sensei activado! 【こんにちは、ラウラさん。おげんきですか。】",
@@ -178,6 +179,13 @@ class ProfesorJapones:
         self._foco_due_gram = []
         self._foco_nuevos = []
         self._foco_unidad = None
+        # Rotación de due items dentro de la sesión (el SRS no se recalifica
+        # hasta cerrar, así que sin esto el FOCO repetiría el mismo lote toda
+        # la sesión): turnos que lleva mostrado cada ítem, y los que ya cedieron
+        # el turno — estos últimos se listan aparte para que no se pierdan
+        # aunque caigan del historial truncado a MAX_TURNOS.
+        self._foco_vistos = {}
+        self._foco_agotados = []
 
     # ── Ciclo de vida ─────────────────────────────────────────────────────────
 
@@ -200,6 +208,8 @@ class ProfesorJapones:
         self.ultima_frase_objetivo = None
         self._foco_due_vocab = []
         self._foco_due_gram = []
+        self._foco_vistos = {}
+        self._foco_agotados = []
 
         # Los ítems nuevos se eligen UNA vez por sesión, no una por turno.
         # Se persisten al cerrar (_ejecutar_extraccion), no aquí.
@@ -352,6 +362,34 @@ class ProfesorJapones:
 
     # ── Estado / orquestador ──────────────────────────────────────────────────
 
+    def _rotar_due(self, kind: str, limit: int) -> list:
+        """Due items para el FOCO de este turno, rotando dentro de la sesión.
+
+        El SRS solo se recalifica al cerrar la sesión (review() no se llama
+        turno a turno), así que sin esto get_due_items() devolvería el mismo
+        lote turno tras turno durante toda la clase. Aquí se cuentan los
+        turnos que lleva arriba cada ítem y, pasados TURNOS_POR_ITEM_FOCO, se
+        aparta para dejar sitio al siguiente due de la cola — solo en memoria,
+        la BD no cambia hasta cerrar_sesion_y_extraer.
+        """
+        candidatos = self.jap_memory.get_due_items(limit * 3, kind=kind)
+        frescos = [
+            c for c in candidatos
+            if self._foco_vistos.get((kind, c["id"]), 0) < TURNOS_POR_ITEM_FOCO
+        ]
+        # Si ya se agotó toda la cola due, mejor repetir lo último que dejar
+        # el FOCO vacío.
+        elegidos = (frescos or candidatos)[:limit]
+        for c in elegidos:
+            clave = (kind, c["id"])
+            vistos = self._foco_vistos.get(clave, 0) + 1
+            self._foco_vistos[clave] = vistos
+            if vistos == TURNOS_POR_ITEM_FOCO:
+                jp = c.get("jp") or c.get("word") or c.get("grammar_point", "")
+                if jp and jp not in self._foco_agotados:
+                    self._foco_agotados.append(jp)
+        return elegidos
+
     def _montar_estado(self) -> tuple:
         """Devuelve (recuerdas_de_laura, foco_de_hoy) como par de strings."""
         # ── RECUERDAS_DE_LAURA ─────────────────────────────────────────────
@@ -401,8 +439,8 @@ class ProfesorJapones:
         recuerdas_de_laura = "\n".join(lineas_r)
 
         # ── FOCO_DE_HOY ────────────────────────────────────────────────────
-        due_vocab = self.jap_memory.get_due_items(5, kind="vocabulario")
-        due_gram = self.jap_memory.get_due_items(3, kind="gramatica")
+        due_vocab = self._rotar_due("vocabulario", 5)
+        due_gram = self._rotar_due("gramatica", 3)
 
         due_count = perfil_jap["due_count"]
         nuevos = self._foco_nuevos      # elegidos en entrar(), solo lectura aquí
@@ -411,6 +449,12 @@ class ProfesorJapones:
         self._foco_due_gram = due_gram
 
         lineas_f = []
+        if self._foco_agotados:
+            lineas_f.append(
+                "Ya trabajados en esta sesión, no los repitas salvo que Laura pida más: "
+                + ", ".join(f"【{jp}】" for jp in self._foco_agotados)
+            )
+
         if due_vocab:
             lineas_f.append("Vocabulario para repasar hoy:")
             for item in due_vocab:
