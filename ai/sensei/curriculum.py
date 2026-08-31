@@ -5,6 +5,13 @@ CURRICULUM = [
     {
         "id": "saludos_basicos",
         "nombre": "Saludos y expresiones básicas",
+        "funcion": "saludar y despedirte a cualquier hora, dar las gracias, disculparte y decir que no has entendido",
+        "frases_hechas": [
+            {"jp": "おつかれさま", "uso": "a alguien que acaba algo: un curro, un examen, una mudanza"},
+            {"jp": "よろしくお願いします", "uso": "al conocer a alguien y al pedir algo: 'cuento contigo'"},
+            {"jp": "なるほど", "uso": "cuando algo te encaja: 'ah, ya veo'"},
+            {"jp": "ちょっと…", "uso": "para decir que no sin decir no"},
+        ],
         "prerequisito": None,
         "umbral_prereq": 0.75,
         "items": [
@@ -54,6 +61,13 @@ CURRICULUM = [
     {
         "id": "particulas_basicas",
         "nombre": "Partículas básicas は・が・を・に",
+        "funcion": "montar frases tuyas: decir de qué hablas, qué haces, dónde y con quién",
+        "frases_hechas": [
+            {"jp": "そうですね", "uso": "para ganar tiempo antes de responder, como el 'pues…' español"},
+            {"jp": "えっと…", "uso": "el 'ehh…' japonés mientras piensas"},
+            {"jp": "それで？", "uso": "'¿y entonces?', para que el otro siga contando"},
+            {"jp": "やっぱり", "uso": "'lo sabía' / 'al final sí', cuando se confirma lo que esperabas"},
+        ],
         "prerequisito": "saludos_basicos",
         "umbral_prereq": 0.75,
         "items": [
@@ -97,6 +111,13 @@ CURRICULUM = [
     {
         "id": "desu_masu",
         "nombre": "Cópula です y forma ～ます",
+        "funcion": "presentarte, decir qué eres y qué haces cada día, y preguntarle lo mismo a alguien",
+        "frases_hechas": [
+            {"jp": "はじめまして", "uso": "solo la primerísima vez que ves a alguien, nunca después"},
+            {"jp": "どうぞよろしく", "uso": "cierra la presentación, justo después de tu nombre"},
+            {"jp": "こちらこそ", "uso": "'lo mismo digo', al devolver un gracias o un cumplido"},
+            {"jp": "おひさしぶりです", "uso": "a alguien que llevas tiempo sin ver"},
+        ],
         "prerequisito": "particulas_basicas",
         "umbral_prereq": 0.75,
         "items": [
@@ -131,6 +152,13 @@ CURRICULUM = [
     {
         "id": "verbos_n5",
         "nombre": "Verbos esenciales N5",
+        "funcion": "contar tu día entero: a qué hora te levantas, qué comes, adónde vas y qué haces",
+        "frases_hechas": [
+            {"jp": "いってきます", "uso": "al salir de casa; literalmente 'voy y vuelvo'"},
+            {"jp": "いってらっしゃい", "uso": "lo que contesta quien se queda"},
+            {"jp": "ただいま", "uso": "al volver a casa, aunque no haya nadie"},
+            {"jp": "おかえり", "uso": "lo que contesta quien estaba en casa"},
+        ],
         "prerequisito": "desu_masu",
         "umbral_prereq": 0.75,
         "items": [
@@ -201,6 +229,13 @@ CURRICULUM = [
     {
         "id": "adjetivos_n5",
         "nombre": "Adjetivos N5 (い y な)",
+        "funcion": "describir cosas y personas, y decir con claridad qué te gusta y qué no",
+        "frases_hechas": [
+            {"jp": "すごい", "uso": "vale para todo: admiración, sorpresa o susto"},
+            {"jp": "かわいい", "uso": "no es solo 'mono': se dice de casi cualquier cosa que gusta"},
+            {"jp": "びみょう", "uso": "'regulero', ni bien ni mal; muy útil para no mojarte"},
+            {"jp": "大丈夫です", "uso": "también sirve para rechazar algo con educación: 'no, gracias'"},
+        ],
         "prerequisito": "verbos_n5",
         "umbral_prereq": 0.75,
         "items": [
@@ -256,6 +291,13 @@ CURRICULUM = [
     {
         "id": "conjugacion_adj",
         "nombre": "Conjugación de adjetivos い y な",
+        "funcion": "contar cómo fue algo y cómo no fue: si la comida estaba rica, si el día se hizo duro",
+        "frases_hechas": [
+            {"jp": "よかった", "uso": "'menos mal', alivio por algo que salió bien"},
+            {"jp": "どうだった？", "uso": "'¿qué tal estuvo?', la pregunta con la que empieza cualquier charla"},
+            {"jp": "まあまあ", "uso": "'ni fu ni fa', la respuesta honesta y educada"},
+            {"jp": "さいこう！", "uso": "'lo mejor', cuando algo te ha encantado de verdad"},
+        ],
         "prerequisito": "adjetivos_n5",
         "umbral_prereq": 0.75,
         "items": [
@@ -284,6 +326,13 @@ CURRICULUM = [
     {
         "id": "grupos_verbales",
         "nombre": "Grupos verbales: る動詞, う動詞, irregulares",
+        "funcion": "conjugar tú sola cualquier verbo nuevo que oigas, sin tener que preguntar la forma",
+        "frases_hechas": [
+            {"jp": "なんて言うんですか", "uso": "'¿cómo se dice?', tu salvavidas cuando falta una palabra"},
+            {"jp": "どういう意味ですか", "uso": "'¿qué significa?', cuando la oyes pero no la entiendes"},
+            {"jp": "ゆっくりお願いします", "uso": "'más despacio, por favor'; funciona con cualquier japonés"},
+            {"jp": "わかった！", "uso": "'¡lo pillé!', informal, cuando por fin te sale la conjugación"},
+        ],
         "prerequisito": "conjugacion_adj",
         "umbral_prereq": 0.75,
         "items": [
@@ -309,6 +358,13 @@ CURRICULUM = [
     {
         "id": "te_forma",
         "nombre": "Forma て",
+        "funcion": "encadenar acciones, pedir cosas con educación y pedir permiso",
+        "frases_hechas": [
+            {"jp": "ちょっと待って", "uso": "'espera un momento', informal; con ください es más educado"},
+            {"jp": "がんばって", "uso": "'ánimo'; literalmente 'esfuérzate', se dice antes de algo difícil"},
+            {"jp": "教えてください", "uso": "'dime' / 'enséñame'; se usa muchísimo más que en español"},
+            {"jp": "助かりました", "uso": "'me has salvado', para agradecer una ayuda de verdad"},
+        ],
         "prerequisito": "grupos_verbales",
         "umbral_prereq": 0.75,
         "items": [
@@ -337,6 +393,13 @@ CURRICULUM = [
     {
         "id": "katakana_comun",
         "nombre": "Katakana — préstamos frecuentes",
+        "funcion": "pedir en una cafetería o una tienda y hablar de las cosas de fuera que están en el día a día",
+        "frases_hechas": [
+            {"jp": "これ、ください", "uso": "señalando la carta o el escaparate; resuelve casi cualquier compra"},
+            {"jp": "お願いします", "uso": "cierra cualquier pedido; es el 'por favor' que lo remata"},
+            {"jp": "テイクアウトで", "uso": "'para llevar', en cualquier cafetería"},
+            {"jp": "いくらですか", "uso": "'¿cuánto es?'"},
+        ],
         "prerequisito": "te_forma",
         "umbral_prereq": 0.75,
         "items": [
@@ -359,6 +422,13 @@ CURRICULUM = [
     {
         "id": "familia_personas",
         "nombre": "Personas y familia N5",
+        "funcion": "hablar de tu familia y de tus amigos, y preguntar por los de otra persona",
+        "frases_hechas": [
+            {"jp": "〜さん", "uso": "se pone a todo el mundo menos a uno mismo; olvidarlo suena brusco"},
+            {"jp": "うちの…", "uso": "'el mío de casa', al hablar de tu propia familia"},
+            {"jp": "お名前は", "uso": "'¿y tú, cómo te llamas?', sin necesidad de más frase"},
+            {"jp": "ご家族は", "uso": "'¿y tu familia?'; el ご delante es respeto por lo del otro"},
+        ],
         "prerequisito": "katakana_comun",
         "umbral_prereq": 0.75,
         "items": [
@@ -380,6 +450,13 @@ CURRICULUM = [
     {
         "id": "tiempo_lugar",
         "nombre": "Tiempo y lugar N5",
+        "funcion": "quedar con alguien: decir cuándo y dónde, y preguntar por un sitio",
+        "frases_hechas": [
+            {"jp": "何時ですか", "uso": "'¿qué hora es?' y también '¿a qué hora?'"},
+            {"jp": "ここはどこですか", "uso": "'¿dónde estoy?', cuando te pierdes"},
+            {"jp": "また今度", "uso": "'otro día'; posterga sin cerrar la puerta, y a veces significa que no"},
+            {"jp": "ちょっと遠いですね", "uso": "'queda un poco lejos'; forma suave de decir que no te apetece"},
+        ],
         "prerequisito": "familia_personas",
         "umbral_prereq": 0.75,
         "items": [
@@ -402,6 +479,13 @@ CURRICULUM = [
     {
         "id": "comida_bebida",
         "nombre": "Comida y bebida",
+        "funcion": "pedir en un restaurante, decir qué te gusta y qué no, y preguntar el precio",
+        "frases_hechas": [
+            {"jp": "いただきます", "uso": "antes de comer, siempre, aunque comas sola"},
+            {"jp": "ごちそうさまでした", "uso": "al terminar de comer, y al despedirte de quien te invitó"},
+            {"jp": "おいしそう", "uso": "al ver la comida, antes de probarla"},
+            {"jp": "おかわり", "uso": "'repito', para pedir otra ración o rellenar el vaso"},
+        ],
         "prerequisito": "tiempo_lugar",
         "umbral_prereq": 0.75,
         "items": [
@@ -424,6 +508,13 @@ CURRICULUM = [
     {
         "id": "numeros",
         "nombre": "Números 1-10 y centenas",
+        "funcion": "decir cantidades y precios, y entender lo que te dicen en una caja",
+        "frases_hechas": [
+            {"jp": "いくつですか", "uso": "'¿cuántos?'; también '¿cuántos años tienes?' con お delante"},
+            {"jp": "ひとつください", "uso": "'uno, por favor'; el contador ひとつ vale para casi todo"},
+            {"jp": "ちょうどです", "uso": "'justo', al pagar con el importe exacto"},
+            {"jp": "半分こ", "uso": "'a medias', repartir algo entre dos; muy coloquial"},
+        ],
         "prerequisito": "comida_bebida",
         "umbral_prereq": 0.75,
         "items": [
@@ -446,6 +537,13 @@ CURRICULUM = [
     {
         "id": "negacion_condicional",
         "nombre": "Negación と〜ない y condicional と〜たら",
+        "funcion": "decir lo que no haces y lo que te apetece hacer, y proponer planes con condición",
+        "frases_hechas": [
+            {"jp": "行きたい！", "uso": "'¡quiero ir!'; el 〜たい se dice solo de uno mismo"},
+            {"jp": "べつに", "uso": "'nada en especial' / 'me da igual'; según el tono suena a desgana"},
+            {"jp": "じゃあ、そうしよう", "uso": "'venga, hagamos eso', para cerrar un plan"},
+            {"jp": "やめとく", "uso": "'paso', decidir no hacer algo sin dar explicaciones"},
+        ],
         "prerequisito": "numeros",
         "umbral_prereq": 0.75,
         "items": [
@@ -463,6 +561,13 @@ CURRICULUM = [
     {
         "id": "forma_casual",
         "nombre": "Forma plain y registro casual",
+        "funcion": "hablar como con un amigo, sin です ni ます, que es como se habla de verdad fuera del aula",
+        "frases_hechas": [
+            {"jp": "うん / ううん", "uso": "sí y no informales; solo con gente de confianza, nunca con un jefe"},
+            {"jp": "マジで", "uso": "'¿en serio?'; entre amigos, jamás en el trabajo"},
+            {"jp": "だよね", "uso": "'ya ves' / 'exacto'; muestra que estáis de acuerdo"},
+            {"jp": "めっちゃ", "uso": "'un montón'; nació en Kansai y ya se oye en todas partes"},
+        ],
         "prerequisito": "negacion_condicional",
         "umbral_prereq": 0.75,
         "items": [
@@ -478,6 +583,13 @@ CURRICULUM = [
     {
         "id": "viaje_transporte",
         "nombre": "Viaje y transporte",
+        "funcion": "moverte por Japón: comprar un billete, preguntar por una línea y pedir direcciones",
+        "frases_hechas": [
+            {"jp": "駅はどこですか", "uso": "'¿dónde está la estación?'; cámbiale el sustantivo y sirve para todo"},
+            {"jp": "次は", "uso": "'¿la siguiente cuál es?', dentro del tren"},
+            {"jp": "乗り換えですか", "uso": "'¿hay que hacer transbordo?'"},
+            {"jp": "気をつけて", "uso": "'ve con cuidado', al despedir a alguien que se va de viaje"},
+        ],
         "prerequisito": "forma_casual",
         "umbral_prereq": 0.75,
         "items": [
@@ -502,6 +614,13 @@ CURRICULUM = [
     {
         "id": "demostrativos",
         "nombre": "Demostrativos こそあど y pronombres de lugar",
+        "funcion": "señalar y elegir: esto, eso, aquello, y preguntar dónde está lo que buscas",
+        "frases_hechas": [
+            {"jp": "これ何ですか", "uso": "'¿qué es esto?'; la frase que más vas a usar en una tienda"},
+            {"jp": "あそこです", "uso": "'está allí', señalando algo lejos de los dos"},
+            {"jp": "どっちでもいい", "uso": "'cualquiera me vale'"},
+            {"jp": "こちらへどうぞ", "uso": "'por aquí, pase'; lo oirás en cualquier restaurante"},
+        ],
         "prerequisito": "viaje_transporte",
         "umbral_prereq": 0.75,
         "items": [
@@ -524,6 +643,13 @@ CURRICULUM = [
     {
         "id": "cuerpo_salud",
         "nombre": "Cuerpo y salud N5",
+        "funcion": "decir que algo te duele y contar cómo te encuentras, en casa o en una farmacia",
+        "frases_hechas": [
+            {"jp": "大丈夫", "uso": "'¿estás bien?' preguntando, y 'estoy bien' respondiendo"},
+            {"jp": "お大事に", "uso": "'cuídate', a alguien enfermo; se dice al despedirse"},
+            {"jp": "疲れた〜", "uso": "'qué cansancio'; se suelta en voz alta sin dirigirlo a nadie"},
+            {"jp": "ちょっと調子が悪い", "uso": "'no me encuentro muy bien', sin dar detalles"},
+        ],
         "prerequisito": "demostrativos",
         "umbral_prereq": 0.75,
         "items": [
@@ -546,6 +672,13 @@ CURRICULUM = [
     {
         "id": "comparaciones_deseos",
         "nombre": "Comparaciones y deseos N5",
+        "funcion": "comparar dos cosas, decir cuál prefieres y suavizar una opinión para no imponerla",
+        "frases_hechas": [
+            {"jp": "どっちがいい", "uso": "'¿cuál prefieres?', entre dos opciones"},
+            {"jp": "一番好き", "uso": "'el que más me gusta', de todos"},
+            {"jp": "〜のほうがいいかも", "uso": "'quizá mejor…', para sugerir sin imponer"},
+            {"jp": "そうかもね", "uso": "'puede ser'; sirve para no llevar la contraria de frente"},
+        ],
         "prerequisito": "cuerpo_salud",
         "umbral_prereq": 0.75,
         "items": [
@@ -569,6 +702,13 @@ CURRICULUM = [
     {
         "id": "forma_potencial",
         "nombre": "Forma potencial N4: poder hacer X",
+        "funcion": "decir lo que puedes y lo que no puedes hacer, y pedir ayuda cuando algo se te escapa",
+        "frases_hechas": [
+            {"jp": "できる", "uso": "'¿puedes?' preguntando, 'puedo' respondiendo"},
+            {"jp": "ちょっと無理かも", "uso": "'lo veo difícil'; es el 'no' amable de todos los días"},
+            {"jp": "手伝ってくれる", "uso": "'¿me echas una mano?'"},
+            {"jp": "やってみる", "uso": "'lo intento'; literalmente 'lo hago a ver qué pasa'"},
+        ],
         "prerequisito": "comparaciones_deseos",
         "umbral_prereq": 0.75,
         "items": [
@@ -587,6 +727,13 @@ CURRICULUM = [
     {
         "id": "volitiva_proposito",
         "nombre": "Volitiva, intención y propósito N4",
+        "funcion": "proponer planes, decir tus intenciones y explicar para qué haces algo",
+        "frases_hechas": [
+            {"jp": "行こう！", "uso": "'¡vamos!'; volitiva informal, entre amigos"},
+            {"jp": "〜しようか", "uso": "'¿hacemos…?', proponer dejando la decisión al otro"},
+            {"jp": "そろそろ…", "uso": "'va siendo hora de…'; el aviso suave de que toca irse"},
+            {"jp": "また誘って", "uso": "'avísame la próxima', al rechazar un plan sin cerrar la puerta"},
+        ],
         "prerequisito": "forma_potencial",
         "umbral_prereq": 0.75,
         "items": [
@@ -605,6 +752,13 @@ CURRICULUM = [
     {
         "id": "condicionales_n4",
         "nombre": "Condicionales N4: 〜ば・〜と・〜なら・〜ても",
+        "funcion": "hablar de hipótesis y condiciones: si pasa esto, entonces aquello",
+        "frases_hechas": [
+            {"jp": "もしよかったら", "uso": "'si te apetece'; abre una invitación sin presionar"},
+            {"jp": "だったら…", "uso": "'en ese caso…', para reaccionar a lo que acaban de decirte"},
+            {"jp": "それなら大丈夫", "uso": "'así sí, sin problema'"},
+            {"jp": "〜すればよかった", "uso": "'ojalá hubiera…'; arrepentimiento por lo que no hiciste"},
+        ],
         "prerequisito": "volitiva_proposito",
         "umbral_prereq": 0.75,
         "items": [
@@ -622,6 +776,13 @@ CURRICULUM = [
     {
         "id": "experiencia_aspecto",
         "nombre": "Experiencia y cambio aspectual N4",
+        "funcion": "contar experiencias que has tenido y cambios que notas: lo que ya hiciste y lo que se te fue de las manos",
+        "frases_hechas": [
+            {"jp": "〜たことある", "uso": "'¿has probado alguna vez…?'; abre mil conversaciones"},
+            {"jp": "やっちゃった", "uso": "'la he liado'; el 〜てしまう informal, con resignación"},
+            {"jp": "忘れてた！", "uso": "'¡se me había olvidado!'"},
+            {"jp": "慣れてきた", "uso": "'ya me voy acostumbrando'; el 〜てくる del cambio gradual"},
+        ],
         "prerequisito": "condicionales_n4",
         "umbral_prereq": 0.75,
         "items": [
@@ -639,6 +800,13 @@ CURRICULUM = [
     {
         "id": "transitivos_intransitivos",
         "nombre": "Verbos transitivos e intransitivos N4",
+        "funcion": "distinguir lo que tú haces de lo que pasa solo: abrir una puerta o que la puerta se abra",
+        "frases_hechas": [
+            {"jp": "開いてる", "uso": "'¿está abierto?'; describe el estado, no quién lo abrió"},
+            {"jp": "壊れちゃった", "uso": "'se ha roto'; en japonés no se culpa a nadie, la cosa se rompe sola"},
+            {"jp": "始まるよ", "uso": "'que empieza', avisando de que va a comenzar algo"},
+            {"jp": "閉めておいて", "uso": "'déjalo cerrado, porfa'; dejar algo hecho para después"},
+        ],
         "prerequisito": "experiencia_aspecto",
         "umbral_prereq": 0.75,
         "items": [
@@ -660,6 +828,13 @@ CURRICULUM = [
     {
         "id": "vocabulario_n4_vida",
         "nombre": "Vocabulario N4 — Vida cotidiana y sociedad",
+        "funcion": "manejarte en el trabajo y en la vida adulta: quedar, llamar, avisar y resolver problemas",
+        "frases_hechas": [
+            {"jp": "おつかれさまです", "uso": "el saludo del trabajo a cualquier hora: hola, adiós y gracias a la vez"},
+            {"jp": "ちょっといいですか", "uso": "'¿tienes un momento?', antes de interrumpir a alguien"},
+            {"jp": "確認します", "uso": "'lo compruebo'; la respuesta segura cuando no sabes algo"},
+            {"jp": "お先に失礼します", "uso": "'me voy antes que vosotros', al salir de la oficina"},
+        ],
         "prerequisito": "transitivos_intransitivos",
         "umbral_prereq": 0.75,
         "items": [
@@ -682,6 +857,13 @@ CURRICULUM = [
     {
         "id": "apariencia_suposicion",
         "nombre": "Apariencia y suposición N4: 〜そう・〜らしい・〜ようだ",
+        "funcion": "decir cómo parece algo y de qué te has enterado, sin afirmarlo del todo",
+        "frases_hechas": [
+            {"jp": "〜みたい", "uso": "'parece que…'; la versión hablada de 〜ようだ"},
+            {"jp": "らしいよ", "uso": "'según dicen'; marcas que la información no es tuya"},
+            {"jp": "たぶんね", "uso": "'probablemente'; deja la puerta abierta a equivocarte"},
+            {"jp": "どうやら…", "uso": "'por lo visto…', cuando lo deduces de lo que ves"},
+        ],
         "prerequisito": "vocabulario_n4_vida",
         "umbral_prereq": 0.75,
         "items": [
@@ -700,6 +882,13 @@ CURRICULUM = [
     {
         "id": "causativo_pasivo",
         "nombre": "Causativo, pasivo y dar/recibir N4",
+        "funcion": "hablar de favores: quién hace qué por quién, y pedir permiso para hacerlo tú",
+        "frases_hechas": [
+            {"jp": "〜てくれてありがとう", "uso": "'gracias por hacerlo'; agradece la acción, no la cosa"},
+            {"jp": "〜させてください", "uso": "'déjame hacerlo'; ofrecerte a hacer algo con educación"},
+            {"jp": "おごるよ", "uso": "'invito yo'"},
+            {"jp": "遠慮しないで", "uso": "'no te cortes'; lo que se dice al que dice que no por educación"},
+        ],
         "prerequisito": "apariencia_suposicion",
         "umbral_prereq": 0.75,
         "items": [
@@ -719,6 +908,13 @@ CURRICULUM = [
     {
         "id": "keigo_intro",
         "nombre": "Honoríficos básicos N4: prefijos お・ご y formas respetuosas",
+        "funcion": "hablar con respeto a un desconocido, a un jefe o en una tienda sin sonar raro",
+        "frases_hechas": [
+            {"jp": "いらっしゃいませ", "uso": "lo que te dicen al entrar en cualquier tienda; no se responde"},
+            {"jp": "少々お待ちください", "uso": "'un momento, por favor', de quien atiende"},
+            {"jp": "かしこまりました", "uso": "'entendido'; solo lo dice quien sirve al cliente"},
+            {"jp": "失礼します", "uso": "al entrar y al salir de una sala, y al colgar el teléfono"},
+        ],
         "prerequisito": "causativo_pasivo",
         "umbral_prereq": 0.75,
         "items": [
@@ -741,6 +937,13 @@ CURRICULUM = [
     {
         "id": "keigo_avanzado",
         "nombre": "Keigo avanzado N3: 尊敬語 y 謙譲語",
+        "funcion": "moverte en situaciones formales de verdad: presentarte en una empresa, atender y ser atendida",
+        "frases_hechas": [
+            {"jp": "お世話になっております", "uso": "apertura estándar de cualquier llamada o correo de trabajo"},
+            {"jp": "恐れ入りますが", "uso": "'disculpe la molestia, pero…', antes de pedir algo incómodo"},
+            {"jp": "ご確認ください", "uso": "'compruébelo, por favor'"},
+            {"jp": "お疲れさまでした", "uso": "cierre formal de la jornada, con el お y el でした"},
+        ],
         "prerequisito": "keigo_intro",
         "umbral_prereq": 0.75,
         "items": [
@@ -760,6 +963,13 @@ CURRICULUM = [
     {
         "id": "causativo_pasivo_n3",
         "nombre": "Causativo-pasivo y verbos compuestos N3",
+        "funcion": "contar lo que te han hecho hacer y lo que no paras de hacer, con matiz de obligación o queja",
+        "frases_hechas": [
+            {"jp": "残業させられた", "uso": "'me hicieron quedarme a currar'; queja clásica de oficina"},
+            {"jp": "〜てばかり", "uso": "'no para de…'; siempre con tono de reproche"},
+            {"jp": "しかたない", "uso": "'qué le vamos a hacer'; muy japonés, resignación sin drama"},
+            {"jp": "まあ、いいか", "uso": "'bueno, da igual', para soltar el tema"},
+        ],
         "prerequisito": "keigo_avanzado",
         "umbral_prereq": 0.75,
         "items": [
@@ -778,6 +988,13 @@ CURRICULUM = [
     {
         "id": "matiz_n3_a",
         "nombre": "Matiz N3: 〜わけ・〜はず・〜べき・〜もの",
+        "funcion": "opinar con matiz: lo que debería ser, lo que es imposible y lo que se da por hecho",
+        "frases_hechas": [
+            {"jp": "そんなわけない", "uso": "'ni de broma'; niega algo tajantemente"},
+            {"jp": "〜べきだと思う", "uso": "'creo que habría que…'; suaviza el べき, que solo suena duro"},
+            {"jp": "当たり前じゃん", "uso": "'pues claro'; informal, casi con reproche cariñoso"},
+            {"jp": "そういうものだ", "uso": "'las cosas son así'; tono reflexivo, de conclusión"},
+        ],
         "prerequisito": "causativo_pasivo_n3",
         "umbral_prereq": 0.75,
         "items": [
@@ -796,6 +1013,13 @@ CURRICULUM = [
     {
         "id": "causa_contraste_n3",
         "nombre": "Causa y contraste formal N3: 〜ため・〜ものの・〜によって",
+        "funcion": "explicar causas y contrastes en registro formal: informes, noticias y discusiones",
+        "frases_hechas": [
+            {"jp": "というのは…", "uso": "'lo que pasa es que…', antes de dar la explicación"},
+            {"jp": "それに対して", "uso": "'frente a eso'; para contraponer dos datos"},
+            {"jp": "にもかかわらず", "uso": "'pese a todo'; escrito y formal, no en la charla del bar"},
+            {"jp": "結果として", "uso": "'como resultado', al cerrar un razonamiento"},
+        ],
         "prerequisito": "matiz_n3_a",
         "umbral_prereq": 0.75,
         "items": [
@@ -815,6 +1039,13 @@ CURRICULUM = [
     {
         "id": "conjunciones_n3",
         "nombre": "Conjunciones y decisiones N3",
+        "funcion": "encadenar razones y contar decisiones: por qué haces algo y en qué has quedado",
+        "frases_hechas": [
+            {"jp": "というか…", "uso": "'o más bien…', para corregirte a media frase"},
+            {"jp": "ってことは", "uso": "'¿eso significa que…?', al sacar una conclusión"},
+            {"jp": "ことにした", "uso": "'he decidido que…'; la decisión es tuya"},
+            {"jp": "一方で", "uso": "'por otro lado'; ordena las dos caras de un asunto"},
+        ],
         "prerequisito": "causa_contraste_n3",
         "umbral_prereq": 0.75,
         "items": [
@@ -833,6 +1064,13 @@ CURRICULUM = [
     {
         "id": "vocabulario_n3",
         "nombre": "Vocabulario N3 — Abstracto, emocional y formal",
+        "funcion": "hablar de lo que sientes y de lo que piensas: opiniones, experiencias y situaciones abstractas",
+        "frases_hechas": [
+            {"jp": "気にしないで", "uso": "'no le des importancia', a quien se disculpa o se agobia"},
+            {"jp": "自信ない", "uso": "'no me veo capaz'; se dice mucho más que en español"},
+            {"jp": "なんとなく", "uso": "'sin razón concreta', 'porque sí'; respuesta comodín"},
+            {"jp": "気持ちわかる", "uso": "'te entiendo'; literalmente 'entiendo tu sentimiento'"},
+        ],
         "prerequisito": "conjunciones_n3",
         "umbral_prereq": 0.75,
         "items": [
@@ -902,6 +1140,19 @@ def _already_taught(jap_memory, item):
                 (item["jp"],),
             ).fetchone()
     return row is not None
+
+
+def unidad_actual(jap_memory):
+    """La unidad que Laura tiene abierta: la primera con la puerta cumplida que
+    aún no está aprendida del todo. Si las tiene todas, la última abierta."""
+    abierta = None
+    for unit in CURRICULUM:
+        if not _gate_met(jap_memory, unit):
+            break
+        abierta = unit
+        if _fraccion_aprendida(jap_memory, unit["id"]) < 1.0:
+            return unit
+    return abierta
 
 
 def siguiente_items_nuevos(jap_memory, n=1):

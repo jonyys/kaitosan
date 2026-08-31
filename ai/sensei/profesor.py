@@ -10,7 +10,7 @@ import threading
 from datetime import datetime
 
 from ai.prompts import cargar_prompt
-from ai.sensei.curriculum import ITEM_POR_JP, siguiente_items_nuevos
+from ai.sensei.curriculum import ITEM_POR_JP, siguiente_items_nuevos, unidad_actual
 from core.config import (
     MAX_ITEMS_NUEVOS,
     MAX_TOKENS_SENSEI,
@@ -161,6 +161,7 @@ class ProfesorJapones:
         self._foco_due_vocab = []
         self._foco_due_gram = []
         self._foco_nuevos = []
+        self._foco_unidad = None
 
     # ── Ciclo de vida ─────────────────────────────────────────────────────────
 
@@ -183,6 +184,9 @@ class ProfesorJapones:
             [] if due >= THROTTLE_DUE
             else siguiente_items_nuevos(self.jap_memory, MAX_ITEMS_NUEVOS)
         )
+        # La unidad abierta también se resuelve una vez por sesión: da el para-qué
+        # del temario y las expresiones naturales que lo acompañan.
+        self._foco_unidad = unidad_actual(self.jap_memory)
 
         now = datetime.now().isoformat(sep=" ", timespec="seconds")
         with self.jap_memory._conectar() as conn:
@@ -394,6 +398,18 @@ class ProfesorJapones:
             lineas_f.append(
                 "No hay ítems pendientes. Conversa libremente en japonés sobre cualquier tema."
             )
+
+        unidad = self._foco_unidad
+        if unidad:
+            cabecera = [f"Unidad actual: {unidad['nombre']}"]
+            if unidad.get("funcion"):
+                cabecera.append(f"  para qué sirve: {unidad['funcion']}")
+            if unidad.get("frases_hechas"):
+                cabecera.append("  expresiones naturales de esta unidad:")
+                cabecera += [
+                    f"    - 【{f['jp']}】 {f['uso']}" for f in unidad["frases_hechas"]
+                ]
+            lineas_f = cabecera + lineas_f
 
         foco_de_hoy = "\n".join(lineas_f)
         return recuerdas_de_laura, foco_de_hoy
