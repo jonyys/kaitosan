@@ -198,7 +198,8 @@ class ProfesorJapones:
             self.timer.cancel()
             self.timer = None
         self.activo = False
-        self.cerrar_sesion_y_extraer()
+        # La extracción tarda entre 5 y 15 s; que no bloquee la despedida.
+        self.socketio.start_background_task(self.cerrar_sesion_y_extraer)
         print("🎌 Modo Sensei desactivado")
 
     def esta_activo(self) -> bool:
