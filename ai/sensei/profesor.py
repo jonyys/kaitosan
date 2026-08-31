@@ -14,6 +14,7 @@ from ai.sensei.curriculum import siguiente_items_nuevos
 from core.config import (
     MAX_ITEMS_NUEVOS,
     MAX_TOKENS_SENSEI,
+    MAX_TOKENS_EXPLICACION,
     REASONING_EFFORT_SENSEI,
     TEMPERATURE_SENSEI,
     THROTTLE_DUE,
@@ -270,7 +271,11 @@ class ProfesorJapones:
         try:
             respuesta = self.provider.completar(
                 historial_sensei,
-                max_tokens=MAX_TOKENS_SENSEI,
+                # Techo alto para todos los turnos: el desglose gramatical es
+                # justo lo que se quedaba a medias. La selección por tipo de
+                # turno (MAX_TOKENS_SENSEI para los normales) espera a que el
+                # prompt distinga registros.
+                max_tokens=MAX_TOKENS_EXPLICACION,
                 temperature=TEMPERATURE_SENSEI,
                 reasoning_effort=REASONING_EFFORT_SENSEI,
             )

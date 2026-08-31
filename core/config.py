@@ -8,7 +8,8 @@ load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 DEFAULT_MODEL = "openai/gpt-oss-120b"
 MAX_TOKENS = 300
-MAX_TOKENS_SENSEI = 1024  # profesor: margen para razonamiento interno + respuesta (gpt-oss)
+MAX_TOKENS_SENSEI = 2048       # profesor, turno normal (razonamiento gpt-oss + respuesta)
+MAX_TOKENS_EXPLICACION = 3072  # profesor, turno de desglose gramatical
 TEMPERATURE = 0.7
 TEMPERATURE_SENSEI = 0.3  # respuestas del profesor — más deterministas para seguir las reglas
 
