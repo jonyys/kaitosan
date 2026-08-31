@@ -22,6 +22,14 @@ def test_unidades_0_a_5_completas():
                 assert item.get(campo), (unit["id"], item["jp"], campo)
 
 
+def test_verbs_se_dividen_en_dos_unidades():
+    ids = [unit["id"] for unit in CURRICULUM]
+    assert "verbos_n5" in ids
+    assert "verbos_movimiento_objeto_n5" in ids
+    assert ids.index("verbos_movimiento_objeto_n5") == ids.index("verbos_n5") + 1
+    assert next(u for u in CURRICULUM if u["id"] == "grupos_verbales")["prerequisito"] == "verbos_movimiento_objeto_n5"
+
+
 def test_item_nuevo_llega_con_ejemplo_y_uso():
     lineas = _lineas_foco("〜ている", "acción en progreso",
                           sufijo=" (unidad: Forma て)")
