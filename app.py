@@ -33,6 +33,8 @@ from audio.recorder import Recorder
 from ai.speech_to_text import SpeechToText, transcribir_para_turno
 from ai.text_to_speech import TextToSpeech
 from ai.sensei.kana import bloques_japones
+from ai.sensei.kanji_n5 import KANJI_N5
+from ai.sensei.curriculum import CURRICULUM
 from core.token_tracker import TokenTracker
 
 
@@ -957,6 +959,186 @@ def japones():
         grammar=grammar,
         sessions=sessions,
     )
+
+@app.route("/japones/kanjis")
+@login_requerido
+def japones_kanjis():
+    selected = request.args.get("kanji", "").strip()
+    kanjis = []
+    for item in KANJI_N5:
+        kanjis.append({
+            "kanji": item.get("jp", ""),
+            "meaning": item.get("meaning", ""),
+            "reading": item.get("reading", "") or item.get("kun", "") or item.get("on", ""),
+            "on": item.get("on", ""),
+            "kun": item.get("kun", ""),
+            "trazos": item.get("trazos", ""),
+            "radical": item.get("radical", ""),
+            "literal": item.get("literal", ""),
+            "ejemplo": item.get("ejemplo", ""),
+            "mnemo": item.get("mnemo", ""),
+            "uso": item.get("uso", ""),
+            "vocab_ejemplo": item.get("vocab_ejemplo", ""),
+        })
+    if selected:
+        selected_item = next((k for k in kanjis if k["kanji"] == selected), kanjis[0] if kanjis else None)
+    else:
+        selected_item = kanjis[0] if kanjis else None
+    return render_template("japones_kanjis.html", kanjis=kanjis, selected=selected_item)
+
+
+def _items_curriculum_por_tipo(kind):
+    items = []
+    for unidad in CURRICULUM:
+        for entry in unidad.get("items", []):
+            if entry.get("kind") != kind:
+                continue
+            jp = str(entry.get("jp") or "").strip()
+            if not jp:
+                continue
+            items.append({
+                "jp": jp,
+                "reading": (entry.get("reading") or "").strip() or jp,
+                "meaning": (entry.get("meaning") or "").strip(),
+                "tipo": (entry.get("tipo") or "").strip(),
+                "ejemplo": (entry.get("ejemplo") or "").strip(),
+                "literal": (entry.get("literal") or "").strip(),
+                "uso": (entry.get("uso") or "").strip(),
+                "unidad": unidad.get("nombre", "N5"),
+                "id": f"{unidad.get('id', 'n5')}:{jp}",
+            })
+    return items
+
+
+@app.route("/japones/vocabulario")
+@login_requerido
+def japones_vocabulario():
+    items = _items_curriculum_por_tipo("vocabulario")
+    selected = request.args.get("item", "").strip()
+    selected_item = next((i for i in items if i["jp"] == selected), items[0] if items else None)
+    return render_template("japones_practica.html", kind="vocabulario", title="Listado de vocabulario N5", items=items, selected=selected_item)
+
+
+@app.route("/japones/gramatica")
+@login_requerido
+def japones_gramatica():
+    items = _items_curriculum_por_tipo("gramatica")
+    selected = request.args.get("item", "").strip()
+    selected_item = next((i for i in items if i["jp"] == selected), items[0] if items else None)
+    return render_template("japones_practica.html", kind="gramatica", title="Listado de gramática N5", items=items, selected=selected_item)
+
+
+@app.route("/japones/vocabulario/practicar", methods=["GET", "POST"])
+@login_requerido
+def japones_vocabulario_practicar():
+    items = _items_curriculum_por_tipo("vocabulario")
+    selected = request.args.get("item", "").strip()
+    if request.method == "POST":
+        jp = (request.form.get("item") or "").strip()
+        modo = (request.form.get("modo") or "ambas").strip().lower()
+        if not jp:
+            flash("❌ No se ha seleccionado ningún vocabulario para practicar", "error")
+            return redirect(url_for("japones_vocabulario_practicar"))
+        item = next((i for i in items if i["jp"] == jp), None)
+        if not item:
+            flash("❌ Ese vocabulario no existe en el temario N5", "error")
+            return redirect(url_for("japones_vocabulario_practicar"))
+        item_id = brain.jap_memory.get_item_id(jp, "vocabulario")
+        if item_id is None:
+            brain.jap_memory.add_item(
+                "vocabulario",
+                jp,
+                reading=item["reading"],
+                meaning=item["meaning"],
+                tipo=item.get("tipo") or "vocabulario",
+            )
+            item_id = brain.jap_memory.get_item_id(jp, "vocabulario")
+        if item_id is None:
+            flash("❌ No se pudo guardar el vocabulario para el SRS", "error")
+            return redirect(url_for("japones_vocabulario_practicar", item=jp))
+        quality = 5 if modo in {"ambas", "reading", "meaning", "significado", "lectura"} else 4
+        brain.jap_memory.review(item_id, quality, "vocabulario")
+        flash("✅ Práctica de vocabulario registrada en el SRS", "success")
+        return redirect(url_for("japones_vocabulario_practicar", item=jp))
+
+    if selected:
+        selected_item = next((i for i in items if i["jp"] == selected), items[0] if items else None)
+    else:
+        selected_item = items[0] if items else None
+    return render_template("japones_practica.html", kind="vocabulario", title="Práctica de vocabulario N5", items=items, selected=selected_item)
+
+
+@app.route("/japones/gramatica/practicar", methods=["GET", "POST"])
+@login_requerido
+def japones_gramatica_practicar():
+    items = _items_curriculum_por_tipo("gramatica")
+    selected = request.args.get("item", "").strip()
+    if request.method == "POST":
+        jp = (request.form.get("item") or "").strip()
+        modo = (request.form.get("modo") or "ambas").strip().lower()
+        if not jp:
+            flash("❌ No se ha seleccionado ninguna gramática para practicar", "error")
+            return redirect(url_for("japones_gramatica_practicar"))
+        item = next((i for i in items if i["jp"] == jp), None)
+        if not item:
+            flash("❌ Esa gramática no existe en el temario N5", "error")
+            return redirect(url_for("japones_gramatica_practicar"))
+        item_id = brain.jap_memory.get_item_id(jp, "gramatica")
+        if item_id is None:
+            brain.jap_memory.add_item("gramatica", jp, meaning=item["meaning"], tipo="gramatica")
+            item_id = brain.jap_memory.get_item_id(jp, "gramatica")
+        if item_id is None:
+            flash("❌ No se pudo guardar la gramática para el SRS", "error")
+            return redirect(url_for("japones_gramatica_practicar", item=jp))
+        quality = 5 if modo in {"ambas", "reading", "meaning", "significado", "lectura"} else 4
+        brain.jap_memory.review(item_id, quality, "gramatica")
+        flash("✅ Práctica de gramática registrada en el SRS", "success")
+        return redirect(url_for("japones_gramatica_practicar", item=jp))
+
+    if selected:
+        selected_item = next((i for i in items if i["jp"] == selected), items[0] if items else None)
+    else:
+        selected_item = items[0] if items else None
+    return render_template("japones_practica.html", kind="gramatica", title="Práctica de gramática N5", items=items, selected=selected_item)
+
+
+@app.route("/japones/kanjis/practicar", methods=["POST"])
+@login_requerido
+def japones_kanjis_practicar():
+    kanji = (request.form.get("kanji") or "").strip()
+    modo = (request.form.get("modo") or "ambas").strip().lower()
+    if not kanji:
+        flash("❌ No se ha seleccionado ningún kanji para practicar", "error")
+        return redirect(url_for("japones_kanjis"))
+
+    item = next((k for k in KANJI_N5 if k.get("jp") == kanji), None)
+    if not item:
+        flash("❌ Ese kanji no existe en el proyecto", "error")
+        return redirect(url_for("japones_kanjis"))
+
+    reading = (item.get("reading") or item.get("kun") or item.get("on") or "").strip()
+    meaning = (item.get("meaning") or "").strip()
+    item_id = brain.jap_memory.get_item_id(kanji, "kanji")
+    if item_id is None:
+        brain.jap_memory.add_item("kanji", kanji, reading=reading, meaning=meaning, tipo="kanji")
+        item_id = brain.jap_memory.get_item_id(kanji, "kanji")
+
+    if item_id is None:
+        flash("❌ No se pudo guardar el kanji para el SRS", "error")
+        return redirect(url_for("japones_kanjis", kanji=kanji))
+
+    if modo in ("meaning", "significado"):
+        brain.jap_memory.review(item_id, 4, "kanji")
+        flash("✅ Práctica de significado registrada en el SRS", "success")
+    elif modo in ("writing", "escritura"):
+        brain.jap_memory.review(item_id, 4, "kanji")
+        flash("✅ Práctica de escritura registrada en el SRS", "success")
+    else:
+        brain.jap_memory.review(item_id, 5, "kanji")
+        flash("✅ Práctica de significado + escritura registrada en el SRS", "success")
+
+    return redirect(url_for("japones_kanjis", kanji=kanji))
+
 
 @app.route("/japones/vocabulario/añadir", methods=["POST"])
 @login_requerido

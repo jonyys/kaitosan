@@ -1,0 +1,504 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Práctica de kanjis — Kaitosan</title>
+    {% include 'partials/admin/_estilos.html' %}
+    <style>
+      .jp-wrap {
+        max-width: 1100px;
+        margin: 0 auto;
+      }
+      .kanji-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        gap: 12px;
+        margin-top: 18px;
+      }
+      .kanji-card {
+        display: block;
+        text-decoration: none;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radio-sm);
+        padding: 16px 10px;
+        text-align: center;
+        box-shadow: var(--sombra-sm);
+        transition:
+          transform 0.15s ease,
+          border-color 0.15s ease,
+          box-shadow 0.15s ease;
+        color: var(--text);
+      }
+      .kanji-card:hover {
+        transform: translateY(-2px);
+        border-color: var(--rosa-accion);
+        box-shadow: var(--sombra);
+      }
+      .kanji-card.active {
+        border-color: var(--rosa-accion);
+        background: var(--surface-2);
+      }
+      .kanji-char {
+        display: block;
+        font-size: 2.6rem;
+        font-weight: 700;
+        color: var(--rosa-tinta);
+        line-height: 1;
+        margin-bottom: 8px;
+      }
+      .kanji-reading {
+        font-size: 12px;
+        color: var(--rosa-accion);
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+      .kanji-meaning {
+        font-size: 11px;
+        color: var(--text-soft);
+        line-height: 1.35;
+      }
+      .practice-panel {
+        margin-top: 24px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radio-md);
+        box-shadow: var(--sombra-sm);
+        padding: 20px;
+      }
+      .practice-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 18px;
+      }
+      .practice-main {
+        display: grid;
+        grid-template-columns: 240px 1fr;
+        gap: 24px;
+        align-items: start;
+      }
+      @media (max-width: 760px) {
+        .practice-main {
+          grid-template-columns: 1fr;
+        }
+      }
+      .char-large {
+        font-size: clamp(5rem, 16vw, 10rem);
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 180px;
+        border: 1px solid var(--border);
+        border-radius: var(--radio-md);
+        background: linear-gradient(135deg, var(--surface-2), var(--surface));
+        color: var(--rosa-tinta);
+        font-weight: 700;
+        user-select: none;
+        cursor: pointer;
+        transition:
+          transform 0.14s ease,
+          box-shadow 0.14s ease,
+          border-color 0.14s ease;
+      }
+      .char-large:hover {
+        transform: translateY(-1px);
+        border-color: var(--rosa-accion);
+        box-shadow: var(--sombra-sm);
+      }
+      .char-large.active {
+        border-color: var(--rosa-accion);
+        background: linear-gradient(135deg, #fce7f3, var(--surface));
+      }
+      .meta-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      .meta-list li {
+        margin: 8px 0;
+        color: var(--text);
+      }
+      .meta-list strong {
+        color: var(--text-soft);
+      }
+      .practice-hint {
+        color: var(--text-soft);
+        font-size: 12px;
+        margin-top: 10px;
+      }
+      .btn-ghost {
+        background: transparent;
+        border: 1px solid var(--border-fuerte);
+        color: var(--text);
+      }
+      .practice-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 16px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .stroke-counter {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--rosa-tinta);
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: var(--radio-pill);
+        padding: 6px 10px;
+      }
+      .writing-zone {
+        margin-top: 18px;
+        border: 1px solid var(--border);
+        border-radius: var(--radio-md);
+        background: linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.4),
+          rgba(255, 255, 255, 0.15)
+        );
+        padding: 14px;
+      }
+      .writing-stage {
+        width: 100%;
+        height: 220px;
+        background: rgba(255, 255, 255, 0.85);
+        border: 1px solid var(--border-fuerte);
+        border-radius: var(--radio-sm);
+        cursor: crosshair;
+        display: block;
+      }
+      .writing-actions {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        margin-top: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .writing-label {
+        font-size: 12px;
+        color: var(--text-soft);
+        font-weight: 700;
+      }
+      .flash-pop .practice-options {
+        display: grid;
+        gap: 10px;
+        margin-top: 10px;
+      }
+      .flash-pop .practice-option {
+        width: 100%;
+        min-height: 42px;
+        border: 1px solid var(--border-fuerte);
+        border-radius: var(--radio-pill);
+        background: var(--surface-2);
+        color: var(--text);
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .flash-pop .practice-option:hover {
+        border-color: var(--rosa-accion);
+        background: #fdf2f8;
+      }
+    </style>
+  </head>
+  <body>
+    {% include 'partials/_iconos.html' %}
+    <div class="jp-wrap">
+      <h1>
+        <span
+          ><svg class="ico"><use href="#i-lang" /></svg> Práctica de
+          kanjis</span
+        >
+        <div
+          style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap"
+        >
+          <a href="/japones"
+            ><button class="btn btn-yellow" style="font-size: 13px">
+              <svg class="ico"><use href="#i-home" /></svg></button
+          ></a>
+          <a href="/japones/kanjis"
+            ><button class="btn btn-yellow" style="font-size: 13px">
+              <svg class="ico"><use href="#i-lang" /></svg> Práctica
+            </button></a
+          >
+        </div>
+      </h1>
+
+      <div class="card full">
+        <div class="section-header">
+          <h2>Selecciona un kanji</h2>
+        </div>
+        <div class="kanji-grid">
+          {% for item in kanjis %}
+          <a
+            class="kanji-card {% if selected and selected.kanji == item.kanji %}active{% endif %}"
+            href="/japones/kanjis?kanji={{ item.kanji | urlencode }}"
+          >
+            <span class="kanji-char">{{ item.kanji }}</span>
+            <span class="kanji-reading">{{ item.reading or '—' }}</span>
+            <span class="kanji-meaning">{{ item.meaning }}</span>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+
+      {% if selected %}
+      <div class="practice-panel">
+        <div class="practice-top">
+          <h2 style="margin: 0">Ficha de práctica</h2>
+          <div class="practice-actions">
+            <button type="button" id="practice-btn" class="btn btn-yellow">
+              Practicar
+            </button>
+            <a
+              href="/japones/kanjis?kanji={{ selected.kanji | urlencode }}"
+              class="btn btn-ghost"
+              >Reiniciar ficha</a
+            >
+          </div>
+        </div>
+
+        <div class="practice-main">
+          <div
+            id="stroke-practice"
+            class="char-large"
+            aria-label="Kanji {{ selected.kanji }}"
+            title="Haz clic para practicar el trazo del kanji"
+            data-kanji="{{ selected.kanji }}"
+          >
+            {{ selected.kanji }}
+          </div>
+
+          <div>
+            <ul class="meta-list">
+              <li><strong>Significado:</strong> {{ selected.meaning }}</li>
+              <li>
+                <strong>Lectura en hiragana:</strong> {{ selected.reading or '—'
+                }}
+              </li>
+              <li><strong>Lectura on:</strong> {{ selected.on or '—' }}</li>
+              <li><strong>Lectura kun:</strong> {{ selected.kun or '—' }}</li>
+              <li><strong>Radical:</strong> {{ selected.radical or '—' }}</li>
+              <li><strong>Trazo:</strong> {{ selected.trazos or '—' }}</li>
+              <li><strong>Literal:</strong> {{ selected.literal or '—' }}</li>
+              <li><strong>Ejemplo:</strong> {{ selected.ejemplo or '—' }}</li>
+              <li><strong>Uso:</strong> {{ selected.uso or '—' }}</li>
+              <li>
+                <strong>Vocabulario de ejemplo:</strong> {{
+                selected.vocab_ejemplo or '—' }}
+              </li>
+              <li><strong>Memoria:</strong> {{ selected.mnemo or '—' }}</li>
+            </ul>
+            <div class="practice-hint">
+              Haz clic en el kanji y escribe a mano en la zona de abajo para
+              practicar el trazo; luego repite la lectura y el significado en
+              voz alta.
+            </div>
+            <div class="stroke-counter" id="stroke-counter">Trazo: 0 / 5</div>
+
+            <div class="writing-zone">
+              <div class="writing-label">Zona de escritura</div>
+              <canvas
+                id="kanji-canvas"
+                class="writing-stage"
+                width="320"
+                height="220"
+                aria-label="Zona de escritura del kanji {{ selected.kanji }}"
+              ></canvas>
+              <div class="writing-actions">
+                <span class="writing-label"
+                  >Sincroniza el trazo con el kanji {{ selected.kanji }}</span
+                >
+                <button type="button" class="btn btn-ghost" id="clear-canvas">
+                  Limpiar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <dialog id="kanji-practice-pop" class="flash-pop">
+      <div class="cp-ask">
+        <p class="cp-msg">¿Cómo quieres practicar este kanji?</p>
+        <div class="practice-options">
+          <button type="button" class="practice-option" data-mode="significado">
+            Prácticar significado
+          </button>
+          <button type="button" class="practice-option" data-mode="escritura">
+            Prácticar escritura
+          </button>
+          <button type="button" class="practice-option" data-mode="ambas">
+            Prácticar las dos
+          </button>
+          <button
+            type="button"
+            class="practice-option"
+            data-mode="cancelar"
+            style="background: var(--surface)"
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </dialog>
+
+    <form
+      id="kanji-practice-form"
+      method="POST"
+      action="/japones/kanjis/practicar"
+      style="display: none"
+    >
+      <input
+        type="hidden"
+        name="kanji"
+        value="{{ selected.kanji if selected else '' }}"
+      />
+      <input type="hidden" name="modo" id="kanji-practice-mode" value="ambas" />
+    </form>
+
+    <script>
+      (function () {
+        var selectedKanji = '{{ selected.kanji if selected else "" }}';
+        var popup = document.getElementById("kanji-practice-pop");
+        var form = document.getElementById("kanji-practice-form");
+        var modeInput = document.getElementById("kanji-practice-mode");
+        var practiceBtn = document.getElementById("practice-btn");
+        var strokeBox = document.getElementById("stroke-practice");
+        var strokeCounter = document.getElementById("stroke-counter");
+        var strokeCount = 0;
+
+        function mostrarPopup() {
+          if (!popup || !popup.showModal) return form.submit();
+          popup.showModal();
+        }
+
+        function cerrarPopup() {
+          if (popup && popup.close) popup.close();
+        }
+
+        if (practiceBtn) {
+          practiceBtn.addEventListener("click", mostrarPopup);
+        }
+
+        popup &&
+          popup.addEventListener("click", function (event) {
+            if (event.target === popup) cerrarPopup();
+          });
+
+        document.querySelectorAll(".practice-option").forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            var mode = btn.getAttribute("data-mode");
+            if (!mode || mode === "cancelar") {
+              cerrarPopup();
+              return;
+            }
+            modeInput.value = mode;
+            cerrarPopup();
+            form.submit();
+          });
+        });
+
+        var canvas = document.getElementById("kanji-canvas");
+        var clearCanvasBtn = document.getElementById("clear-canvas");
+
+        if (canvas) {
+          var ctx = canvas.getContext("2d");
+          var drawing = false;
+          var lastX = 0;
+          var lastY = 0;
+
+          function resizeCanvas() {
+            var rect = canvas.getBoundingClientRect();
+            var ratio = window.devicePixelRatio || 1;
+            canvas.width = Math.max(280, Math.floor(rect.width * ratio));
+            canvas.height = Math.max(180, Math.floor(rect.height * ratio));
+            ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+            ctx.lineCap = "round";
+            ctx.lineJoin = "round";
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = "#5d2342";
+          }
+
+          function getPoint(event) {
+            var rect = canvas.getBoundingClientRect();
+            var x = (event.clientX - rect.left) * (canvas.width / rect.width);
+            var y = (event.clientY - rect.top) * (canvas.height / rect.height);
+            return { x: x, y: y };
+          }
+
+          function startDraw(event) {
+            drawing = true;
+            var point = getPoint(event);
+            lastX = point.x;
+            lastY = point.y;
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(lastX, lastY);
+            ctx.stroke();
+          }
+
+          function moveDraw(event) {
+            if (!drawing) return;
+            var point = getPoint(event);
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(point.x, point.y);
+            ctx.stroke();
+            lastX = point.x;
+            lastY = point.y;
+          }
+
+          function stopDraw() {
+            drawing = false;
+          }
+
+          resizeCanvas();
+          window.addEventListener("resize", resizeCanvas);
+
+          canvas.addEventListener("pointerdown", startDraw);
+          canvas.addEventListener("pointermove", moveDraw);
+          canvas.addEventListener("pointerup", stopDraw);
+          canvas.addEventListener("pointerleave", stopDraw);
+          canvas.addEventListener("pointercancel", stopDraw);
+
+          if (clearCanvasBtn) {
+            clearCanvasBtn.addEventListener("click", function () {
+              ctx.clearRect(0, 0, canvas.width, canvas.height);
+              strokeCount = 0;
+              if (strokeCounter) {
+                strokeCounter.textContent = "Trazo: 0 / 5";
+              }
+            });
+          }
+        }
+
+        if (strokeBox) {
+          strokeBox.addEventListener("click", function () {
+            strokeCount = Math.min(5, strokeCount + 1);
+            strokeBox.classList.add("active");
+            if (strokeCounter) {
+              strokeCounter.textContent = "Trazo: " + strokeCount + " / 5";
+            }
+            if (strokeCount >= 5) {
+              strokeBox.title =
+                "¡Muy bien! Ya tienes el trazo del kanji " + selectedKanji;
+              strokeCounter.textContent = "Trazo: 5 / 5 · ¡Muy bien!";
+            }
+            setTimeout(function () {
+              strokeBox.classList.remove("active");
+            }, 180);
+          });
+        }
+      })();
+    </script>
+  </body>
+</html>

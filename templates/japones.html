@@ -154,7 +154,11 @@
 
 <h1>
     <span><svg class="ico"><use href="#i-lang"/></svg> Panel de Japonés</span>
-    <a href="/admin"><button class="btn btn-yellow" style="font-size:13px"><svg class="ico"><use href="#i-home"/></svg></button></a>
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <a href="/admin"><button class="btn btn-yellow" style="font-size:13px"><svg class="ico"><use href="#i-home"/></svg></button></a>
+        <a href="/japones/vocabulario/practicar"><button class="btn btn-yellow" style="font-size:13px">Vocabulario</button></a>
+        <a href="/japones/gramatica/practicar"><button class="btn btn-yellow" style="font-size:13px">Gramática</button></a>
+    </div>
 </h1>
 
 {% include 'partials/_panel_scripts.html' %}
@@ -260,10 +264,13 @@
 <div class="card full">
     <div class="section-header">
         <h2><svg class="ico"><use href="#i-book"/></svg> Vocabulario ({{ total_vocab }})</h2>
-        <form method="post" action="/japones/vocabulario/borrar-todo"
-              onsubmit="return confirm('¿Borrar TODO el vocabulario? Esta acción no se puede deshacer.')">
-            <button class="btn btn-red">Borrar todo</button>
-        </form>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <a href="/japones/vocabulario/practicar"><button class="btn btn-yellow" style="font-size:13px">Práctica</button></a>
+            <form method="post" action="/japones/vocabulario/borrar-todo"
+                  onsubmit="return confirm('¿Borrar TODO el vocabulario? Esta acción no se puede deshacer.')">
+                <button class="btn btn-red">Borrar todo</button>
+            </form>
+        </div>
     </div>
 
     <form method="post" action="/japones/vocabulario/añadir" style="margin-bottom:16px;">
@@ -337,10 +344,13 @@
 <div class="card full">
     <div class="section-header">
         <h2><svg class="ico"><use href="#i-lang"/></svg> Kanjis ({{ total_kanji }})</h2>
-        <form method="post" action="/japones/kanji/borrar-todo"
-              onsubmit="return confirm('¿Borrar TODOS los kanjis?')">
-            <button class="btn btn-red">Borrar todo</button>
-        </form>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <a href="/japones/kanjis"><button class="btn btn-yellow" style="font-size:13px">Práctica</button></a>
+            <form method="post" action="/japones/kanji/borrar-todo"
+                  onsubmit="return confirm('¿Borrar TODOS los kanjis?')">
+                <button class="btn btn-red">Borrar todo</button>
+            </form>
+        </div>
     </div>
 
     <form method="post" action="/japones/kanji/añadir" style="margin-bottom:16px;">
@@ -414,10 +424,13 @@
 <div class="card full">
     <div class="section-header">
         <h2><svg class="ico"><use href="#i-puzzle"/></svg> Gramática ({{ total_grammar }})</h2>
-        <form method="post" action="/japones/gramatica/borrar-todo"
-              onsubmit="return confirm('¿Borrar TODA la gramática?')">
-            <button class="btn btn-red">Borrar todo</button>
-        </form>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <a href="/japones/gramatica/practicar"><button class="btn btn-yellow" style="font-size:13px">Práctica</button></a>
+            <form method="post" action="/japones/gramatica/borrar-todo"
+                  onsubmit="return confirm('¿Borrar TODA la gramática?')">
+                <button class="btn btn-red">Borrar todo</button>
+            </form>
+        </div>
     </div>
 
     <form method="post" action="/japones/gramatica/añadir" style="margin-bottom:16px;">
