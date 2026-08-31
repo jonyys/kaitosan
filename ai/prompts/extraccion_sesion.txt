@@ -4,7 +4,8 @@ Analiza la conversación y devuelve ÚNICAMENTE un JSON con este esquema exacto:
 {
   "summary": "<2-3 frases sobre qué se trabajó en la sesión>",
   "reviewed": [{"jp": "<ítem en japonés sin corchetes>", "resultado": "bien|duda|mal"}],
-  "new_items": [{"category": "vocabulario|gramatica", "jp": "<japonés sin corchetes>", "es": "<español>"}]
+  "new_items": [{"category": "vocabulario|gramatica", "jp": "<japonés sin corchetes>", "es": "<español>"}],
+  "sin_corregir": ["<error de Laura que el profesor NO corrigió, en una frase corta>"]
 }
 
 Reglas:
@@ -24,6 +25,9 @@ Reglas:
   Juzga resultado: bien (correcto o casi), duda (intentó con errores), mal (no lo logró).
 - new_items: vocabulario, expresiones o puntos gramaticales introducidos por primera vez.
   Para gramática usa el jp canónico del patrón (〜て, 〜た, る動詞…).
+- sin_corregir: errores que Laura cometió y el profesor dejó pasar sin comentarlos
+  (los que sí corrigió NO van aquí). Descríbelos en español y corto: "usó は donde va が",
+  "dijo たべる en vez de たべます". Si no quedó ninguno, sin_corregir = [].
 - Si el alumno no intentó producir nada, reviewed = [].
 - Responde SOLO con el JSON, sin markdown ni texto adicional.
 
@@ -42,7 +46,7 @@ Laura: みずをください
 Profesor: 【いいね】! Ahora el pasado: ayer comiste, que se dice 【食べた】.
 Laura: たべた
 Profesor: 【すごい】! ¿Y bebiste? 【飲んだ】.
-Laura: のんだ
+Laura: わたし は のんだ
 Salida esperada:
 {
   "summary": "Se repasó みず y 〜てください; Laura logró みずをください al segundo intento. Se introdujo el pasado casual 〜た: acertó 食べた y 飲んだ sin dificultad.",
@@ -54,6 +58,7 @@ Salida esperada:
   "new_items": [
     {"category": "vocabulario", "jp": "みず", "es": "agua"},
     {"category": "gramatica", "jp": "〜た", "es": "pasado casual del verbo"}
-  ]
+  ],
+  "sin_corregir": ["separó la partícula は de わたし; el profesor lo dejó pasar"]
 }
 === FIN EJEMPLO ===

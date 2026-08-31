@@ -200,6 +200,14 @@ TOOLS = [
             "description": "Activa el modo conversación japonés. Usar SOLO cuando Laura pide explícitamente ponerse a charlar o practicar en japonés de forma continua, por ejemplo: 'hablemos en japonés', 'quiero practicar conversación'. NO usar para preguntas sueltas de traducción.",
             "parameters": {"type": "object", "properties": {}, "required": []}
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "activar_modo_mixto_japones",
+            "description": "Activa el modo mixto: conversación en la que el temario del día se cuela de forma natural, sin ejercicios anunciados. Usar cuando Laura quiere practicar pero sin clase formal, por ejemplo: 'algo entre charla y clase', 'practica pero sin ejercicios'.",
+            "parameters": {"type": "object", "properties": {}, "required": []}
+        }
     }
 ]
 

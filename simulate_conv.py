@@ -292,7 +292,7 @@ def main():
     linea(f"Fecha/Hora : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     linea(f"BD         : {DB_PATH}")
     linea(f"Modo       : {'interactivo' if args.interactive else 'automático (conversación predefinida)'}")
-    linea(f"Prompt     : profesor_japones_conv.txt  (modo charla, conv=True)")
+    linea(f"Prompt     : profesor_japones.txt  (registro charla)")
 
     if args.clean:
         seccion("LIMPIANDO DATOS JAPONESES")
@@ -318,8 +318,8 @@ def main():
     seccion("ACTIVANDO MODO CONVERSACIONAL  (conv=True)")
     profesor.entrar(conv=True)
     linea(f"Session ID en japanese_sessions: {profesor.session_id}")
-    linea(f"modo_conv: {profesor.modo_conv}")
-    linea("Prompt cargado: profesor_japones_conv.txt")
+    linea(f"registro: {profesor.registro}")
+    linea("Prompt cargado: profesor_japones.txt")
     linea("Timer de inactividad (20 min) activo — se cancela al salir")
 
     seccion("CONVERSACIÓN")

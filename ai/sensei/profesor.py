@@ -54,6 +54,8 @@ CAMBIO_A_ESTUDIO = [
     "Modo clase activado. Aunque tampoco me voy a poner muy formal, que me conozco. 【はじめましょう！】",
 ]
 
+REGISTROS = ("clase", "mixto", "charla")  # densidad de ejercicio, no identidad
+
 _QUALITY_MAP = {"bien": 5, "duda": 3, "mal": 1}
 
 # Bloques 【...】 que contienen al menos un kana/kanji (con o sin puntuación dentro).
@@ -150,7 +152,7 @@ class ProfesorJapones:
         self.socketio = socketio
 
         self.activo = False
-        self.modo_conv = False
+        self.registro = "clase"
         self.timer = None
         self.session_id = None
         self.mensajes = []          # historial propio de la sesión sensei (solo user/assistant)
@@ -165,13 +167,21 @@ class ProfesorJapones:
 
     # ── Ciclo de vida ─────────────────────────────────────────────────────────
 
-    def set_modo_conv(self, conv: bool):
-        self.modo_conv = conv
+    @property
+    def modo_conv(self) -> bool:
+        """Compatibilidad: fuera del sensei solo interesa si esto es charla."""
+        return self.registro == "charla"
 
-    def entrar(self, conv: bool = False):
+    def set_registro(self, registro: str):
+        self.registro = registro if registro in REGISTROS else "clase"
+
+    def set_modo_conv(self, conv: bool):
+        self.set_registro("charla" if conv else "clase")
+
+    def entrar(self, conv: bool = False, registro: str = None):
         """Activa el modo sensei y abre una sesión en la BD."""
         self.activo = True
-        self.modo_conv = conv
+        self.set_registro(registro or ("charla" if conv else "clase"))
         self.mensajes = []
         self.ultima_frase_objetivo = None
         self._foco_due_vocab = []
@@ -247,12 +257,14 @@ class ProfesorJapones:
         self._renovar_timer()
 
         # Construir historial del sensei desde cero (sin mutar el de Brain)
-        nombre_prompt = "profesor_japones_conv" if self.modo_conv else "profesor_japones"
         try:
-            prompt_base = cargar_prompt(nombre_prompt)
+            prompt_base = cargar_prompt("profesor_japones")
         except Exception as e:
-            print(f"⚠️ No se pudo cargar prompt {nombre_prompt}: {e}")
+            print(f"⚠️ No se pudo cargar prompt profesor_japones: {e}")
             prompt_base = "Eres un profesor de japonés amable. Habla en japonés con 【】."
+        # Un solo prompt con dial: lo que cambia entre clase y charla es la
+        # densidad de ejercicio, no quién es Kaito.
+        prompt_base = prompt_base.replace("{REGISTRO}", self.registro)
 
         recuerdas, foco = self._montar_estado()
 
@@ -342,6 +354,9 @@ class ProfesorJapones:
 
         if perfil_jap.get("last_session_summary"):
             lineas_r.append(f"Última sesión: {perfil_jap['last_session_summary']}")
+
+        if perfil_jap.get("sin_corregir"):
+            lineas_r.append(f"Quedó sin corregir: {perfil_jap['sin_corregir']}")
 
         if perfil_jap.get("weak_points"):
             puntos = ", ".join(
@@ -519,7 +534,6 @@ class ProfesorJapones:
 
         words_learned = 0
         grammar_list = []
-        errors_list = []
 
         for r in data.get("reviewed", []):
             jp = (r.get("jp") or "").strip()
@@ -541,8 +555,6 @@ class ProfesorJapones:
                     words_learned += 1
                 else:
                     grammar_list.append(jp)
-                if quality < 3:
-                    errors_list.append(jp)
             except Exception as e:
                 print(f"⚠️ Error en review de '{jp}': {e}")
 
@@ -562,7 +574,11 @@ class ProfesorJapones:
             summary=data.get("summary") or summary_basico or None,
             words_learned=words_learned,
             grammar_practiced=", ".join(grammar_list),
-            errors_noted=", ".join(errors_list),
+            # Lo que Kaito decidió no corregir en el momento: lo recupera
+            # la próxima sesión desde RECUERDAS_DE_LAURA.
+            errors_noted="; ".join(
+                e.strip() for e in data.get("sin_corregir", []) if e and e.strip()
+            ),
         )
 
     def _construir_transcript(self) -> str:
@@ -620,4 +636,5 @@ class ProfesorJapones:
         data.setdefault("summary", "")
         data.setdefault("reviewed", [])
         data.setdefault("new_items", [])
+        data.setdefault("sin_corregir", [])
         return data

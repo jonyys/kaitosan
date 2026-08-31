@@ -17,6 +17,13 @@ import re as regex
 
 MAX_MENSAJES = 20
 
+# La herramienta que Kaito elige decide el registro del sensei (Fase 11).
+_TOOL_A_REGISTRO = {
+    "activar_modo_sensei": "clase",
+    "activar_modo_mixto_japones": "mixto",
+    "activar_modo_conversacion_japones": "charla",
+}
+
 
 class Brain:
 
@@ -115,10 +122,11 @@ class Brain:
         # Primera llamada: el modelo decide si usar herramientas
         content, tool_calls = self.provider.completar_tools(self.historial, TOOLS)
         if tool_calls:
-            modo_switch = next((tc for tc in tool_calls if tc.function.name in ("activar_modo_sensei", "activar_modo_conversacion_japones")), None)
+            modo_switch = next((tc for tc in tool_calls if tc.function.name in _TOOL_A_REGISTRO), None)
             if modo_switch:
-                conv = modo_switch.function.name == "activar_modo_conversacion_japones"
-                self.profesor.entrar(conv=conv)
+                registro = _TOOL_A_REGISTRO[modo_switch.function.name]
+                conv = registro != "clase"
+                self.profesor.entrar(registro=registro)
                 saludo = random.choice(SALUDOS_CONV if conv else SALUDOS)
                 self.historial.append({"role": "assistant", "content": saludo})
                 self.memory.guardar_mensaje(self.session_id, "user", mensaje)

@@ -272,6 +272,13 @@ class JapaneseMemory:
                 """SELECT summary FROM japanese_sessions
                    WHERE summary IS NOT NULL ORDER BY started_at DESC LIMIT 1"""
             ).fetchone()
+            # Errores que el profesor decidió no comentar en su momento: se
+            # arrastran a la sesión siguiente en vez de perderse.
+            sin_corregir = conn.execute(
+                """SELECT errors_noted FROM japanese_sessions
+                   WHERE errors_noted IS NOT NULL AND errors_noted != ''
+                   ORDER BY started_at DESC LIMIT 1"""
+            ).fetchone()
             weak = conn.execute(
                 "SELECT word, errors FROM japanese_vocabulary "
                 "WHERE times_reviewed >= 3 AND CAST(errors AS REAL) / times_reviewed > 0.4 "
@@ -287,6 +294,7 @@ class JapaneseMemory:
             "vocab_by_status": dict(vocab_counts),
             "due_count": due_count,
             "last_session_summary": last_session[0] if last_session else None,
+            "sin_corregir": sin_corregir[0] if sin_corregir else None,
             "weak_points": [{"word": w, "errors": e} for w, e in weak],
             "weak_grammar": [{"punto": g, "errors": e} for g, e in weak_gram],
         }
