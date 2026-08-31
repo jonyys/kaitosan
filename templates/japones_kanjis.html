@@ -72,6 +72,22 @@
         border-color: var(--rosa-accion);
         background: var(--surface-2);
       }
+      .kanji-card.dominado {
+        border-color: var(--ok);
+        background: var(--ok-bg);
+      }
+      .kanji-card.dominado .kanji-char::after {
+        content: " ✓";
+        font-size: 1rem;
+        color: var(--ok-tinta);
+      }
+      .kanji-cats-acciones {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        margin-top: 10px;
+      }
       .kanji-char {
         display: block;
         font-size: 2.6rem;
@@ -340,7 +356,7 @@
   </head>
   <body>
     {% include 'partials/_iconos.html' %} {% include
-    'partials/_confirm_pop.html' %}
+    'partials/_confirm_pop.html' %} {% include 'partials/_flash_pop.html' %}
     <div class="jp-wrap">
       <h1>
         <span
@@ -383,19 +399,42 @@
           <h2>Selecciona un kanji</h2>
         </div>
         <div class="kanji-cats">
-          <button type="button" class="kanji-cat active" data-cat="all">
-            Todos ({{ kanjis | length }})
+          <button
+            type="button"
+            class="kanji-cat active"
+            data-cat="all"
+            data-nombre="todos"
+          >
+            Todos ({{ total_dom }}/{{ kanjis | length }})
           </button>
           {% for c in categorias %}
-          <button type="button" class="kanji-cat" data-cat="{{ c.id }}">
-            {{ c.nombre }}
+          <button
+            type="button"
+            class="kanji-cat"
+            data-cat="{{ c.id }}"
+            data-nombre="{{ c.nombre }}"
+          >
+            {{ c.nombre }} ({{ c.hechos }}/{{ c.total }})
           </button>
           {% endfor %}
+        </div>
+        <div class="kanji-cats-acciones">
+          <form
+            method="POST"
+            action="/japones/kanjis/completar-categoria"
+            id="dom-cat-form"
+          >
+            <input type="hidden" name="categoria" id="dom-cat-input" value="all" />
+            <button type="submit" class="btn btn-ghost" style="font-size: 12px">
+              <svg class="ico"><use href="#i-check" /></svg>
+              <span id="dom-cat-label">Marcar todos como dominados</span>
+            </button>
+          </form>
         </div>
         <div class="kanji-grid">
           {% for item in kanjis %}
           <a
-            class="kanji-card {% if selected and selected.kanji == item.kanji %}active{% endif %}"
+            class="kanji-card {% if selected and selected.kanji == item.kanji %}active{% endif %} {% if item.dominado %}dominado{% endif %}"
             data-cat="{{ item.categoria }}"
             href="/japones/kanjis?kanji={{ item.kanji | urlencode }}"
           >
@@ -481,6 +520,30 @@
         </div>
         <p>{{ selected.mnemo or '—' }}</p>
       </div>
+
+      {% if selected.dominado %}
+      <p
+        style="
+          margin-top: 16px;
+          text-align: center;
+          color: var(--ok-tinta);
+          font-weight: 700;
+        "
+      >
+        <svg class="ico"><use href="#i-check" /></svg> Kanji dominado
+      </p>
+      {% else %}
+      <form
+        method="POST"
+        action="/japones/kanjis/completar"
+        style="margin-top: 16px; text-align: center"
+      >
+        <input type="hidden" name="kanji" value="{{ selected.kanji }}" />
+        <button type="submit" class="btn btn-yellow">
+          <svg class="ico"><use href="#i-check" /></svg> Marcar como dominado
+        </button>
+      </form>
+      {% endif %}
     </dialog>
     {% endif %}
 
@@ -750,14 +813,30 @@
           });
         });
 
+        var domInput = document.getElementById("dom-cat-input");
+        var domLabel = document.getElementById("dom-cat-label");
+
+        function sincronizarDominar(cat, nombre) {
+          if (domInput) domInput.value = cat;
+          if (domLabel)
+            domLabel.textContent =
+              cat === "all"
+                ? "Marcar todos como dominados"
+                : "Marcar «" + nombre + "» como dominado";
+        }
+
         function aplicarFiltro(cat) {
+          var activo = null;
           catButtons.forEach(function (b) {
-            b.classList.toggle("active", b.getAttribute("data-cat") === cat);
+            var on = b.getAttribute("data-cat") === cat;
+            b.classList.toggle("active", on);
+            if (on) activo = b;
           });
           kanjiCards.forEach(function (card) {
             card.hidden =
               cat !== "all" && card.getAttribute("data-cat") !== cat;
           });
+          sincronizarDominar(cat, activo ? activo.getAttribute("data-nombre") : "");
         }
 
         catButtons.forEach(function (btn) {
@@ -769,6 +848,27 @@
             aplicarFiltro(cat);
           });
         });
+
+        var domForm = document.getElementById("dom-cat-form");
+        domForm &&
+          domForm.addEventListener("submit", function (e) {
+            if (domForm.dataset.ok === "1") return;
+            e.preventDefault();
+            var cat = domInput.value;
+            var msg =
+              cat === "all"
+                ? "¿Marcar TODOS los kanji como dominados?"
+                : "¿Marcar toda esta categoría como dominada?";
+            (window.confirmar
+              ? window.confirmar(msg, { ok: "Sí" })
+              : Promise.resolve(window.confirm(msg))
+            ).then(function (ok) {
+              if (ok) {
+                domForm.dataset.ok = "1";
+                domForm.submit();
+              }
+            });
+          });
 
         // el clic en un kanji recarga la página: recupera el filtro elegido
         var catGuardada = "all";

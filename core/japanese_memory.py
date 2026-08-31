@@ -364,6 +364,56 @@ class JapaneseMemory:
                     ),
                 )
 
+    def vocab_rows(self) -> dict:
+        """{word: {reading, meaning, type, status, reps}} de todo el vocabulario en BD."""
+        with self._conectar() as conn:
+            conn.row_factory = sqlite3.Row
+            return {r["word"]: dict(r) for r in conn.execute(
+                "SELECT word, reading, meaning, type, status, "
+                "COALESCE(reps, 0) AS reps FROM japanese_vocabulary"
+            )}
+
+    def marcar_completo(self, jp, kind="vocabulario", reading=None, meaning=None, tipo=None):
+        """Marca una palabra o kanji como aprendido del todo: fuera de la cola de
+        repaso y del flujo de ítems nuevos de las sesiones. Crea la fila si Laura
+        aún no la tenía."""
+        tabla, col = (("japanese_kanji", "kanji") if kind == "kanji"
+                      else ("japanese_vocabulary", "word"))
+        with self._conectar() as conn:
+            existe = conn.execute(
+                f"SELECT 1 FROM {tabla} WHERE {col} = ?", (jp,)
+            ).fetchone()
+            if existe:
+                conn.execute(
+                    f"""UPDATE {tabla} SET
+                           status='mastered', reps=MAX(COALESCE(reps, 0), 8),
+                           ease_factor=2.5, interval_days=36500,
+                           next_review=date('now', '+36500 days'), errors=0
+                       WHERE {col} = ?""",
+                    (jp,),
+                )
+            else:
+                conn.execute(
+                    f"""INSERT INTO {tabla}
+                           ({col}, reading, meaning, type, status, confidence,
+                            reps, ease_factor, interval_days, next_review,
+                            times_reviewed, times_correct)
+                       VALUES (?, ?, ?, ?, 'mastered', 0,
+                               8, 2.5, 36500, date('now', '+36500 days'), 0, 8)""",
+                    (jp, reading, meaning, tipo or ("kanji" if kind == "kanji" else "vocabulario")),
+                )
+
+    def dominados(self, kind: str = "kanji") -> set:
+        """Textos (jp) que se cuentan como aprendidos del todo:
+        status 'learned'/'mastered' o reps >= 2."""
+        tabla, col = (("japanese_kanji", "kanji") if kind == "kanji"
+                      else ("japanese_vocabulary", "word"))
+        with self._conectar() as conn:
+            return {r[0] for r in conn.execute(
+                f"SELECT {col} FROM {tabla} "
+                "WHERE status IN ('learned', 'mastered') OR COALESCE(reps, 0) >= 2"
+            )}
+
     def get_practiced_set(self, kind: str = "kanji") -> set:
         """Conjunto de textos (jp) que ya tienen ficha SRS en la BD."""
         if kind == "vocabulario":

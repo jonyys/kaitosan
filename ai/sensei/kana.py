@@ -31,6 +31,13 @@ def a_kana(texto: str) -> str:
     return "".join(partes)
 
 
+def romaji(texto: str) -> str:
+    """Transcripción Hepburn de `texto` (kana o kanji), para mostrar la lectura."""
+    if not texto:
+        return texto
+    return "".join(seg["hepburn"] for seg in _kks.convert(texto))
+
+
 def bloques_japones(texto: str) -> list[str]:
     """Trozos 【…】 con japonés dentro, ya convertidos a solo kana."""
     out = []
@@ -50,4 +57,6 @@ if __name__ == "__main__":
     assert bloques_japones("Repite: 【水をのむ】 ¿vale?") == ["みずをのむ"]
     assert bloques_japones("dos 【食べる】 y 【コーヒー】 aquí") == ["たべる", "コーヒー"]
     assert bloques_japones("sin japonés 【hola】") == []
+    assert romaji("がくせい") == "gakusei", romaji("がくせい")
+    assert romaji("すみません") == "sumimasen", romaji("すみません")
     print("ok")

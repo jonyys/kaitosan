@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vocabulario N5 — Kaitosan</title>
+    {% include 'partials/admin/_estilos.html' %}
+    <style>
+      .jp-wrap {
+        max-width: 1100px;
+        margin: 0 auto;
+      }
+      .jp-wrap h1 {
+        justify-content: space-between;
+        flex-wrap: wrap;
+      }
+
+      .voc-niveles {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+      .voc-unidades {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 20px;
+        padding-top: 10px;
+        border-top: 1px dashed var(--border-fuerte);
+      }
+      .voc-nivel,
+      .voc-unidad-btn {
+        border: 1px solid var(--border-fuerte);
+        border-radius: var(--radio-pill);
+        background: var(--surface-2);
+        color: var(--text);
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .voc-nivel {
+        font-size: 14px;
+        padding: 8px 18px;
+      }
+      .voc-unidad-btn {
+        font-size: 12px;
+        padding: 6px 12px;
+      }
+      .voc-nivel:hover,
+      .voc-unidad-btn:hover {
+        border-color: var(--rosa-accion);
+      }
+      .voc-nivel.active,
+      .voc-unidad-btn.active {
+        background: var(--rosa-accion);
+        border-color: var(--rosa-accion);
+        color: #fff;
+      }
+      .voc-unidad-btn[hidden] {
+        display: none;
+      }
+
+      .voc-unidad {
+        margin-bottom: 18px;
+      }
+      .voc-unidad[hidden] {
+        display: none;
+      }
+      .voc-unidad-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+      }
+      .voc-unidad-head h2 {
+        margin: 0;
+        border: 0;
+        padding: 0;
+        font-size: 16px;
+      }
+
+      .prog {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+      .prog-track {
+        flex: 1;
+        height: 10px;
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: var(--radio-pill);
+        overflow: hidden;
+      }
+      .prog-fill {
+        height: 100%;
+        border-radius: var(--radio-pill);
+        background: linear-gradient(90deg, var(--rosa-medio), var(--rosa-accion));
+        transition: width 0.35s ease;
+      }
+      .prog-num {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--rosa-tinta);
+        min-width: 42px;
+        text-align: right;
+      }
+
+      .voc-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 10px;
+      }
+      .voc-card {
+        text-align: left;
+        font: inherit;
+        cursor: pointer;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radio-sm);
+        padding: 12px;
+        box-shadow: var(--sombra-sm);
+        transition:
+          transform 0.12s ease,
+          border-color 0.12s ease;
+      }
+      .voc-card:hover {
+        transform: translateY(-2px);
+        border-color: var(--rosa-accion);
+      }
+      .voc-card .jp {
+        display: block;
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: var(--rosa-tinta);
+        line-height: 1.2;
+      }
+      .voc-card .rd {
+        display: block;
+        font-size: 11px;
+        color: var(--rosa-accion);
+        font-weight: 700;
+        margin: 2px 0 4px;
+      }
+      .voc-card .es {
+        display: block;
+        font-size: 12px;
+        color: var(--text);
+        line-height: 1.35;
+      }
+      .voc-card.aprendida {
+        border-color: var(--ok);
+        background: var(--ok-bg);
+      }
+      .voc-card.aprendida .jp::after {
+        content: " ✓";
+        color: var(--ok-tinta);
+        font-size: 0.9rem;
+      }
+
+      #voc-pop {
+        text-align: left;
+        max-width: 440px;
+        width: calc(100vw - 24px);
+      }
+      #voc-pop h3 {
+        margin: 0 0 4px;
+        color: var(--rosa-tinta);
+      }
+      #voc-pop .rd {
+        color: var(--rosa-accion);
+        font-weight: 700;
+        margin: 0 0 12px;
+      }
+      #voc-pop dl {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 6px 12px;
+        margin: 0 0 16px;
+        font-size: 14px;
+      }
+      #voc-pop dt {
+        color: var(--text-soft);
+        font-weight: 700;
+      }
+      #voc-pop dd {
+        margin: 0;
+      }
+      #voc-pop .voc-pop-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+    </style>
+  </head>
+  <body>
+    {% include 'partials/_iconos.html' %} {% include
+    'partials/_confirm_pop.html' %} {% include 'partials/_flash_pop.html' %}
+    <div class="jp-wrap">
+      <h1>
+        <span
+          ><svg class="ico"><use href="#i-lang" /></svg> Vocabulario N5</span
+        >
+        <div
+          style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap"
+        >
+          <a href="/japones"
+            ><button class="btn btn-yellow" style="font-size: 13px">
+              <svg class="ico"><use href="#i-home" /></svg></button
+          ></a>
+        </div>
+      </h1>
+
+      <div class="voc-niveles">
+        {% for n in niveles %}
+        <button type="button" class="voc-nivel" data-n="{{ n }}">{{ n }}</button>
+        {% endfor %}
+      </div>
+      <div class="voc-unidades">
+        <button type="button" class="voc-unidad-btn" data-u="all">Todas</button>
+        {% for u in unidades %}
+        <button
+          type="button"
+          class="voc-unidad-btn"
+          data-u="{{ u.id }}"
+          data-n="{{ u.nivel }}"
+        >
+          {{ u.nombre }} ({{ u.hechas }}/{{ u.total }})
+        </button>
+        {% endfor %}
+      </div>
+
+      {% for u in unidades %}
+      <section
+        class="voc-unidad card full"
+        data-u="{{ u.id }}"
+        data-n="{{ u.nivel }}"
+      >
+        <div class="voc-unidad-head">
+          <h2>{{ u.nombre }}</h2>
+          <form
+            method="POST"
+            action="/japones/vocabulario/completar-unidad"
+            class="js-unidad"
+          >
+            <input type="hidden" name="unidad" value="{{ u.id }}" />
+            <button
+              type="submit"
+              class="btn btn-ghost"
+              style="font-size: 12px"
+              {% if u.hechas == u.total %}disabled{% endif %}
+            >
+              Marcar unidad como aprendida
+            </button>
+          </form>
+        </div>
+        <div class="prog">
+          <div class="prog-track">
+            <div class="prog-fill" style="width: {{ u.pct }}%"></div>
+          </div>
+          <span class="prog-num">{{ u.pct }}%</span>
+        </div>
+        <div class="voc-grid">
+          {% for it in u["items"] %}
+          <button
+            type="button"
+            class="voc-card {% if it.estado == 'aprendida' %}aprendida{% endif %}"
+            data-jp="{{ it.jp }}"
+            data-rd="{{ it.reading }}"
+            data-roma="{{ it.romaji }}"
+            data-es="{{ it.meaning }}"
+            data-tipo="{{ it.tipo }}"
+            data-ej="{{ it.ejemplo }}"
+            data-lit="{{ it.literal }}"
+            data-uso="{{ it.uso }}"
+            data-unidad="{{ u.nombre }}"
+            data-estado="{{ it.estado }}"
+          >
+            <span class="jp">{{ it.jp }}</span>
+            <span class="rd">{{ it.romaji }}</span>
+            <span class="es">{{ it.meaning or '—' }}</span>
+          </button>
+          {% endfor %}
+        </div>
+      </section>
+      {% endfor %}
+    </div>
+
+    <dialog id="voc-pop" class="flash-pop">
+      <h3 id="voc-pop-jp"></h3>
+      <p class="rd" id="voc-pop-rd"></p>
+      <dl>
+        <dt>Lectura</dt>
+        <dd id="voc-pop-kana"></dd>
+        <dt>Significado</dt>
+        <dd id="voc-pop-es"></dd>
+        <dt>Tipo</dt>
+        <dd id="voc-pop-tipo"></dd>
+        <dt>Ejemplo</dt>
+        <dd id="voc-pop-ej"></dd>
+        <dt>Literal</dt>
+        <dd id="voc-pop-lit"></dd>
+        <dt>Uso</dt>
+        <dd id="voc-pop-uso"></dd>
+        <dt>Unidad</dt>
+        <dd id="voc-pop-unidad"></dd>
+        <dt>Estado</dt>
+        <dd id="voc-pop-estado"></dd>
+      </dl>
+      <div class="voc-pop-actions">
+        <form
+          method="POST"
+          action="/japones/vocabulario/completar"
+          id="voc-pop-form"
+        >
+          <input type="hidden" name="word" id="voc-pop-word" />
+          <button type="submit" class="btn btn-yellow" id="voc-pop-complete">
+            Marcar como completa
+          </button>
+        </form>
+        <button type="button" class="btn btn-ghost" id="voc-pop-close">
+          Cerrar
+        </button>
+      </div>
+    </dialog>
+
+    <script>
+      (function () {
+        var K_NIVEL = "vocNivel";
+        var K_UNIDAD = "vocUnidad";
+        var nivelBtns = document.querySelectorAll(".voc-nivel");
+        var unidadBtns = document.querySelectorAll(".voc-unidad-btn");
+        var secciones = document.querySelectorAll(".voc-unidad");
+        var niveles = [].map.call(nivelBtns, function (b) {
+          return b.dataset.n;
+        });
+
+        var activeN = niveles[0] || "";
+        var activeU = "all";
+
+        function aplicar() {
+          nivelBtns.forEach(function (b) {
+            b.classList.toggle("active", b.dataset.n === activeN);
+          });
+          unidadBtns.forEach(function (b) {
+            var mia = !b.dataset.n || b.dataset.n === activeN;
+            b.hidden = !mia;
+            b.classList.toggle("active", mia && b.dataset.u === activeU);
+          });
+          secciones.forEach(function (s) {
+            s.hidden =
+              s.dataset.n !== activeN ||
+              (activeU !== "all" && s.dataset.u !== activeU);
+          });
+        }
+
+        nivelBtns.forEach(function (b) {
+          b.addEventListener("click", function () {
+            activeN = b.dataset.n;
+            activeU = "all";
+            try {
+              sessionStorage.setItem(K_NIVEL, activeN);
+              sessionStorage.setItem(K_UNIDAD, "all");
+            } catch (e) {}
+            aplicar();
+          });
+        });
+        unidadBtns.forEach(function (b) {
+          b.addEventListener("click", function () {
+            activeU = b.dataset.u;
+            try {
+              sessionStorage.setItem(K_UNIDAD, activeU);
+            } catch (e) {}
+            aplicar();
+          });
+        });
+
+        try {
+          var gn = sessionStorage.getItem(K_NIVEL);
+          if (gn && niveles.indexOf(gn) !== -1) activeN = gn;
+          var gu = sessionStorage.getItem(K_UNIDAD);
+          if (gu) activeU = gu;
+        } catch (e) {}
+        if (
+          activeU !== "all" &&
+          ![].some.call(secciones, function (s) {
+            return s.dataset.u === activeU && s.dataset.n === activeN;
+          })
+        )
+          activeU = "all";
+        aplicar();
+
+        // popup de palabra
+        var pop = document.getElementById("voc-pop");
+        function fila(id, val) {
+          var dd = document.getElementById(id);
+          dd.textContent = val || "—";
+          var dt = dd.previousElementSibling;
+          dd.hidden = !val;
+          if (dt) dt.hidden = !val;
+        }
+        var ESTADO = {
+          aprendida: "Aprendida",
+          en_curso: "En curso",
+          nueva: "Sin empezar",
+        };
+        document.querySelectorAll(".voc-card").forEach(function (card) {
+          card.addEventListener("click", function () {
+            var d = card.dataset;
+            document.getElementById("voc-pop-jp").textContent = d.jp;
+            document.getElementById("voc-pop-rd").textContent = d.roma || "";
+            fila("voc-pop-kana", d.rd);
+            fila("voc-pop-es", d.es);
+            fila("voc-pop-tipo", d.tipo);
+            fila("voc-pop-ej", d.ej);
+            fila("voc-pop-lit", d.lit);
+            fila("voc-pop-uso", d.uso);
+            fila("voc-pop-unidad", d.unidad);
+            document.getElementById("voc-pop-estado").textContent =
+              ESTADO[d.estado] || d.estado;
+            document.getElementById("voc-pop-word").value = d.jp;
+            document.getElementById("voc-pop-complete").hidden =
+              d.estado === "aprendida";
+            if (pop.showModal) pop.showModal();
+          });
+        });
+        document
+          .getElementById("voc-pop-close")
+          .addEventListener("click", function () {
+            pop.close();
+          });
+        pop.addEventListener("click", function (e) {
+          if (e.target === pop) pop.close();
+        });
+
+        // confirmar "marcar unidad como aprendida"
+        document.querySelectorAll("form.js-unidad").forEach(function (f) {
+          f.addEventListener("submit", function (e) {
+            if (f.dataset.ok === "1") return;
+            e.preventDefault();
+            var msg =
+              "¿Marcar toda la unidad como aprendida? No volverá a salir en las sesiones.";
+            (window.confirmar
+              ? window.confirmar(msg, { ok: "Sí" })
+              : Promise.resolve(window.confirm(msg))
+            ).then(function (ok) {
+              if (ok) {
+                f.dataset.ok = "1";
+                f.submit();
+              }
+            });
+          });
+        });
+      })();
+    </script>
+  </body>
+</html>

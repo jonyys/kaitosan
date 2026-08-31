@@ -1,6 +1,7 @@
 import atexit
 import os
 import random
+import re
 import signal
 import sys
 import tempfile
@@ -33,7 +34,7 @@ from datetime import timedelta, date
 from audio.recorder import Recorder
 from ai.speech_to_text import SpeechToText, transcribir_para_turno
 from ai.text_to_speech import TextToSpeech
-from ai.sensei.kana import bloques_japones
+from ai.sensei.kana import bloques_japones, romaji
 from ai.sensei.kanji_n5 import KANJI_N5
 from ai.sensei.curriculum import CURRICULUM
 from core.token_tracker import TokenTracker
@@ -900,6 +901,18 @@ def japones():
     total_grammar = db.execute("SELECT COUNT(*) FROM japanese_grammar").fetchone()[0]
     total_sessions = db.execute("SELECT COUNT(*) FROM japanese_sessions").fetchone()[0]
 
+    # Denominador de las barras de progreso: TODO lo que hay que aprender
+    # (temario + lo que Laura haya metido en BD), no solo lo que ya tiene ficha.
+    _curr_vocab = {str(e.get("jp") or "").strip()
+                   for u in CURRICULUM for e in u.get("items", [])
+                   if e.get("kind") == "vocabulario" and e.get("tipo") != "kanji"
+                   and str(e.get("jp") or "").strip()}
+    _db_vocab = {r[0] for r in db.execute(
+        "SELECT word FROM japanese_vocabulary WHERE type IS NULL OR type != 'kanji'")}
+    vocab_corpus = len(_curr_vocab | _db_vocab) or 1
+    _db_kanji = {r[0] for r in db.execute("SELECT kanji FROM japanese_kanji")}
+    kanji_corpus = len({k["jp"] for k in KANJI_N5} | _db_kanji) or 1
+
     last_session_row = db.execute("""
         SELECT summary, started_at FROM japanese_sessions
         WHERE summary IS NOT NULL ORDER BY started_at DESC LIMIT 1
@@ -948,9 +961,11 @@ def japones():
     return render_template("japones.html",
         today=today,
         total_vocab=total_vocab,
+        vocab_corpus=vocab_corpus,
         due_today=due_today,
         vocab_by_status=vocab_by_status,
         total_kanji=total_kanji,
+        kanji_corpus=kanji_corpus,
         kanji_by_status=kanji_by_status,
         total_grammar=total_grammar,
         total_sessions=total_sessions,
@@ -966,6 +981,7 @@ def japones():
 def japones_kanjis():
     selected = request.args.get("kanji", "").strip()
     mnemos_laura = brain.jap_memory.get_mnemos()
+    dominados = brain.jap_memory.dominados("kanji")
     kanjis = []
     categorias = []
     for item in KANJI_N5:
@@ -977,6 +993,7 @@ def japones_kanjis():
             })
         kanjis.append({
             "kanji": item.get("jp", ""),
+            "dominado": item.get("jp", "") in dominados,
             "meaning": item.get("meaning", ""),
             "reading": item.get("reading", "") or item.get("kun", "") or item.get("on", ""),
             "reading_card": item.get("reading_card", ""),
@@ -993,12 +1010,18 @@ def japones_kanjis():
             "vocab_ejemplo": item.get("vocab_ejemplo", ""),
             "categoria": cat_id,
         })
+    for c in categorias:
+        suyos = [k for k in kanjis if k["categoria"] == c["id"]]
+        c["total"] = len(suyos)
+        c["hechos"] = sum(1 for k in suyos if k["dominado"])
+    total_dom = sum(1 for k in kanjis if k["dominado"])
     if selected:
         selected_item = next((k for k in kanjis if k["kanji"] == selected), kanjis[0] if kanjis else None)
     else:
         selected_item = kanjis[0] if kanjis else None
     return render_template("japones_kanjis.html", kanjis=kanjis,
-                           categorias=categorias, selected=selected_item)
+                           categorias=categorias, selected=selected_item,
+                           total_dom=total_dom)
 
 
 def _items_curriculum_por_tipo(kind):
@@ -1024,13 +1047,128 @@ def _items_curriculum_por_tipo(kind):
     return items
 
 
+def _vocab_unidades():
+    """Unidades del temario con su vocabulario + una fila 'extra' con lo que
+    Laura haya metido en sesiones y no esté en el temario. Cada palabra trae su
+    estado ('aprendida' | 'en_curso' | 'nueva') y cada unidad su progreso."""
+    db_rows = brain.jap_memory.vocab_rows()
+
+    def estado(jp):
+        r = db_rows.get(jp)
+        if not r:
+            return "nueva"
+        if (r["reps"] or 0) >= 2 or r["status"] in ("learned", "mastered"):
+            return "aprendida"
+        return "en_curso"
+
+    # El nivel (N5/N4/N3…) no está en un campo: va en el nombre de algunas
+    # unidades y el temario está ordenado de mayor a menor. Se arrastra el
+    # último nivel visto y solo se avanza (N5→N4→N3), nunca se retrocede.
+    nivel_re = re.compile(r"\bN([1-5])\b")
+    nivel = "N5"
+
+    unidades, vistos = [], set()
+    for u in CURRICULUM:
+        m = nivel_re.search(u.get("nombre", ""))
+        if m and int(m.group(1)) < int(nivel[1]):
+            nivel = "N" + m.group(1)
+        items = []
+        for e in u.get("items", []):
+            # los kanji entran como kind 'vocabulario' pero tienen su propia
+            # página; aquí solo vocabulario de verdad
+            if e.get("kind") != "vocabulario" or e.get("tipo") == "kanji":
+                continue
+            jp = str(e.get("jp") or "").strip()
+            if not jp or jp in vistos:
+                continue
+            vistos.add(jp)
+            reading = (e.get("reading") or "").strip() or jp
+            items.append({
+                "jp": jp,
+                "reading": reading,
+                "romaji": romaji(reading),
+                "meaning": (e.get("meaning") or "").strip(),
+                "tipo": (e.get("tipo") or "").strip(),
+                "ejemplo": (e.get("ejemplo") or "").strip(),
+                "literal": (e.get("literal") or "").strip(),
+                "uso": (e.get("uso") or "").strip(),
+                "estado": estado(jp),
+            })
+        if items:
+            unidades.append({"id": u["id"], "nombre": u.get("nombre", "N5"),
+                             "nivel": nivel, "items": items})
+
+    extra = [{
+        "jp": jp,
+        "reading": (r["reading"] or "").strip() or jp,
+        "romaji": romaji((r["reading"] or "").strip() or jp),
+        "meaning": (r["meaning"] or "").strip(),
+        "tipo": (r["type"] or "").strip(),
+        "ejemplo": "", "literal": "", "uso": "",
+        "estado": estado(jp),
+    } for jp, r in db_rows.items() if jp not in vistos and r["type"] != "kanji"]
+    if extra:
+        unidades.append({"id": "_extra", "nombre": "Vocabulario extra (sesiones)",
+                         "nivel": "Extra", "items": extra})
+
+    for u in unidades:
+        u["total"] = len(u["items"])
+        u["hechas"] = sum(1 for it in u["items"] if it["estado"] == "aprendida")
+        u["pct"] = round(u["hechas"] * 100 / u["total"]) if u["total"] else 0
+    return unidades
+
+
 @app.route("/japones/vocabulario")
 @login_requerido
 def japones_vocabulario():
-    items = _items_curriculum_por_tipo("vocabulario")
-    selected = request.args.get("item", "").strip()
-    selected_item = next((i for i in items if i["jp"] == selected), items[0] if items else None)
-    return render_template("japones_practica.html", kind="vocabulario", title="Listado de vocabulario N5", items=items, selected=selected_item)
+    unidades = _vocab_unidades()
+    niveles = list(dict.fromkeys(u["nivel"] for u in unidades))
+    return render_template("japones_vocabulario.html", unidades=unidades, niveles=niveles)
+
+
+@app.route("/japones/vocabulario/completar", methods=["POST"])
+@login_requerido
+def japones_vocabulario_completar():
+    jp = (request.form.get("word") or "").strip()
+    if not jp:
+        flash("❌ No se ha indicado ninguna palabra", "error")
+        return redirect(url_for("japones_vocabulario"))
+    e = next((it for u in CURRICULUM for it in u.get("items", [])
+              if it.get("kind") == "vocabulario" and str(it.get("jp") or "").strip() == jp), {}) or {}
+    brain.jap_memory.marcar_completo(
+        jp,
+        reading=(e.get("reading") or "").strip() or jp,
+        meaning=(e.get("meaning") or "").strip(),
+        tipo=(e.get("tipo") or "").strip() or "vocabulario",
+    )
+    return redirect(url_for("japones_vocabulario"))
+
+
+@app.route("/japones/vocabulario/completar-unidad", methods=["POST"])
+@login_requerido
+def japones_vocabulario_completar_unidad():
+    uid = (request.form.get("unidad") or "").strip()
+    curr = {str(e.get("jp") or "").strip()
+            for u in CURRICULUM for e in u.get("items", [])
+            if e.get("kind") == "vocabulario"}
+    if uid == "_extra":
+        palabras = [(jp, None, None, "vocabulario")
+                    for jp in brain.jap_memory.vocab_rows() if jp not in curr]
+    else:
+        u = next((x for x in CURRICULUM if x["id"] == uid), None)
+        if not u:
+            flash("❌ Unidad desconocida", "error")
+            return redirect(url_for("japones_vocabulario"))
+        palabras = [((str(e.get("jp") or "").strip()),
+                     (e.get("reading") or "").strip() or str(e.get("jp") or "").strip(),
+                     (e.get("meaning") or "").strip(),
+                     (e.get("tipo") or "").strip() or "vocabulario")
+                    for e in u.get("items", [])
+                    if e.get("kind") == "vocabulario" and str(e.get("jp") or "").strip()]
+    for jp, reading, meaning, tipo in palabras:
+        brain.jap_memory.marcar_completo(jp, reading=reading, meaning=meaning, tipo=tipo)
+    flash(f"✅ Unidad marcada como aprendida ({len(palabras)} palabras)", "success")
+    return redirect(url_for("japones_vocabulario"))
 
 
 @app.route("/japones/gramatica")
@@ -1040,46 +1178,6 @@ def japones_gramatica():
     selected = request.args.get("item", "").strip()
     selected_item = next((i for i in items if i["jp"] == selected), items[0] if items else None)
     return render_template("japones_practica.html", kind="gramatica", title="Listado de gramática N5", items=items, selected=selected_item)
-
-
-@app.route("/japones/vocabulario/practicar", methods=["GET", "POST"])
-@login_requerido
-def japones_vocabulario_practicar():
-    items = _items_curriculum_por_tipo("vocabulario")
-    selected = request.args.get("item", "").strip()
-    if request.method == "POST":
-        jp = (request.form.get("item") or "").strip()
-        modo = (request.form.get("modo") or "ambas").strip().lower()
-        if not jp:
-            flash("❌ No se ha seleccionado ningún vocabulario para practicar", "error")
-            return redirect(url_for("japones_vocabulario_practicar"))
-        item = next((i for i in items if i["jp"] == jp), None)
-        if not item:
-            flash("❌ Ese vocabulario no existe en el temario N5", "error")
-            return redirect(url_for("japones_vocabulario_practicar"))
-        item_id = brain.jap_memory.get_item_id(jp, "vocabulario")
-        if item_id is None:
-            brain.jap_memory.add_item(
-                "vocabulario",
-                jp,
-                reading=item["reading"],
-                meaning=item["meaning"],
-                tipo=item.get("tipo") or "vocabulario",
-            )
-            item_id = brain.jap_memory.get_item_id(jp, "vocabulario")
-        if item_id is None:
-            flash("❌ No se pudo guardar el vocabulario para el SRS", "error")
-            return redirect(url_for("japones_vocabulario_practicar", item=jp))
-        quality = 5 if modo in {"ambas", "reading", "meaning", "significado", "lectura"} else 4
-        brain.jap_memory.review(item_id, quality, "vocabulario")
-        flash("✅ Práctica de vocabulario registrada en el SRS", "success")
-        return redirect(url_for("japones_vocabulario_practicar", item=jp))
-
-    if selected:
-        selected_item = next((i for i in items if i["jp"] == selected), items[0] if items else None)
-    else:
-        selected_item = items[0] if items else None
-    return render_template("japones_practica.html", kind="vocabulario", title="Práctica de vocabulario N5", items=items, selected=selected_item)
 
 
 @app.route("/japones/gramatica/practicar", methods=["GET", "POST"])
@@ -1164,6 +1262,40 @@ def japones_kanjis_mnemo():
         return redirect(url_for("japones_kanjis"))
     brain.jap_memory.set_mnemo(kanji, texto)
     # sin flash ni ?kanji=: no queremos popup de confirmación al volver
+    return redirect(url_for("japones_kanjis"))
+
+
+@app.route("/japones/kanjis/completar", methods=["POST"])
+@login_requerido
+def japones_kanjis_completar():
+    kanji = (request.form.get("kanji") or "").strip()
+    item = next((k for k in KANJI_N5 if k.get("jp") == kanji), None)
+    if not item:
+        flash("❌ Ese kanji no existe en el proyecto", "error")
+        return redirect(url_for("japones_kanjis"))
+    brain.jap_memory.marcar_completo(
+        kanji, "kanji",
+        reading=(item.get("reading") or item.get("kun") or item.get("on") or "").strip(),
+        meaning=(item.get("meaning") or "").strip(),
+        tipo="kanji",
+    )
+    return redirect(url_for("japones_kanjis"))
+
+
+@app.route("/japones/kanjis/completar-categoria", methods=["POST"])
+@login_requerido
+def japones_kanjis_completar_categoria():
+    cat = (request.form.get("categoria") or "").strip()
+    objetivo = [k for k in KANJI_N5
+                if cat in ("all", "") or k.get("categoria") == cat]
+    for item in objetivo:
+        brain.jap_memory.marcar_completo(
+            item["jp"], "kanji",
+            reading=(item.get("reading") or item.get("kun") or item.get("on") or "").strip(),
+            meaning=(item.get("meaning") or "").strip(),
+            tipo="kanji",
+        )
+    flash(f"✅ {len(objetivo)} kanji marcados como dominados", "success")
     return redirect(url_for("japones_kanjis"))
 
 
