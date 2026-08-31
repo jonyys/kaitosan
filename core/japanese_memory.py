@@ -38,6 +38,26 @@ class JapaneseMemory:
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 );
 
+                CREATE TABLE IF NOT EXISTS japanese_kanji (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    kanji TEXT NOT NULL,
+                    reading TEXT,
+                    meaning TEXT,
+                    type TEXT DEFAULT 'kanji',
+                    status TEXT DEFAULT 'learning',
+                    confidence REAL DEFAULT 0,
+                    errors INTEGER DEFAULT 0,
+                    last_reviewed DATETIME,
+                    times_reviewed INTEGER DEFAULT 0,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    reps INTEGER DEFAULT 0,
+                    ease_factor REAL DEFAULT 2.5,
+                    interval_days INTEGER DEFAULT 0,
+                    next_review TEXT,
+                    times_correct INTEGER DEFAULT 0,
+                    first_taught_session_id INTEGER
+                );
+
                 CREATE TABLE IF NOT EXISTS japanese_sessions (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -82,14 +102,26 @@ class JapaneseMemory:
             "times_seen": "INTEGER DEFAULT 0",
             "times_correct": "INTEGER DEFAULT 0",
         }
+        kanji_cols = {
+            "reps": "INTEGER DEFAULT 0",
+            "ease_factor": "REAL DEFAULT 2.5",
+            "interval_days": "INTEGER DEFAULT 0",
+            "next_review": "TEXT",
+            "times_correct": "INTEGER DEFAULT 0",
+            "first_taught_session_id": "INTEGER",
+        }
         with self._conectar() as conn:
             self._add_columns_if_missing(conn, "japanese_vocabulary", vocab_cols)
             self._add_columns_if_missing(conn, "japanese_grammar", grammar_cols)
+            self._add_columns_if_missing(conn, "japanese_kanji", kanji_cols)
             conn.execute(
                 "UPDATE japanese_vocabulary SET next_review = date('now') WHERE next_review IS NULL"
             )
             conn.execute(
                 "UPDATE japanese_grammar SET next_review = date('now') WHERE next_review IS NULL"
+            )
+            conn.execute(
+                "UPDATE japanese_kanji SET next_review = date('now') WHERE next_review IS NULL"
             )
 
     def _add_columns_if_missing(self, conn, table, columns):
@@ -103,7 +135,7 @@ class JapaneseMemory:
     def add_item(self, kind, jp, reading=None, meaning=None, tipo=None, session_id=None):
         """Inserta un ítem nuevo si no existe; si existe, no duplica.
 
-        kind: "vocabulario" | "gramatica"
+        kind: "vocabulario" | "gramatica" | "kanji"
         """
         today = datetime.now().strftime("%Y-%m-%d")
         if kind == "vocabulario":
@@ -138,6 +170,22 @@ class JapaneseMemory:
                                    0, 0)""",
                         (jp, meaning, today),
                     )
+        elif kind == "kanji":
+            with self._conectar() as conn:
+                existing = conn.execute(
+                    "SELECT id FROM japanese_kanji WHERE kanji = ?", (jp,)
+                ).fetchone()
+                if not existing:
+                    conn.execute(
+                        """INSERT INTO japanese_kanji
+                           (kanji, reading, meaning, type, status, confidence,
+                            reps, ease_factor, interval_days, next_review,
+                            times_reviewed, times_correct, first_taught_session_id)
+                           VALUES (?, ?, ?, 'kanji', 'learning', 0,
+                                   0, 2.5, 0, ?,
+                                   0, 0, ?)""",
+                        (jp, reading, meaning, today, session_id),
+                    )
 
     def get_due_items(self, limit=5, kind="vocabulario"):
         """Devuelve ítems cuyo next_review <= hoy, ordenados por fecha."""
@@ -151,7 +199,15 @@ class JapaneseMemory:
                 ORDER BY next_review ASC
                 LIMIT ?
             """
-            col_jp = "word"
+        elif kind == "kanji":
+            query = """
+                SELECT id, kanji AS jp, reading, meaning, type,
+                       reps, ease_factor, interval_days, next_review, status
+                FROM japanese_kanji
+                WHERE next_review <= ?
+                ORDER BY next_review ASC
+                LIMIT ?
+            """
         else:
             query = """
                 SELECT id, grammar_point AS jp, description AS meaning,
@@ -161,7 +217,6 @@ class JapaneseMemory:
                 ORDER BY next_review ASC
                 LIMIT ?
             """
-            col_jp = "grammar_point"
 
         with self._conectar() as conn:
             conn.row_factory = sqlite3.Row
@@ -196,6 +251,44 @@ class JapaneseMemory:
 
                 conn.execute(
                     """UPDATE japanese_vocabulary SET
+                           reps = ?, ease_factor = ?, interval_days = ?,
+                           next_review = ?, status = ?,
+                           times_reviewed = times_reviewed + 1,
+                           times_correct = times_correct + ?,
+                           errors = errors + ?,
+                           last_reviewed = ?
+                       WHERE id = ?""",
+                    (
+                        reps, round(ease, 4), interval,
+                        next_review, status,
+                        1 if quality >= 3 else 0,
+                        1 if quality < 3 else 0,
+                        now, item_id,
+                    ),
+                )
+        elif kind == "kanji":
+            with self._conectar() as conn:
+                row = conn.execute(
+                    "SELECT reps, ease_factor, interval_days FROM japanese_kanji WHERE id = ?",
+                    (item_id,),
+                ).fetchone()
+                if not row:
+                    return
+                reps, ease, interval = sm2(quality, row[0], row[1], row[2])
+                from datetime import timedelta
+                next_review = (
+                    datetime.now() + timedelta(days=max(interval, 1))
+                ).strftime("%Y-%m-%d")
+
+                if interval >= 21:
+                    status = "mastered"
+                elif interval >= 7:
+                    status = "learned"
+                else:
+                    status = "learning"
+
+                conn.execute(
+                    """UPDATE japanese_kanji SET
                            reps = ?, ease_factor = ?, interval_days = ?,
                            next_review = ?, status = ?,
                            times_reviewed = times_reviewed + 1,
@@ -250,6 +343,8 @@ class JapaneseMemory:
         """Devuelve el id de un ítem por su texto en japonés, o None si no existe."""
         if kind == "vocabulario":
             table, col = "japanese_vocabulary", "word"
+        elif kind == "kanji":
+            table, col = "japanese_kanji", "kanji"
         else:
             table, col = "japanese_grammar", "grammar_point"
         with self._conectar() as conn:
@@ -299,11 +394,17 @@ class JapaneseMemory:
             vocab_counts = conn.execute(
                 """SELECT status, COUNT(*) FROM japanese_vocabulary GROUP BY status"""
             ).fetchall()
-            due_count = conn.execute(
-                "SELECT COUNT(*) FROM japanese_vocabulary WHERE next_review <= date('now')"
-            ).fetchone()[0] + conn.execute(
-                "SELECT COUNT(*) FROM japanese_grammar WHERE next_review <= date('now')"
-            ).fetchone()[0]
+            due_count = (
+                conn.execute(
+                    "SELECT COUNT(*) FROM japanese_vocabulary WHERE next_review <= date('now')"
+                ).fetchone()[0]
+                + conn.execute(
+                    "SELECT COUNT(*) FROM japanese_grammar WHERE next_review <= date('now')"
+                ).fetchone()[0]
+                + conn.execute(
+                    "SELECT COUNT(*) FROM japanese_kanji WHERE next_review <= date('now')"
+                ).fetchone()[0]
+            )
             last_sessions = conn.execute(
                 """SELECT summary FROM japanese_sessions
                    WHERE summary IS NOT NULL ORDER BY started_at DESC LIMIT 3"""

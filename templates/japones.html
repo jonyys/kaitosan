@@ -166,6 +166,10 @@
         <div class="stat-label">palabras en total</div>
     </div>
     <div class="stat-card">
+        <span class="stat-number">{{ total_kanji }}</span>
+        <div class="stat-label">kanjis en total</div>
+    </div>
+    <div class="stat-card">
         <span class="stat-number stat-due">{{ due_today }}</span>
         <div class="stat-label">para repasar hoy</div>
     </div>
@@ -206,6 +210,36 @@
             <div class="progress-bar-fill" style="width:{{ (n_mastered / total_vocab * 100)|round }}%; background:var(--rosa-accion);"></div>
         </div>
         <span class="progress-count">{{ n_mastered }}</span>
+    </div>
+</div>
+{% endif %}
+
+{% if total_kanji > 0 %}
+<div class="card full" style="margin-bottom:20px;">
+    <h2>Progreso de kanjis</h2>
+    {% set k_learning = kanji_by_status.get('learning', 0) %}
+    {% set k_learned  = kanji_by_status.get('learned', 0) %}
+    {% set k_mastered = kanji_by_status.get('mastered', 0) %}
+    <div class="progress-row">
+        <span class="progress-label">Aprendiendo</span>
+        <div class="progress-bar-bg">
+            <div class="progress-bar-fill" style="width:{{ (k_learning / total_kanji * 100)|round }}%; background:var(--rosa);"></div>
+        </div>
+        <span class="progress-count">{{ k_learning }}</span>
+    </div>
+    <div class="progress-row">
+        <span class="progress-label">Aprendida</span>
+        <div class="progress-bar-bg">
+            <div class="progress-bar-fill" style="width:{{ (k_learned / total_kanji * 100)|round }}%; background:var(--rosa-medio);"></div>
+        </div>
+        <span class="progress-count">{{ k_learned }}</span>
+    </div>
+    <div class="progress-row">
+        <span class="progress-label">Dominada</span>
+        <div class="progress-bar-bg">
+            <div class="progress-bar-fill" style="width:{{ (k_mastered / total_kanji * 100)|round }}%; background:var(--rosa-accion);"></div>
+        </div>
+        <span class="progress-count">{{ k_mastered }}</span>
     </div>
 </div>
 {% endif %}
@@ -293,6 +327,83 @@
     </table>
     {% else %}
     <p class="empty">Sin vocabulario registrado</p>
+    {% endif %}
+</div>
+</details>
+
+{# ── Kanjis ── #}
+<details class="acc">
+<summary><svg class="ico"><use href="#i-lang"/></svg> Kanjis ({{ total_kanji }})</summary>
+<div class="card full">
+    <div class="section-header">
+        <h2><svg class="ico"><use href="#i-lang"/></svg> Kanjis ({{ total_kanji }})</h2>
+        <form method="post" action="/japones/kanji/borrar-todo"
+              onsubmit="return confirm('¿Borrar TODOS los kanjis?')">
+            <button class="btn btn-red">Borrar todo</button>
+        </form>
+    </div>
+
+    <form method="post" action="/japones/kanji/añadir" style="margin-bottom:16px;">
+        <div class="form-row">
+            <input type="text" name="jp" placeholder="Kanji (ej: 日)" required>
+            <input type="text" name="es" placeholder="Significado en español" required>
+            <button type="submit" class="btn btn-green">+ Añadir</button>
+        </div>
+    </form>
+
+    {% if kanji %}
+    <table class="srs-table">
+        <tr>
+            <th>Kanji</th>
+            <th>Significado</th>
+            <th>Estado</th>
+            <th>Reps</th>
+            <th>EF</th>
+            <th>Intervalo</th>
+            <th>Próx. repaso</th>
+            <th><svg class="ico"><use href="#i-check"/></svg>&nbsp;/&nbsp;<svg class="ico"><use href="#i-x"/></svg></th>
+            <th></th>
+        </tr>
+        {% for k in kanji %}
+        <tr>
+            <td><strong>{{ k.kanji }}</strong></td>
+            <td>{{ k.meaning or '—' }}</td>
+            <td><span class="badge">{{ k.status }}</span></td>
+            <td>{{ k.reps }}</td>
+            <td>{{ "%.2f"|format(k.ease_factor or 2.5) }}</td>
+            <td>{{ k.interval_days or 0 }}d</td>
+            <td>
+                {% if k.next_review %}
+                    {% if k.next_review <= today %}
+                        <span class="due-badge">{{ k.next_review }}</span>
+                    {% else %}
+                        <span style="color:#555;">{{ k.next_review }}</span>
+                    {% endif %}
+                {% else %}—{% endif %}
+            </td>
+            <td style="color:#888;">{{ k.times_correct or 0 }} / {{ k.errors or 0 }}</td>
+            <td>
+                <details class="rowmenu">
+                    <summary title="Acciones">⋯</summary>
+                    <div class="rowmenu-panel">
+                        <form method="post" action="/japones/kanji/marcar-aprendido/{{ k.id }}">
+                            <button type="submit"><svg class="ico"><use href="#i-check"/></svg> Aprendido al 100%</button>
+                        </form>
+                        <form method="post" action="/japones/kanji/resetear-srs/{{ k.id }}">
+                            <button type="submit"><svg class="ico"><use href="#i-undo"/></svg> Resetear a 0</button>
+                        </form>
+                        <form method="post" action="/japones/kanji/borrar/{{ k.id }}"
+                              onsubmit="return confirm('¿Borrar {{ k.kanji | replace("'", "\\'") }}?')">
+                            <button type="submit" class="peligro"><svg class="ico"><use href="#i-trash"/></svg> Eliminar</button>
+                        </form>
+                    </div>
+                </details>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p class="empty">Sin kanjis registrados</p>
     {% endif %}
 </div>
 </details>
