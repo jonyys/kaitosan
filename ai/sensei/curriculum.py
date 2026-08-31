@@ -3265,7 +3265,7 @@ CURRICULUM = [{'id': 'saludos_basicos',
              'tipo': 'sustantivo'}]}]
 
 
-# Los 103 kanji N5 entran como bloque de cierre del N5, justo antes del N4: para
+# Los 108 kanji N5 entran como bloque de cierre del N5, justo antes del N4: para
 # entonces Laura ya sabe decir de viva voz casi todo lo que los kanji escriben.
 # Los caracteres que otra unidad ya enseña (一〜千, 人, 目, 手…) se filtran, para
 # que el SRS no lleve dos fichas del mismo carácter.

@@ -81,6 +81,11 @@ class JapaneseMemory:
                     anecdota TEXT NOT NULL,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 );
+
+                CREATE TABLE IF NOT EXISTS kanji_mnemo (
+                    kanji TEXT PRIMARY KEY,
+                    mnemo TEXT NOT NULL
+                );
             """)
         self._migrar_srs()
 
@@ -129,6 +134,26 @@ class JapaneseMemory:
         for col, definition in columns.items():
             if col not in existing:
                 conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {definition}")
+
+    # ── Mnemotecnias de kanji personalizadas por Laura ─────────────────────
+
+    def get_mnemos(self) -> dict:
+        """{kanji: mnemo} con las reglas que Laura ha reescrito."""
+        with self._conectar() as conn:
+            return dict(conn.execute("SELECT kanji, mnemo FROM kanji_mnemo"))
+
+    def set_mnemo(self, kanji: str, texto: str):
+        """Guarda la mnemotecnia de Laura; texto vacío borra y vuelve a la de serie."""
+        texto = (texto or "").strip()
+        with self._conectar() as conn:
+            if texto:
+                conn.execute(
+                    "INSERT INTO kanji_mnemo (kanji, mnemo) VALUES (?, ?) "
+                    "ON CONFLICT(kanji) DO UPDATE SET mnemo = excluded.mnemo",
+                    (kanji, texto),
+                )
+            else:
+                conn.execute("DELETE FROM kanji_mnemo WHERE kanji = ?", (kanji,))
 
     # ── Métodos SRS nuevos ──────────────────────────────────────────────────
 

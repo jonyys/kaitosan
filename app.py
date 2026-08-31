@@ -964,27 +964,40 @@ def japones():
 @login_requerido
 def japones_kanjis():
     selected = request.args.get("kanji", "").strip()
+    mnemos_laura = brain.jap_memory.get_mnemos()
     kanjis = []
+    categorias = []
     for item in KANJI_N5:
+        cat_id = item.get("categoria", "")
+        if cat_id and not any(c["id"] == cat_id for c in categorias):
+            categorias.append({
+                "id": cat_id,
+                "nombre": item.get("categoria_nombre", cat_id).split("—")[-1].strip(),
+            })
         kanjis.append({
             "kanji": item.get("jp", ""),
             "meaning": item.get("meaning", ""),
             "reading": item.get("reading", "") or item.get("kun", "") or item.get("on", ""),
+            "reading_card": item.get("reading_card", ""),
             "on": item.get("on", ""),
             "kun": item.get("kun", ""),
             "trazos": item.get("trazos", ""),
             "radical": item.get("radical", ""),
             "literal": item.get("literal", ""),
             "ejemplo": item.get("ejemplo", ""),
-            "mnemo": item.get("mnemo", ""),
+            "mnemo": mnemos_laura.get(item.get("jp", "")) or item.get("mnemo", ""),
+            "mnemo_default": item.get("mnemo", ""),
+            "mnemo_propia": item.get("jp", "") in mnemos_laura,
             "uso": item.get("uso", ""),
             "vocab_ejemplo": item.get("vocab_ejemplo", ""),
+            "categoria": cat_id,
         })
     if selected:
         selected_item = next((k for k in kanjis if k["kanji"] == selected), kanjis[0] if kanjis else None)
     else:
         selected_item = kanjis[0] if kanjis else None
-    return render_template("japones_kanjis.html", kanjis=kanjis, selected=selected_item)
+    return render_template("japones_kanjis.html", kanjis=kanjis,
+                           categorias=categorias, selected=selected_item)
 
 
 def _items_curriculum_por_tipo(kind):
@@ -1127,17 +1140,23 @@ def japones_kanjis_practicar():
         flash("❌ No se pudo guardar el kanji para el SRS", "error")
         return redirect(url_for("japones_kanjis", kanji=kanji))
 
-    if modo in ("meaning", "significado"):
-        brain.jap_memory.review(item_id, 4, "kanji")
-        flash("✅ Práctica de significado registrada en el SRS", "success")
-    elif modo in ("writing", "escritura"):
-        brain.jap_memory.review(item_id, 4, "kanji")
-        flash("✅ Práctica de escritura registrada en el SRS", "success")
-    else:
-        brain.jap_memory.review(item_id, 5, "kanji")
-        flash("✅ Práctica de significado + escritura registrada en el SRS", "success")
+    brain.jap_memory.review(item_id, 4 if modo in ("meaning", "significado", "writing", "escritura") else 5, "kanji")
 
-    return redirect(url_for("japones_kanjis", kanji=kanji))
+    # sin flash ni ?kanji=: no queremos popup de confirmación al volver
+    return redirect(url_for("japones_kanjis"))
+
+
+@app.route("/japones/kanjis/mnemo", methods=["POST"])
+@login_requerido
+def japones_kanjis_mnemo():
+    kanji = (request.form.get("kanji") or "").strip()
+    texto = request.form.get("mnemo") or ""
+    if not kanji or not any(k.get("jp") == kanji for k in KANJI_N5):
+        flash("❌ Ese kanji no existe en el proyecto", "error")
+        return redirect(url_for("japones_kanjis"))
+    brain.jap_memory.set_mnemo(kanji, texto)
+    # sin flash ni ?kanji=: no queremos popup de confirmación al volver
+    return redirect(url_for("japones_kanjis"))
 
 
 @app.route("/japones/vocabulario/añadir", methods=["POST"])

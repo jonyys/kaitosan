@@ -16,6 +16,31 @@
         gap: 12px;
         margin-top: 18px;
       }
+      .kanji-cats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 4px;
+      }
+      .kanji-cat {
+        border: 1px solid var(--border-fuerte);
+        border-radius: var(--radio-pill);
+        background: var(--surface-2);
+        color: var(--text);
+        font: inherit;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 6px 12px;
+        cursor: pointer;
+      }
+      .kanji-cat:hover {
+        border-color: var(--rosa-accion);
+      }
+      .kanji-cat.active {
+        background: var(--rosa-accion);
+        border-color: var(--rosa-accion);
+        color: #fff;
+      }
       .kanji-card {
         display: block;
         text-decoration: none;
@@ -36,6 +61,9 @@
         border-color: var(--rosa-accion);
         box-shadow: var(--sombra);
       }
+      .kanji-card[hidden] {
+        display: none;
+      }
       .kanji-card.active {
         border-color: var(--rosa-accion);
         background: var(--surface-2);
@@ -49,70 +77,136 @@
         margin-bottom: 8px;
       }
       .kanji-reading {
+        display: block;
         font-size: 12px;
         color: var(--rosa-accion);
         font-weight: 700;
         margin-bottom: 4px;
       }
       .kanji-meaning {
+        display: block;
         font-size: 11px;
         color: var(--text-soft);
         line-height: 1.35;
       }
-      .practice-panel {
-        margin-top: 24px;
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: var(--radio-md);
-        box-shadow: var(--sombra-sm);
-        padding: 20px;
+      .vocab-list {
+        list-style: disc;
+        margin: 6px 0 0;
+        padding-left: 20px;
       }
-      .practice-top {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 10px;
-        flex-wrap: wrap;
-        margin-bottom: 18px;
+      .vocab-list li {
+        margin: 4px 0;
+        color: var(--text);
       }
-      .practice-main {
-        display: grid;
-        grid-template-columns: 240px 1fr;
-        gap: 24px;
-        align-items: start;
-      }
-      @media (max-width: 760px) {
-        .practice-main {
-          grid-template-columns: 1fr;
-        }
-      }
-      .char-large {
-        font-size: clamp(5rem, 16vw, 10rem);
-        line-height: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 180px;
-        border: 1px solid var(--border);
-        border-radius: var(--radio-md);
-        background: linear-gradient(135deg, var(--surface-2), var(--surface));
-        color: var(--rosa-tinta);
+      .mnemo-tag {
+        font-size: 10px;
         font-weight: 700;
-        user-select: none;
-        cursor: pointer;
-        transition:
-          transform 0.14s ease,
-          box-shadow 0.14s ease,
-          border-color 0.14s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #fff;
+        background: var(--rosa-accion);
+        border-radius: var(--radio-pill);
+        padding: 2px 7px;
+        vertical-align: middle;
       }
-      .char-large:hover {
-        transform: translateY(-1px);
-        border-color: var(--rosa-accion);
-        box-shadow: var(--sombra-sm);
+      .mnemo-change-btn {
+        font-size: 11px;
+        padding: 3px 10px;
+        margin-left: 6px;
+        vertical-align: middle;
       }
-      .char-large.active {
+      #kanji-mnemo-pop {
+        text-align: left;
+        max-width: 460px;
+        width: calc(100% - 32px);
+      }
+      #kanji-mnemo-pop .cp-msg {
+        margin: 0 0 12px;
+        font-weight: 700;
+        font-size: 15px;
+      }
+      .mnemo-input {
+        width: 100%;
+        box-sizing: border-box;
+        font: inherit;
+        font-size: 14px;
+        line-height: 1.4;
+        color: var(--text);
+        background: var(--surface-2);
+        border: 1px solid var(--border-fuerte);
+        border-radius: var(--radio-sm);
+        padding: 8px 10px;
+        resize: vertical;
+      }
+      .mnemo-input:focus {
+        outline: none;
         border-color: var(--rosa-accion);
-        background: linear-gradient(135deg, #fce7f3, var(--surface));
+      }
+      .mnemo-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 12px;
+      }
+      .help-pop {
+        position: relative;
+        box-sizing: border-box;
+        margin: auto;
+        inset: 0;
+        max-width: 640px;
+        width: calc(100vw - 24px);
+        max-height: 85vh;
+        overflow-y: auto;
+        border: 1px solid var(--border-fuerte);
+        border-radius: var(--radio-md);
+        padding: 22px;
+        background: var(--surface);
+        color: var(--text);
+        box-shadow: var(--sombra);
+        text-align: left;
+      }
+      .help-pop::backdrop {
+        background: rgba(91, 58, 74, 0.45);
+      }
+      .help-pop h3 {
+        margin: 0 0 4px;
+        padding-right: 34px;
+      }
+      .help-pop h4 {
+        margin: 18px 0 4px;
+        color: var(--rosa-tinta);
+      }
+      .help-pop p {
+        margin: 4px 0;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+      .help-pop table {
+        display: block;
+        overflow-x: auto;
+        border-collapse: collapse;
+        width: 100%;
+        margin: 8px 0;
+        font-size: 13px;
+      }
+      .help-pop th,
+      .help-pop td {
+        border: 1px solid var(--border);
+        padding: 6px 8px;
+        text-align: left;
+        vertical-align: top;
+        word-break: break-word;
+      }
+      .help-pop th {
+        background: var(--surface-2);
+      }
+      .help-pop .ruby {
+        color: var(--rosa-accion);
+        font-weight: 700;
+      }
+      .help-pop .close-row {
+        text-align: right;
+        margin-top: 16px;
       }
       .meta-list {
         list-style: none;
@@ -126,64 +220,128 @@
       .meta-list strong {
         color: var(--text-soft);
       }
-      .practice-hint {
-        color: var(--text-soft);
-        font-size: 12px;
-        margin-top: 10px;
-      }
       .btn-ghost {
         background: transparent;
         border: 1px solid var(--border-fuerte);
         color: var(--text);
       }
-      .practice-actions {
-        display: flex;
-        gap: 10px;
-        margin-top: 16px;
-        flex-wrap: wrap;
-        align-items: center;
+      .ficha-pop {
+        position: relative;
+        box-sizing: border-box;
+        text-align: left;
+        max-width: 500px;
+        width: calc(100vw - 24px);
+        max-height: 85vh;
+        overflow-y: auto;
       }
-      .stroke-counter {
-        font-size: 12px;
+      .pop-x {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        border: 1px solid var(--border-fuerte);
+        border-radius: 50%;
+        background: var(--surface-2);
+        color: var(--text-soft);
+        cursor: pointer;
+      }
+      .pop-x:hover {
+        border-color: var(--rosa-accion);
+        color: var(--rosa-tinta);
+      }
+      .ficha-hero {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 4px 0 14px;
+        margin-bottom: 14px;
+        border-bottom: 1px solid var(--border);
+      }
+      .ficha-hero-char {
+        flex: none;
+        font-size: 3.6rem;
+        line-height: 1;
         font-weight: 700;
         color: var(--rosa-tinta);
-        background: var(--surface-2);
-        border: 1px solid var(--border);
-        border-radius: var(--radio-pill);
-        padding: 6px 10px;
       }
-      .writing-zone {
-        margin-top: 18px;
-        border: 1px solid var(--border);
-        border-radius: var(--radio-md);
-        background: linear-gradient(
-          180deg,
-          rgba(255, 255, 255, 0.4),
-          rgba(255, 255, 255, 0.15)
-        );
-        padding: 14px;
-      }
-      .writing-stage {
-        width: 100%;
-        height: 220px;
-        background: rgba(255, 255, 255, 0.85);
-        border: 1px solid var(--border-fuerte);
-        border-radius: var(--radio-sm);
-        cursor: crosshair;
-        display: block;
-      }
-      .writing-actions {
+      .ficha-hero-info {
         display: flex;
-        justify-content: space-between;
-        gap: 8px;
-        margin-top: 10px;
-        align-items: center;
-        flex-wrap: wrap;
+        flex-direction: column;
+        gap: 3px;
       }
-      .writing-label {
-        font-size: 12px;
+      .ficha-hero-reading {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--rosa-accion);
+      }
+      .ficha-hero-meaning {
+        font-size: 16px;
+        color: var(--text);
+      }
+      .ficha-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+      }
+      .ficha-table th,
+      .ficha-table td {
+        text-align: left;
+        vertical-align: top;
+        padding: 7px 4px;
+        border-bottom: 1px solid var(--border);
+      }
+      .ficha-table th {
+        width: 1%;
+        white-space: nowrap;
+        padding-right: 14px;
         color: var(--text-soft);
         font-weight: 700;
+      }
+      .ficha-table .vocab-list {
+        margin: 0;
+      }
+      .ficha-section-title {
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--text-soft);
+      }
+      .ficha-mnemo {
+        margin-top: 16px;
+        padding: 12px 14px;
+        background: var(--surface-2);
+        border-radius: var(--radio-sm);
+      }
+      .ficha-mnemo-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 6px;
+      }
+      .ficha-mnemo p {
+        margin: 0;
+        font-size: 14px;
+        line-height: 1.45;
+        color: var(--text);
+      }
+      .ficha-actions {
+        margin-top: 18px;
+        text-align: center;
+      }
+      .ficha-actions .btn {
+        min-width: 150px;
+      }
+      #kanji-practice-pop .cp-msg {
+        margin: 0 0 18px;
+        font-weight: 700;
+        font-size: 16px;
       }
       .flash-pop .practice-options {
         display: grid;
@@ -208,7 +366,8 @@
     </style>
   </head>
   <body>
-    {% include 'partials/_iconos.html' %}
+    {% include 'partials/_iconos.html' %} {% include
+    'partials/_confirm_pop.html' %}
     <div class="jp-wrap">
       <h1>
         <span
@@ -227,6 +386,16 @@
               <svg class="ico"><use href="#i-lang" /></svg> Práctica
             </button></a
           >
+          <button
+            type="button"
+            id="help-btn"
+            class="btn btn-yellow"
+            style="font-size: 13px"
+            title="¿Qué es on, kun y el radical?"
+            aria-label="Ayuda: on, kun y radical"
+          >
+            <svg class="ico"><use href="#i-help" /></svg>
+          </button>
         </div>
       </h1>
 
@@ -234,97 +403,301 @@
         <div class="section-header">
           <h2>Selecciona un kanji</h2>
         </div>
+        <div class="kanji-cats">
+          <button type="button" class="kanji-cat active" data-cat="all">
+            Todos ({{ kanjis | length }})
+          </button>
+          {% for c in categorias %}
+          <button type="button" class="kanji-cat" data-cat="{{ c.id }}">
+            {{ c.nombre }}
+          </button>
+          {% endfor %}
+        </div>
         <div class="kanji-grid">
           {% for item in kanjis %}
           <a
             class="kanji-card {% if selected and selected.kanji == item.kanji %}active{% endif %}"
+            data-cat="{{ item.categoria }}"
             href="/japones/kanjis?kanji={{ item.kanji | urlencode }}"
           >
             <span class="kanji-char">{{ item.kanji }}</span>
-            <span class="kanji-reading">{{ item.reading or '—' }}</span>
-            <span class="kanji-meaning">{{ item.meaning }}</span>
+            <span class="kanji-reading">{{ item.reading_card or '—' }}</span>
+            <span class="kanji-meaning"
+              >{{ item.meaning | replace(' (kanji)', '') }}</span
+            >
           </a>
           {% endfor %}
         </div>
       </div>
 
-      {% if selected %}
-      <div class="practice-panel">
-        <div class="practice-top">
-          <h2 style="margin: 0">Ficha de práctica</h2>
-          <div class="practice-actions">
-            <button type="button" id="practice-btn" class="btn btn-yellow">
-              Practicar
-            </button>
-            <a
-              href="/japones/kanjis?kanji={{ selected.kanji | urlencode }}"
-              class="btn btn-ghost"
-              >Reiniciar ficha</a
-            >
-          </div>
-        </div>
+    </div>
 
-        <div class="practice-main">
-          <div
-            id="stroke-practice"
-            class="char-large"
-            aria-label="Kanji {{ selected.kanji }}"
-            title="Haz clic para practicar el trazo del kanji"
-            data-kanji="{{ selected.kanji }}"
-          >
-            {{ selected.kanji }}
-          </div>
+    {% if selected %}
+    <dialog id="kanji-ficha-pop" class="flash-pop ficha-pop">
+      {% set sig = selected.meaning | replace(' (kanji)', '') %}
+      <button
+        type="button"
+        class="pop-x"
+        id="ficha-close"
+        aria-label="Cerrar ficha"
+      >
+        <svg class="ico"><use href="#i-x" /></svg>
+      </button>
 
-          <div>
-            <ul class="meta-list">
-              <li><strong>Significado:</strong> {{ selected.meaning }}</li>
-              <li>
-                <strong>Lectura en hiragana:</strong> {{ selected.reading or '—'
-                }}
-              </li>
-              <li><strong>Lectura on:</strong> {{ selected.on or '—' }}</li>
-              <li><strong>Lectura kun:</strong> {{ selected.kun or '—' }}</li>
-              <li><strong>Radical:</strong> {{ selected.radical or '—' }}</li>
-              <li><strong>Trazo:</strong> {{ selected.trazos or '—' }}</li>
-              <li><strong>Literal:</strong> {{ selected.literal or '—' }}</li>
-              <li><strong>Ejemplo:</strong> {{ selected.ejemplo or '—' }}</li>
-              <li><strong>Uso:</strong> {{ selected.uso or '—' }}</li>
-              <li>
-                <strong>Vocabulario de ejemplo:</strong> {{
-                selected.vocab_ejemplo or '—' }}
-              </li>
-              <li><strong>Memoria:</strong> {{ selected.mnemo or '—' }}</li>
-            </ul>
-            <div class="practice-hint">
-              Haz clic en el kanji y escribe a mano en la zona de abajo para
-              practicar el trazo; luego repite la lectura y el significado en
-              voz alta.
-            </div>
-            <div class="stroke-counter" id="stroke-counter">Trazo: 0 / 5</div>
-
-            <div class="writing-zone">
-              <div class="writing-label">Zona de escritura</div>
-              <canvas
-                id="kanji-canvas"
-                class="writing-stage"
-                width="320"
-                height="220"
-                aria-label="Zona de escritura del kanji {{ selected.kanji }}"
-              ></canvas>
-              <div class="writing-actions">
-                <span class="writing-label"
-                  >Sincroniza el trazo con el kanji {{ selected.kanji }}</span
-                >
-                <button type="button" class="btn btn-ghost" id="clear-canvas">
-                  Limpiar
-                </button>
-              </div>
-            </div>
-          </div>
+      <div class="ficha-hero">
+        <span class="ficha-hero-char">{{ selected.kanji }}</span>
+        <div class="ficha-hero-info">
+          <span class="ficha-hero-reading">{{ selected.reading_card or '—' }}</span>
+          <span class="ficha-hero-meaning">{{ sig }}</span>
         </div>
       </div>
-      {% endif %}
-    </div>
+
+      <table class="ficha-table">
+        <tr>
+          <th>Lectura on</th>
+          <td>{{ selected.on or '—' }}</td>
+        </tr>
+        <tr>
+          <th>Lectura kun</th>
+          <td>{{ selected.kun or '—' }}</td>
+        </tr>
+        <tr>
+          <th>Radical</th>
+          <td>{{ selected.radical or '—' }}</td>
+        </tr>
+        <tr>
+          <th>Trazos</th>
+          <td>{{ selected.trazos or '—' }}</td>
+        </tr>
+        <tr>
+          <th>Vocabulario</th>
+          <td>
+            <ul class="vocab-list">
+              {% for e in (selected.vocab_ejemplo or '').split(' · ') if e %}
+              {% set p = e.split() %}
+              <li>
+                <strong>{{ p[0] }}</strong> ({{ p[1] }}) — {{ p[2:] | join(' ') }}
+              </li>
+              {% endfor %}
+            </ul>
+          </td>
+        </tr>
+      </table>
+
+      <div class="ficha-mnemo">
+        <div class="ficha-mnemo-head">
+          <span class="ficha-section-title">
+            Memoria
+            {% if selected.mnemo_propia %}
+            <span class="mnemo-tag">tu regla</span>
+            {% endif %}
+          </span>
+          <button
+            type="button"
+            id="mnemo-change"
+            class="btn btn-ghost mnemo-change-btn"
+          >
+            Cambiar
+          </button>
+        </div>
+        <p>{{ selected.mnemo or '—' }}</p>
+      </div>
+
+      <div class="ficha-actions">
+        <button type="button" id="practice-btn" class="btn btn-yellow">
+          Practicar
+        </button>
+      </div>
+    </dialog>
+    {% endif %}
+
+    <dialog id="kanji-help-pop" class="help-pop">
+      <button type="button" class="pop-x" id="help-x" aria-label="Cerrar ayuda">
+        <svg class="ico"><use href="#i-x" /></svg>
+      </button>
+      <h3>Cómo leer una ficha de kanji</h3>
+      <p>
+        Cada kanji trae dos tipos de lectura y un radical. En los ejemplos, lo
+        que va <span class="ruby">en rosa</span> es siempre <strong>cómo se lee</strong>
+        (en hiragana o katakana); entre comillas, lo que <strong>significa</strong>.
+      </p>
+
+      <h4>Lectura ON (音読み)</h4>
+      <p>
+        Es la lectura que viene <strong>del chino</strong>, adaptada al japonés.
+        En los diccionarios se escribe en katakana. Suena corta y seca. Se usa
+        sobre todo cuando el kanji va <strong>pegado a otro kanji</strong>.
+      </p>
+
+      <h4>Lectura KUN (訓読み)</h4>
+      <p>
+        Es la palabra <strong>japonesa nativa</strong> a la que se le puso el
+        kanji encima. Se escribe en hiragana. Se usa cuando el kanji va
+        <strong>solo o seguido de hiragana</strong>. El trozo entre paréntesis,
+        como ひと<strong>(つ)</strong>, es la parte que se escribe en hiragana
+        detrás del kanji (一つ se lee ひとつ).
+      </p>
+
+      <h4>El mismo kanji, distintas lecturas</h4>
+      <p>Mira cómo cambia la lectura de <strong>日</strong> según dónde aparezca:</p>
+      <table>
+        <tr>
+          <th>Palabra</th>
+          <th>Se lee</th>
+          <th>Lectura</th>
+          <th>Significa</th>
+        </tr>
+        <tr>
+          <td>日本</td>
+          <td><span class="ruby">にほん</span></td>
+          <td>ON (日 + 本)</td>
+          <td>Japón</td>
+        </tr>
+        <tr>
+          <td>日曜日</td>
+          <td><span class="ruby">にちようび</span></td>
+          <td>ON (日 + 曜 + 日)</td>
+          <td>domingo</td>
+        </tr>
+        <tr>
+          <td>日</td>
+          <td><span class="ruby">ひ</span></td>
+          <td>KUN (kanji solo)</td>
+          <td>día / sol</td>
+        </tr>
+        <tr>
+          <td>三日</td>
+          <td><span class="ruby">みっか</span></td>
+          <td>KUN (か, contador de días)</td>
+          <td>día 3</td>
+        </tr>
+        <tr>
+          <td>今日</td>
+          <td><span class="ruby">きょう</span></td>
+          <td>irregular (de memoria)</td>
+          <td>hoy</td>
+        </tr>
+      </table>
+
+      <p>Y lo mismo con <strong>一</strong>:</p>
+      <table>
+        <tr>
+          <th>Palabra</th>
+          <th>Se lee</th>
+          <th>Lectura</th>
+          <th>Significa</th>
+        </tr>
+        <tr>
+          <td>一</td>
+          <td><span class="ruby">いち</span></td>
+          <td>ON (al contar)</td>
+          <td>uno</td>
+        </tr>
+        <tr>
+          <td>一月</td>
+          <td><span class="ruby">いちがつ</span></td>
+          <td>ON (一 + 月)</td>
+          <td>enero</td>
+        </tr>
+        <tr>
+          <td>一つ</td>
+          <td><span class="ruby">ひとつ</span></td>
+          <td>KUN (一 + つ en hiragana)</td>
+          <td>una cosa</td>
+        </tr>
+        <tr>
+          <td>一人</td>
+          <td><span class="ruby">ひとり</span></td>
+          <td>irregular (de memoria)</td>
+          <td>una persona</td>
+        </tr>
+      </table>
+      <p>
+        Regla rápida: <strong>dos kanji juntos → ON; kanji + hiragana → KUN</strong>.
+        Acierta la mayoría de las veces en N5. En las tarjetas se muestra la ON
+        en hiragana (一 → いち) porque es la lectura base del kanji.
+      </p>
+
+      <h4>Radical (部首)</h4>
+      <p>
+        Es el <strong>componente principal</strong> por el que el kanji se
+        clasifica en el diccionario. Cada kanji tiene uno. Muchas veces da una
+        pista del significado y cambia de nombre según dónde va colocado.
+      </p>
+      <table>
+        <tr>
+          <th>Radical</th>
+          <th>Significa</th>
+          <th>Dónde va</th>
+          <th>Se llama</th>
+          <th>Kanji que lo llevan</th>
+        </tr>
+        <tr>
+          <td>日</td>
+          <td>sol / día</td>
+          <td>a la izquierda</td>
+          <td>ひへん</td>
+          <td>時 (hora), 明 (claro), 曜 (día de la semana)</td>
+        </tr>
+        <tr>
+          <td>艹</td>
+          <td>planta</td>
+          <td>arriba</td>
+          <td>くさかんむり</td>
+          <td>花 (flor), 茶 (té), 草 (hierba)</td>
+        </tr>
+        <tr>
+          <td>門</td>
+          <td>puerta</td>
+          <td>envolviendo</td>
+          <td>もんがまえ</td>
+          <td>間 (intervalo), 聞 (oír), 開 (abrir)</td>
+        </tr>
+      </table>
+      <p>
+        "Radical: 日 (ひへん)" quiere decir: se archiva bajo 日, y en esa posición
+        ese radical se llama <em>hi-hen</em>. No es una lectura, es su etiqueta de
+        archivo.
+      </p>
+
+      <div class="close-row">
+        <button type="button" class="btn btn-yellow" id="help-close">
+          Entendido
+        </button>
+      </div>
+    </dialog>
+
+    {% if selected %}
+    <dialog id="kanji-mnemo-pop" class="flash-pop">
+      <p class="cp-msg">Tu regla para acordarte de {{ selected.kanji }}</p>
+      <form method="POST" action="/japones/kanjis/mnemo" id="mnemo-form">
+        <input type="hidden" name="kanji" value="{{ selected.kanji }}" />
+        <textarea
+          name="mnemo"
+          id="mnemo-text"
+          rows="4"
+          class="mnemo-input"
+          placeholder="Escribe tu propia regla para acordarte de este kanji…"
+        >{{ selected.mnemo }}</textarea>
+        <div class="mnemo-actions">
+          <button type="submit" class="btn btn-yellow">Guardar</button>
+          <button type="button" class="btn btn-ghost" id="mnemo-cancel">
+            Cancelar
+          </button>
+          {% if selected.mnemo_propia %}
+          <button
+            type="submit"
+            class="btn btn-ghost"
+            id="mnemo-reset"
+            formnovalidate
+          >
+            Restaurar la de serie
+          </button>
+          {% endif %}
+        </div>
+      </form>
+    </dialog>
+    {% endif %}
 
     <dialog id="kanji-practice-pop" class="flash-pop">
       <div class="cp-ask">
@@ -367,14 +740,74 @@
 
     <script>
       (function () {
-        var selectedKanji = '{{ selected.kanji if selected else "" }}';
+        var helpPop = document.getElementById("kanji-help-pop");
+        var helpBtn = document.getElementById("help-btn");
+        if (helpBtn && helpPop && helpPop.showModal) {
+          helpBtn.addEventListener("click", function () {
+            helpPop.showModal();
+          });
+          ["help-close", "help-x"].forEach(function (id) {
+            var b = document.getElementById(id);
+            b &&
+              b.addEventListener("click", function () {
+                helpPop.close();
+              });
+          });
+          helpPop.addEventListener("click", function (event) {
+            if (event.target === helpPop) helpPop.close();
+          });
+        }
+
+        var mnemoPop = document.getElementById("kanji-mnemo-pop");
+        var mnemoChangeBtn = document.getElementById("mnemo-change");
+        if (mnemoPop && mnemoChangeBtn && mnemoPop.showModal) {
+          mnemoChangeBtn.addEventListener("click", function () {
+            mnemoPop.showModal();
+          });
+          var mnemoCancel = document.getElementById("mnemo-cancel");
+          mnemoCancel &&
+            mnemoCancel.addEventListener("click", function () {
+              mnemoPop.close();
+            });
+          var mnemoReset = document.getElementById("mnemo-reset");
+          mnemoReset &&
+            mnemoReset.addEventListener("click", function () {
+              document.getElementById("mnemo-text").value = "";
+            });
+          mnemoPop.addEventListener("click", function (event) {
+            if (event.target === mnemoPop) mnemoPop.close();
+          });
+        }
+
+        var fichaPop = document.getElementById("kanji-ficha-pop");
+        if (fichaPop && fichaPop.showModal) {
+          // solo se abre si venimos de pinchar un kanji; nunca al recargar,
+          // volver atrás o restaurar la pestaña
+          var abrirFicha = false;
+          try {
+            abrirFicha = sessionStorage.getItem("abrirFicha") === "1";
+            sessionStorage.removeItem("abrirFicha");
+          } catch (e) {}
+          if (abrirFicha) fichaPop.showModal();
+
+          var fichaClose = document.getElementById("ficha-close");
+          fichaClose &&
+            fichaClose.addEventListener("click", function () {
+              fichaPop.close();
+            });
+          fichaPop.addEventListener("click", function (event) {
+            if (event.target === fichaPop) fichaPop.close();
+          });
+          fichaPop.addEventListener("close", function () {
+            if (location.search)
+              history.replaceState(null, "", location.pathname);
+          });
+        }
+
         var popup = document.getElementById("kanji-practice-pop");
         var form = document.getElementById("kanji-practice-form");
         var modeInput = document.getElementById("kanji-practice-mode");
         var practiceBtn = document.getElementById("practice-btn");
-        var strokeBox = document.getElementById("stroke-practice");
-        var strokeCounter = document.getElementById("stroke-counter");
-        var strokeCount = 0;
 
         function mostrarPopup() {
           if (!popup || !popup.showModal) return form.submit();
@@ -407,97 +840,52 @@
           });
         });
 
-        var canvas = document.getElementById("kanji-canvas");
-        var clearCanvasBtn = document.getElementById("clear-canvas");
+        var catButtons = document.querySelectorAll(".kanji-cat");
+        var kanjiCards = document.querySelectorAll(".kanji-card");
 
-        if (canvas) {
-          var ctx = canvas.getContext("2d");
-          var drawing = false;
-          var lastX = 0;
-          var lastY = 0;
+        // marca que la ficha debe abrirse en la página que carga a continuación
+        kanjiCards.forEach(function (card) {
+          card.addEventListener("click", function () {
+            try {
+              sessionStorage.setItem("abrirFicha", "1");
+            } catch (e) {}
+          });
+        });
 
-          function resizeCanvas() {
-            var rect = canvas.getBoundingClientRect();
-            var ratio = window.devicePixelRatio || 1;
-            canvas.width = Math.max(280, Math.floor(rect.width * ratio));
-            canvas.height = Math.max(180, Math.floor(rect.height * ratio));
-            ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-            ctx.lineCap = "round";
-            ctx.lineJoin = "round";
-            ctx.lineWidth = 4;
-            ctx.strokeStyle = "#5d2342";
-          }
-
-          function getPoint(event) {
-            var rect = canvas.getBoundingClientRect();
-            var x = (event.clientX - rect.left) * (canvas.width / rect.width);
-            var y = (event.clientY - rect.top) * (canvas.height / rect.height);
-            return { x: x, y: y };
-          }
-
-          function startDraw(event) {
-            drawing = true;
-            var point = getPoint(event);
-            lastX = point.x;
-            lastY = point.y;
-            ctx.beginPath();
-            ctx.moveTo(lastX, lastY);
-            ctx.lineTo(lastX, lastY);
-            ctx.stroke();
-          }
-
-          function moveDraw(event) {
-            if (!drawing) return;
-            var point = getPoint(event);
-            ctx.beginPath();
-            ctx.moveTo(lastX, lastY);
-            ctx.lineTo(point.x, point.y);
-            ctx.stroke();
-            lastX = point.x;
-            lastY = point.y;
-          }
-
-          function stopDraw() {
-            drawing = false;
-          }
-
-          resizeCanvas();
-          window.addEventListener("resize", resizeCanvas);
-
-          canvas.addEventListener("pointerdown", startDraw);
-          canvas.addEventListener("pointermove", moveDraw);
-          canvas.addEventListener("pointerup", stopDraw);
-          canvas.addEventListener("pointerleave", stopDraw);
-          canvas.addEventListener("pointercancel", stopDraw);
-
-          if (clearCanvasBtn) {
-            clearCanvasBtn.addEventListener("click", function () {
-              ctx.clearRect(0, 0, canvas.width, canvas.height);
-              strokeCount = 0;
-              if (strokeCounter) {
-                strokeCounter.textContent = "Trazo: 0 / 5";
-              }
-            });
-          }
-        }
-
-        if (strokeBox) {
-          strokeBox.addEventListener("click", function () {
-            strokeCount = Math.min(5, strokeCount + 1);
-            strokeBox.classList.add("active");
-            if (strokeCounter) {
-              strokeCounter.textContent = "Trazo: " + strokeCount + " / 5";
-            }
-            if (strokeCount >= 5) {
-              strokeBox.title =
-                "¡Muy bien! Ya tienes el trazo del kanji " + selectedKanji;
-              strokeCounter.textContent = "Trazo: 5 / 5 · ¡Muy bien!";
-            }
-            setTimeout(function () {
-              strokeBox.classList.remove("active");
-            }, 180);
+        function aplicarFiltro(cat) {
+          catButtons.forEach(function (b) {
+            b.classList.toggle("active", b.getAttribute("data-cat") === cat);
+          });
+          kanjiCards.forEach(function (card) {
+            card.hidden =
+              cat !== "all" && card.getAttribute("data-cat") !== cat;
           });
         }
+
+        catButtons.forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            var cat = btn.getAttribute("data-cat");
+            try {
+              sessionStorage.setItem("kanjiCat", cat);
+            } catch (e) {}
+            aplicarFiltro(cat);
+          });
+        });
+
+        // el clic en un kanji recarga la página: recupera el filtro elegido
+        var catGuardada = "all";
+        try {
+          catGuardada = sessionStorage.getItem("kanjiCat") || "all";
+        } catch (e) {}
+        var selCard = document.querySelector(".kanji-card.active");
+        if (
+          selCard &&
+          catGuardada !== "all" &&
+          selCard.getAttribute("data-cat") !== catGuardada
+        ) {
+          catGuardada = "all";
+        }
+        if (catGuardada !== "all") aplicarFiltro(catGuardada);
       })();
     </script>
   </body>
