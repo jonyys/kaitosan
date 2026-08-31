@@ -10,6 +10,14 @@ import subprocess
 import threading
 import time as tmod
 
+# Cualquier carácter japonés (kana o kanji).
+JP_CHAR = r'[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]'
+# Bloque 【...】 con al menos un carácter japonés dentro: la puntuación,
+# el 〜 y el texto que lo acompañe viajan con él en vez de romper el
+# bloque en trozos.
+BLOQUE_JP = r'【[^【】]*' + JP_CHAR + r'[^【】]*】'
+
+
 def buscar_altavoz():
     # Preferencia de Ajustes (app_settings) antes que AUDIO_OUTPUT_HINT del .env.
     from core.system_settings import audio_salida_preferida
@@ -43,7 +51,7 @@ class TextToSpeech:
 
     def _contiene_japones(self, texto: str) -> bool:
         """Detecta si hay kana/kanji o bloques 【】 en el texto."""
-        if re.search(r'【[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]+】', texto):
+        if re.search(BLOQUE_JP, texto):
             return True
         if re.search(r'[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]', texto):
             return True
@@ -67,7 +75,7 @@ class TextToSpeech:
         pronuncie aproximado al japonés real.
         """
         # Quitar corchetes 【】 (ya los procesamos aparte)
-        texto = re.sub(r'【[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]+】', '', texto)
+        texto = re.sub(BLOQUE_JP, '', texto)
 
         # Eliminar restos de kana/kanji sueltos (no deberían aparecer)
         texto = re.sub(r'[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]+', '', texto)
@@ -102,7 +110,7 @@ class TextToSpeech:
         - El resto se envía a la voz española.
         """
         # Separar por bloques 【...】
-        partes = re.split(r'(【[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]+】)', texto)
+        partes = re.split('(' + BLOQUE_JP + ')', texto)
         segmentos = []
 
         for parte in partes:
