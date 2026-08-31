@@ -151,31 +151,31 @@
         </summary>
         {% include 'partials/ajustes/_sistema.html' %}
       </details>
+
+      <details class="acc">
+        <summary>
+          <svg class="ico"><use href="#i-user" /></svg> Perfil
+          <span class="count">({{ perfil|length }})</span>
+        </summary>
+        {% include 'partials/admin/_perfil.html' %}
+      </details>
+
+      <details class="acc">
+        <summary>
+          <svg class="ico"><use href="#i-calendar" /></svg> Sesiones
+          <span class="count">({{ sesiones|length }})</span>
+        </summary>
+        {% include 'partials/admin/_sesiones.html' %}
+      </details>
+
+      <details class="acc">
+        <summary>
+          <svg class="ico"><use href="#i-chat" /></svg> Conversaciones
+          <span class="count">({{ mensajes|length }})</span>
+        </summary>
+        {% include 'partials/admin/_mensajes.html' %}
+      </details>
     </div>
-
-    <details class="acc">
-      <summary>
-        <svg class="ico"><use href="#i-user" /></svg> Perfil
-        <span class="count">({{ perfil|length }})</span>
-      </summary>
-      {% include 'partials/admin/_perfil.html' %}
-    </details>
-
-    <details class="acc">
-      <summary>
-        <svg class="ico"><use href="#i-calendar" /></svg> Sesiones
-        <span class="count">({{ sesiones|length }})</span>
-      </summary>
-      {% include 'partials/admin/_sesiones.html' %}
-    </details>
-
-    <details class="acc">
-      <summary>
-        <svg class="ico"><use href="#i-chat" /></svg> Conversaciones
-        <span class="count">({{ mensajes|length }})</span>
-      </summary>
-      {% include 'partials/admin/_mensajes.html' %}
-    </details>
 
     {% include 'partials/_panel_scripts.html' %}
 

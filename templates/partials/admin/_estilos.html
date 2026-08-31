@@ -290,7 +290,9 @@
     }
     @keyframes acc-fila {
         from { opacity: 0; transform: translateY(6px); }
-        to   { opacity: 1; transform: translateY(0); }
+        /* transform:none, no translateY(0): con animation-fill-mode both, translateY(0)
+           dejaría un stacking context permanente en cada fila y taparía el menú "⋯". */
+        to   { opacity: 1; transform: none; }
     }
     details.acc[open] > .card {
         animation: acc-abrir .28s cubic-bezier(.22, 1, .36, 1);

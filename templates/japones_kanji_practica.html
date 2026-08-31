@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Práctica de escritura de kanji — Kaitosan</title>
+    {% include 'partials/admin/_estilos.html' %}
+    <style>
+      .jp-wrap {
+        max-width: 720px;
+        margin: 0 auto;
+      }
+      .kp-pend {
+        font-size: 13px;
+        color: var(--text-soft);
+        font-weight: 700;
+        margin: 0 0 14px;
+      }
+      .kp-readings {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 22px;
+        margin-bottom: 16px;
+      }
+      .kp-readings div {
+        font-size: 14px;
+        color: var(--text);
+      }
+      .kp-readings span {
+        display: block;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--text-soft);
+        font-weight: 700;
+      }
+      .kp-canvas-wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+      }
+      #kp-canvas {
+        width: 300px;
+        max-width: 100%;
+        aspect-ratio: 1;
+        border: 2px dashed var(--border-fuerte);
+        border-radius: var(--radio-sm);
+        background: #fff;
+        touch-action: none;
+        cursor: crosshair;
+      }
+      .kp-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+        margin-top: 18px;
+      }
+      .kp-hints {
+        margin-top: 16px;
+        display: grid;
+        gap: 8px;
+      }
+      .kp-hint {
+        background: var(--surface-2);
+        border-radius: var(--radio-sm);
+        padding: 10px 12px;
+        font-size: 14px;
+        line-height: 1.45;
+        color: var(--text);
+      }
+      .kp-hint span {
+        font-weight: 700;
+        color: var(--text-soft);
+      }
+      .kp-reveal {
+        margin-top: 20px;
+        text-align: center;
+      }
+      .kp-reveal .kp-glyph {
+        font-size: 96px;
+        line-height: 1.1;
+        color: var(--rosa-tinta);
+      }
+      .kp-reveal p {
+        margin: 6px 0 0;
+        font-size: 14px;
+        color: var(--text);
+      }
+      #hint-pop .cp-msg {
+        margin: 0 0 18px;
+        font-weight: 700;
+        font-size: 16px;
+      }
+      /* mismas animaciones que el pop-up de confirmación (_confirm_pop.html) */
+      #hint-pop .cp-ask {
+        animation: cp-fade 0.18s ease-out;
+      }
+      #hint-pop .practice-option {
+        animation: cp-pop 0.35s cubic-bezier(0.17, 0.89, 0.32, 1.28);
+      }
+      .flash-pop .practice-options {
+        display: grid;
+        gap: 10px;
+        margin-top: 10px;
+      }
+      .flash-pop .practice-option {
+        width: 100%;
+        min-height: 42px;
+        border: 1px solid var(--border-fuerte);
+        border-radius: var(--radio-pill);
+        background: var(--surface-2);
+        color: var(--text);
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .flash-pop .practice-option:hover:not([disabled]) {
+        border-color: var(--rosa-accion);
+        background: #fdf2f8;
+      }
+      .flash-pop .practice-option[disabled] {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+    </style>
+  </head>
+  <body>
+    {% include 'partials/_iconos.html' %} {% include
+    'partials/_confirm_pop.html' %}
+    <div class="jp-wrap">
+      <h1>
+        <span
+          ><svg class="ico"><use href="#i-lang" /></svg> Práctica de
+          escritura</span
+        >
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap">
+          <a href="/japones"
+            ><button class="btn btn-yellow" style="font-size: 13px">
+              <svg class="ico"><use href="#i-home" /></svg></button
+          ></a>
+          <a href="/japones/kanjis"
+            ><button class="btn btn-yellow" style="font-size: 13px">
+              Fichas
+            </button></a
+          >
+        </div>
+      </h1>
+
+      <p class="kp-pend">{{ pendientes }} kanji por repasar hoy</p>
+
+      <div class="card full">
+        <div class="section-header">
+          <h2>Dibuja el kanji de estas lecturas</h2>
+        </div>
+
+        <div class="kp-readings">
+          {% if k.on and k.on != '—' %}<div><span>on</span>{{ k.on }}</div>{% endif %}
+          {% if k.kun and k.kun != '—' %}<div><span>kun</span>{{ k.kun }}</div>{% endif %}
+          {% if k.reading_card %}<div><span>lectura</span>{{ k.reading_card }}</div>{% endif %}
+        </div>
+
+        <div class="kp-canvas-wrap">
+          <canvas id="kp-canvas" width="600" height="600"></canvas>
+          <button type="button" class="btn btn-ghost" id="kp-clear">
+            <svg class="ico"><use href="#i-undo" /></svg> Borrar
+          </button>
+        </div>
+
+        <div class="kp-hints" id="kp-hints" hidden>
+          <div class="kp-hint" id="hint-significado" hidden>
+            <span>Significado:</span> {{ k.meaning | replace(' (kanji)', '') }}
+          </div>
+          <div class="kp-hint" id="hint-memoria" hidden>
+            <span>Memoria:</span> {{ k.mnemo or '—' }}
+          </div>
+          <div class="kp-hint" id="hint-trazos" hidden>
+            <span>Trazos:</span> {{ k.trazos or '—' }}
+          </div>
+        </div>
+
+        <div class="kp-actions">
+          <button type="button" class="btn btn-yellow" id="kp-hint-btn">
+            <svg class="ico"><use href="#i-bulb" /></svg> Pista
+          </button>
+          <button type="button" class="btn btn-ghost" id="kp-skip-btn">
+            <svg class="ico"><use href="#i-arrow-right" /></svg> Pasar
+          </button>
+          <button type="button" class="btn btn-yellow" id="kp-check-btn">
+            <svg class="ico"><use href="#i-check" /></svg> Comprobar
+          </button>
+        </div>
+
+        <div class="kp-reveal" id="kp-reveal" hidden>
+          <div class="kp-glyph">{{ k.jp }}</div>
+          <p>{{ k.meaning | replace(' (kanji)', '') }} · {{ k.trazos }} trazos</p>
+          <p>{{ k.uso }}</p>
+          <div class="kp-actions">
+            <button type="button" class="btn btn-yellow" data-quality="5">
+              La dibujé bien
+            </button>
+            <button type="button" class="btn btn-ghost" data-quality="2">
+              No me salió
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <dialog id="hint-pop" class="flash-pop">
+      <div class="cp-ask">
+        <p class="cp-msg">¿Qué pista quieres ver?</p>
+        <div class="practice-options">
+          <button type="button" class="practice-option" data-hint="significado">
+            Significado en español
+          </button>
+          <button
+            type="button"
+            class="practice-option"
+            data-hint="memoria"
+            {% if not k.mnemo %}disabled{% endif %}
+          >
+            Regla de memoria
+          </button>
+          <button
+            type="button"
+            class="practice-option"
+            data-hint="trazos"
+            {% if not k.trazos %}disabled{% endif %}
+          >
+            Número de trazos
+          </button>
+          <button
+            type="button"
+            class="practice-option"
+            data-hint=""
+            style="background: var(--surface)"
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </dialog>
+
+    <form id="grade-form" method="POST" action="/japones/kanjis/practicar" style="display: none">
+      <input type="hidden" name="kanji" value="{{ k.jp }}" />
+      <input type="hidden" name="quality" id="grade-quality" value="2" />
+    </form>
+
+    <script>
+      (function () {
+        // ── Área de dibujo ────────────────────────────────────────────────
+        var canvas = document.getElementById("kp-canvas");
+        var ctx = canvas.getContext("2d");
+        ctx.lineWidth = 14;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.strokeStyle = "#1a1a1a";
+        var drawing = false;
+
+        function pos(e) {
+          var r = canvas.getBoundingClientRect();
+          return {
+            x: ((e.clientX - r.left) / r.width) * canvas.width,
+            y: ((e.clientY - r.top) / r.height) * canvas.height,
+          };
+        }
+        canvas.addEventListener("pointerdown", function (e) {
+          drawing = true;
+          var p = pos(e);
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          canvas.setPointerCapture(e.pointerId);
+        });
+        canvas.addEventListener("pointermove", function (e) {
+          if (!drawing) return;
+          var p = pos(e);
+          ctx.lineTo(p.x, p.y);
+          ctx.stroke();
+        });
+        function stop() {
+          drawing = false;
+        }
+        canvas.addEventListener("pointerup", stop);
+        canvas.addEventListener("pointercancel", stop);
+        document.getElementById("kp-clear").addEventListener("click", function () {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+        });
+
+        // ── Pistas ───────────────────────────────────────────────────────
+        var pop = document.getElementById("hint-pop");
+        var hintsBox = document.getElementById("kp-hints");
+        document
+          .getElementById("kp-hint-btn")
+          .addEventListener("click", function () {
+            if (pop.showModal) pop.showModal();
+          });
+        pop.addEventListener("click", function (e) {
+          if (e.target === pop) pop.close();
+        });
+        pop.querySelectorAll("[data-hint]").forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            var which = btn.getAttribute("data-hint");
+            if (which) {
+              hintsBox.hidden = false;
+              document.getElementById("hint-" + which).hidden = false;
+            }
+            pop.close();
+          });
+        });
+
+        // ── Comprobar / calificar ────────────────────────────────────────
+        var form = document.getElementById("grade-form");
+        var qInput = document.getElementById("grade-quality");
+        function grade(q) {
+          qInput.value = q;
+          form.submit();
+        }
+        document
+          .getElementById("kp-check-btn")
+          .addEventListener("click", function () {
+            document.getElementById("kp-reveal").hidden = false;
+            this.hidden = true;
+          });
+        document
+          .getElementById("kp-skip-btn")
+          .addEventListener("click", function () {
+            grade(2);
+          });
+        document
+          .querySelectorAll("#kp-reveal [data-quality]")
+          .forEach(function (btn) {
+            btn.addEventListener("click", function () {
+              grade(btn.getAttribute("data-quality"));
+            });
+          });
+      })();
+    </script>
+  </body>
+</html>

@@ -364,6 +364,17 @@ class JapaneseMemory:
                     ),
                 )
 
+    def get_practiced_set(self, kind: str = "kanji") -> set:
+        """Conjunto de textos (jp) que ya tienen ficha SRS en la BD."""
+        if kind == "vocabulario":
+            table, col = "japanese_vocabulary", "word"
+        elif kind == "kanji":
+            table, col = "japanese_kanji", "kanji"
+        else:
+            table, col = "japanese_grammar", "grammar_point"
+        with self._conectar() as conn:
+            return {row[0] for row in conn.execute(f"SELECT {col} FROM {table}")}
+
     def get_item_id(self, jp: str, kind: str = "vocabulario"):
         """Devuelve el id de un ítem por su texto en japonés, o None si no existe."""
         if kind == "vocabulario":

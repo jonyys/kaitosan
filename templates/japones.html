@@ -97,6 +97,9 @@
         /* Menú de acciones por fila (nativo, sin JS): un botón "⋯" que despliega
            las opciones, para que no se salgan del ancho en móvil. */
         .rowmenu { position: relative; display: inline-block; }
+        /* La fila con el menú abierto se pinta por encima de las filas de abajo,
+           si no, el panel desplegado queda tapado y los clics caen en la tabla. */
+        .acc table tr:has(.rowmenu[open]) { position: relative; z-index: 5; }
         .rowmenu > summary {
             list-style: none;
             cursor: pointer;

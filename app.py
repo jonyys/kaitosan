@@ -1,5 +1,6 @@
 import atexit
 import os
+import random
 import signal
 import sys
 import tempfile
@@ -1115,35 +1116,42 @@ def japones_gramatica_practicar():
     return render_template("japones_practica.html", kind="gramatica", title="Práctica de gramática N5", items=items, selected=selected_item)
 
 
-@app.route("/japones/kanjis/practicar", methods=["POST"])
+@app.route("/japones/kanjis/practicar", methods=["GET", "POST"])
 @login_requerido
 def japones_kanjis_practicar():
-    kanji = (request.form.get("kanji") or "").strip()
-    modo = (request.form.get("modo") or "ambas").strip().lower()
-    if not kanji:
-        flash("❌ No se ha seleccionado ningún kanji para practicar", "error")
-        return redirect(url_for("japones_kanjis"))
+    if request.method == "POST":
+        kanji = (request.form.get("kanji") or "").strip()
+        try:
+            quality = int(request.form.get("quality", 2))
+        except ValueError:
+            quality = 2
+        quality = max(0, min(5, quality))
+        item = next((k for k in KANJI_N5 if k.get("jp") == kanji), None)
+        if item:
+            item_id = brain.jap_memory.get_item_id(kanji, "kanji")
+            if item_id is None:
+                brain.jap_memory.add_item(
+                    "kanji", kanji,
+                    reading=(item.get("reading") or item.get("kun") or item.get("on") or "").strip(),
+                    meaning=(item.get("meaning") or "").strip(),
+                    tipo="kanji",
+                )
+                item_id = brain.jap_memory.get_item_id(kanji, "kanji")
+            if item_id is not None:
+                brain.jap_memory.review(item_id, quality, "kanji")
+        return redirect(url_for("japones_kanjis_practicar"))
 
-    item = next((k for k in KANJI_N5 if k.get("jp") == kanji), None)
-    if not item:
-        flash("❌ Ese kanji no existe en el proyecto", "error")
-        return redirect(url_for("japones_kanjis"))
-
-    reading = (item.get("reading") or item.get("kun") or item.get("on") or "").strip()
-    meaning = (item.get("meaning") or "").strip()
-    item_id = brain.jap_memory.get_item_id(kanji, "kanji")
-    if item_id is None:
-        brain.jap_memory.add_item("kanji", kanji, reading=reading, meaning=meaning, tipo="kanji")
-        item_id = brain.jap_memory.get_item_id(kanji, "kanji")
-
-    if item_id is None:
-        flash("❌ No se pudo guardar el kanji para el SRS", "error")
-        return redirect(url_for("japones_kanjis", kanji=kanji))
-
-    brain.jap_memory.review(item_id, 4 if modo in ("meaning", "significado", "writing", "escritura") else 5, "kanji")
-
-    # sin flash ni ?kanji=: no queremos popup de confirmación al volver
-    return redirect(url_for("japones_kanjis"))
+    # GET: siguiente kanji por SRS (vencidos primero, luego nunca practicados)
+    due = [d["jp"] for d in brain.jap_memory.get_due_items(limit=50, kind="kanji")]
+    practicados = brain.jap_memory.get_practiced_set("kanji")
+    nuevos = [k["jp"] for k in KANJI_N5 if k.get("jp") not in practicados]
+    cola = due + nuevos or [k["jp"] for k in KANJI_N5]
+    jp = cola[0] if due else random.choice(cola)
+    item = next(k for k in KANJI_N5 if k.get("jp") == jp)
+    k = dict(item)
+    k["mnemo"] = brain.jap_memory.get_mnemos().get(jp) or item.get("mnemo", "")
+    return render_template("japones_kanji_practica.html",
+                           k=k, pendientes=len(due) + len(nuevos))
 
 
 @app.route("/japones/kanjis/mnemo", methods=["POST"])

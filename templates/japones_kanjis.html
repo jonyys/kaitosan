@@ -10,6 +10,10 @@
         max-width: 1100px;
         margin: 0 auto;
       }
+      .jp-wrap h1 {
+        justify-content: space-between;
+        flex-wrap: wrap;
+      }
       .kanji-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
@@ -330,38 +334,7 @@
         font-size: 14px;
         line-height: 1.45;
         color: var(--text);
-      }
-      .ficha-actions {
-        margin-top: 18px;
-        text-align: center;
-      }
-      .ficha-actions .btn {
-        min-width: 150px;
-      }
-      #kanji-practice-pop .cp-msg {
-        margin: 0 0 18px;
-        font-weight: 700;
-        font-size: 16px;
-      }
-      .flash-pop .practice-options {
-        display: grid;
-        gap: 10px;
-        margin-top: 10px;
-      }
-      .flash-pop .practice-option {
-        width: 100%;
-        min-height: 42px;
-        border: 1px solid var(--border-fuerte);
-        border-radius: var(--radio-pill);
-        background: var(--surface-2);
-        color: var(--text);
-        font: inherit;
-        font-weight: 700;
-        cursor: pointer;
-      }
-      .flash-pop .practice-option:hover {
-        border-color: var(--rosa-accion);
-        background: #fdf2f8;
+        text-align: left;
       }
     </style>
   </head>
@@ -381,11 +354,6 @@
             ><button class="btn btn-yellow" style="font-size: 13px">
               <svg class="ico"><use href="#i-home" /></svg></button
           ></a>
-          <a href="/japones/kanjis"
-            ><button class="btn btn-yellow" style="font-size: 13px">
-              <svg class="ico"><use href="#i-lang" /></svg> Práctica
-            </button></a
-          >
           <button
             type="button"
             id="help-btn"
@@ -398,6 +366,17 @@
           </button>
         </div>
       </h1>
+
+      <div style="text-align: center; margin: 4px 0 22px">
+        <a href="/japones/kanjis/practicar" style="text-decoration: none">
+          <button
+            class="btn btn-yellow"
+            style="font-size: 19px; padding: 16px 40px"
+          >
+            <svg class="ico"><use href="#i-play" /></svg>
+          </button>
+        </a>
+      </div>
 
       <div class="card full">
         <div class="section-header">
@@ -501,12 +480,6 @@
           </button>
         </div>
         <p>{{ selected.mnemo or '—' }}</p>
-      </div>
-
-      <div class="ficha-actions">
-        <button type="button" id="practice-btn" class="btn btn-yellow">
-          Practicar
-        </button>
       </div>
     </dialog>
     {% endif %}
@@ -699,45 +672,6 @@
     </dialog>
     {% endif %}
 
-    <dialog id="kanji-practice-pop" class="flash-pop">
-      <div class="cp-ask">
-        <p class="cp-msg">¿Cómo quieres practicar este kanji?</p>
-        <div class="practice-options">
-          <button type="button" class="practice-option" data-mode="significado">
-            Prácticar significado
-          </button>
-          <button type="button" class="practice-option" data-mode="escritura">
-            Prácticar escritura
-          </button>
-          <button type="button" class="practice-option" data-mode="ambas">
-            Prácticar las dos
-          </button>
-          <button
-            type="button"
-            class="practice-option"
-            data-mode="cancelar"
-            style="background: var(--surface)"
-          >
-            Cancelar
-          </button>
-        </div>
-      </div>
-    </dialog>
-
-    <form
-      id="kanji-practice-form"
-      method="POST"
-      action="/japones/kanjis/practicar"
-      style="display: none"
-    >
-      <input
-        type="hidden"
-        name="kanji"
-        value="{{ selected.kanji if selected else '' }}"
-      />
-      <input type="hidden" name="modo" id="kanji-practice-mode" value="ambas" />
-    </form>
-
     <script>
       (function () {
         var helpPop = document.getElementById("kanji-help-pop");
@@ -803,42 +737,6 @@
               history.replaceState(null, "", location.pathname);
           });
         }
-
-        var popup = document.getElementById("kanji-practice-pop");
-        var form = document.getElementById("kanji-practice-form");
-        var modeInput = document.getElementById("kanji-practice-mode");
-        var practiceBtn = document.getElementById("practice-btn");
-
-        function mostrarPopup() {
-          if (!popup || !popup.showModal) return form.submit();
-          popup.showModal();
-        }
-
-        function cerrarPopup() {
-          if (popup && popup.close) popup.close();
-        }
-
-        if (practiceBtn) {
-          practiceBtn.addEventListener("click", mostrarPopup);
-        }
-
-        popup &&
-          popup.addEventListener("click", function (event) {
-            if (event.target === popup) cerrarPopup();
-          });
-
-        document.querySelectorAll(".practice-option").forEach(function (btn) {
-          btn.addEventListener("click", function () {
-            var mode = btn.getAttribute("data-mode");
-            if (!mode || mode === "cancelar") {
-              cerrarPopup();
-              return;
-            }
-            modeInput.value = mode;
-            cerrarPopup();
-            form.submit();
-          });
-        });
 
         var catButtons = document.querySelectorAll(".kanji-cat");
         var kanjiCards = document.querySelectorAll(".kanji-card");

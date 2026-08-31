@@ -51,18 +51,14 @@ _CATEGORIAS = [
         ],
     ),
     (
-        "kanji_tiempo", "Kanjis N5 — Tiempo y calendario",
-        "leer un horario, un calendario y los carteles de apertura de una tienda",
+        "kanji_elementos", "Kanjis N5 — Elementos naturales",
+        "los cinco elementos (火水木金土): con 曜日 detrás nombran los días de la semana, y sueltos salen en decenas de palabras del día a día",
         [
-            {"jp": "何曜日ですか", "uso": "'¿qué día de la semana es?'"},
-            {"jp": "今日は 何日ですか", "uso": "'¿a qué día del mes estamos?'"},
-            {"jp": "時間が ないんです", "uso": "'es que no tengo tiempo'; excusa educada y comodín"},
+            {"jp": "花火を 見に 行きました", "uso": "'fuimos a ver fuegos artificiales'; 花 (flor) + 火 (fuego)"},
+            {"jp": "お金を おろします", "uso": "'voy a sacar dinero'; el 金 de お金 es el de 金曜日"},
+            {"jp": "木の 下で 休みましょう", "uso": "'descansemos bajo el árbol'"},
         ],
         [
-            ("日", "día / sol", "ニチ・ジツ", "ひ・か", 4, "日 (ひへん)", "今日は いい 日ですね", "hoy-TEMA / buen / día-es-¿verdad?",
-             "un recuadro con una raya en medio: el disco del sol con su mancha; cuando sale, empieza el día", "日本 にほん Japón · 三日 みっか el día 3 · 日曜日 にちようび domingo"),
-            ("月", "mes / luna", "ゲツ・ガツ", "つき", 4, "月 (つきへん)", "月曜日に あいます", "lunes-A / quedamos",
-             "una ventana estrecha con dos baldas: por ella asoma la luna, y una luna llena marca un mes", "月曜日 げつようび lunes · 一月 いちがつ enero · 今月 こんげつ este mes"),
             ("火", "fuego", "カ", "ひ", 4, "火 (ひ)", "火曜日は やすみです", "martes-TEMA / descanso-es",
              "una hoguera: el leño central y dos chispas saltando a los lados", "火曜日 かようび martes · 花火 はなび fuegos artificiales"),
             ("水", "agua", "スイ", "みず", 4, "水 (みず)", "お水を ください", "agua-OBJ / por-favor",
@@ -73,8 +69,39 @@ _CATEGORIAS = [
              "un tejado (𠆢) sobre lingotes (王) enterrados y dos pepitas (丷): un tesoro guardado", "お金 おかね dinero · 金曜日 きんようび viernes"),
             ("土", "tierra", "ド", "つち", 3, "土 (つちへん)", "土曜日に 行きます", "sábado-A / voy",
              "una estaca clavada en el suelo (la raya de abajo): así marcas tu trozo de tierra", "土曜日 どようび sábado · 土 つち tierra"),
+        ],
+    ),
+    (
+        "kanji_tiempo", "Kanjis N5 — Tiempo y calendario",
+        "leer un horario, un calendario y los carteles de apertura de una tienda",
+        [
+            {"jp": "何曜日ですか", "uso": "'¿qué día de la semana es?'; se responde con un elemento + 曜日 (月火水木金土日)"},
+            {"jp": "今日は 何日ですか", "uso": "'¿a qué día del mes estamos?'"},
+            {"jp": "時間が ないんです", "uso": "'es que no tengo tiempo'; excusa educada y comodín"},
+        ],
+        [
+            ("日", "día / sol", "ニチ・ジツ", "ひ・か", 4, "日 (ひへん)", "今日は いい 日ですね", "hoy-TEMA / buen / día-es-¿verdad?",
+             "un recuadro con una raya en medio: el disco del sol con su mancha; cuando sale, empieza el día", "日本 にほん Japón · 三日 みっか el día 3 · 日曜日 にちようび domingo"),
+            ("月", "mes / luna", "ゲツ・ガツ", "つき", 4, "月 (つきへん)", "月曜日に あいます", "lunes-A / quedamos",
+             "una ventana estrecha con dos baldas: por ella asoma la luna, y una luna llena marca un mes", "月曜日 げつようび lunes · 一月 いちがつ enero · 今月 こんげつ este mes"),
             ("曜", "día de la semana", "ヨウ", "—", 18, "日 (ひへん)", "何曜日ですか", "¿qué-día-de-la-semana-es?",
-             "日 (sol) con alas (羽) y un pájaro (隹): cada día el sol vuelve a echar a volar; solo vive en 〜曜日", "曜日 ようび día de la semana"),
+             "cada día es un elemento + 曜日: 月(luna) 火 水 木 金 土 日(sol). 曜 es 日 (sol) con alas (羽) y un pájaro (隹), y solo vive en 〜曜日",
+             "月曜日 げつようび lunes · 火曜日 かようび martes · 水曜日 すいようび miércoles · 木曜日 もくようび jueves · 金曜日 きんようび viernes · 土曜日 どようび sábado · 日曜日 にちようび domingo"),
+            # los 7 días como palabra: cada uno su tarjeta, para practicarlos por separado
+            ("月曜日", "lunes", "—", "げつようび", 26, "—", "月曜日に あいましょう", "lunes-EN / quedemos",
+             "月 (luna) + 曜日: el día de la Luna; aquí 月 se lee げつ", "月曜日 げつようび lunes · 毎週月曜日 まいしゅうげつようび todos los lunes"),
+            ("火曜日", "martes", "—", "かようび", 26, "—", "火曜日は やすみです", "martes-TEMA / descanso-es",
+             "火 (fuego) + 曜日: el día del Fuego (Marte)", "火曜日 かようび martes · 火曜 かよう martes (informal)"),
+            ("水曜日", "miércoles", "—", "すいようび", 26, "—", "水曜日に テストが あります", "miércoles-EN / examen-SUJ / hay",
+             "水 (agua) + 曜日: el día del Agua (Mercurio)", "水曜日 すいようび miércoles · 水曜 すいよう miércoles (informal)"),
+            ("木曜日", "jueves", "—", "もくようび", 26, "—", "木曜日まで まって ください", "jueves-HASTA / espera / por-favor",
+             "木 (árbol) + 曜日: el día de la Madera (Júpiter)", "木曜日 もくようび jueves · 木曜 もくよう jueves (informal)"),
+            ("金曜日", "viernes", "—", "きんようび", 30, "—", "金曜日の 夜は ひまです", "viernes-DE / noche-TEMA / libre-estoy",
+             "金 (oro) + 曜日: el día del Metal (Venus); aquí 金 se lee きん", "金曜日 きんようび viernes · 花金 はなきん 'por fin viernes' (coloquial)"),
+            ("土曜日", "sábado", "—", "どようび", 25, "—", "土曜日に かいものを します", "sábado-EN / compras-OBJ / hago",
+             "土 (tierra) + 曜日: el día de la Tierra (Saturno); aquí 土 se lee ど", "土曜日 どようび sábado · 土曜 どよう sábado (informal)"),
+            ("日曜日", "domingo", "—", "にちようび", 26, "—", "日曜日は 休みます", "domingo-TEMA / descanso",
+             "日 (sol) + 曜日: el día del Sol; aquí 日 se lee にち", "日曜日 にちようび domingo · 日曜 にちよう domingo (informal)"),
             ("年", "año", "ネン", "とし", 6, "干 (かん)", "来年 日本に 行きます", "año-que-viene / Japón-A / voy",
              "alguien cargando al hombro una espiga (禾): una cosecha recogida = un año", "今年 ことし este año · 去年 きょねん el año pasado"),
             ("時", "hora / momento", "ジ", "とき", 10, "日 (ひへん)", "今 何時ですか", "ahora / ¿qué-hora-es?",
@@ -347,19 +374,30 @@ def _kata_a_hira(s):
 # la on de 4 y 7 (し, しち) casi nunca se usa al contar: chocan con 死/一
 _READING_CARD = {"四": "よん", "七": "なな", "九": "きゅう"}
 
+# kanji que en la card se reconocen por su ON aunque tengan kun: números, y los
+# que en la práctica solo viven en compuestos (時 じ, 語 ご, 社 しゃ...). El resto
+# muestra su kun, que es como se lee el carácter suelto (山 やま, no さん).
+_ON_CARD = set("一二三四五六七八九十千円時分半語社年天本生先学文字")
+
+
+def _card_reading(jp, on, kun):
+    if jp in _READING_CARD:
+        return _READING_CARD[jp]
+    base = on if (jp in _ON_CARD or kun == "—") else kun
+    if base == "—":
+        base = on
+    return _kata_a_hira(base).split("・")[0].replace("(", "").replace(")", "")
+
 
 def _item(t):
     """Tupla de datos → ítem del temario (kind vocabulario, tipo kanji)."""
     jp, sig, on, kun, trazos, radical, ejemplo, literal, mnemo, vocab = t
     lect = " · ".join(p for p in (f"on {on}" if on != "—" else "",
                                   f"kun {kun}" if kun != "—" else "") if p)
-    primaria = (on if on != "—" else kun).split("・")[0]
     return {
         "kind": "vocabulario", "tipo": "kanji", "jp": jp,
         "reading": (kun if kun != "—" else on).split("・")[0].replace("(", "").replace(")", ""),
-        # lectura para la card: la on en hiragana (一→いち, 二→に, 三→さん),
-        # salvo 4/7/9 donde manda la lectura de uso real (よん・なな・きゅう)
-        "reading_card": _READING_CARD.get(jp) or _kata_a_hira(primaria).replace("(", "").replace(")", ""),
+        "reading_card": _card_reading(jp, on, kun),
         "meaning": f"{sig} (kanji)",
         "ejemplo": ejemplo, "literal": literal,
         "uso": f"{lect} · {trazos} trazos · radical {radical}. {mnemo}. Aparece en: {vocab}",
@@ -398,20 +436,21 @@ def unidades_kanji(ya_en_temario=frozenset(), prerequisito=None, umbral=0.75):
 
 
 if __name__ == "__main__":
-    assert len(KANJI_N5) == 108, len(KANJI_N5)
-    assert len({k["jp"] for k in KANJI_N5}) == 108, "kanji repetido"
+    # 108 kanji sueltos + los 7 días de la semana como palabra (月曜日〜日曜日)
+    assert len(KANJI_N5) == 115, len(KANJI_N5)
+    assert len({k["jp"] for k in KANJI_N5}) == 115, "kanji repetido"
     for k in KANJI_N5:
-        assert len(k["jp"]) == 1 and "一" <= k["jp"] <= "鿿", k["jp"]
+        assert 1 <= len(k["jp"]) <= 3 and all("一" <= c <= "鿿" for c in k["jp"]), k["jp"]
         assert k["reading"] and k["ejemplo"] and k["literal"] and k["mnemo"], k["jp"]
-        assert 1 <= k["trazos"] <= 20, k
+        assert 1 <= k["trazos"] <= 20 * len(k["jp"]), k
 
     us = unidades_kanji()
-    assert len(us) == 10 and sum(len(u["items"]) for u in us) == 108
+    assert len(us) == 11 and sum(len(u["items"]) for u in us) == 115
     assert us[0]["prerequisito"] is None
     assert [u["prerequisito"] for u in us[1:]] == [u["id"] for u in us[:-1]], "cadena rota"
 
     # con las fichas que ya existen filtradas, ningún carácter se duplica
     filtradas = unidades_kanji({"一", "二", "三", "山"}, prerequisito="x")
-    assert sum(len(u["items"]) for u in filtradas) == 104
+    assert sum(len(u["items"]) for u in filtradas) == 111
     assert filtradas[0]["prerequisito"] == "x"
     print("ok:", len(KANJI_N5), "kanji N5 en", len(us), "unidades")
