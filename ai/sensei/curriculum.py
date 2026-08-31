@@ -1,5 +1,7 @@
 """Espina dorsal del temario de japonés y selector del próximo ítem nuevo."""
 
+from ai.sensei.kanji_n5 import unidades_kanji
+
 CURRICULUM = [
     # ── Unidad 0: Saludos y expresiones básicas (sin puerta) ─────────────────
     {
@@ -1049,7 +1051,6 @@ CURRICULUM = [
         "prerequisito": "causa_contraste_n3",
         "umbral_prereq": 0.75,
         "items": [
-            {"kind": "gramatica", "jp": "〜し", "meaning": "enumeración de razones: 'además de X, también Y / tanto X como Y'"},
             {"kind": "gramatica", "jp": "〜一方で", "meaning": "contraste: 'por un lado X, por otro Y / mientras que X, Y'"},
             {"kind": "gramatica", "jp": "〜上に", "meaning": "adición con agravante: 'además de X (que ya es mucho), también Y'"},
             {"kind": "gramatica", "jp": "〜というのは", "meaning": "explicación de definición: 'lo que se llama X significa...'"},
@@ -1090,6 +1091,16 @@ CURRICULUM = [
     },
 ]
 
+
+# Los 103 kanji N5 entran como bloque de cierre del N5, justo antes del N4: para
+# entonces Laura ya sabe decir de viva voz casi todo lo que los kanji escriben.
+# Los caracteres que otra unidad ya enseña (一〜千, 人, 目, 手…) se filtran, para
+# que el SRS no lleve dos fichas del mismo carácter.
+_YA_EN_TEMARIO = {item["jp"] for unit in CURRICULUM for item in unit["items"]}
+_UNIDADES_KANJI = unidades_kanji(_YA_EN_TEMARIO, prerequisito="comparaciones_deseos")
+_CORTE = next(i for i, u in enumerate(CURRICULUM) if u["id"] == "forma_potencial")
+CURRICULUM[_CORTE]["prerequisito"] = _UNIDADES_KANJI[-1]["id"]
+CURRICULUM[_CORTE:_CORTE] = _UNIDADES_KANJI
 
 UMBRAL_PREREQ_DEFECTO = 0.75
 
