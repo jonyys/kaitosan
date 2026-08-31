@@ -166,7 +166,14 @@ class ProfesorJapones:
         self.ultima_frase_objetivo = None
         self._foco_due_vocab = []
         self._foco_due_gram = []
-        self._foco_nuevos = []
+
+        # Los ítems nuevos se eligen UNA vez por sesión, no una por turno.
+        # Se persisten al cerrar (_ejecutar_extraccion), no aquí.
+        due = self.jap_memory.resumen_perfil()["due_count"]
+        self._foco_nuevos = (
+            [] if due >= THROTTLE_DUE
+            else siguiente_items_nuevos(self.jap_memory, MAX_ITEMS_NUEVOS)
+        )
 
         now = datetime.now().isoformat(sep=" ", timespec="seconds")
         with self.jap_memory._conectar() as conn:
@@ -331,23 +338,10 @@ class ProfesorJapones:
         due_gram = self.jap_memory.get_due_items(3, kind="gramatica")
 
         due_count = perfil_jap["due_count"]
-        if due_count >= THROTTLE_DUE:
-            nuevos = []
-        else:
-            nuevos = siguiente_items_nuevos(self.jap_memory, MAX_ITEMS_NUEVOS)
+        nuevos = self._foco_nuevos      # elegidos en entrar(), solo lectura aquí
 
-        # Persistir ítems nuevos en cuanto se seleccionan — add_item es idempotente
-        for nuevo in nuevos:
-            self.jap_memory.add_item(
-                nuevo["kind"], nuevo["jp"],
-                reading=nuevo.get("reading"),
-                meaning=nuevo.get("meaning"),
-                tipo=nuevo.get("tipo"),
-                session_id=self.session_id,
-            )
         self._foco_due_vocab = due_vocab
         self._foco_due_gram = due_gram
-        self._foco_nuevos = nuevos
 
         lineas_f = []
         if due_vocab:
@@ -406,6 +400,25 @@ class ProfesorJapones:
         if not self.mensajes:
             self.jap_memory.guardar_resumen_sesion(session_id, summary=None)
             return
+
+        # Copia local: una sesión nueva puede pisar self._foco_nuevos mientras
+        # esta extracción corre en segundo plano (igual que session_id).
+        foco_nuevos = list(self._foco_nuevos)
+
+        # Persistir aquí los ítems nuevos de la sesión, antes de cualquier
+        # review(): sin esto get_item_id() devuelve None y las dos rutas de
+        # calificación (rescate y aprobado de oficio) quedarían mudas.
+        for nuevo in foco_nuevos:
+            try:
+                self.jap_memory.add_item(
+                    nuevo["kind"], nuevo["jp"],
+                    reading=nuevo.get("reading"),
+                    meaning=nuevo.get("meaning"),
+                    tipo=nuevo.get("tipo"),
+                    session_id=session_id,
+                )
+            except Exception as e:
+                print(f"⚠️ Error persistiendo ítem nuevo '{nuevo['jp']}': {e}")
 
         transcript = self._construir_transcript()
 
@@ -500,7 +513,7 @@ class ProfesorJapones:
 
         # Ítems nuevos del FOCO que el extractor no capturó: mínimo reps=1 (duda)
         reviewed_jp = {(r.get("jp") or "").strip() for r in data.get("reviewed", [])}
-        for nuevo in self._foco_nuevos:
+        for nuevo in foco_nuevos:
             if nuevo["jp"] not in reviewed_jp:
                 item_id = self.jap_memory.get_item_id(nuevo["jp"], nuevo["kind"])
                 if item_id is not None:
