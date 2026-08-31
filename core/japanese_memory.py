@@ -373,10 +373,45 @@ class JapaneseMemory:
                 "COALESCE(reps, 0) AS reps FROM japanese_vocabulary"
             )}
 
+    def gram_rows(self) -> dict:
+        """{grammar_point: {description, mastery, reps}} de toda la gramática en BD."""
+        with self._conectar() as conn:
+            conn.row_factory = sqlite3.Row
+            return {r["grammar_point"]: dict(r) for r in conn.execute(
+                "SELECT grammar_point, description, COALESCE(mastery, 0) AS mastery, "
+                "COALESCE(reps, 0) AS reps FROM japanese_grammar"
+            )}
+
     def marcar_completo(self, jp, kind="vocabulario", reading=None, meaning=None, tipo=None):
-        """Marca una palabra o kanji como aprendido del todo: fuera de la cola de
-        repaso y del flujo de ítems nuevos de las sesiones. Crea la fila si Laura
-        aún no la tenía."""
+        """Marca una palabra, kanji o punto de gramática como aprendido del todo:
+        fuera de la cola de repaso y del flujo de ítems nuevos de las sesiones.
+        Crea la fila si Laura aún no la tenía."""
+        if kind == "gramatica":
+            with self._conectar() as conn:
+                existe = conn.execute(
+                    "SELECT 1 FROM japanese_grammar WHERE grammar_point = ?", (jp,)
+                ).fetchone()
+                if existe:
+                    conn.execute(
+                        """UPDATE japanese_grammar SET
+                               mastery=100, reps=MAX(COALESCE(reps, 0), 8),
+                               ease_factor=2.5, interval_days=36500,
+                               next_review=date('now', '+36500 days'), errors=0
+                           WHERE grammar_point = ?""",
+                        (jp,),
+                    )
+                else:
+                    conn.execute(
+                        """INSERT INTO japanese_grammar
+                               (grammar_point, description, mastery,
+                                reps, ease_factor, interval_days, next_review,
+                                times_seen, times_correct)
+                           VALUES (?, ?, 100,
+                                   8, 2.5, 36500, date('now', '+36500 days'), 0, 8)""",
+                        (jp, meaning),
+                    )
+            return
+
         tabla, col = (("japanese_kanji", "kanji") if kind == "kanji"
                       else ("japanese_vocabulary", "word"))
         with self._conectar() as conn:
@@ -405,7 +440,13 @@ class JapaneseMemory:
 
     def dominados(self, kind: str = "kanji") -> set:
         """Textos (jp) que se cuentan como aprendidos del todo:
-        status 'learned'/'mastered' o reps >= 2."""
+        status 'learned'/'mastered', mastery >= 100 o reps >= 2."""
+        if kind == "gramatica":
+            with self._conectar() as conn:
+                return {r[0] for r in conn.execute(
+                    "SELECT grammar_point FROM japanese_grammar "
+                    "WHERE COALESCE(mastery, 0) >= 100 OR COALESCE(reps, 0) >= 2"
+                )}
         tabla, col = (("japanese_kanji", "kanji") if kind == "kanji"
                       else ("japanese_vocabulary", "word"))
         with self._conectar() as conn:

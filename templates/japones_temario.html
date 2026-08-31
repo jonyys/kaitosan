@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vocabulario N5 — Kaitosan</title>
+    <title>{{ titulo }} — Kaitosan</title>
     {% include 'partials/admin/_estilos.html' %}
     <style>
       .jp-wrap {
@@ -203,7 +203,7 @@
     <div class="jp-wrap">
       <h1>
         <span
-          ><svg class="ico"><use href="#i-lang" /></svg> Vocabulario N5</span
+          ><svg class="ico"><use href="#i-lang" /></svg> {{ titulo }}</span
         >
         <div
           style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap"
@@ -244,7 +244,7 @@
           <h2>{{ u.nombre }}</h2>
           <form
             method="POST"
-            action="/japones/vocabulario/completar-unidad"
+            action="/japones/{{ kind }}/completar-unidad"
             class="js-unidad"
           >
             <input type="hidden" name="unidad" value="{{ u.id }}" />
@@ -314,7 +314,7 @@
       <div class="voc-pop-actions">
         <form
           method="POST"
-          action="/japones/vocabulario/completar"
+          action="/japones/{{ kind }}/completar"
           id="voc-pop-form"
         >
           <input type="hidden" name="word" id="voc-pop-word" />
@@ -330,8 +330,8 @@
 
     <script>
       (function () {
-        var K_NIVEL = "vocNivel";
-        var K_UNIDAD = "vocUnidad";
+        var K_NIVEL = "temNivel:{{ kind }}";
+        var K_UNIDAD = "temUnidad:{{ kind }}";
         var nivelBtns = document.querySelectorAll(".voc-nivel");
         var unidadBtns = document.querySelectorAll(".voc-unidad-btn");
         var secciones = document.querySelectorAll(".voc-unidad");

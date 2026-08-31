@@ -160,7 +160,8 @@
     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
         <a href="/admin"><button class="btn btn-yellow" style="font-size:13px"><svg class="ico"><use href="#i-home"/></svg></button></a>
         <a href="/japones/vocabulario"><button class="btn btn-yellow" style="font-size:13px">Vocabulario</button></a>
-        <a href="/japones/gramatica/practicar"><button class="btn btn-yellow" style="font-size:13px">Gramática</button></a>
+        <a href="/japones/gramatica"><button class="btn btn-yellow" style="font-size:13px">Gramática</button></a>
+        <a href="/japones/kanjis"><button class="btn btn-yellow" style="font-size:13px">Kanjis</button></a>
     </div>
 </h1>
 
@@ -248,6 +249,36 @@
             <div class="progress-bar-fill" style="width:{{ (k_mastered / kanji_corpus * 100)|round }}%; background:var(--rosa-accion);"></div>
         </div>
         <span class="progress-count">{{ k_mastered }}/{{ kanji_corpus }}</span>
+    </div>
+</div>
+{% endif %}
+
+{% if gram_corpus > 0 %}
+<div class="card full" style="margin-bottom:20px;">
+    <h2>Progreso de gramática</h2>
+    {% set gr_learning = grammar_by_status.get('learning', 0) %}
+    {% set gr_learned  = grammar_by_status.get('learned', 0) %}
+    {% set gr_mastered = grammar_by_status.get('mastered', 0) %}
+    <div class="progress-row">
+        <span class="progress-label">Aprendiendo</span>
+        <div class="progress-bar-bg">
+            <div class="progress-bar-fill" style="width:{{ (gr_learning / gram_corpus * 100)|round }}%; background:var(--rosa);"></div>
+        </div>
+        <span class="progress-count">{{ gr_learning }}/{{ gram_corpus }}</span>
+    </div>
+    <div class="progress-row">
+        <span class="progress-label">Aprendida</span>
+        <div class="progress-bar-bg">
+            <div class="progress-bar-fill" style="width:{{ (gr_learned / gram_corpus * 100)|round }}%; background:var(--rosa-medio);"></div>
+        </div>
+        <span class="progress-count">{{ gr_learned }}/{{ gram_corpus }}</span>
+    </div>
+    <div class="progress-row">
+        <span class="progress-label">Dominada</span>
+        <div class="progress-bar-bg">
+            <div class="progress-bar-fill" style="width:{{ (gr_mastered / gram_corpus * 100)|round }}%; background:var(--rosa-accion);"></div>
+        </div>
+        <span class="progress-count">{{ gr_mastered }}/{{ gram_corpus }}</span>
     </div>
 </div>
 {% endif %}
@@ -429,7 +460,7 @@
     <div class="section-header">
         <h2><svg class="ico"><use href="#i-puzzle"/></svg> Gramática ({{ total_grammar }})</h2>
         <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-            <a href="/japones/gramatica/practicar"><button class="btn btn-yellow" style="font-size:13px">Práctica</button></a>
+            <a href="/japones/gramatica"><button class="btn btn-yellow" style="font-size:13px">Ver gramática</button></a>
             <form method="post" action="/japones/gramatica/borrar-todo"
                   onsubmit="return confirm('¿Borrar TODA la gramática?')">
                 <button class="btn btn-red">Borrar todo</button>
