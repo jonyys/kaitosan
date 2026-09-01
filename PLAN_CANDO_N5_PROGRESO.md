@@ -9,7 +9,7 @@ Estados: `pendiente` · `en_curso:<agente>` · `verificada` · `bloqueada:<motiv
 | 02 | Reconciliar vocabulario a la lista | I | 🔴 | verificada | cando/fase02 | 4bd09dd | 202 conservados, 508 añadidos, 103 fuera. CSV=710 jp únicos (no 717: 8 kanji doble lectura). Unidad nueva vocabulario_n5_extra |
 | 03 | Reconciliar gramática a la lista | I | 🟢 | verificada | cando/fase03 | 8171b38 | 54 conservados, 36 añadidos, 101 fuera, 16 reubicados. gramática=90==CSV. Rehecha sobre fase02 (serializadores en conflicto) |
 | 04 | Borrar unidades vacías + purgar BD | I | 🟢 | verificada | cando/fase04 | 4b20ca5 | 13 unidades borradas (53→40, 10 kanji intactas). 2 prereq repunteados. purgar_fuera_de_temario en Brain.__init__. Selector de nivel fuera de web. +col first_taught_session_id en japanese_grammar |
-| 05 | Notas de uso del vocabulario + gramática completa | II | 🔴 | WIP:fase05 | cando/fase05 | (WIP) | Subagente cortado por límite de sesión. `scripts/_fase05_contenido.json` pusheado: 52 puntos de gramática con los 4 campos generados, JSON truncado/inválido al final. Falta: reparar JSON, `uso` de vocab, ensamblar, validar |
+| 05 | Notas de uso del vocabulario + gramática completa | II | 🔴 | verificada | cando/fase05 | 4dfb44d | 52 puntos gramática con los 4 campos + 234 `uso` de vocab (286 vacías por diseño). LLM-juez: 50 ok, 2 regenerados, 0 dudosos. validador gramática ESTRICTO. Sin ítems `regenerar` pendientes |
 | 06 | Can-dos por unidad (generados) | III | 🟢 | pendiente | | | |
 | 07 | Esquema BD: can_do_progreso + estado_item | III | 🟢 | pendiente | | | |
 | 08 | Extractor califica can-dos | III | 🟢 | pendiente | | | |
