@@ -1054,26 +1054,17 @@ def _temario_unidades(kind):
     'extra' con lo que Laura haya metido en sesiones y no esté en el temario.
     Cada ítem trae su estado ('aprendida' | 'en_curso' | 'nueva') y cada unidad
     su progreso."""
-    if kind == "gramatica":
-        db_rows = brain.jap_memory.gram_rows()
+    db_rows = (brain.jap_memory.gram_rows() if kind == "gramatica"
+               else brain.jap_memory.vocab_rows())
 
-        def estado(jp):
-            r = db_rows.get(jp)
-            if not r:
-                return "nueva"
-            if (r["reps"] or 0) >= 2 or (r["mastery"] or 0) >= 100:
-                return "aprendida"
-            return "en_curso"
-    else:
-        db_rows = brain.jap_memory.vocab_rows()
+    # Estado del ítem: fuente única en JapaneseMemory.estado_item (Fase 07). La
+    # página conserva su vocabulario propio ('aprendida'/'en_curso'/'nueva').
+    # ponytail: una consulta por ítem al render; la Fase 14 unifica temario,
+    # boletín y profesor sobre estado_item y batea si hiciera falta.
+    _MAP = {"sabido": "aprendida", "en_progreso": "en_curso", "nuevo": "nueva"}
 
-        def estado(jp):
-            r = db_rows.get(jp)
-            if not r:
-                return "nueva"
-            if (r["reps"] or 0) >= 2 or r["status"] in ("learned", "mastered"):
-                return "aprendida"
-            return "en_curso"
+    def estado(jp):
+        return _MAP[brain.jap_memory.estado_item(jp, kind)]
 
     # El temario es exactamente el N5 (Fase 04): se renderiza tal cual sale de
     # CURRICULUM, sin selector de nivel ni arrastre N5→N4→N3.
