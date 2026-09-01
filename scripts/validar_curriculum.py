@@ -18,8 +18,9 @@ Checks tolerantes (solo avisan por stdout):
   - `uso` de vocabulario con japonés fuera de 「」 (las notas anteriores a la
     Fase 05 lo usan como estilo de casa; las nuevas no).
 
-TODO (Fase 06): cuando el curriculum tenga `can_do` por unidad, añadir aquí
-el check de `can_do.id` único en todo el temario.
+Checks duros de can-dos (Fase 06 en adelante):
+  - todo `can_do['id']` es único en todo el `CURRICULUM`.
+  - todo can-do tiene `texto` no vacío.
 """
 import re
 import sys
@@ -144,7 +145,21 @@ def main():
             f"(las notas previas a la Fase 05 lo usan como estilo de casa)"
         )
 
-    print(f"Unidades: {len(CURRICULUM)} · vocabulario: {len(vocab_items)} · gramatica: {len(gram_items)}")
+    # --- can-dos: id único en todo el temario + texto no vacío (DURO, Fase 06) ---
+    can_do_ids = [
+        cd.get("id") for u in CURRICULUM for cd in u.get("can_dos", [])
+    ]
+    dup_can_do = sorted({i for i, n in Counter(can_do_ids).items() if n > 1})
+    if dup_can_do:
+        errores.append(f"can_do.id duplicados en el temario: {dup_can_do}")
+    can_do_sin_texto = [
+        cd.get("id") for u in CURRICULUM for cd in u.get("can_dos", [])
+        if not (cd.get("texto") or "").strip()
+    ]
+    if can_do_sin_texto:
+        errores.append(f"can-dos con texto vacío: {can_do_sin_texto}")
+
+    print(f"Unidades: {len(CURRICULUM)} · vocabulario: {len(vocab_items)} · gramatica: {len(gram_items)} · can-dos: {len(can_do_ids)}")
 
     for aviso in avisos:
         print(f"AVISO (tolerado): {aviso}")
