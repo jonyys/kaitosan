@@ -22,6 +22,13 @@ import sys
 from collections import Counter
 from pathlib import Path
 
+# La consola de Windows por defecto (cmd, codepage cp1252/cp437) revienta al
+# imprimir jp japonés. Forzamos stdout/stderr a UTF-8 en vez de depender de
+# PYTHONIOENCODING en el entorno de quien ejecute el script.
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from ai.sensei.curriculum import CURRICULUM
