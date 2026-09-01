@@ -22,7 +22,7 @@ Estados: `pendiente` · `en_curso:<agente>` · `verificada` · `bloqueada:<motiv
 | 15 | Notas del profe | V | 🟢 | verificada | cando/fase15 | ede48d2 | campo nota_profe en extractor, columna en japanese_sessions (+migración), 3 últimas en RECUERDAS_DE_LAURA bajo "Cómo va Laura" |
 | 16 | Deberes entre sesiones | V | 🟢 | verificada | cando/fase16 | f515b4b | campo deberes en extractor + ritual de cierre, columna en japanese_sessions, getter deberes_ultima_sesion, línea primera del FOCO en sesión siguiente ("ya preguntados" vía ended_at) |
 | 17 | Arco de sesión | V | 🟢 | verificada | cando/fase17 | ba29e17 | línea FASE DE LA SESIÓN en FOCO: calentamiento (turnos 1-2) / foco / cierre (heurística de despedida). +prompt. adaptado test_unidad_funcion |
-| 18 | Limpieza final | VI | 🟢 | pendiente | | | |
+| 18 | Limpieza final | VI | 🟢 | verificada | cando/fase18 | 0640fd5 | test_rotacion_foco borrado, selector_conexiones reescrito, 0 skipped. hub due_today→can-dos dominados + enlaces práctica. estado_items_bulk (~800 queries→2). simulate_* sin cola due. pytest 61/0 |
 
 ## Registro
 
