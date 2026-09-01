@@ -411,6 +411,10 @@ class ProfesorJapones:
         if perfil_jap.get("sin_corregir"):
             lineas_r.append(f"Quedó sin corregir: {perfil_jap['sin_corregir']}")
 
+        if perfil_jap.get("notas_profe"):
+            lineas_r.append("Cómo va Laura (notas de sesiones anteriores):")
+            lineas_r += [f"  - {n}" for n in perfil_jap["notas_profe"]]
+
         # THROTTLE_DUE (Fase 09): tamaño máximo de la lista de puntos débiles.
         if perfil_jap.get("weak_points"):
             puntos = ", ".join(
@@ -639,6 +643,8 @@ class ProfesorJapones:
             errors_noted="; ".join(
                 e.strip() for e in data.get("sin_corregir", []) if e and e.strip()
             ),
+            # Fase 15: cómo va Laura como alumna. Si no viene, se guarda vacía.
+            nota_profe=(data.get("nota_profe") or "").strip(),
         )
         # Memoria episódica: lo que Laura contó de su vida, y lo que Kaito
         # afirmó de sí mismo (para que no se contradiga entre sesiones).

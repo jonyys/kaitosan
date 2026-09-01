@@ -65,7 +65,8 @@ class JapaneseMemory:
                     words_learned INTEGER DEFAULT 0,
                     grammar_practiced TEXT,
                     errors_noted TEXT,
-                    summary TEXT
+                    summary TEXT,
+                    nota_profe TEXT
                 );
 
                 CREATE TABLE IF NOT EXISTS laura_episodios (
@@ -130,6 +131,8 @@ class JapaneseMemory:
             self._add_columns_if_missing(conn, "japanese_vocabulary", vocab_cols)
             self._add_columns_if_missing(conn, "japanese_grammar", grammar_cols)
             self._add_columns_if_missing(conn, "japanese_kanji", kanji_cols)
+            # Fase 15: nota del profe sobre cómo va Laura como alumna.
+            self._add_columns_if_missing(conn, "japanese_sessions", {"nota_profe": "TEXT"})
             conn.execute(
                 "UPDATE japanese_vocabulary SET next_review = date('now') WHERE next_review IS NULL"
             )
@@ -707,16 +710,22 @@ class JapaneseMemory:
         return row[0] if row else None
 
     def guardar_resumen_sesion(self, session_id, summary, words_learned=0,
-                               grammar_practiced="", errors_noted=""):
-        """Actualiza el resumen de una sesión al cerrarla."""
+                               grammar_practiced="", errors_noted="", nota_profe=None):
+        """Actualiza el resumen de una sesión al cerrarla.
+
+        `nota_profe` — 1-2 frases del extractor sobre cómo va Laura como alumna
+        (Fase 15). None/vacío se guarda como '' sin romper.
+        """
         now = datetime.now().isoformat(sep=" ", timespec="seconds")
         with self._conectar() as conn:
             conn.execute(
                 """UPDATE japanese_sessions SET
                        ended_at = ?, summary = ?,
-                       words_learned = ?, grammar_practiced = ?, errors_noted = ?
+                       words_learned = ?, grammar_practiced = ?, errors_noted = ?,
+                       nota_profe = ?
                    WHERE id = ?""",
-                (now, summary, words_learned, grammar_practiced, errors_noted, session_id),
+                (now, summary, words_learned, grammar_practiced, errors_noted,
+                 (nota_profe or "").strip(), session_id),
             )
 
     def guardar_episodios(self, session_id, episodios: list):
@@ -768,6 +777,12 @@ class JapaneseMemory:
             anecdotas_kaito = conn.execute(
                 "SELECT anecdota FROM kaito_anecdotas ORDER BY created_at DESC LIMIT 8"
             ).fetchall()
+            # Fase 15: las 3 últimas notas del profe no vacías → "Cómo va Laura".
+            notas_profe = conn.execute(
+                """SELECT nota_profe FROM japanese_sessions
+                   WHERE nota_profe IS NOT NULL AND nota_profe != ''
+                   ORDER BY started_at DESC LIMIT 3"""
+            ).fetchall()
             # Errores que el profesor decidió no comentar en su momento: se
             # arrastran a la sesión siguiente en vez de perderse.
             sin_corregir = conn.execute(
@@ -794,6 +809,7 @@ class JapaneseMemory:
             "last_session_summary": last_sessions[0][0] if last_sessions else None,
             "episodios_laura": [e for (e,) in episodios],
             "anecdotas_kaito": [a for (a,) in anecdotas_kaito],
+            "notas_profe": [n for (n,) in notas_profe],
             "sin_corregir": sin_corregir[0] if sin_corregir else None,
             "weak_points": [{"word": w, "errors": e} for w, e in weak],
             "weak_grammar": [{"punto": g, "errors": e} for g, e in weak_gram],
