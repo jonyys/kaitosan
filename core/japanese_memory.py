@@ -66,7 +66,8 @@ class JapaneseMemory:
                     grammar_practiced TEXT,
                     errors_noted TEXT,
                     summary TEXT,
-                    nota_profe TEXT
+                    nota_profe TEXT,
+                    deberes TEXT
                 );
 
                 CREATE TABLE IF NOT EXISTS laura_episodios (
@@ -132,7 +133,10 @@ class JapaneseMemory:
             self._add_columns_if_missing(conn, "japanese_grammar", grammar_cols)
             self._add_columns_if_missing(conn, "japanese_kanji", kanji_cols)
             # Fase 15: nota del profe sobre cómo va Laura como alumna.
-            self._add_columns_if_missing(conn, "japanese_sessions", {"nota_profe": "TEXT"})
+            # Fase 16: deberes que Kaito propuso al cerrar la sesión.
+            self._add_columns_if_missing(
+                conn, "japanese_sessions", {"nota_profe": "TEXT", "deberes": "TEXT"}
+            )
             conn.execute(
                 "UPDATE japanese_vocabulary SET next_review = date('now') WHERE next_review IS NULL"
             )
@@ -710,11 +714,14 @@ class JapaneseMemory:
         return row[0] if row else None
 
     def guardar_resumen_sesion(self, session_id, summary, words_learned=0,
-                               grammar_practiced="", errors_noted="", nota_profe=None):
+                               grammar_practiced="", errors_noted="", nota_profe=None,
+                               deberes=None):
         """Actualiza el resumen de una sesión al cerrarla.
 
         `nota_profe` — 1-2 frases del extractor sobre cómo va Laura como alumna
         (Fase 15). None/vacío se guarda como '' sin romper.
+        `deberes` — la tarea que Kaito propuso al despedirse (Fase 16). Igual:
+        None/vacío se guarda como ''.
         """
         now = datetime.now().isoformat(sep=" ", timespec="seconds")
         with self._conectar() as conn:
@@ -722,10 +729,10 @@ class JapaneseMemory:
                 """UPDATE japanese_sessions SET
                        ended_at = ?, summary = ?,
                        words_learned = ?, grammar_practiced = ?, errors_noted = ?,
-                       nota_profe = ?
+                       nota_profe = ?, deberes = ?
                    WHERE id = ?""",
                 (now, summary, words_learned, grammar_practiced, errors_noted,
-                 (nota_profe or "").strip(), session_id),
+                 (nota_profe or "").strip(), (deberes or "").strip(), session_id),
             )
 
     def guardar_episodios(self, session_id, episodios: list):
@@ -783,6 +790,16 @@ class JapaneseMemory:
                    WHERE nota_profe IS NOT NULL AND nota_profe != ''
                    ORDER BY started_at DESC LIMIT 3"""
             ).fetchall()
+            # Fase 16: los deberes de la ÚLTIMA sesión cerrada (la anterior a la
+            # que se está abriendo). Al leer solo la última cerrada, los deberes
+            # aparecen en el FOCO de la sesión siguiente y solo esa: cuando esa
+            # sesión cierra, la próxima lee sus deberes (nuevos o ''), no estos.
+            # Ese es el gate "ya preguntados", sin flag aparte.
+            deberes_row = conn.execute(
+                """SELECT deberes FROM japanese_sessions
+                   WHERE ended_at IS NOT NULL
+                   ORDER BY id DESC LIMIT 1"""
+            ).fetchone()
             # Errores que el profesor decidió no comentar en su momento: se
             # arrastran a la sesión siguiente en vez de perderse.
             sin_corregir = conn.execute(
@@ -810,6 +827,7 @@ class JapaneseMemory:
             "episodios_laura": [e for (e,) in episodios],
             "anecdotas_kaito": [a for (a,) in anecdotas_kaito],
             "notas_profe": [n for (n,) in notas_profe],
+            "deberes_ultima_sesion": (deberes_row[0] or "").strip() if deberes_row else "",
             "sin_corregir": sin_corregir[0] if sin_corregir else None,
             "weak_points": [{"word": w, "errors": e} for w, e in weak],
             "weak_grammar": [{"punto": g, "errors": e} for g, e in weak_gram],
