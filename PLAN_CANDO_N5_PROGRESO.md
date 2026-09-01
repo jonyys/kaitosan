@@ -5,7 +5,7 @@ Estados: `pendiente` · `en_curso:<agente>` · `verificada` · `bloqueada:<motiv
 
 | Fase | Título | Bloque | 🔴/🟢 | Estado | Rama | Commit | Nota |
 |---|---|---|---|---|---|---|---|
-| 01 | Fuentes de verdad + validador | I | 🟢 | pendiente | | | |
+| 01 | Fuentes de verdad + validador | I | 🟢 | verificada | cando/fase01 | 64509f0 | data/n5_vocab.csv (717+cab), data/n5_grammar.csv (90+cab, ensamblada de memoria), scripts/validar_curriculum.py |
 | 02 | Reconciliar vocabulario a la lista | I | 🔴 | pendiente | | | |
 | 03 | Reconciliar gramática a la lista | I | 🟢 | pendiente | | | |
 | 04 | Borrar unidades vacías + purgar BD | I | 🟢 | pendiente | | | |
