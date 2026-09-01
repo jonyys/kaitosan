@@ -653,7 +653,8 @@ class JapaneseMemory:
                 elif e.get("kind") == "vocabulario" and e.get("tipo") != "kanji":
                     vocab_jp.add(jp)
         # ponytail: una consulta por ítem (≈800), igual que la página de temario.
-        # Página de solo lectura y poco tráfico; si molesta, batear en estado_item.
+        # Página de solo lectura y poco tráfico; el batch (estado_items_bulk) se
+        # aparca para la Fase 18 (limpieza), es más que el alcance de la Fase 14.
         vocab_sabido = sum(1 for jp in vocab_jp
                            if self.estado_item(jp, "vocabulario") == "sabido")
         gram_sabido = sum(1 for jp in gram_jp
