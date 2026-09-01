@@ -213,6 +213,13 @@
       <section class="voc-unidad card full" data-u="{{ u.id }}">
         <div class="voc-unidad-head">
           <h2>{{ u.nombre }}</h2>
+          {% if kind == 'vocabulario' and u.id != '_extra' %}
+          <a href="/japones/vocabulario/practicar?unidad={{ u.id }}">
+            <button type="button" class="btn btn-yellow" style="font-size: 12px">
+              Practicar
+            </button>
+          </a>
+          {% endif %}
           <form
             method="POST"
             action="/japones/{{ kind }}/completar-unidad"
