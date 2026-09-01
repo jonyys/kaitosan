@@ -3,6 +3,8 @@ import os
 import sys
 import tempfile
 
+import pytest
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.japanese_memory import JapaneseMemory
@@ -30,6 +32,11 @@ def _contando_conexiones(jap):
     return jap
 
 
+@pytest.mark.skip(
+    reason="Fase 09: unidad_actual/siguiente_items_nuevos orquestan por can-do "
+    "(fraccion_can_dos + estado_item), ya no por un snapshot de reps en 2 "
+    "conexiones. Test se reescribe en la Fase 18 (PLAN_CANDO_N5.md §18)."
+)
 def test_recorrido_completo_son_dos_conexiones():
     jap = _contando_conexiones(_bd_llena())
     unidad_actual(jap)

@@ -10,8 +10,14 @@ import threading
 from datetime import datetime
 
 from ai.prompts import cargar_prompt
-from ai.sensei.curriculum import ITEM_POR_JP, siguiente_items_nuevos, unidad_actual
+from ai.sensei.curriculum import (
+    CURRICULUM,
+    ITEM_POR_JP,
+    siguiente_items_nuevos,
+    unidad_actual,
+)
 from core.config import (
+    CHEQUEO_OXIDO_CADA,
     MAX_ITEMS_NUEVOS,
     NIVEL_INMERSION_FORZADO,
     NIVEL_INMERSION_UMBRALES,
@@ -25,7 +31,12 @@ from core.config import (
 # ── Constantes ────────────────────────────────────────────────────────────────
 
 MAX_TURNOS = 10  # pares user/assistant conservados en el contexto del LLM
-TURNOS_POR_ITEM_FOCO = 3  # turnos que un ítem due se mantiene arriba del FOCO antes de ceder paso al siguiente
+# ponytail: naive "unidad entera, recortada" como ítems del can-do activo — no hay
+# mapa can-do→ítem para N5. Sube esto o mete el mapa si el FOCO se queda corto.
+ITEMS_CANDO_FOCO = 12  # ítems del can-do activo que se listan en el FOCO
+MUESTRA_OXIDO = 3      # ítems 'sabido' de unidades pasadas en el chequeo de óxido
+
+_MARCA_ESTADO = {"sabido": "[sabida]", "en_progreso": "[en progreso]", "nuevo": "[nueva]"}
 
 SALUDOS = [
     "Modo Sensei activado! 【こんにちは、ラウラさん。おげんきですか。】",
@@ -175,16 +186,10 @@ class ProfesorJapones:
         # Frase que el profesor pidió repetir en su último turno (ReferenceText de Azure).
         self.ultima_frase_objetivo = None
 
-        # Estado del último FOCO (para cierre resiliente en Fase 4)
+        # Estado del último FOCO (para cierre resiliente): ítems nuevos y unidad
+        # abierta, ambos resueltos una vez por sesión en entrar().
         self._foco_nuevos = []
         self._foco_unidad = None
-        # Rotación de due items dentro de la sesión (el SRS no se recalifica
-        # hasta cerrar, así que sin esto el FOCO repetiría el mismo lote toda
-        # la sesión): turnos que lleva mostrado cada ítem, y los que ya cedieron
-        # el turno — estos últimos se listan aparte para que no se pierdan
-        # aunque caigan del historial truncado a MAX_TURNOS.
-        self._foco_vistos = {}
-        self._foco_agotados = []
 
     # ── Ciclo de vida ─────────────────────────────────────────────────────────
 
@@ -205,19 +210,12 @@ class ProfesorJapones:
         self.set_registro(registro or ("charla" if conv else "clase"))
         self.mensajes = []
         self.ultima_frase_objetivo = None
-        self._foco_vistos = {}
-        self._foco_agotados = []
 
-        # Los ítems nuevos se eligen UNA vez por sesión, no una por turno.
-        # Se persisten al cerrar (_ejecutar_extraccion), no aquí.
-        due = self.jap_memory.resumen_perfil()["due_count"]
-        self._foco_nuevos = (
-            [] if due >= THROTTLE_DUE
-            else siguiente_items_nuevos(self.jap_memory, MAX_ITEMS_NUEVOS)
-        )
-        # La unidad abierta también se resuelve una vez por sesión: da el para-qué
-        # del temario y las expresiones naturales que lo acompañan.
+        # La unidad abierta y los ítems nuevos del can-do activo se resuelven UNA
+        # vez por sesión (no una por turno). Los nuevos se persisten al cerrar
+        # (_ejecutar_extraccion), no aquí. MAX_ITEMS_NUEVOS limita cuántos.
         self._foco_unidad = unidad_actual(self.jap_memory)
+        self._foco_nuevos = siguiente_items_nuevos(self.jap_memory, MAX_ITEMS_NUEVOS)
 
         now = datetime.now().isoformat(sep=" ", timespec="seconds")
         with self.jap_memory._conectar() as conn:
@@ -359,33 +357,26 @@ class ProfesorJapones:
 
     # ── Estado / orquestador ──────────────────────────────────────────────────
 
-    def _rotar_due(self, kind: str, limit: int) -> list:
-        """Due items para el FOCO de este turno, rotando dentro de la sesión.
-
-        El SRS solo se recalifica al cerrar la sesión (review() no se llama
-        turno a turno), así que sin esto get_due_items() devolvería el mismo
-        lote turno tras turno durante toda la clase. Aquí se cuentan los
-        turnos que lleva arriba cada ítem y, pasados TURNOS_POR_ITEM_FOCO, se
-        aparta para dejar sitio al siguiente due de la cola — solo en memoria,
-        la BD no cambia hasta cerrar_sesion_y_extraer.
-        """
-        candidatos = self.jap_memory.get_due_items(limit * 3, kind=kind)
-        frescos = [
-            c for c in candidatos
-            if self._foco_vistos.get((kind, c["id"]), 0) < TURNOS_POR_ITEM_FOCO
-        ]
-        # Si ya se agotó toda la cola due, mejor repetir lo último que dejar
-        # el FOCO vacío.
-        elegidos = (frescos or candidatos)[:limit]
-        for c in elegidos:
-            clave = (kind, c["id"])
-            vistos = self._foco_vistos.get(clave, 0) + 1
-            self._foco_vistos[clave] = vistos
-            if vistos == TURNOS_POR_ITEM_FOCO:
-                jp = c.get("jp") or c.get("word") or c.get("grammar_point", "")
-                if jp and jp not in self._foco_agotados:
-                    self._foco_agotados.append(jp)
-        return elegidos
+    def _muestra_oxido(self, unidad_abierta) -> list:
+        """Chequeo de óxido: hasta MUESTRA_OXIDO ítems ya 'sabido' de unidades
+        anteriores a la abierta, para que no se enmohezcan. Solo se llama cada
+        CHEQUEO_OXIDO_CADA sesiones. Devuelve [(jp, meaning), ...]."""
+        if not unidad_abierta:
+            return []
+        uid = unidad_abierta.get("id")
+        out = []
+        for u in CURRICULUM:
+            if u.get("id") == uid:
+                break
+            if not u.get("can_dos"):
+                continue  # unidad de kanji: su SRS es aparte
+            for it in u["items"]:
+                kind = "gramatica" if it["kind"] == "gramatica" else "vocabulario"
+                if self.jap_memory.estado_item(it["jp"], kind) == "sabido":
+                    out.append((it["jp"], it.get("meaning", "")))
+                    if len(out) >= MUESTRA_OXIDO:
+                        return out
+        return out
 
     def _montar_estado(self) -> tuple:
         """Devuelve (recuerdas_de_laura, foco_de_hoy) como par de strings."""
@@ -398,7 +389,6 @@ class ProfesorJapones:
         perfil_jap = self.jap_memory.resumen_perfil()
         self.nivel_inmersion = _nivel_inmersion(perfil_jap)
         lineas_r = [perfil_general] if perfil_general else []
-        lineas_r.append(f"Ítems en cola de repaso (SRS): {perfil_jap['due_count']}")
 
         if perfil_jap.get("vocab_by_status"):
             estados = ", ".join(
@@ -421,47 +411,80 @@ class ProfesorJapones:
         if perfil_jap.get("sin_corregir"):
             lineas_r.append(f"Quedó sin corregir: {perfil_jap['sin_corregir']}")
 
+        # THROTTLE_DUE (Fase 09): tamaño máximo de la lista de puntos débiles.
         if perfil_jap.get("weak_points"):
             puntos = ", ".join(
-                f"{w['word']} ({w['errors']} errores)" for w in perfil_jap["weak_points"]
+                f"{w['word']} ({w['errors']} errores)"
+                for w in perfil_jap["weak_points"][:THROTTLE_DUE]
             )
             lineas_r.append(f"Puntos débiles (vocabulario): {puntos}")
 
         if perfil_jap.get("weak_grammar"):
             puntos_g = ", ".join(
-                f"{g['punto']} ({g['errors']} errores)" for g in perfil_jap["weak_grammar"]
+                f"{g['punto']} ({g['errors']} errores)"
+                for g in perfil_jap["weak_grammar"][:THROTTLE_DUE]
             )
             lineas_r.append(f"Puntos débiles (gramática): {puntos_g}")
 
         recuerdas_de_laura = "\n".join(lineas_r)
 
         # ── FOCO_DE_HOY ────────────────────────────────────────────────────
-        due_vocab = self._rotar_due("vocabulario", 5)
-        due_gram = self._rotar_due("gramatica", 3)
-
-        due_count = perfil_jap["due_count"]
-        nuevos = self._foco_nuevos      # elegidos en entrar(), solo lectura aquí
+        # El FOCO se organiza alrededor del CAN-DO ACTIVO de la unidad abierta,
+        # no de una cola de repaso SRS. (Fase 09.)
+        unidad = self._foco_unidad or {}
+        can_dos = unidad.get("can_dos", []) if isinstance(unidad, dict) else []
+        prog = self.jap_memory.can_dos_progreso()
 
         lineas_f = []
-        if self._foco_agotados:
+        if unidad:
+            lineas_f.append(f"Unidad actual: {unidad['nombre']}")
+            if unidad.get("funcion"):
+                lineas_f.append(f"  para qué sirve: {unidad['funcion']}")
+            if unidad.get("frases_hechas"):
+                lineas_f.append("  expresiones naturales de esta unidad:")
+                lineas_f += [
+                    f"    - 【{f['jp']}】 {f['uso']}" for f in unidad["frases_hechas"]
+                ]
+
+        if can_dos:
+            grupos = {"dominado": [], "en_progreso": [], "pendiente": []}
+            for cd in can_dos:
+                est = prog.get(cd["id"], {}).get("estado", "no_intentado")
+                clave = est if est in ("dominado", "en_progreso") else "pendiente"
+                grupos[clave].append(cd["texto"])
+            lineas_f.append("Can-dos de esta unidad:")
+            lineas_f.append(f"  dominados: {', '.join(grupos['dominado']) or '—'}")
+            lineas_f.append(f"  en progreso: {', '.join(grupos['en_progreso']) or '—'}")
+            lineas_f.append(f"  pendientes: {', '.join(grupos['pendiente']) or '—'}")
+
+        # Can-do activo = primer can-do de la unidad que no está dominado.
+        activo = next(
+            (cd for cd in can_dos
+             if prog.get(cd["id"], {}).get("estado") != "dominado"),
+            None,
+        )
+        if activo:
+            lineas_f.append(f"Can-do de hoy: {activo['texto']}")
+            items = unidad.get("items", [])[:ITEMS_CANDO_FOCO]
+            if items:
+                lineas_f.append(
+                    "  lo que necesita (las [sabida] úsalas en japonés directamente):"
+                )
+                for it in items:
+                    kind = "gramatica" if it["kind"] == "gramatica" else "vocabulario"
+                    marca = _MARCA_ESTADO.get(
+                        self.jap_memory.estado_item(it["jp"], kind), "[nueva]"
+                    )
+                    lineas_f += _lineas_foco(
+                        it["jp"], it.get("meaning", ""), sufijo=f"  {marca}"
+                    )
+        elif can_dos:
             lineas_f.append(
-                "Ya trabajados en esta sesión, no los repitas salvo que Laura pida más: "
-                + ", ".join(f"【{jp}】" for jp in self._foco_agotados)
+                "Todos los can-dos de esta unidad están dominados. Repasa lo flojo "
+                "o conversa libremente en japonés."
             )
 
-        if due_vocab:
-            lineas_f.append("Vocabulario para repasar hoy:")
-            for item in due_vocab:
-                jp = item.get("jp") or item.get("word", "")
-                lineas_f += _lineas_foco(jp, item.get("meaning", ""))
-
-        if due_gram:
-            lineas_f.append("Gramática para repasar hoy:")
-            for item in due_gram:
-                jp = item.get("jp") or item.get("grammar_point", "")
-                meaning = item.get("meaning") or item.get("description", "")
-                lineas_f += _lineas_foco(jp, meaning)
-
+        nuevos = self._foco_nuevos      # elegidos en entrar(), solo lectura aquí
         if nuevos:
             lineas_f.append(f"Ítems nuevos a introducir ({len(nuevos)}):")
             for nuevo in nuevos:
@@ -469,28 +492,21 @@ class ProfesorJapones:
                     nuevo["jp"], nuevo["meaning"],
                     sufijo=f" (unidad: {nuevo['unidad']})",
                 )
-        elif due_count >= THROTTLE_DUE:
-            lineas_f.append(
-                f"Carga alta de repasos ({due_count} pendientes): no introducir ítems nuevos del temario hoy. "
-                f"Consolida los repasos. (Si Laura pide algo concreto, enséñalo igualmente.)"
-            )
+
+        # Chequeo de óxido: cada CHEQUEO_OXIDO_CADA sesiones, vocabulario viejo.
+        if self.session_id and self.session_id % CHEQUEO_OXIDO_CADA == 0:
+            oxido = self._muestra_oxido(unidad)
+            if oxido:
+                lineas_f.append(
+                    "Repaso de mantenimiento (que no se oxide lo ya sabido):"
+                )
+                for jp, meaning in oxido:
+                    lineas_f += _lineas_foco(jp, meaning, sufijo="  [sabida]")
 
         if not lineas_f:
             lineas_f.append(
-                "No hay ítems pendientes. Conversa libremente en japonés sobre cualquier tema."
+                "Sin unidad abierta. Conversa libremente en japonés sobre cualquier tema."
             )
-
-        unidad = self._foco_unidad
-        if unidad:
-            cabecera = [f"Unidad actual: {unidad['nombre']}"]
-            if unidad.get("funcion"):
-                cabecera.append(f"  para qué sirve: {unidad['funcion']}")
-            if unidad.get("frases_hechas"):
-                cabecera.append("  expresiones naturales de esta unidad:")
-                cabecera += [
-                    f"    - 【{f['jp']}】 {f['uso']}" for f in unidad["frases_hechas"]
-                ]
-            lineas_f = cabecera + lineas_f
 
         foco_de_hoy = "\n".join(lineas_f)
         return recuerdas_de_laura, foco_de_hoy

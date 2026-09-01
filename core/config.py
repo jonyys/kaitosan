@@ -83,8 +83,15 @@ ADMIN_USER = os.getenv("ADMIN_USER", "laura")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "kaito123")
 
 # Sensei — ritmo de introducción
-MAX_ITEMS_NUEVOS = 2   # ítems nuevos por sesión (configurable hasta 3)
-THROTTLE_DUE = 12      # si hay ≥ N repasos vencidos, no introducir ítems nuevos
+MAX_ITEMS_NUEVOS = 2   # ítems (estado 'nuevo') que el can-do activo introduce por sesión
+# Fase 09: el profesor ya no orquesta por cola SRS. THROTTLE_DUE deja de "frenar
+# ítems nuevos por repasos vencidos" y pasa a ser el tamaño máximo de la lista de
+# puntos débiles que se cuela en el FOCO. (`due_count` sigue existiendo en
+# resumen_perfil, pero solo para el SRS de kanji / juego del Bloque IV.)
+THROTTLE_DUE = 12
+# Fase 09: chequeo de óxido — cada cuántas sesiones el FOCO incluye una muestra
+# de vocabulario ya 'sabido' de unidades pasadas. Knob, se afina con datos.
+CHEQUEO_OXIDO_CADA = 5
 
 # Nivel de inmersión (1→4): cuánto japonés habla Kaito. Se calcula solo a partir
 # del vocabulario dominado (learned + mastered); estos son los umbrales de salto.
