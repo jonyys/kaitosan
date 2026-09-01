@@ -86,6 +86,14 @@ class JapaneseMemory:
                     kanji TEXT PRIMARY KEY,
                     mnemo TEXT NOT NULL
                 );
+
+                CREATE TABLE IF NOT EXISTS can_do_progreso (
+                    can_do_id     TEXT PRIMARY KEY,
+                    estado        TEXT DEFAULT 'no_intentado',  -- no_intentado | en_progreso | dominado
+                    veces_ok      INTEGER DEFAULT 0,
+                    ultima_sesion INTEGER,
+                    nota          TEXT
+                );
             """)
         self._migrar_srs()
 
@@ -488,6 +496,100 @@ class JapaneseMemory:
                 f"SELECT {col} FROM {tabla} "
                 "WHERE status IN ('learned', 'mastered') OR COALESCE(reps, 0) >= 2"
             )}
+
+    # ── Estado de ítem y progreso de can-dos (Fase 07) ─────────────────────
+
+    def estado_item(self, jp: str, kind: str = "vocabulario") -> str:
+        """'sabido' | 'en_progreso' | 'nuevo' para un ítem de vocab/gramática.
+
+        Fuente única de la lógica que vivía en `app.py:_temario_unidades()`
+        ('aprendida'/'en_curso'/'nueva' desde `status`+`reps`). Renombrada 1:1:
+        aprendida→sabido, en_curso→en_progreso, sin fila/nueva→nuevo.
+        """
+        with self._conectar() as conn:
+            if kind == "gramatica":
+                row = conn.execute(
+                    "SELECT COALESCE(reps, 0), COALESCE(mastery, 0) "
+                    "FROM japanese_grammar WHERE grammar_point = ?", (jp,),
+                ).fetchone()
+                if not row:
+                    return "nuevo"
+                reps, mastery = row
+                return "sabido" if reps >= 2 or mastery >= 100 else "en_progreso"
+            row = conn.execute(
+                "SELECT COALESCE(reps, 0), status "
+                "FROM japanese_vocabulary WHERE word = ?", (jp,),
+            ).fetchone()
+            if not row:
+                return "nuevo"
+            reps, status = row
+            if reps >= 2 or status in ("learned", "mastered"):
+                return "sabido"
+            return "en_progreso"
+
+    def set_can_do(self, can_do_id: str, resultado: str, session_id):
+        """Registra el resultado de un can-do en una sesión y recalcula su estado.
+
+        resultado: 'conseguido' | 'parcial' | 'error' | 'no_intentado'
+        - 'conseguido' en 2 sesiones distintas (session_id distinto) → 'dominado'
+        - un solo 'conseguido' → 'en_progreso', veces_ok = 1
+        - 'error' / 'parcial' estando ya 'dominado' → baja a 'en_progreso'
+        Upsert: crea la fila si no existe. Actualiza veces_ok y ultima_sesion.
+        """
+        with self._conectar() as conn:
+            row = conn.execute(
+                "SELECT estado, veces_ok, ultima_sesion FROM can_do_progreso "
+                "WHERE can_do_id = ?", (can_do_id,),
+            ).fetchone()
+            estado, veces_ok, ultima = row if row else ("no_intentado", 0, None)
+
+            if resultado == "conseguido":
+                if session_id != ultima:
+                    veces_ok += 1
+                estado = "dominado" if veces_ok >= 2 else "en_progreso"
+            elif resultado in ("error", "parcial") and estado == "dominado":
+                estado = "en_progreso"
+
+            conn.execute(
+                """INSERT INTO can_do_progreso
+                       (can_do_id, estado, veces_ok, ultima_sesion)
+                   VALUES (?, ?, ?, ?)
+                   ON CONFLICT(can_do_id) DO UPDATE SET
+                       estado = excluded.estado,
+                       veces_ok = excluded.veces_ok,
+                       ultima_sesion = excluded.ultima_sesion""",
+                (can_do_id, estado, veces_ok, session_id),
+            )
+
+    def can_dos_progreso(self) -> dict:
+        """{can_do_id: {estado, veces_ok, ultima_sesion, nota}}."""
+        with self._conectar() as conn:
+            conn.row_factory = sqlite3.Row
+            return {r["can_do_id"]: {
+                "estado": r["estado"],
+                "veces_ok": r["veces_ok"],
+                "ultima_sesion": r["ultima_sesion"],
+                "nota": r["nota"],
+            } for r in conn.execute(
+                "SELECT can_do_id, estado, veces_ok, ultima_sesion, nota "
+                "FROM can_do_progreso"
+            )}
+
+    def fraccion_can_dos(self, unit_id: str) -> float:
+        """Fracción de can-dos de la unidad (según CURRICULUM) en 'dominado'.
+        0.0 si la unidad no existe o no tiene can-dos."""
+        from ai.sensei.curriculum import CURRICULUM
+
+        unidad = next((u for u in CURRICULUM if u.get("id") == unit_id), None)
+        can_dos = (unidad or {}).get("can_dos", [])
+        if not can_dos:
+            return 0.0
+        prog = self.can_dos_progreso()
+        dominados = sum(
+            1 for cd in can_dos
+            if prog.get(cd["id"], {}).get("estado") == "dominado"
+        )
+        return dominados / len(can_dos)
 
     def get_practiced_set(self, kind: str = "kanji") -> set:
         """Conjunto de textos (jp) que ya tienen ficha SRS en la BD."""
