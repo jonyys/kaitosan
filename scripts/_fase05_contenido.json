@@ -1,0 +1,318 @@
+{
+  "_nota": "Fase 05 - contenido didactico generado por Claude. gramatica: los 4 campos para los ~52 puntos que entraron vacios en la Fase 03. vocabulario: solo 'uso' donde el matiz lo pide (el resto queda vacio por diseno). Lo ensambla scripts/generar_contenido.py sobre ai/sensei/curriculum.py.",
+  "gramatica": {
+    "じゃありません": {
+      "meaning": "cópula negativa hablada: 'no es / no son' (contracción de はない/ではありません)",
+      "ejemplo": "わたしは がくせいじゃありません",
+      "literal": "yo-TEMA / estudiante-no-soy",
+      "uso": "La forma normal de negar al hablar; 「ではありません」 suena de discurso o de examen. Aún más coloquial: 「じゃないです」."
+    },
+    "ではありませんでした": {
+      "meaning": "cópula formal negativa en pasado: 'no era / no fue'",
+      "ejemplo": "きのうは 休みではありませんでした",
+      "literal": "ayer-TEMA / descanso-no-fue",
+      "uso": "Muy formal y bastante larga; en conversación se dice 「じゃなかったです」 o 「じゃありませんでした」."
+    },
+    "〒ましょう": {
+      "meaning": "propuesta en primera persona del plural: 'hagamos ~ / vamos a ~'",
+      "ejemplo": "いっしょに ひるごはんを 食べましょう",
+      "literal": "juntos / almuerzo-OBJ / comamos",
+      "uso": "Propones algo dando por hecho que el otro acepta; si no lo tienes claro, usa 「〒ましょうか」 o 「〒ませんか」, que dejan salida."
+    },
+    "〒ましょうか": {
+      "meaning": "ofrecimiento ('¿te ayudo con ~?') o propuesta tanteando ('¿hacemos ~?')",
+      "ejemplo": "にもつを 持ちましょうか",
+      "literal": "equipaje-OBJ / ¿lo-llevo-yo?",
+      "uso": "Con 「か」 suena menos impositivo que 「〒ましょう」: dejas la decisión en el otro. Es la fórmula típica para ofrecer ayuda."
+    },
+    "疑問詞+か": {
+      "meaning": "interrogativo + か -> indefinido afirmativo: algo, alguien, en algún sitio, alguna vez",
+      "ejemplo": "かばんの なかに 何か ありますか",
+      "literal": "bolso-DE / dentro-EN / algo / ¿hay?",
+      "uso": "Con 「だれか」, 「どこか」, 「いつか」, 「なにか」 la pregunta se vuelve un indefinido ('alguien', 'algún sitio'). La partícula 「は」/「が」/「を」 suele caerse al hablar."
+    },
+    "疑問詞+も": {
+      "meaning": "interrogativo + も + verbo en negativo -> nada, nadie, en ningún sitio",
+      "ejemplo": "きょうは どこも 行きません",
+      "literal": "hoy-TEMA / a-ningún-sitio / no-voy",
+      "uso": "Pide verbo en negativo: 「だれもいません」 ('no hay nadie'). En afirmativo el sentido cambia a 'todos/cualquiera', pero para N5 quédate con el negativo."
+    },
+    "から": {
+      "meaning": "partícula: 'desde ~ / a partir de ~' (punto de inicio en lugar o tiempo)",
+      "ejemplo": "九時から しごとです",
+      "literal": "nueve-horas-DESDE / trabajo-es",
+      "uso": "Marca de dónde o de cuándo arranca algo; se empareja con 「まで」 para el otro extremo. Detrás de una frase entera, 「から」 significa 'porque'."
+    },
+    "まで": {
+      "meaning": "partícula: 'hasta ~' (límite de lugar, tiempo o cantidad)",
+      "ejemplo": "えきまで あるきます",
+      "literal": "estación-HASTA / voy-andando",
+      "uso": "El tope de un recorrido o de un plazo; va con 「から」. No lo confundas con 「までに」, que es 'antes de (una fecha límite)'."
+    },
+    "や": {
+      "meaning": "partícula 'y' para listas abiertas: 'A や B (entre otras cosas)'",
+      "ejemplo": "つくえの うえに ノートや ペンが あります",
+      "literal": "mesa-DE / encima-EN / cuaderno-Y / boli-SUJ / hay",
+      "uso": "Citas solo algunos ejemplos, no la lista entera; 「と」 en cambio da la lista cerrada. Suele rematarse con 「など」."
+    },
+    "へ": {
+      "meaning": "partícula de dirección: 'hacia ~ / a ~' (se pronuncia 'e')",
+      "ejemplo": "らいしゅう 京都へ 行きます",
+      "literal": "semana-que-viene / Kioto-HACIA / voy",
+      "uso": "Casi intercambiable con 「に」 para destinos; 「へ」 pone el acento en el trayecto y 「に」 en el punto de llegada. Se escribe 「へ」 pero se pronuncia 'e'."
+    },
+    "という": {
+      "meaning": "'llamado ~ / que se llama ~': introduce un nombre o una cita",
+      "ejemplo": "「こんにちは」という ことばを つかいます",
+      "literal": "'hola'-LLAMADO / palabra-OBJ / uso",
+      "uso": "Para presentar algo por su nombre cuando el oyente no lo conoce, o para citar lo dicho. En charla informal se oye 「っていう」."
+    },
+    "〒やすいです": {
+      "meaning": "'fácil de ~': verbo en raíz-ます + やすい",
+      "ejemplo": "この ペンは 書きやすいです",
+      "literal": "este / boli-TEMA / fácil-de-escribir-es",
+      "uso": "Se forma sobre la raíz de 「ます」 (「かきます」 -> 「かき」+「やすい」) y se conjuga como adjetivo-い. Opuesto: 「にくい」."
+    },
+    "〒にくいです": {
+      "meaning": "'difícil de ~ / cuesta ~': verbo en raíz-ます + にくい",
+      "ejemplo": "この くすりは 飲みにくいです",
+      "literal": "esta / medicina-TEMA / difícil-de-tragar-es",
+      "uso": "No es que no se pueda, es que resulta incómodo o costoso; para 'no puedo' va el potencial. Se conjuga como adjetivo-い: 「にくかった」."
+    },
+    "〒くなります": {
+      "meaning": "cambio de estado con adjetivo-い: 'volverse ~ / ponerse ~'",
+      "ejemplo": "はるに なると あたたかくなります",
+      "literal": "primavera-A / al-llegar / se-vuelve-cálido",
+      "uso": "El adjetivo-い pierde 「い」, toma 「く」 y se le añade 「なる」. El cambio ocurre solo; si alguien lo provoca, es 「くします」."
+    },
+    "〒になります": {
+      "meaning": "cambio de estado con adjetivo-な o sustantivo: 'llegar a ser ~ / convertirse en ~'",
+      "ejemplo": "らいねん 二十歳に なります",
+      "literal": "año-que-viene / veinte-años-A / me-hago",
+      "uso": "Para adjetivo-な y sustantivos: 「に」 + 「なる」. Para adjetivo-い es 「くなります」. Muy usado con edad, hora y profesión."
+    },
+    "〒くします": {
+      "meaning": "provocar un cambio con adjetivo-い: 'hacer que algo quede ~'",
+      "ejemplo": "へやを あかるくします",
+      "literal": "habitación-OBJ / la-pongo-luminosa",
+      "uso": "El adjetivo-い pierde 「い」, toma 「く」 y se le añade 「する」: alguien cambia algo a propósito, frente a 「くなります」, que pasa solo."
+    },
+    "〒にします": {
+      "meaning": "provocar un cambio, o elegir: 'dejar algo ~ / decidirse por ~'",
+      "ejemplo": "わたしは コーヒーに します",
+      "literal": "yo-TEMA / café-A / me-decido",
+      "uso": "Dos usos: cambiar algo aposta (「しずかにしてください」) y elegir al pedir (「わたしはこれにします」). Con adjetivo-な y sustantivos."
+    },
+    "〒くて": {
+      "meaning": "forma-て del adjetivo-い: enlaza cualidades o da un motivo",
+      "ejemplo": "この へやは ひろくて あかるいです",
+      "literal": "esta / habitación-TEMA / ancha-y / luminosa-es",
+      "uso": "El adjetivo-い pasa a 「くて」 para encadenar dos cualidades o dar una causa (「あたまがいたくてねました」). Nunca 「いで」."
+    },
+    "〒で（な形容詞）": {
+      "meaning": "forma-て del adjetivo-な y del sustantivo: enlaza o da un motivo",
+      "ejemplo": "この まちは しずかで きれいです",
+      "literal": "esta / ciudad-TEMA / tranquila-y / bonita-es",
+      "uso": "El adjetivo-な y los sustantivos pierden 「だ」 y toman 「で」 (「げんきでしんせつなひと」). Es el equivalente de 「くて」 para el otro tipo de adjetivo."
+    },
+    "〒てみます": {
+      "meaning": "'probar a ~ / hacer ~ a ver qué tal': forma-て + みる",
+      "ejemplo": "この ケーキを 食べてみます",
+      "literal": "este / pastel-OBJ / pruebo-a-comer",
+      "uso": "Haces algo por primera vez a ver qué tal, sin saber si saldrá bien. 「てみてください」 es 'inténtalo'."
+    },
+    "〒ておきます": {
+      "meaning": "'dejar ~ hecho de antemano': forma-て + おく",
+      "ejemplo": "りょこうの まえに きっぷを 買っておきます",
+      "literal": "viaje-DE / antes / billete-OBJ / lo-dejo-comprado",
+      "uso": "Preparar algo con vistas a más tarde, o dejarlo tal cual porque va a servir. Al hablar se contrae en 「とく」 (「かっとく」)."
+    },
+    "〒てしまいます": {
+      "meaning": "'terminar ~ del todo', o '~ sin querer / para mi disgusto': forma-て + しまう",
+      "ejemplo": "しゅくだいを ぜんぶ やってしまいました",
+      "literal": "deberes-OBJ / todos / los-terminé",
+      "uso": "Dos matices según el contexto: acción rematada ('me lo acabé') o algo que lamentas (「さいふをなくしてしまいました」). Contracción hablada: 「ちゃう」."
+    },
+    "〒てあげます": {
+      "meaning": "hacer algo por otro como favor: forma-て + あげる",
+      "ejemplo": "ともだちに 日本語を 教えてあげます",
+      "literal": "amigo-A / japonés-OBJ / se-lo-enseño",
+      "uso": "El favor va del hablante hacia fuera. Dicho a la cara puede sonar a que te las das de generoso; mejor entre iguales o de arriba abajo."
+    },
+    "〒てくれます": {
+      "meaning": "alguien hace algo por mí (o por los míos): forma-て + くれる",
+      "ejemplo": "ちちが かさを 貸してくれました",
+      "literal": "padre-SUJ / paraguas-OBJ / me-lo-prestó",
+      "uso": "El favor entra hacia el hablante o los suyos; quien lo hace lleva 「が」. Sirve para agradecer: 「てつだってくれてありがとう」."
+    },
+    "〒てもらいます": {
+      "meaning": "conseguir que alguien haga algo por mí: forma-て + もらう",
+      "ejemplo": "せんせいに 日本語を 教えてもらいました",
+      "literal": "profesor-A / japonés-OBJ / me-lo-enseñó",
+      "uso": "Yo recibo el favor y normalmente lo he pedido; la persona que lo hace lleva 「に」. 「くれる」, en cambio, no implica que lo pidieras."
+    },
+    "あげます": {
+      "meaning": "dar algo (del hablante o su grupo hacia fuera, o entre iguales)",
+      "ejemplo": "ラウラさんに 花を あげます",
+      "literal": "Laura-san-A / flores-OBJ / doy",
+      "uso": "El que da soy yo o alguien de mi lado; nunca para algo que me dan a mí (eso es 「くれる」). Con un superior se sube a 「さしあげます」."
+    },
+    "もらいます": {
+      "meaning": "recibir algo de alguien",
+      "ejemplo": "ともだちに プレゼントを もらいました",
+      "literal": "amigo-DE / regalo-OBJ / recibí",
+      "uso": "El que recibe es el sujeto (yo, casi siempre); la fuente lleva 「に」 o 「から」. Educado hacia arriba: 「いただきます」."
+    },
+    "くれます": {
+      "meaning": "alguien me da algo a mí (o a alguien de mi grupo)",
+      "ejemplo": "あねが 本を くれました",
+      "literal": "hermana-mayor-SUJ / libro-OBJ / me-dio",
+      "uso": "Solo cuando quien recibe soy yo o los míos; el que da lleva 「が」. Si es un superior: 「くださいます」."
+    },
+    "〒なくてはいけません": {
+      "meaning": "obligación: 'hay que ~ / tengo que ~' (variante de なければなりません)",
+      "ejemplo": "くすりを 飲まなくてはいけません",
+      "literal": "medicina-OBJ / si-no-la-tomo / no-vale",
+      "uso": "Misma idea que 「なければなりません」, un poco más de conversación. Contracción muy usada: 「なくちゃ」 (「のまなくちゃ」)."
+    },
+    "〒ないほうがいいです": {
+      "meaning": "consejo en negativo: 'mejor no ~'",
+      "ejemplo": "たばこは 吸わないほうがいいです",
+      "literal": "tabaco-TEMA / no-fumar / mejor-es",
+      "uso": "Recomendación de no hacer algo, más suave que una prohibición. El afirmativo lleva verbo en pasado (「たほうがいい」), pero el negativo va en presente."
+    },
+    "〒たくないです": {
+      "meaning": "deseo en negativo: 'no quiero ~'",
+      "ejemplo": "きょうは 出かけたくないです",
+      "literal": "hoy-TEMA / no-quiero-salir",
+      "uso": "Es 「たい」 negado como adjetivo-い (「たい」 -> 「たくない」). Solo para lo que quiere el hablante; para otra persona, 「たがる」. También 「たくありません」."
+    },
+    "〒たがっています": {
+      "meaning": "deseo de un tercero visible desde fuera: 'se le nota que quiere ~'",
+      "ejemplo": "いもうとが 犬を かいたがっています",
+      "literal": "hermana-menor-SUJ / perro-OBJ / anda-queriendo-tener",
+      "uso": "No se usa 「たい」 para lo que siente otro; con 「たがる」 describes lo que se le ve o se le oye querer. El objeto suele ir con 「を」."
+    },
+    "〒たことがあります": {
+      "meaning": "experiencia: 'he ~ alguna vez'",
+      "ejemplo": "日本へ 行ったことがあります",
+      "literal": "Japón-A / hay-vez-de-haber-ido",
+      "uso": "Verbo en pasado llano + 「ことがある」: habla de si algo pasó alguna vez en la vida, no de cuándo. Para algo de ayer no vale."
+    },
+    "〒たり〒たりします": {
+      "meaning": "enumerar algunas acciones de ejemplo: 'hacer cosas como ~ y ~'",
+      "ejemplo": "日曜日は 本を 読んだり おんがくを 聞いたりします",
+      "literal": "domingo-TEMA / libro-OBJ / leo-y / música-OBJ / escucho-y-tal",
+      "uso": "Das una muestra de acciones, no la lista completa ni el orden; se cierra con 「する」 conjugado según el tiempo. Verbo en pasado llano + 「り」."
+    },
+    "〒たあとで": {
+      "meaning": "secuencia: 'después de ~'",
+      "ejemplo": "ごはんを 食べたあとで さんぽします",
+      "literal": "comida-OBJ / después-de-comer / paseo",
+      "uso": "Verbo en pasado llano + 「あとで」; la primera acción está del todo terminada. Con sustantivo: 「のあとで」 (「じゅぎょうのあとで」)."
+    },
+    "〒たほうがいいです": {
+      "meaning": "consejo: 'mejor ~ / deberías ~'",
+      "ejemplo": "はやく ねたほうがいいです",
+      "literal": "pronto / dormir / mejor-es",
+      "uso": "Consejo bastante directo, casi advertencia; el verbo va en pasado llano aunque el consejo sea para ahora. Negativo: 「ないほうがいい」."
+    },
+    "〒まえに": {
+      "meaning": "secuencia: 'antes de ~'",
+      "ejemplo": "ねるまえに はを みがきます",
+      "literal": "antes-de-dormir / dientes-OBJ / cepillo",
+      "uso": "El verbo va en presente llano aunque la acción sea pasada. Con sustantivo: 「のまえに」 (「しょくじのまえに」); con tiempo: 「三日まえに」."
+    },
+    "〒ながら": {
+      "meaning": "dos acciones a la vez hechas por la misma persona: 'mientras ~'",
+      "ejemplo": "おんがくを 聞きながら べんきょうします",
+      "literal": "música-OBJ / escuchando / estudio",
+      "uso": "Raíz de 「ます」 + 「ながら」; la acción principal es la segunda ('estudio escuchando música'). Los dos verbos tiene que hacerlos la misma persona."
+    },
+    "〒ことができます": {
+      "meaning": "poder / saber hacer algo: verbo en presente llano + ことができる",
+      "ejemplo": "ラウラさんは ピアノを ひくことができます",
+      "literal": "Laura-san-TEMA / piano-OBJ / puede-tocar",
+      "uso": "Más formal y algo más rígido que la forma potencial (「ひける」); típico de carteles y textos. Negativo para lo prohibido o imposible: 「ことができません」."
+    },
+    "〒ことがあります": {
+      "meaning": "'a veces pasa que ~ / hay veces que ~' (frecuencia baja)",
+      "ejemplo": "あさ ごはんを 食べないことがあります",
+      "literal": "mañana / comida-OBJ / hay-veces-de-no-comer",
+      "uso": "Verbo en presente llano + 「ことがある」: ocurre de vez en cuando. Con verbo en pasado (「たことがある」) cambia a experiencia de toda la vida."
+    },
+    "〒ば": {
+      "meaning": "condicional hipotético: 'si ~'",
+      "ejemplo": "じかんが あれば 行きます",
+      "literal": "tiempo-SUJ / si-hay / voy",
+      "uso": "Pone el foco en la condición ('con que se dé esto, basta'); el resultado suele ser algo deseado. Formación: 「う」 -> 「えば」, adjetivo-い -> 「ければ」."
+    },
+    "と（条件）": {
+      "meaning": "consecuencia automática: 'si ~, (siempre) pasa ~'",
+      "ejemplo": "この ボタンを おすと でんきが つきます",
+      "literal": "este / botón-OBJ / al-pulsar / luz-SUJ / se-enciende",
+      "uso": "Verbo en presente llano + 「と」: para leyes naturales, mecanismos e instrucciones. El resultado no puede ser una orden ni una petición."
+    },
+    "〒なら": {
+      "meaning": "condición sobre un tema que el otro acaba de sacar: 'si es (lo de) ~, entonces ~'",
+      "ejemplo": "京都へ 行くなら バスが べんりです",
+      "literal": "Kioto-A / si-vas / autobús-SUJ / práctico-es",
+      "uso": "Recoges un tema que el otro acaba de sacar y das tu consejo o reacción. Con sustantivo va directo: 「日本語なら田中さんです」."
+    },
+    "〒ので": {
+      "meaning": "causa presentada con suavidad: 'como ~ / dado que ~'",
+      "ejemplo": "あたまが いたいので 帰ります",
+      "literal": "cabeza-SUJ / como-duele / me-voy",
+      "uso": "Razón expuesta como un hecho, más blanda y educada que 「から」; buena para excusas y peticiones. Tras adjetivo-な o sustantivo: 「なので」."
+    },
+    "〒つもりです": {
+      "meaning": "intención decidida: 'tengo pensado ~ / pienso ~'",
+      "ejemplo": "なつやすみに 国へ 帰るつもりです",
+      "literal": "vacaciones-verano-EN / país-A / pienso-volver",
+      "uso": "Plan firme y personal, pero no una promesa. 「行かないつもりです」 ('no pienso ir') no es lo mismo que 「行くつもりはありません」 ('ni me lo planteo')."
+    },
+    "〒そうです": {
+      "meaning": "impresión por lo que se ve: 'parece que ~ / tiene pinta de ~'",
+      "ejemplo": "この ケーキは おいしそうです",
+      "literal": "este / pastel-TEMA / tiene-pinta-de-rico",
+      "uso": "Juicio inmediato por lo que se ve; raíz de adjetivo o verbo + 「そう」 (「いい」 -> 「よさそう」). Distinto del 「そうです」 de 'dicen que', que va tras forma llana completa."
+    },
+    "〒ほど〒ない": {
+      "meaning": "comparación en negativo: 'no tan ~ como ~'",
+      "ejemplo": "きょうは きのうほど さむくないです",
+      "literal": "hoy-TEMA / como-ayer / no-hace-frío",
+      "uso": "El término de comparación lleva 「ほど」 y el adjetivo va en negativo; equivale a 'A es menos ~ que B', dicho desde A."
+    },
+    "〒が好きです": {
+      "meaning": "gusto: 'me gusta ~' (lo que gusta va con が, no を)",
+      "ejemplo": "わたしは くだものが 好きです",
+      "literal": "yo-TEMA / fruta-SUJ / gusta",
+      "uso": "「好き」 es adjetivo-な, no un verbo, por eso lo que gusta lleva 「が」. Mucho: 「大好きです」. Negar con tacto: 「あまり好きじゃないです」."
+    },
+    "〒が嫌いです": {
+      "meaning": "disgusto: 'no me gusta ~ / detesto ~'",
+      "ejemplo": "おとうとは やさいが \u5ac cいです",
+      "literal": "hermano-menor-TEMA / verdura-SUJ / no-gusta",
+      "uso": "「\u5ac cい」 es adjetivo-な y suena fuerte, casi 'odio'; para rebajarlo, 「あまり好きじゃないです」. Muy fuerte: 「大\u5ac cいです」."
+    },
+    "〒が上手です": {
+      "meaning": "habilidad: 'se te da bien ~'",
+      "ejemplo": "ラウラさんは りょうりが 上手です",
+      "literal": "Laura-san-TEMA / cocina-SUJ / hábil-es",
+      "uso": "Se dice de otras personas; de uno mismo suena a fanfarronada, mejor 「ができます」. Elogio típico: 「日本語が上手ですね」."
+    },
+    "〒が下手です": {
+      "meaning": "torpeza: 'se te da mal ~'",
+      "ejemplo": "わたしは うたが 下手です",
+      "literal": "yo-TEMA / canción-SUJ / torpe-soy",
+      "uso": "De uno mismo sí se usa, como modestia; soltárselo a otro a la cara es grosero. Más suave: 「あまり上手じゃないです」."
+    },
+    "〒がわかります": {
+      "meaning": "comprensión: 'entiendo ~ / se me da ~' (con が)",
+      "ejemplo": "ラウラさんは 英語がわかります",
+      "literal": "Laura-san-TEMA / inglés-SUJ / entiende",
+      "uso": "「わかる」 no lleva 「を」: lo que se entiende va con 「が」. No es 「知る」 ('saber, conocer'): 「わかる」 es captar o comprender."
+    }
+  },
+  "vocabulario": {}
+}
