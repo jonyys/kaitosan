@@ -16,7 +16,7 @@ Estados: `pendiente` · `en_curso:<agente>` · `verificada` · `bloqueada:<motiv
 | 09 | Orquestación del profesor por can-do | III | 🔴 | verificada | cando/fase09 | 431b4a3 | FOCO por can-do activo, fuera _rotar_due/_foco_due/_fraccion_aprendida. unidad completa ≥80% can-dos dominados. CHEQUEO_OXIDO_CADA=5. skip test_rotacion_foco + 1 de conexiones (Fase 18). simulate_sensei sustituido por smoke test (falta google.generativeai en entorno) |
 | 10 | Regla sabido/nuevo en el prompt | III | 🟢 | verificada | cando/fase10 | 36a4a6d | regla [sabida]/[nueva]/[en progreso] en MÉTODO DE ENSEÑANZA. marcado ya venía de Fase 09, solo prompt + test |
 | 11 | Boletín web | III | 🟢 | verificada | cando/fase11 | f317963 | /japones/boletin + JapaneseMemory.boletin(). can-dos ○/◐/● por unidad, inventario 710/90, puntos débiles. Enlace en hub. Test con app Flask mínima (import app rompe por picamera2) |
-| 12 | Práctica de vocabulario por lección | IV | 🔴 | pendiente | | | |
+| 12 | Práctica de vocabulario por lección | IV | 🔴 | verificada | cando/fase12 | c7a9c69 | /japones/vocabulario/practicar?unidad=<id>, calcada de kanji. q5/q3/q1→review(...,"vocabulario"). alterna ES↔JP por paridad de reps. botón Practicar en temario. SM-2 idéntico a kanji (test) |
 | 13 | Práctica de gramática por lección | IV | 🔴 | pendiente | | | |
 | 14 | Conectar estado del juego con el profesor | IV | 🟢 | pendiente | | | |
 | 15 | Notas del profe | V | 🟢 | pendiente | | | |
