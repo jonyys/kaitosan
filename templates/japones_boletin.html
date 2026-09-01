@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Boletín — Kaitosan</title>
+    {% include 'partials/admin/_estilos.html' %}
+    <style>
+      .jp-wrap {
+        max-width: 1100px;
+        margin: 0 auto;
+      }
+      .jp-wrap h1 {
+        justify-content: space-between;
+        flex-wrap: wrap;
+      }
+
+      .bol-sec {
+        margin-bottom: 18px;
+      }
+      .bol-sec h2 {
+        margin: 0 0 12px;
+        border: 0;
+        padding: 0;
+        font-size: 16px;
+      }
+
+      .prog {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+      .prog-label {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--text);
+        min-width: 150px;
+      }
+      .prog-track {
+        flex: 1;
+        height: 10px;
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: var(--radio-pill);
+        overflow: hidden;
+      }
+      .prog-fill {
+        height: 100%;
+        border-radius: var(--radio-pill);
+        background: linear-gradient(90deg, var(--rosa-medio), var(--rosa-accion));
+        transition: width 0.35s ease;
+      }
+      .prog-num {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--rosa-tinta);
+        min-width: 78px;
+        text-align: right;
+      }
+
+      .cd-unidad {
+        margin-bottom: 16px;
+      }
+      .cd-unidad-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 8px;
+      }
+      .cd-unidad-head h3 {
+        margin: 0;
+        font-size: 14px;
+        color: var(--rosa-tinta);
+      }
+      .cd-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .cd-list li {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        font-size: 13px;
+        padding: 3px 0;
+      }
+      .cd-mark {
+        font-size: 15px;
+        line-height: 1;
+        color: var(--rosa-accion);
+      }
+      .cd-list li.dominado .cd-mark {
+        color: var(--ok-tinta, var(--rosa-tinta));
+      }
+      .cd-sesion {
+        font-size: 11px;
+        color: var(--text-soft);
+        font-weight: 700;
+      }
+      .bol-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .bol-debiles {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        font-size: 13px;
+      }
+      .bol-debiles li {
+        padding: 3px 0;
+      }
+      .bol-debiles .es {
+        color: var(--text-soft);
+        font-size: 11px;
+        font-weight: 700;
+      }
+      .bol-vacio {
+        font-size: 13px;
+        color: var(--text-soft);
+      }
+    </style>
+  </head>
+  <body>
+    {% include 'partials/_iconos.html' %}
+    <div class="jp-wrap">
+      <h1>
+        <span
+          ><svg class="ico"><use href="#i-lang" /></svg> Boletín</span
+        >
+        <div
+          style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap"
+        >
+          <a href="/japones"
+            ><button class="btn btn-yellow" style="font-size: 13px">
+              <svg class="ico"><use href="#i-home" /></svg></button
+          ></a>
+        </div>
+      </h1>
+
+      <section class="bol-sec card full">
+        <h2>Inventario N5</h2>
+        <div class="prog">
+          <span class="prog-label">Vocabulario sabido</span>
+          <div class="prog-track">
+            <div class="prog-fill" style="width: {{ vocab_pct }}%"></div>
+          </div>
+          <span class="prog-num">{{ vocab_sabido }} / {{ vocab_total }}</span>
+        </div>
+        <div class="prog">
+          <span class="prog-label">Gramática</span>
+          <div class="prog-track">
+            <div class="prog-fill" style="width: {{ gram_pct }}%"></div>
+          </div>
+          <span class="prog-num">{{ gram_sabido }} / {{ gram_total }}</span>
+        </div>
+        <div class="prog">
+          <span class="prog-label">Can-dos dominados</span>
+          <div class="prog-track">
+            <div class="prog-fill" style="width: {{ candos_pct }}%"></div>
+          </div>
+          <span class="prog-num">{{ candos_dominados }} / {{ candos_total }}</span>
+        </div>
+        <div class="bol-links">
+          <a href="/japones/kanjis"
+            ><button class="btn btn-yellow" style="font-size: 12px">
+              Kanji — práctica</button
+          ></a>
+        </div>
+      </section>
+
+      <section class="bol-sec card full">
+        <h2>Can-dos por unidad</h2>
+        {% for u in unidades %}
+        <div class="cd-unidad">
+          <div class="cd-unidad-head">
+            <h3>{{ u.nombre }}</h3>
+            <span class="cd-sesion">{{ u.n_dominados }} / {{ u.n_total }}</span>
+          </div>
+          <div class="prog">
+            <div class="prog-track">
+              <div class="prog-fill" style="width: {{ u.pct }}%"></div>
+            </div>
+            <span class="prog-num">{{ u.pct }}%</span>
+          </div>
+          <ul class="cd-list">
+            {% for cd in u.can_dos %}
+            <li class="{{ cd.estado }}">
+              <span class="cd-mark">{{ cd.simbolo }}</span>
+              <span>{{ cd.texto }}</span>
+              {% if cd.ultima_sesion %}
+              <span class="cd-sesion">sesión {{ cd.ultima_sesion }}</span>
+              {% endif %}
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endfor %}
+      </section>
+
+      {% if kanji_unidades %}
+      <section class="bol-sec card full">
+        <h2>Kanji</h2>
+        <p class="bol-vacio">
+          Las unidades de kanji siguen su propia progresión (SRS). Se practican en
+          su página.
+        </p>
+        <div class="bol-links">
+          {% for u in kanji_unidades %}
+          <a href="/japones/kanjis"
+            ><button class="btn btn-yellow" style="font-size: 12px">
+              {{ u.nombre }}</button
+          ></a>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      <section class="bol-sec card full">
+        <h2>Puntos débiles activos</h2>
+        {% if weak_points or weak_grammar %}
+        <ul class="bol-debiles">
+          {% for w in weak_points %}
+          <li>{{ w.word }} <span class="es">— {{ w.errors }} errores</span></li>
+          {% endfor %}
+          {% for w in weak_grammar %}
+          <li>{{ w.punto }} <span class="es">— {{ w.errors }} errores</span></li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="bol-vacio">Ninguno ahora mismo.</p>
+        {% endif %}
+      </section>
+    </div>
+  </body>
+</html>

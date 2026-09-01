@@ -599,6 +599,87 @@ class JapaneseMemory:
         )
         return dominados / len(can_dos)
 
+    def boletin(self) -> dict:
+        """Contexto de /japones/boletin (solo lectura, Fase 11).
+
+        - can-dos por unidad temática con estado visual (○ no_intentado /
+          ◐ en_progreso / ● dominado) y la sesión en que se consiguieron los
+          dominados. Las unidades de kanji (sin can-dos) van aparte, como enlace.
+        - inventario N5: vocab no-kanji y gramática en estado 'sabido'
+          (`estado_item`), sobre el total real del temario (jp distintos en
+          CURRICULUM, no el 717/~80 aproximado del plan).
+        - puntos débiles activos (los que ya trackea `resumen_perfil`).
+        """
+        from ai.sensei.curriculum import CURRICULUM
+
+        prog = self.can_dos_progreso()
+        simbolo = {"no_intentado": "○", "en_progreso": "◐", "dominado": "●"}
+
+        unidades, kanji_unidades = [], []
+        cd_total = cd_dominados = 0
+        for u in CURRICULUM:
+            cds = u.get("can_dos", [])
+            if not cds:
+                kanji_unidades.append({"id": u["id"], "nombre": u.get("nombre", "")})
+                continue
+            filas = []
+            for cd in cds:
+                p = prog.get(cd["id"], {})
+                estado = p.get("estado", "no_intentado")
+                cd_total += 1
+                if estado == "dominado":
+                    cd_dominados += 1
+                filas.append({
+                    "texto": cd.get("texto", cd["id"]),
+                    "estado": estado,
+                    "simbolo": simbolo.get(estado, "○"),
+                    "ultima_sesion": p.get("ultima_sesion") if estado == "dominado" else None,
+                })
+            dom = sum(1 for f in filas if f["estado"] == "dominado")
+            unidades.append({
+                "id": u["id"], "nombre": u.get("nombre", ""),
+                "can_dos": filas, "n_dominados": dom, "n_total": len(filas),
+                "pct": round(dom * 100 / len(filas)) if filas else 0,
+            })
+
+        vocab_jp, gram_jp = set(), set()
+        for u in CURRICULUM:
+            for e in u.get("items", []):
+                jp = str(e.get("jp") or "").strip()
+                if not jp:
+                    continue
+                if e.get("kind") == "gramatica":
+                    gram_jp.add(jp)
+                elif e.get("kind") == "vocabulario" and e.get("tipo") != "kanji":
+                    vocab_jp.add(jp)
+        # ponytail: una consulta por ítem (≈800), igual que la página de temario.
+        # Página de solo lectura y poco tráfico; si molesta, batear en estado_item.
+        vocab_sabido = sum(1 for jp in vocab_jp
+                           if self.estado_item(jp, "vocabulario") == "sabido")
+        gram_sabido = sum(1 for jp in gram_jp
+                          if self.estado_item(jp, "gramatica") == "sabido")
+
+        perfil = self.resumen_perfil()
+
+        def pct(n, d):
+            return round(n * 100 / d) if d else 0
+
+        return {
+            "unidades": unidades,
+            "kanji_unidades": kanji_unidades,
+            "candos_total": cd_total,
+            "candos_dominados": cd_dominados,
+            "candos_pct": pct(cd_dominados, cd_total),
+            "vocab_sabido": vocab_sabido,
+            "vocab_total": len(vocab_jp),
+            "vocab_pct": pct(vocab_sabido, len(vocab_jp)),
+            "gram_sabido": gram_sabido,
+            "gram_total": len(gram_jp),
+            "gram_pct": pct(gram_sabido, len(gram_jp)),
+            "weak_points": perfil["weak_points"],
+            "weak_grammar": perfil["weak_grammar"],
+        }
+
     def get_practiced_set(self, kind: str = "kanji") -> set:
         """Conjunto de textos (jp) que ya tienen ficha SRS en la BD."""
         if kind == "vocabulario":

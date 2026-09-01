@@ -1168,6 +1168,13 @@ def japones_gramatica():
     return _render_temario("gramatica")
 
 
+@app.route("/japones/boletin")
+@login_requerido
+def japones_boletin():
+    # Boletín can-do (Fase 11): solo lectura. Contexto en JapaneseMemory.boletin.
+    return render_template("japones_boletin.html", **brain.jap_memory.boletin())
+
+
 @app.route("/japones/vocabulario/completar", methods=["POST"])
 @login_requerido
 def japones_vocabulario_completar():
