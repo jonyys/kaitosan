@@ -8630,79 +8630,68 @@ CURRICULUM[_CORTE]["prerequisito"] = _UNIDADES_KANJI[-1]["id"]
 CURRICULUM[_CORTE:_CORTE] = _UNIDADES_KANJI
 
 UMBRAL_PREREQ_DEFECTO = 0.75
+# Fase 09: una unidad can-do se da por "completa" (y unidad_actual avanza) cuando
+# al menos este porcentaje de sus can-dos está en 'dominado'.
+UMBRAL_UNIDAD_COMPLETA = 0.8
 
 # Índice jp → ítem del temario, para enriquecer el FOCO (ejemplo / literal / uso)
 # también en los ítems de repaso, que vienen de la BD y no traen esos campos.
 ITEM_POR_JP = {item["jp"]: item for unit in CURRICULUM for item in unit["items"]}
 
 
-def _snapshot_reps(jap_memory):
-    """Un solo viaje a la BD: {(kind, jp): reps} de todo lo que Laura ya tiene.
-
-    El recorrido del temario preguntaba ítem a ítem (~360 conexiones por turno);
-    con la foto en memoria son dos consultas y una conexión.
-    """
-    with jap_memory._conectar() as conn:
-        snap = {("vocabulario", w): r or 0
-                for w, r in conn.execute("SELECT word, reps FROM japanese_vocabulary")}
-        snap.update({("gramatica", g): r or 0
-                     for g, r in conn.execute("SELECT grammar_point, reps FROM japanese_grammar")})
-    return snap
+def _kind_de(item):
+    return "gramatica" if item["kind"] == "gramatica" else "vocabulario"
 
 
-def _clave(item):
-    return ("vocabulario" if item["kind"] == "vocabulario" else "gramatica", item["jp"])
-
-
-def _fraccion_aprendida(unit_id, reps):
-    """Fracción de ítems de una unidad que el alumno tiene aprendidos (reps >= 2)."""
-    unit = next((u for u in CURRICULUM if u["id"] == unit_id), None)
-    if not unit or not unit["items"]:
-        return 0.0
-    aprendidas = sum(1 for item in unit["items"] if reps.get(_clave(item), 0) >= 2)
-    return aprendidas / len(unit["items"])
-
-
-def _gate_met(unit, reps):
+def _gate_met(unit, jap_memory):
+    """La puerta de una unidad: su prerequisito can-do al >= umbral. Un
+    prerequisito sin can_dos (unidad de kanji) no bloquea: su progresión va por
+    el SRS del juego web, no por este motor."""
     prereq = unit.get("prerequisito")
     if not prereq:
         return True
-    return _fraccion_aprendida(prereq, reps) >= unit.get("umbral_prereq", UMBRAL_PREREQ_DEFECTO)
+    pu = next((u for u in CURRICULUM if u["id"] == prereq), None)
+    if pu is None or not pu.get("can_dos"):
+        return True
+    return jap_memory.fraccion_can_dos(prereq) >= unit.get(
+        "umbral_prereq", UMBRAL_PREREQ_DEFECTO
+    )
 
 
 def unidad_actual(jap_memory):
-    """La unidad que Laura tiene abierta: la primera con la puerta cumplida que
-    aún no está aprendida del todo. Si las tiene todas, la última abierta."""
-    reps = _snapshot_reps(jap_memory)
+    """La unidad can-do que Laura tiene abierta: la primera con la puerta
+    cumplida cuyos can-dos aún no llegan al UMBRAL_UNIDAD_COMPLETA de 'dominado'.
+    Si están todas, la última abierta. Las unidades de kanji (sin can_dos) no
+    entran: su progresión es independiente (SRS del juego web)."""
     abierta = None
     for unit in CURRICULUM:
-        if not _gate_met(unit, reps):
+        if not unit.get("can_dos"):
+            continue
+        if not _gate_met(unit, jap_memory):
             break
         abierta = unit
-        if _fraccion_aprendida(unit["id"], reps) < 1.0:
+        if jap_memory.fraccion_can_dos(unit["id"]) < UMBRAL_UNIDAD_COMPLETA:
             return unit
     return abierta
 
 
 def siguiente_items_nuevos(jap_memory, n=1):
-    """Devuelve hasta n ítems del currículo que Laura aún no tiene y cuyas
-    puertas de prerequisito estén cumplidas.
+    """Los ítems que pide el can-do activo — en la práctica, los de su unidad —
+    que Laura aún no tiene (estado_item == 'nuevo'). Hasta n (MAX_ITEMS_NUEVOS).
 
-    Retorna lista de dicts {kind, jp, reading?, meaning, tipo?, unidad}.
+    Mapping can-do→ítems: la unidad entera (el can-do activo da el foco temático;
+    no hay un mapa explícito can-do→ítem para N5). Retorna lista de dicts
+    {kind, jp, reading?, meaning, tipo?, unidad}.
     """
-    reps = _snapshot_reps(jap_memory)
+    unidad = unidad_actual(jap_memory)
+    if not unidad:
+        return []
     result = []
-    seen = set()  # ítems elegidos en esta llamada pero aún no en BD
-    for unit in CURRICULUM:
-        if not _gate_met(unit, reps):
-            continue
-        for item in unit["items"]:
-            if item["jp"] in seen or _clave(item) in reps:
-                continue
-            result.append({**item, "unidad": unit["nombre"]})
-            seen.add(item["jp"])
+    for item in unidad["items"]:
+        if jap_memory.estado_item(item["jp"], _kind_de(item)) == "nuevo":
+            result.append({**item, "unidad": unidad["nombre"]})
             if len(result) >= n:
-                return result
+                break
     return result
 
 
