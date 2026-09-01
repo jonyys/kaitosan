@@ -473,3 +473,59 @@ def test_practica_gram():
 
     # mastery se recalcula en cada review, no es estático: cae del paso 3 al 4
     assert masteries[3] < masteries[2], masteries
+
+
+# ── Fase 14 — Circuito juego SRS → profesor ────────────────────────────────────
+#
+# Cierra el círculo del Bloque III: lo que la práctica web (Fases 12/13) lleva a
+# 'learned' debe verse 'sabido' vía `estado_item()` — la fuente única que ya leen
+# temario (Fase 07), boletín (Fase 11) y profesor (Fase 09/10). No hay lógica de
+# `status`+`reps` duplicada que migrar; este test verifica el extremo a extremo.
+
+
+def test_circuito():
+    from unittest.mock import MagicMock
+
+    from ai.sensei.profesor import ITEMS_CANDO_FOCO, ProfesorJapones
+
+    # unidad N5 con can-dos y >= 2 vocab no-kanji entre los ítems que el FOCO lista
+    elegida = None
+    for u in CURRICULUM:
+        if not u.get("can_dos"):
+            continue
+        vocab = [jp for e in u.get("items", [])[:ITEMS_CANDO_FOCO]
+                 if e.get("kind") == "vocabulario" and e.get("tipo") != "kanji"
+                 and (jp := str(e.get("jp") or "").strip())]
+        if len(vocab) >= 2:
+            elegida = (u, vocab[0], vocab[1])
+            break
+    assert elegida, "sin unidad con can-dos y vocab en CURRICULUM"
+    unidad, jp, otro = elegida
+    uid = unidad["id"]
+
+    jm = _jm()
+    cliente = _mini_practica_app(jm).test_client()
+
+    # 1) la práctica web lleva el ítem a 'learned' (q5 ×3) ...
+    for _ in range(3):
+        cliente.post("/japones/vocabulario/practicar",
+                     data={"unidad": uid, "word": jp, "quality": "5"})
+    assert _fila(jm, "japanese_vocabulary", "word", jp)[4] == "learned"
+    # ... y `estado_item()` -- la fuente única -- lo da 'sabido'
+    assert jm.estado_item(jp, "vocabulario") == "sabido"
+
+    # 2) ese 'sabido' llega al FOCO del profesor como [sabida]
+    mem = MagicMock()
+    mem.obtener_perfil.return_value = ""
+    prof = ProfesorJapones(jm, MagicMock(), mem, MagicMock())
+    prof._foco_unidad = unidad
+    prof._foco_nuevos = []
+    prof.session_id = 1
+    _rec, foco = prof._montar_estado()
+    linea = next((ln for ln in foco.splitlines()
+                  if f"【{jp}】" in ln and "[sabida]" in ln), None)
+    assert linea, "sin linea [sabida] para el item practicado en el FOCO:\n" + foco
+
+    # 3) el boton "marcar como completa" deja OTRO item igual de 'sabido'
+    jm.marcar_completo(otro, "vocabulario")
+    assert jm.estado_item(otro, "vocabulario") == "sabido"

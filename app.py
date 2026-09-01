@@ -1059,8 +1059,9 @@ def _temario_unidades(kind):
 
     # Estado del ítem: fuente única en JapaneseMemory.estado_item (Fase 07). La
     # página conserva su vocabulario propio ('aprendida'/'en_curso'/'nueva').
-    # ponytail: una consulta por ítem al render; la Fase 14 unifica temario,
-    # boletín y profesor sobre estado_item y batea si hiciera falta.
+    # ponytail: una consulta por ítem al render. Temario, boletín y profesor ya
+    # leen todos estado_item (circuito unificado, Fase 14); el batch
+    # (estado_items_bulk) se aparca para la Fase 18, es más que esta fase.
     _MAP = {"sabido": "aprendida", "en_progreso": "en_curso", "nuevo": "nueva"}
 
     def estado(jp):
