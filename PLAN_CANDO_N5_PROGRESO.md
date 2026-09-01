@@ -1,0 +1,29 @@
+# Progreso — PLAN_CANDO_N5
+
+Estado vivo de la ejecución. Lo actualiza el orquestador tras cada fase.
+Estados: `pendiente` · `en_curso:<agente>` · `verificada` · `bloqueada:<motivo>`
+
+| Fase | Título | Bloque | 🔴/🟢 | Estado | Rama | Commit | Nota |
+|---|---|---|---|---|---|---|---|
+| 01 | Fuentes de verdad + validador | I | 🟢 | pendiente | | | |
+| 02 | Reconciliar vocabulario a la lista | I | 🔴 | pendiente | | | |
+| 03 | Reconciliar gramática a la lista | I | 🟢 | pendiente | | | |
+| 04 | Borrar unidades vacías + purgar BD | I | 🟢 | pendiente | | | |
+| 05 | Notas de uso del vocabulario + gramática completa | II | 🔴 | pendiente | | | |
+| 06 | Can-dos por unidad (generados) | III | 🟢 | pendiente | | | |
+| 07 | Esquema BD: can_do_progreso + estado_item | III | 🟢 | pendiente | | | |
+| 08 | Extractor califica can-dos | III | 🟢 | pendiente | | | |
+| 09 | Orquestación del profesor por can-do | III | 🔴 | pendiente | | | |
+| 10 | Regla sabido/nuevo en el prompt | III | 🟢 | pendiente | | | |
+| 11 | Boletín web | III | 🟢 | pendiente | | | |
+| 12 | Práctica de vocabulario por lección | IV | 🔴 | pendiente | | | |
+| 13 | Práctica de gramática por lección | IV | 🔴 | pendiente | | | |
+| 14 | Conectar estado del juego con el profesor | IV | 🟢 | pendiente | | | |
+| 15 | Notas del profe | V | 🟢 | pendiente | | | |
+| 16 | Deberes entre sesiones | V | 🟢 | pendiente | | | |
+| 17 | Arco de sesión | V | 🟢 | pendiente | | | |
+| 18 | Limpieza final | VI | 🟢 | pendiente | | | |
+
+## Registro
+
+_(el orquestador añade aquí una línea por fase cerrada: fecha, agente, salida de la verificación, decisiones)_
