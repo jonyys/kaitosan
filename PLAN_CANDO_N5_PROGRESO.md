@@ -17,7 +17,7 @@ Estados: `pendiente` · `en_curso:<agente>` · `verificada` · `bloqueada:<motiv
 | 10 | Regla sabido/nuevo en el prompt | III | 🟢 | verificada | cando/fase10 | 36a4a6d | regla [sabida]/[nueva]/[en progreso] en MÉTODO DE ENSEÑANZA. marcado ya venía de Fase 09, solo prompt + test |
 | 11 | Boletín web | III | 🟢 | verificada | cando/fase11 | f317963 | /japones/boletin + JapaneseMemory.boletin(). can-dos ○/◐/● por unidad, inventario 710/90, puntos débiles. Enlace en hub. Test con app Flask mínima (import app rompe por picamera2) |
 | 12 | Práctica de vocabulario por lección | IV | 🔴 | verificada | cando/fase12 | c7a9c69 | /japones/vocabulario/practicar?unidad=<id>, calcada de kanji. q5/q3/q1→review(...,"vocabulario"). alterna ES↔JP por paridad de reps. botón Practicar en temario. SM-2 idéntico a kanji (test) |
-| 13 | Práctica de gramática por lección | IV | 🔴 | pendiente | | | |
+| 13 | Práctica de gramática por lección | IV | 🔴 | verificada | cando/fase13 | 9da4255 | /japones/gramatica/practicar?unidad=<id>. ejercicio hueco (64/90) o patrón (26/90). review(...,"gramatica"), mastery recalculado. botón Practicar ampliado a gramática |
 | 14 | Conectar estado del juego con el profesor | IV | 🟢 | pendiente | | | |
 | 15 | Notas del profe | V | 🟢 | pendiente | | | |
 | 16 | Deberes entre sesiones | V | 🟢 | pendiente | | | |
