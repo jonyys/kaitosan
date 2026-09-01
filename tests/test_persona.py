@@ -87,8 +87,71 @@ def test_extractor_sin_nota_profe_no_rompe_y_guarda_vacia():
     assert jap.resumen_perfil()["notas_profe"] == []
 
 
+# ── Fase 16 — Deberes entre sesiones ────────────────────────────────────────
+
+def test_deberes():
+    jap = JapaneseMemory(os.path.join(tempfile.mkdtemp(), "t.db"))
+    prof = _profesor(jap)
+
+    # Sesión 1: Kaito propuso una tarea al despedirse; el extractor la captura.
+    prof.entrar()
+    if prof.timer:
+        prof.timer.cancel()
+    prof.mensajes = [{"role": "user", "content": "じゃあね, hasta la semana que viene"}]
+    deberes = "Apúntate en japonés tres cosas que tengas en tu mesa."
+    prof.provider.completar.return_value = json.dumps({
+        "summary": "Repaso y despedida.",
+        "can_dos": [], "new_items": [], "sin_corregir": [],
+        "episodios": [], "kaito_dijo": [], "nota_profe": "",
+        "deberes": deberes,
+    })
+    prof._ejecutar_extraccion(prof.session_id)
+
+    with jap._conectar() as conn:
+        fila = conn.execute(
+            "SELECT deberes FROM japanese_sessions ORDER BY id DESC LIMIT 1"
+        ).fetchone()
+    assert fila[0] == deberes, fila
+    assert jap.resumen_perfil()["deberes_ultima_sesion"] == deberes
+
+    # Sesión 2: los deberes entran PRIMEROS en el FOCO, antes de la unidad.
+    prof.entrar()
+    if prof.timer:
+        prof.timer.cancel()
+    foco = prof._montar_estado()[1]
+    assert foco.startswith("DEBERES DE LA SEMANA PASADA"), foco
+    assert deberes in foco.splitlines()[0]
+    for marca in ("Unidad actual", "Can-do de hoy", "Can-dos de esta unidad"):
+        if marca in foco:
+            assert foco.index("DEBERES DE LA SEMANA") < foco.index(marca), foco
+
+
+def test_deberes_sin_campo_no_rompe():
+    jap = JapaneseMemory(os.path.join(tempfile.mkdtemp(), "t.db"))
+    prof = _profesor(jap)
+    prof.entrar()
+    if prof.timer:
+        prof.timer.cancel()
+    prof.mensajes = [{"role": "user", "content": "hola"}]
+    prof.provider.completar.return_value = json.dumps({
+        "summary": "Charla corta.",
+        "can_dos": [], "new_items": [], "sin_corregir": [],
+        "episodios": [], "kaito_dijo": [],
+    })
+    prof._ejecutar_extraccion(prof.session_id)  # no debe lanzar
+
+    assert jap.resumen_perfil()["deberes_ultima_sesion"] == ""
+    prof.entrar()
+    if prof.timer:
+        prof.timer.cancel()
+    foco = prof._montar_estado()[1]
+    assert "DEBERES DE LA SEMANA" not in foco, foco
+
+
 if __name__ == "__main__":
     test_nota_profe()
     test_montar_estado_incluye_notas_bajo_como_va_laura()
     test_extractor_sin_nota_profe_no_rompe_y_guarda_vacia()
+    test_deberes()
+    test_deberes_sin_campo_no_rompe()
     print("OK")

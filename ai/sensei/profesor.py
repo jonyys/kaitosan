@@ -440,6 +440,18 @@ class ProfesorJapones:
         prog = self.jap_memory.can_dos_progreso()
 
         lineas_f = []
+
+        # Fase 16: los deberes de la última sesión entran PRIMEROS en el FOCO,
+        # con marca para que Kaito pregunte qué tal fueron antes de nada. El
+        # getter solo devuelve los de la última sesión cerrada, así que esto
+        # sale una única sesión (la inmediatamente posterior) y luego se apaga.
+        deberes = perfil_jap.get("deberes_ultima_sesion")
+        if deberes:
+            lineas_f.append(
+                "DEBERES DE LA SEMANA PASADA (pregúntale qué tal le fueron antes "
+                f"de entrar en materia): {deberes}"
+            )
+
         if unidad:
             lineas_f.append(f"Unidad actual: {unidad['nombre']}")
             if unidad.get("funcion"):
@@ -507,7 +519,8 @@ class ProfesorJapones:
                 for jp, meaning in oxido:
                     lineas_f += _lineas_foco(jp, meaning, sufijo="  [sabida]")
 
-        if not lineas_f:
+        # (la línea de deberes de Fase 16, si está, no cuenta como contenido)
+        if not [ln for ln in lineas_f if not ln.startswith("DEBERES DE LA SEMANA")]:
             lineas_f.append(
                 "Sin unidad abierta. Conversa libremente en japonés sobre cualquier tema."
             )
@@ -645,6 +658,8 @@ class ProfesorJapones:
             ),
             # Fase 15: cómo va Laura como alumna. Si no viene, se guarda vacía.
             nota_profe=(data.get("nota_profe") or "").strip(),
+            # Fase 16: la tarea que Kaito propuso al despedirse. Si no viene, ''.
+            deberes=(data.get("deberes") or "").strip(),
         )
         # Memoria episódica: lo que Laura contó de su vida, y lo que Kaito
         # afirmó de sí mismo (para que no se contradiga entre sesiones).

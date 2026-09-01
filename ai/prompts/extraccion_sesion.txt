@@ -8,7 +8,8 @@ Analiza la conversación y devuelve ÚNICAMENTE un JSON con este esquema exacto:
   "sin_corregir": ["<error de Laura que el profesor NO corrigió, en una frase corta>"],
   "episodios": ["<algo que Laura contó de su vida: un viaje, sus perros, cómo le fue la semana…>"],
   "kaito_dijo": ["<algo que el profesor afirmó sobre sí mismo: una anécdota, un gusto, un recuerdo>"],
-  "nota_profe": "<1-2 frases sobre cómo va Laura COMO ALUMNA: ánimo, actitud, ritmo, tendencias. NO qué se trabajó>"
+  "nota_profe": "<1-2 frases sobre cómo va Laura COMO ALUMNA: ánimo, actitud, ritmo, tendencias. NO qué se trabajó>",
+  "deberes": "<la tarea pequeña que el profesor propuso a Laura al despedirse, tal cual, en español. Si no propuso ninguna, ''>"
 }
 
 Reglas:
@@ -47,6 +48,11 @@ Reglas:
   Bien: "Se frustra cuando no le sale la partícula a la primera, pero insiste hasta sacarla".
   Bien: "Hoy con energía, ha arrancado ella los temas sin que Kaito tirara".
   Si no hay señal clara de la persona en la conversación, nota_profe = "".
+- deberes: al despedirse, el profesor suele proponer UNA tarea pequeña para la semana
+  (algo que Laura haga sola en 5-10 min: "fíjate en cómo pides las cosas en una cafetería",
+  "apúntate 3 cosas de tu mesa en japonés"). Cópiala tal cual, en español, en una frase.
+  Solo la tarea que propuso al cerrar, no cada sugerencia suelta de la sesión.
+  Si no propuso ninguna, deberes = "".
 - Responde SOLO con el JSON, sin markdown ni texto adicional.
 
 === EJEMPLO ===
@@ -73,6 +79,7 @@ Salida esperada:
   "sin_corregir": [],
   "episodios": [],
   "kaito_dijo": [],
-  "nota_profe": "Va con ganas: pide un café ella sola sin dudar. Con los gustos se queda callada y espera a que Kaito le dé la frase antes de intentarlo."
+  "nota_profe": "Va con ganas: pide un café ella sola sin dudar. Con los gustos se queda callada y espera a que Kaito le dé la frase antes de intentarlo.",
+  "deberes": "Esta semana, fíjate en cómo pides las cosas cuando entras en una cafetería."
 }
 === FIN EJEMPLO ===
