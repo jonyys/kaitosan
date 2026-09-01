@@ -10,7 +10,7 @@ Estados: `pendiente` · `en_curso:<agente>` · `verificada` · `bloqueada:<motiv
 | 03 | Reconciliar gramática a la lista | I | 🟢 | verificada | cando/fase03 | 8171b38 | 54 conservados, 36 añadidos, 101 fuera, 16 reubicados. gramática=90==CSV. Rehecha sobre fase02 (serializadores en conflicto) |
 | 04 | Borrar unidades vacías + purgar BD | I | 🟢 | verificada | cando/fase04 | 4b20ca5 | 13 unidades borradas (53→40, 10 kanji intactas). 2 prereq repunteados. purgar_fuera_de_temario en Brain.__init__. Selector de nivel fuera de web. +col first_taught_session_id en japanese_grammar |
 | 05 | Notas de uso del vocabulario + gramática completa | II | 🔴 | verificada | cando/fase05 | 4dfb44d | 52 puntos gramática con los 4 campos + 234 `uso` de vocab (286 vacías por diseño). LLM-juez: 50 ok, 2 regenerados, 0 dudosos. validador gramática ESTRICTO. Sin ítems `regenerar` pendientes |
-| 06 | Can-dos por unidad (generados) | III | 🟢 | pendiente | | | |
+| 06 | Can-dos por unidad (generados) | III | 🟢 | verificada | cando/fase06 | ed9414a | 129 can-dos en 30 unidades temáticas (3-5 c/u), 0 en las 10 de kanji. check can_do.id único activo en validador |
 | 07 | Esquema BD: can_do_progreso + estado_item | III | 🟢 | pendiente | | | |
 | 08 | Extractor califica can-dos | III | 🟢 | pendiente | | | |
 | 09 | Orquestación del profesor por can-do | III | 🔴 | pendiente | | | |
