@@ -12,7 +12,7 @@ Estados: `pendiente` · `en_curso:<agente>` · `verificada` · `bloqueada:<motiv
 | 05 | Notas de uso del vocabulario + gramática completa | II | 🔴 | verificada | cando/fase05 | 4dfb44d | 52 puntos gramática con los 4 campos + 234 `uso` de vocab (286 vacías por diseño). LLM-juez: 50 ok, 2 regenerados, 0 dudosos. validador gramática ESTRICTO. Sin ítems `regenerar` pendientes |
 | 06 | Can-dos por unidad (generados) | III | 🟢 | verificada | cando/fase06 | ed9414a | 129 can-dos en 30 unidades temáticas (3-5 c/u), 0 en las 10 de kanji. check can_do.id único activo en validador |
 | 07 | Esquema BD: can_do_progreso + estado_item | III | 🟢 | verificada | cando/fase07 | 8ede807 | tabla can_do_progreso + estado_item/set_can_do/can_dos_progreso/fraccion_can_dos en japanese_memory.py. app.py:_temario_unidades usa estado_item (1 query/ítem, marcado ponytail para Fase 14) |
-| 08 | Extractor califica can-dos | III | 🟢 | pendiente | | | |
+| 08 | Extractor califica can-dos | III | 🟢 | verificada | cando/fase08 | 999b9e2 | prompt sin `reviewed`, `_ejecutar_extraccion` sin review()/rescate/aprobado-oficio → set_can_do(id,resultado,session_id,nota=evidencia). srs.py intacto. `_rotar_due` (get_due_items) queda para Fase 09 |
 | 09 | Orquestación del profesor por can-do | III | 🔴 | pendiente | | | |
 | 10 | Regla sabido/nuevo en el prompt | III | 🟢 | pendiente | | | |
 | 11 | Boletín web | III | 🟢 | pendiente | | | |
