@@ -18,6 +18,7 @@ except Exception:
     pass
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from ai.prompts import cargar_prompt
 from ai.sensei import profesor as profesor_mod
 from ai.sensei.curriculum import CURRICULUM
 from ai.sensei.profesor import ProfesorJapones
@@ -206,6 +207,51 @@ def test_sin_rotar_due():
     assert "get_due_items(" not in src, "quedó get_due_items en el flujo del profesor"
 
 
+def test_marcador_estado():
+    """Fase 10 — cada ítem del FOCO lleva su marcador de estado. Un ítem sabido
+    sale con [sabida]; uno nuevo, con [nueva]. Y el prompt trae la regla."""
+    jm = _jm()
+    unidad = CURRICULUM[0]  # BD limpia -> unidad can-do abierta
+    sabido, nuevo = unidad["items"][0], unidad["items"][1]
+    assert sabido["jp"] != nuevo["jp"]
+
+    with jm._conectar() as c:
+        if sabido["kind"] == "gramatica":
+            c.execute(
+                "INSERT INTO japanese_grammar (grammar_point, reps, mastery) VALUES (?, 2, 0)",
+                (sabido["jp"],),
+            )
+        else:
+            c.execute(
+                "INSERT INTO japanese_vocabulary (word, reps, status) VALUES (?, 2, 'learned')",
+                (sabido["jp"],),
+            )
+    assert jm.estado_item(sabido["jp"], sabido["kind"]) == "sabido"
+    assert jm.estado_item(nuevo["jp"], nuevo["kind"]) == "nuevo"
+
+    prof = _profesor(jm)
+    prof.entrar()
+    if prof.timer:
+        prof.timer.cancel()
+    _, foco = prof._montar_estado()
+
+    def _linea_foco_de(jp):
+        pref = f"  - 【{jp}】"
+        return next((ln for ln in foco.splitlines()
+                     if ln.startswith(pref) and ("[sabida]" in ln or "[nueva]" in ln
+                                                 or "[en progreso]" in ln)), None)
+
+    ln_sabido = _linea_foco_de(sabido["jp"])
+    ln_nuevo = _linea_foco_de(nuevo["jp"])
+    assert ln_sabido and "[sabida]" in ln_sabido, foco
+    assert ln_nuevo and "[nueva]" in ln_nuevo, foco
+
+    prompt = cargar_prompt("profesor_japones")
+    metodo = prompt.split("== MÉTODO DE ENSEÑANZA ==", 1)[1]
+    assert "Cada palabra del FOCO lleva su estado" in metodo
+    assert "[sabida]" in metodo and "[en progreso]" in metodo and "[nueva]" in metodo
+
+
 def test_smoke_5_turnos():
     """Sustituto de `python simulate_sensei.py` (no hay API key en el entorno):
     5 turnos + _montar_estado() con el LLM mockeado, sin excepción."""
@@ -234,5 +280,6 @@ if __name__ == "__main__":
     test_foco()
     test_unidad_avanza_por_candos()
     test_sin_rotar_due()
+    test_marcador_estado()
     test_smoke_5_turnos()
     print("OK")
