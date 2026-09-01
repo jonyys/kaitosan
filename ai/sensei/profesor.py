@@ -525,10 +525,13 @@ class ProfesorJapones:
                 lineas_f.append(
                     "  lo que necesita (las [sabida] úsalas en japonés directamente):"
                 )
+                estados_it = self.jap_memory.estado_items_bulk(
+                    (it["jp"], it["kind"]) for it in items
+                )
                 for it in items:
                     kind = "gramatica" if it["kind"] == "gramatica" else "vocabulario"
                     marca = _MARCA_ESTADO.get(
-                        self.jap_memory.estado_item(it["jp"], kind), "[nueva]"
+                        estados_it.get((it["jp"], kind), "nuevo"), "[nueva]"
                     )
                     lineas_f += _lineas_foco(
                         it["jp"], it.get("meaning", ""), sufijo=f"  {marca}"

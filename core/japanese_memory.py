@@ -534,6 +534,41 @@ class JapaneseMemory:
                 return "sabido"
             return "en_progreso"
 
+    def estado_items_bulk(self, pares) -> dict:
+        """`estado_item` en lote. `pares`: iterable de (jp, kind). Devuelve
+        {(jp, kind_normalizado): 'sabido'|'en_progreso'|'nuevo'}, con kind
+        normalizado a 'gramatica' / 'vocabulario'. Dos queries (una por tabla);
+        los jp sin fila salen 'nuevo'.
+        ponytail: IN (...) con un placeholder por jp; el N5 son ~800, bajo el
+        límite de 999 variables de SQLite. Trocea si algún día se pasa."""
+        pares = [(jp, "gramatica" if k == "gramatica" else "vocabulario") for jp, k in pares]
+        vocab = {jp for jp, k in pares if k == "vocabulario"}
+        gram = {jp for jp, k in pares if k == "gramatica"}
+        out = {}
+        with self._conectar() as conn:
+            if vocab:
+                ph = ",".join("?" * len(vocab))
+                for word, reps, status in conn.execute(
+                    f"SELECT word, COALESCE(reps, 0), status FROM japanese_vocabulary "
+                    f"WHERE word IN ({ph})", tuple(vocab),
+                ):
+                    out[(word, "vocabulario")] = (
+                        "sabido" if reps >= 2 or status in ("learned", "mastered")
+                        else "en_progreso"
+                    )
+            if gram:
+                ph = ",".join("?" * len(gram))
+                for gp, reps, mastery in conn.execute(
+                    f"SELECT grammar_point, COALESCE(reps, 0), COALESCE(mastery, 0) "
+                    f"FROM japanese_grammar WHERE grammar_point IN ({ph})", tuple(gram),
+                ):
+                    out[(gp, "gramatica")] = (
+                        "sabido" if reps >= 2 or mastery >= 100 else "en_progreso"
+                    )
+        for par in pares:
+            out.setdefault(par, "nuevo")
+        return out
+
     def set_can_do(self, can_do_id: str, resultado: str, session_id, nota: str = None):
         """Registra el resultado de un can-do en una sesión y recalcula su estado.
 
@@ -659,13 +694,14 @@ class JapaneseMemory:
                     gram_jp.add(jp)
                 elif e.get("kind") == "vocabulario" and e.get("tipo") != "kanji":
                     vocab_jp.add(jp)
-        # ponytail: una consulta por ítem (≈800), igual que la página de temario.
-        # Página de solo lectura y poco tráfico; el batch (estado_items_bulk) se
-        # aparca para la Fase 18 (limpieza), es más que el alcance de la Fase 14.
+        estados = self.estado_items_bulk(
+            [(jp, "vocabulario") for jp in vocab_jp]
+            + [(jp, "gramatica") for jp in gram_jp]
+        )
         vocab_sabido = sum(1 for jp in vocab_jp
-                           if self.estado_item(jp, "vocabulario") == "sabido")
+                           if estados[(jp, "vocabulario")] == "sabido")
         gram_sabido = sum(1 for jp in gram_jp
-                          if self.estado_item(jp, "gramatica") == "sabido")
+                          if estados[(jp, "gramatica")] == "sabido")
 
         perfil = self.resumen_perfil()
 

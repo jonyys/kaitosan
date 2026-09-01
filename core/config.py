@@ -84,10 +84,10 @@ ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "kaito123")
 
 # Sensei — ritmo de introducción
 MAX_ITEMS_NUEVOS = 2   # ítems (estado 'nuevo') que el can-do activo introduce por sesión
-# Fase 09: el profesor ya no orquesta por cola SRS. THROTTLE_DUE deja de "frenar
-# ítems nuevos por repasos vencidos" y pasa a ser el tamaño máximo de la lista de
-# puntos débiles que se cuela en el FOCO. (`due_count` sigue existiendo en
-# resumen_perfil, pero solo para el SRS de kanji / juego del Bloque IV.)
+# Fase 09: el profesor ya no orquesta por cola SRS. La cola `due` de vocab/gram
+# solo la mueve el juego web (Bloque IV) y el SRS de kanji; el profesor no la
+# toca (`due_count` de resumen_perfil vale solo para eso). THROTTLE_DUE ya no
+# frena ítems nuevos: hoy es solo el tope de la lista de puntos débiles del FOCO.
 THROTTLE_DUE = 12
 # Fase 09: chequeo de óxido — cada cuántas sesiones el FOCO incluye una muestra
 # de vocabulario ya 'sabido' de unidades pasadas. Knob, se afina con datos.
@@ -96,6 +96,9 @@ CHEQUEO_OXIDO_CADA = 5
 # Nivel de inmersión (1→4): cuánto japonés habla Kaito. Se calcula solo a partir
 # del vocabulario dominado (learned + mastered); estos son los umbrales de salto.
 # NIVEL_INMERSION=3 en el entorno lo fija a mano para probar.
+# Knob: pendiente de afinar con el ritmo real del juego web (Bloque IV) — Laura
+# acumulará 'sabido' más rápido, así que casi seguro suben. No se cambian ahora,
+# se ajustan con datos de uso real.
 NIVEL_INMERSION_UMBRALES = (15, 40, 80)
 NIVEL_INMERSION_FORZADO = int(os.getenv("NIVEL_INMERSION", "0")) or None
 
