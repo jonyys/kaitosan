@@ -24,7 +24,7 @@ CURRICULUM = [
         'tipo': 'expresión',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Ah' de caer en algo; alargado (「ああ…」) marca duda, fastidio o resignación."
       },
       {
         'kind': 'vocabulario',
@@ -44,7 +44,7 @@ CURRICULUM = [
         'tipo': 'expresión',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Sí' en tono algo más formal o de escucha atenta que 「うん」; menos tajante que 「はい」."
       },
       {
         'kind': 'vocabulario',
@@ -54,7 +54,7 @@ CURRICULUM = [
         'tipo': 'expresión',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'Prefijo de cortesía; obligatorio en algunas palabras (「お茶」「お金」「お風呂」) y opcional en otras. Abusar de él suena remilgado, sobre todo en un hombre.'
       },
       {
         'kind': 'vocabulario',
@@ -64,7 +64,7 @@ CURRICULUM = [
         'tipo': 'expresión',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Para animar ('venga, vamos') o para expresar que no se sabe: 「さあ…」 encogiéndose de hombros."
       },
       {
         'kind': 'vocabulario',
@@ -74,7 +74,7 @@ CURRICULUM = [
         'tipo': 'expresión',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "「そうです」 confirma lo dicho por el otro ('así es'). Tras una frase entera, 「～そうです」 es 'dicen que ~'. 「そう？」 = '¿ah, sí?'."
       },
       {
         'kind': 'vocabulario',
@@ -84,7 +84,7 @@ CURRICULUM = [
         'tipo': 'expresión',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Se dice al ceder algo: el turno, el paso, un asiento, una taza de té. Responde a una petición: 'adelante', 'sírvase'."
       },
       {
         'kind': 'vocabulario',
@@ -94,7 +94,7 @@ CURRICULUM = [
         'tipo': 'expresión',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Comodín: 'gracias' (「どうもありがとう」 acortado), 'hola', 'perdona' o 'no sé por qué' (「どうも調子が悪い」). Solo, es un agradecimiento rápido e informal."
       },
       {
         'kind': 'vocabulario',
@@ -114,7 +114,7 @@ CURRICULUM = [
         'tipo': 'expresión',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'Casi solo al teléfono, al descolgar o si se corta la voz. En persona, para llamar a un desconocido, mejor 「すみません」.'
       },
       {
         'kind': 'vocabulario',
@@ -124,7 +124,7 @@ CURRICULUM = [
         'tipo': 'expresión',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Sirve para 'estoy bien' y también para rechazar con suavidad: ante 「コーヒーいかがですか」, 「大丈夫です」 significa 'no, gracias'."
       },
       {
         'kind': 'vocabulario',
@@ -134,7 +134,7 @@ CURRICULUM = [
         'tipo': 'pronombre',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Para dirigirse con respeto a un grupo ('todos ustedes'). Entre amigos se dice 「みんな」."
       },
       {
         'kind': 'vocabulario',
@@ -144,7 +144,7 @@ CURRICULUM = [
         'tipo': 'expresión',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Dos caras: 'estupendo, de acuerdo' al aprobar algo y 'no, gracias' al rechazar un ofrecimiento; el tono lo desambigua. Como adverbio, 'bastante'."
       },
       {
         'kind': 'vocabulario',
@@ -154,7 +154,7 @@ CURRICULUM = [
         'tipo': 'expresión',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'Detrás del apellido o el nombre; nunca sobre uno mismo. Con cercanía o niños, 「くん」/「ちゃん」; en contexto muy formal, 「さま」.'
       }
     ]
   },
@@ -190,10 +190,10 @@ CURRICULUM = [
       {
         'kind': 'gramatica',
         'jp': 'じゃありません',
-        'meaning': "cópula negativa hablada: 'no es / no son' (más natural que ではありません)",
-        'ejemplo': '',
-        'literal': '',
-        'uso': ''
+        'meaning': "cópula negativa hablada: 'no es / no son' (contracción de ではありません)",
+        'ejemplo': 'わたしは がくせいじゃありません',
+        'literal': 'yo-TEMA / estudiante-no-soy',
+        'uso': 'La forma normal de negar al hablar; 「ではありません」 suena de discurso o de examen. Aún más coloquial: 「じゃないです」.'
       },
       {
         'kind': 'gramatica',
@@ -206,10 +206,10 @@ CURRICULUM = [
       {
         'kind': 'gramatica',
         'jp': 'ではありませんでした',
-        'meaning': "cópula formal negativa en pasado: 'no era / no fueron'",
-        'ejemplo': '',
-        'literal': '',
-        'uso': ''
+        'meaning': "cópula formal negativa en pasado: 'no era / no fue'",
+        'ejemplo': 'きのうは 休みではありませんでした',
+        'literal': 'ayer-TEMA / descanso-no-fue',
+        'uso': 'Muy formal y bastante larga; en conversación se dice 「じゃなかったです」 o 「じゃありませんでした」.'
       },
       {
         'kind': 'gramatica',
@@ -243,14 +243,21 @@ CURRICULUM = [
         'literal': 'anoche / no-dormí',
         'uso': 'dos piezas pegadas: negativo + pasado. Es larga, por eso en informal se abrevia a 〜なかった'
       },
-      {'kind': 'gramatica', 'jp': '〜ましょう', 'meaning': "sugerencia formal: 'hagamos X / vamos a X'"},
+      {
+        'kind': 'gramatica',
+        'jp': '〜ましょう',
+        'meaning': "propuesta en primera persona del plural: 'hagamos ~ / vamos a ~'",
+        'ejemplo': 'いっしょに ひるごはんを 食べましょう',
+        'literal': 'juntos / almuerzo-OBJ / comamos',
+        'uso': 'Propones algo dando por hecho que el otro acepta; si no lo tienes claro, usa 「〜ましょうか」 o 「〜ませんか」, que dejan salida.'
+      },
       {
         'kind': 'gramatica',
         'jp': '〜ましょうか',
-        'meaning': "ofrecimiento o propuesta: '¿hacemos ~?' / '¿te ayudo con ~?'",
-        'ejemplo': '',
-        'literal': '',
-        'uso': ''
+        'meaning': "ofrecimiento ('¿te ayudo con ~?') o propuesta tanteando ('¿hacemos ~?')",
+        'ejemplo': 'にもつを 持ちましょうか',
+        'literal': 'equipaje-OBJ / ¿lo-llevo-yo?',
+        'uso': 'Con 「か」 suena menos impositivo que 「〜ましょう」: dejas la decisión en el otro. Es la fórmula típica para ofrecer ayuda.'
       },
       {
         'kind': 'vocabulario',
@@ -260,7 +267,7 @@ CURRICULUM = [
         'tipo': 'pronombre',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Entre desconocidos o hacia un superior suena distante o brusco; se usa el nombre + 「さん」 o el cargo. Entre parejas, dicho por la mujer al marido, equivale a 'cariño'."
       },
       {
         'kind': 'vocabulario',
@@ -280,7 +287,7 @@ CURRICULUM = [
         'tipo': 'pronombre',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'El pronombre se omite casi siempre; solo se dice para contrastar. 「わたくし」 es muy formal (trabajo, discursos); 「わたし」 sirve para todo; 「あたし」 lo usan mujeres en tono informal.'
       },
       {
         'kind': 'vocabulario',
@@ -290,7 +297,7 @@ CURRICULUM = [
         'tipo': 'pronombre',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Vale para 'yo mismo' y para 'uno mismo' en general según el contexto. En habla masculina informal y en Kansai, 「自分」 puede llegar a significar 'tú'."
       }
     ]
   },
@@ -310,18 +317,18 @@ CURRICULUM = [
       {
         'kind': 'gramatica',
         'jp': '疑問詞+か',
-        'meaning': 'interrogativo + か: algo / alguien / en algún sitio (indefinido afirmativo)',
-        'ejemplo': '',
-        'literal': '',
-        'uso': ''
+        'meaning': 'interrogativo + か -> indefinido afirmativo: algo, alguien, en algún sitio, alguna vez',
+        'ejemplo': 'かばんの なかに 何か ありますか',
+        'literal': 'bolso-DE / dentro-EN / algo / ¿hay?',
+        'uso': "Con 「だれか」, 「どこか」, 「いつか」, 「なにか」 la pregunta se vuelve un indefinido ('alguien', 'algún sitio'). La partícula 「は」/「が」/「を」 suele caerse al hablar."
       },
       {
         'kind': 'gramatica',
         'jp': '疑問詞+も',
-        'meaning': 'interrogativo + も + verbo negativo: nada / nadie / en ningún sitio',
-        'ejemplo': '',
-        'literal': '',
-        'uso': ''
+        'meaning': 'interrogativo + も + verbo en negativo -> nada, nadie, en ningún sitio',
+        'ejemplo': 'きょうは どこも 行きません',
+        'literal': 'hoy-TEMA / a-ningún-sitio / no-voy',
+        'uso': "Pide verbo en negativo: 「だれもいません」 ('no hay nadie'). En afirmativo el sentido cambia a 'todos/cualquiera', pero para N5 quédate con el negativo."
       },
       {
         'kind': 'vocabulario',
@@ -341,7 +348,7 @@ CURRICULUM = [
         'tipo': 'pronombre',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Allí' o 'aquella persona' en cortés. Versión llana: 「あっち」, que no se usa delante de un superior o un cliente."
       },
       {
         'kind': 'vocabulario',
@@ -351,7 +358,7 @@ CURRICULUM = [
         'tipo': 'pronombre',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'Forma llana de 「あちら」; entre iguales. Señalar así a una persona resulta grosero.'
       },
       {
         'kind': 'vocabulario',
@@ -361,7 +368,7 @@ CURRICULUM = [
         'tipo': 'pronombre',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Además de 'aquel', alargado (「あのう…」) es la muletilla para pedir la palabra o abordar a alguien con tacto: 'oye…', 'perdona…'."
       },
       {
         'kind': 'vocabulario',
@@ -401,7 +408,7 @@ CURRICULUM = [
         'tipo': 'pronombre',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Para presentar a alguien: 「こちらは田中さんです」. También es un 'yo/nosotros' cortés al teléfono o en una tienda."
       },
       {
         'kind': 'vocabulario',
@@ -411,7 +418,7 @@ CURRICULUM = [
         'tipo': 'pronombre',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'Forma llana de 「こちら」; natural entre amigos, cortante con un superior.'
       },
       {
         'kind': 'vocabulario',
@@ -461,7 +468,7 @@ CURRICULUM = [
         'tipo': 'pronombre',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Ahí, tu lado' en tono cortés; también alude a tu interlocutor o a su empresa. Versión llana: 「そっち」."
       },
       {
         'kind': 'vocabulario',
@@ -471,7 +478,7 @@ CURRICULUM = [
         'tipo': 'pronombre',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'Forma llana de 「そちら」; entre iguales. Con un cliente o un jefe, 「そちら」.'
       },
       {
         'kind': 'vocabulario',
@@ -511,7 +518,7 @@ CURRICULUM = [
         'tipo': 'pronombre',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Por qué' neutro en conversación; también puede ser '¿cómo?' (「どうして分かったの」). Casual: 「なんで」."
       },
       {
         'kind': 'vocabulario',
@@ -591,7 +598,7 @@ CURRICULUM = [
         'tipo': 'pronombre',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'Más propio de texto escrito o pregunta formal; al hablar es más normal 「どうして」, y en tono casual 「なんで」.'
       },
       {
         'kind': 'vocabulario',
@@ -601,7 +608,7 @@ CURRICULUM = [
         'tipo': 'pronombre',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'Se lee 「なん」 antes de 「です」, 「た」, 「の」 y los contadores (「何時」「何人」); 「なに」 en el resto (「何を」「何が」).'
       },
       {
         'kind': 'vocabulario',
@@ -715,27 +722,34 @@ CURRICULUM = [
       {
         'kind': 'gramatica',
         'jp': 'から',
-        'meaning': 'partícula: desde / a partir de (lugar, tiempo o motivo)',
-        'ejemplo': '',
-        'literal': '',
-        'uso': ''
+        'meaning': "partícula: 'desde ~ / a partir de ~' (punto de inicio en lugar o tiempo)",
+        'ejemplo': '九時から しごとです',
+        'literal': 'nueve-horas-DESDE / trabajo-es',
+        'uso': "Marca de dónde o de cuándo arranca algo; se empareja con 「まで」 para el otro extremo. Detrás de una frase entera, 「から」 significa 'porque'."
       },
-      {'kind': 'gramatica', 'jp': 'まで', 'meaning': "límite: 'hasta X' (tiempo, lugar o condición)"},
+      {
+        'kind': 'gramatica',
+        'jp': 'まで',
+        'meaning': "partícula: 'hasta ~' (límite de lugar, tiempo o cantidad)",
+        'ejemplo': 'えきまで あるきます',
+        'literal': 'estación-HASTA / voy-andando',
+        'uso': "El tope de un recorrido o de un plazo; va con 「から」. No lo confundas con 「までに」, que es 'antes de (una fecha límite)'."
+      },
       {
         'kind': 'gramatica',
         'jp': 'や',
-        'meaning': "partícula 'y' para listas no exhaustivas: A や B (entre otras cosas)",
-        'ejemplo': '',
-        'literal': '',
-        'uso': ''
+        'meaning': "partícula 'y' para listas abiertas: 'A や B (entre otras cosas)'",
+        'ejemplo': 'つくえの うえに ノートや ペンが あります',
+        'literal': 'mesa-DE / encima-EN / cuaderno-Y / boli-SUJ / hay',
+        'uso': 'Citas solo algunos ejemplos, no la lista entera; 「と」 en cambio da la lista cerrada. Suele rematarse con 「など」.'
       },
       {
         'kind': 'gramatica',
         'jp': 'へ',
-        'meaning': "partícula de dirección: hacia ~ (se pronuncia 'e')",
-        'ejemplo': '',
-        'literal': '',
-        'uso': ''
+        'meaning': "partícula de dirección: 'hacia ~ / a ~' (se pronuncia 'e')",
+        'ejemplo': 'らいしゅう 京都へ 行きます',
+        'literal': 'semana-que-viene / Kioto-HACIA / voy',
+        'uso': "Casi intercambiable con 「に」 para destinos; 「へ」 pone el acento en el trayecto y 「に」 en el punto de llegada. Se escribe 「へ」 pero se pronuncia 'e'."
       },
       {
         'kind': 'gramatica',
@@ -764,10 +778,10 @@ CURRICULUM = [
       {
         'kind': 'gramatica',
         'jp': 'という',
-        'meaning': "cita o definición: 'que se llama ~' / 'que dice que ~'",
-        'ejemplo': '',
-        'literal': '',
-        'uso': ''
+        'meaning': "'llamado ~ / que se llama ~': introduce un nombre o una cita",
+        'ejemplo': '「こんにちは」という ことばを つかいます',
+        'literal': "'hola'-LLAMADO / palabra-OBJ / uso",
+        'uso': 'Para presentar algo por su nombre cuando el oyente no lo conoce, o para citar lo dicho. En charla informal se oye 「っていう」.'
       }
     ]
   },
@@ -882,7 +896,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Es el 「とる」 de hacer fotos y grabar vídeo (「写真をとる」). Para 'coger algo' es 「取る」, que se pronuncia igual."
       },
       {
         'kind': 'vocabulario',
@@ -987,7 +1001,7 @@ CURRICULUM = [
         'tipo': 'número',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "La serie 「ひとつ・ふたつ…とお」 cuenta hasta diez cosas cualesquiera cuando no sabes o no hace falta el contador exacto. 「一つ」 al pedir algo lo suaviza: 'uno, por favor'."
       },
       {
         'kind': 'vocabulario',
@@ -1247,7 +1261,7 @@ CURRICULUM = [
         'tipo': 'contador',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'El yen no tiene decimales; 「四円」 se lee 「よえん」. Al hablar de precios el número entero va pegado: 「せんえん」.'
       },
       {
         'kind': 'vocabulario',
@@ -1257,7 +1271,7 @@ CURRICULUM = [
         'tipo': 'contador',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': '1, 8 y a menudo 10 y 20 se contraen: 「いっさい」「はっさい」「じゅっさい」. Los 20 años tienen forma propia: 「はたち」.'
       },
       {
         'kind': 'vocabulario',
@@ -1267,7 +1281,7 @@ CURRICULUM = [
         'tipo': 'contador',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Número X' de una serie o el turno. 「一番」 además significa 'el primero' o 'el más ~' (「一番高い」)."
       }
     ]
   },
@@ -1292,7 +1306,7 @@ CURRICULUM = [
         'tipo': 'número',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Irregular: 「ひとり」. Además de 'una persona', 'solo, sin compañía' (「一人で行く」)."
       },
       {
         'kind': 'vocabulario',
@@ -1302,7 +1316,7 @@ CURRICULUM = [
         'tipo': 'número',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'Irregular: 「ふたり」. De tres en adelante ya es 「さんにん」…'
       },
       {
         'kind': 'vocabulario',
@@ -1312,7 +1326,7 @@ CURRICULUM = [
         'tipo': 'contador',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Cuenta duración en meses ('durante X meses'). No lo confundas con 「～月」 (「がつ」), que nombra el mes del año."
       },
       {
         'kind': 'vocabulario',
@@ -1322,7 +1336,7 @@ CURRICULUM = [
         'tipo': 'contador',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': '1 y 2 personas son irregulares: 「ひとり」「ふたり」; de 3 en adelante, 「～にん」. Con un país forma el gentilicio: 「～じん」 (「日本人」).'
       },
       {
         'kind': 'vocabulario',
@@ -1332,7 +1346,7 @@ CURRICULUM = [
         'tipo': 'contador',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'Cosas pequeñas y compactas sin forma propia (fruta, piezas). 1, 6, 8, 10 se contraen: 「いっこ」「ろっこ」「はっこ」「じゅっこ」.'
       },
       {
         'kind': 'vocabulario',
@@ -1342,7 +1356,7 @@ CURRICULUM = [
         'tipo': 'contador',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'Libros, cuadernos y revistas. 1, 8, 10: 「いっさつ」「はっさつ」「じゅっさつ」.'
       },
       {
         'kind': 'vocabulario',
@@ -1352,7 +1366,7 @@ CURRICULUM = [
         'tipo': 'contador',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'Animales pequeños. La consonante cambia: 「いっぴき」「にひき」「さんびき」「ろっぴき」.'
       },
       {
         'kind': 'vocabulario',
@@ -1362,7 +1376,7 @@ CURRICULUM = [
         'tipo': 'contador',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'Coches, bicicletas, máquinas y aparatos (ordenador, nevera, televisión).'
       },
       {
         'kind': 'vocabulario',
@@ -1372,7 +1386,7 @@ CURRICULUM = [
         'tipo': 'contador',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'Número de veces que se repite algo. Muy próximo a 「～度」, pero 「～回」 subraya la repetición.'
       },
       {
         'kind': 'vocabulario',
@@ -1382,7 +1396,7 @@ CURRICULUM = [
         'tipo': 'contador',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Veces' insistiendo en la ocasión concreta (「今度」 'esta vez'); también 'grados' de temperatura o de ángulo."
       },
       {
         'kind': 'vocabulario',
@@ -1392,7 +1406,7 @@ CURRICULUM = [
         'tipo': 'contador',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'Objetos largos y finos (botellas, paraguas, bolis, árboles) y también llamadas, trenes y películas. Suena 「いっぽん」「さんぼん」「ろっぽん」.'
       },
       {
         'kind': 'vocabulario',
@@ -1402,7 +1416,7 @@ CURRICULUM = [
         'tipo': 'contador',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Vasos, tazas y cuencos con su contenido. Suena 「いっぱい」「さんばい」「ろっぱい」. 「いっぱい」 aparte significa 'lleno'."
       },
       {
         'kind': 'vocabulario',
@@ -1412,7 +1426,7 @@ CURRICULUM = [
         'tipo': 'contador',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'Cosas planas y finas: hojas, sellos, camisetas, platos, entradas.'
       }
     ]
   },
@@ -1477,7 +1491,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "「いちにち」 = 'un día (de duración)'; 「ついたち」 = 'el día 1 del mes'."
       },
       {
         'kind': 'vocabulario',
@@ -1547,7 +1561,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'Los 20 años, con lectura propia 「はたち」; marca la mayoría de edad en Japón.'
       },
       {
         'kind': 'vocabulario',
@@ -1637,7 +1651,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Descanso, vacaciones, día libre' y también 'falta de asistencia' (「学校が休み」)."
       },
       {
         'kind': 'vocabulario',
@@ -1777,7 +1791,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Año' y también 'edad': 「年を取る」 'hacerse mayor', 「年上」 'mayor que uno'."
       },
       {
         'kind': 'vocabulario',
@@ -1797,7 +1811,7 @@ CURRICULUM = [
         'tipo': 'adjetivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Temprano' en el tiempo (「朝が早い」). 'Rápido' de velocidad se escribe 「速い」, con la misma lectura 「はやい」."
       },
       {
         'kind': 'vocabulario',
@@ -1847,7 +1861,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Vale para 'mediodía', 'de día' (frente a 「夜」) y 'almuerzo' (「昼を食べる」)."
       },
       {
         'kind': 'vocabulario',
@@ -1857,7 +1871,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Noche' de la tarde-noche, sobre todo en compuestos: 「今晩」「毎晩」「晩ごはん」. Para la noche en general, 「夜」."
       },
       {
         'kind': 'vocabulario',
@@ -2007,7 +2021,7 @@ CURRICULUM = [
         'tipo': 'adjetivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Vale para 'lento' (poca velocidad) y para 'tarde' (「もう遅い」)."
       },
       {
         'kind': 'vocabulario',
@@ -2027,7 +2041,7 @@ CURRICULUM = [
         'tipo': 'contador',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Momento aproximado en el tiempo: 「三時ごろ」 'hacia las tres', 「子供のころ」 'de niño'. Para cantidades aproximadas se usa 「くらい・ぐらい」."
       },
       {
         'kind': 'vocabulario',
@@ -2037,7 +2051,7 @@ CURRICULUM = [
         'tipo': 'contador',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Se lee 「じゅう」 para 'todo el / durante todo' (「一日中」 'todo el día'); 「ちゅう」 para 'en pleno' (「勉強中」 'estudiando ahora')."
       },
       {
         'kind': 'vocabulario',
@@ -2047,7 +2061,7 @@ CURRICULUM = [
         'tipo': 'contador',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'Minutos. La consonante cambia: 「いっぷん」「さんぷん」「よんふん」「ろっぷん」.'
       },
       {
         'kind': 'vocabulario',
@@ -2067,7 +2081,7 @@ CURRICULUM = [
         'tipo': 'contador',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Del 1 al 10 y el 14, 20 y 24 tienen lectura especial (「ついたち」「ふつか」「はつか」…). Vale para el día del mes y para 'durante X días'."
       },
       {
         'kind': 'vocabulario',
@@ -2077,7 +2091,7 @@ CURRICULUM = [
         'tipo': 'contador',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "「じ」 marca la hora en punto (「三時」); 「とき」 es 'cuando ~' (「子供のとき」)."
       },
       {
         'kind': 'vocabulario',
@@ -2087,7 +2101,7 @@ CURRICULUM = [
         'tipo': 'contador',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Durante X horas' (duración). El punto de la hora es 「～時」, sin 「間」."
       },
       {
         'kind': 'vocabulario',
@@ -2097,7 +2111,7 @@ CURRICULUM = [
         'tipo': 'contador',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Nombra el mes: 「一月」 = 'enero'. Para preguntar cuántos meses dura algo se usa 「何か月」."
       },
       {
         'kind': 'vocabulario',
@@ -2132,7 +2146,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'Verbo comodín: 「電話をかける」 (llamar), 「いすにかける」 (sentarse), 「めがねをかける」 (ponerse gafas), 「時間をかける」 (dedicar tiempo).'
       },
       {
         'kind': 'vocabulario',
@@ -2152,7 +2166,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Volverse, llegar a ser'. Con adjetivo-い va 「くなる」; con adjetivo-な y sustantivos, 「になる」. También en fórmulas de cortesía (「お世話になる」)."
       },
       {
         'kind': 'vocabulario',
@@ -2162,7 +2176,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Hacer', versión llana y algo brusca de 「する」, entre amigos. También 'dar' a alguien de menos rango, a plantas o animales (「花に水をやる」), donde a un igual se diría 「あげる」."
       },
       {
         'kind': 'vocabulario',
@@ -2172,7 +2186,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Levantar, subir' (「手を上げる」). Se solapa en sonido con 「あげる」 'dar'. Su pareja intransitiva es 「上がる」 'subir (por sí solo)'."
       },
       {
         'kind': 'vocabulario',
@@ -2182,7 +2196,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Intransitivo: 'ponerse en fila, hacer cola' (「店の前に並ぶ」). Colocar cosas en fila es 「並べる」."
       },
       {
         'kind': 'vocabulario',
@@ -2192,7 +2206,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Transitivo: 'colocar en fila u ordenar' (「皿を並べる」). Que las cosas 'estén en fila' es 「並ぶ」."
       },
       {
         'kind': 'vocabulario',
@@ -2212,7 +2226,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Trabajar' como actividad; el lugar lleva 「で」: 「工場で働く」. Para decir en qué empresa estás empleado, 「～に勤める」."
       },
       {
         'kind': 'vocabulario',
@@ -2222,7 +2236,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Transitivo: 'meter, poner dentro' (「かばんに入れる」); también 「電気を入れる」 (encender), 「コーヒーを入れる」 (preparar). Que algo 'entre' es 「入る」."
       },
       {
         'kind': 'vocabulario',
@@ -2242,7 +2256,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Sacar' (「かばんから出す」), pero también 「手紙を出す」 (echar al correo), 「宿題を出す」 (entregar), 「お金を出す」 (poner el dinero)."
       },
       {
         'kind': 'vocabulario',
@@ -2262,7 +2276,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Cortar', y además 「電話を切る」 (colgar), 「スイッチを切る」 (apagar). Se pronuncia igual que 「着る」 'ponerse ropa'."
       },
       {
         'kind': 'vocabulario',
@@ -2282,7 +2296,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Trabajar para' una empresa; el sitio lleva 「に」: 「銀行に勤める」. 「働く」 se centra en la acción de currar y lleva 「で」."
       },
       {
         'kind': 'vocabulario',
@@ -2292,7 +2306,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Coger, quitar', pero también 'apuntarse a' una clase, 'tomar' notas y 「年を取る」 'cumplir años'."
       },
       {
         'kind': 'vocabulario',
@@ -2302,7 +2316,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Llamar' por el nombre o para que alguien venga (「名前を呼ぶ」); también 'invitar' (「パーティーに呼ぶ」). Llamar por teléfono es 「電話をかける」."
       },
       {
         'kind': 'vocabulario',
@@ -2312,7 +2326,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'No saber qué hacer, estar en un apuro'. Muy usado como 「困っている」 y con condición: 「来られると困る」 'me viene mal que vengas'."
       },
       {
         'kind': 'vocabulario',
@@ -2322,7 +2336,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Existencia de cosas y hechos (「時間がある」 'tener tiempo'); para personas y animales se usa 「いる」. Casi siempre se escribe en kana, 「ある」."
       },
       {
         'kind': 'vocabulario',
@@ -2342,7 +2356,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'Existencia de personas y animales (「猫がいる」); para cosas se usa 「ある」. Se escribe casi siempre en kana, 「いる」.'
       },
       {
         'kind': 'vocabulario',
@@ -2362,7 +2376,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Tirar de' algo (「ドアを引く」), y además 「風邪を引く」 (coger un resfriado), 「辞書を引く」 (buscar en el diccionario), restar. Suena como 「弾く」 'tocar (piano, guitarra)'."
       },
       {
         'kind': 'vocabulario',
@@ -2382,7 +2396,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Empujar' y 'pulsar' (「ボタンを押す」). En las puertas japonesas, 「押す」 = empujar, 「引く」 = tirar."
       },
       {
         'kind': 'vocabulario',
@@ -2422,7 +2436,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Haber, tener' cosas y hechos (「お金がある」). Para seres vivos, 「いる」. Se escribe casi siempre en kana, 「ある」."
       },
       {
         'kind': 'vocabulario',
@@ -2442,7 +2456,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Transitivo: 'entregar algo en mano' (「書類を渡す」). Cruzar (una calle, un puente) es 「渡る」."
       },
       {
         'kind': 'vocabulario',
@@ -2452,7 +2466,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Perder' algo por descuido (「かぎを無くす」). Que algo 'desaparezca' solo es 「無くなる」."
       },
       {
         'kind': 'vocabulario',
@@ -2482,7 +2496,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Mostrar' algo a alguien a propósito (「写真を見せる」). Que algo 'se vea' o 'poder ver' es 「見える」."
       },
       {
         'kind': 'vocabulario',
@@ -2502,7 +2516,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'Se pronuncia 「ゆう」. En 「～という」 sirve para citar o para presentar un nombre (「田中という人」).'
       },
       {
         'kind': 'vocabulario',
@@ -2805,7 +2819,7 @@ CURRICULUM = [
         'tipo': 'adjetivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': '「いい」 solo vale en presente afirmativo; para lo demás cambia a 「よい」: 「よくない」「よかった」「よくて」. 「よい」 suena algo más formal.'
       },
       {
         'kind': 'vocabulario',
@@ -2815,7 +2829,7 @@ CURRICULUM = [
         'tipo': 'adjetivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Ruidoso, molesto'; también 'quisquilloso' con algo (「味にうるさい」). 「うるさい！」 a secas es un '¡cállate!'."
       },
       {
         'kind': 'vocabulario',
@@ -2825,7 +2839,7 @@ CURRICULUM = [
         'tipo': 'adjetivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Aburrido, insignificante'. En 「つまらないものですが」 es la fórmula humilde al entregar un regalo."
       },
       {
         'kind': 'vocabulario',
@@ -2865,7 +2879,7 @@ CURRICULUM = [
         'tipo': 'adjetivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'No se usa para uno mismo (suena a fanfarronada); ahí se dice 「できる」. De otra persona es un elogio: 「日本語が上手ですね」.'
       },
       {
         'kind': 'vocabulario',
@@ -2875,7 +2889,7 @@ CURRICULUM = [
         'tipo': 'adjetivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'Sí se puede decir de uno mismo, como modestia. Soltárselo a otro a la cara es grosero.'
       },
       {
         'kind': 'vocabulario',
@@ -2905,7 +2919,7 @@ CURRICULUM = [
         'tipo': 'adjetivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Peligroso'; gritado, 「あぶない！」 es '¡cuidado!'."
       },
       {
         'kind': 'vocabulario',
@@ -2915,7 +2929,7 @@ CURRICULUM = [
         'tipo': 'adjetivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Grueso' (「厚い本」). Se pronuncia como 「暑い」 'caluroso' y 「熱い」 'caliente'."
       },
       {
         'kind': 'vocabulario',
@@ -2955,7 +2969,7 @@ CURRICULUM = [
         'tipo': 'adjetivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'Solo delante de un nombre (「大きな家」); no se predica: para eso, 「大きい」.'
       },
       {
         'kind': 'vocabulario',
@@ -2965,7 +2979,7 @@ CURRICULUM = [
         'tipo': 'adjetivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Como adverbio, 'muy' (「大変うれしい」, formal); como adjetivo-な, 'duro, penoso' (「大変な仕事」)."
       },
       {
         'kind': 'vocabulario',
@@ -2985,7 +2999,7 @@ CURRICULUM = [
         'tipo': 'adjetivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'Solo delante de un nombre (「小さな声」); para predicar, 「小さい」.'
       },
       {
         'kind': 'vocabulario',
@@ -3025,7 +3039,7 @@ CURRICULUM = [
         'tipo': 'adjetivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Luminoso' y también 'alegre, abierto' de carácter (「明るい人」). Opuesto: 「暗い」."
       },
       {
         'kind': 'vocabulario',
@@ -3035,7 +3049,7 @@ CURRICULUM = [
         'tipo': 'adjetivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Fácil'. Se pronuncia igual que 「優しい」 'amable'; el contexto los distingue."
       },
       {
         'kind': 'vocabulario',
@@ -3185,66 +3199,66 @@ CURRICULUM = [
       {
         'kind': 'gramatica',
         'jp': '〜やすいです',
-        'meaning': 'facilidad: fácil de hacer ~',
-        'ejemplo': '',
-        'literal': '',
-        'uso': ''
+        'meaning': "'fácil de ~': verbo en raíz-ます + やすい",
+        'ejemplo': 'この ペンは 書きやすいです',
+        'literal': 'este / boli-TEMA / fácil-de-escribir-es',
+        'uso': 'Se forma sobre la raíz de 「ます」 (「かきます」 -> 「かき」+「やすい」) y se conjuga como adjetivo-い. Opuesto: 「にくい」.'
       },
       {
         'kind': 'gramatica',
         'jp': '〜にくいです',
-        'meaning': 'dificultad: difícil de hacer ~',
-        'ejemplo': '',
-        'literal': '',
-        'uso': ''
+        'meaning': "'difícil de ~ / cuesta ~': verbo en raíz-ます + にくい",
+        'ejemplo': 'この くすりは 飲みにくいです',
+        'literal': 'esta / medicina-TEMA / difícil-de-tragar-es',
+        'uso': "No es que no se pueda, es que resulta incómodo o costoso; para 'no puedo' va el potencial. Se conjuga como adjetivo-い: 「にくかった」."
       },
       {
         'kind': 'gramatica',
         'jp': '〜くなります',
-        'meaning': 'cambio de estado con adjetivo-い: volverse / ponerse ~',
-        'ejemplo': '',
-        'literal': '',
-        'uso': ''
+        'meaning': "cambio de estado con adjetivo-い: 'volverse ~ / ponerse ~'",
+        'ejemplo': 'はるに なると あたたかくなります',
+        'literal': 'primavera-A / al-llegar / se-vuelve-cálido',
+        'uso': 'El adjetivo-い pierde 「い」, toma 「く」 y se le añade 「なる」. El cambio ocurre solo; si alguien lo provoca, es 「くします」.'
       },
       {
         'kind': 'gramatica',
         'jp': '〜になります',
-        'meaning': 'cambio de estado con adjetivo-な o sustantivo: volverse / convertirse en ~',
-        'ejemplo': '',
-        'literal': '',
-        'uso': ''
+        'meaning': "cambio de estado con adjetivo-な o sustantivo: 'llegar a ser ~ / convertirse en ~'",
+        'ejemplo': 'らいねん 二十歳に なります',
+        'literal': 'año-que-viene / veinte-años-A / me-hago',
+        'uso': 'Para adjetivo-な y sustantivos: 「に」 + 「なる」. Para adjetivo-い es 「くなります」. Muy usado con edad, hora y profesión.'
       },
       {
         'kind': 'gramatica',
         'jp': '〜くします',
-        'meaning': 'provocar un cambio con adjetivo-い: hacer que algo quede ~',
-        'ejemplo': '',
-        'literal': '',
-        'uso': ''
+        'meaning': "provocar un cambio con adjetivo-い: 'hacer que algo quede ~'",
+        'ejemplo': 'へやを あかるくします',
+        'literal': 'habitación-OBJ / la-pongo-luminosa',
+        'uso': 'El adjetivo-い pierde 「い」, toma 「く」 y se le añade 「する」: alguien cambia algo a propósito, frente a 「くなります」, que pasa solo.'
       },
       {
         'kind': 'gramatica',
         'jp': '〜にします',
-        'meaning': 'provocar un cambio o elegir: hacer que algo sea ~ / decidirse por ~',
-        'ejemplo': '',
-        'literal': '',
-        'uso': ''
+        'meaning': "provocar un cambio, o elegir: 'dejar algo ~ / decidirse por ~'",
+        'ejemplo': 'わたしは コーヒーに します',
+        'literal': 'yo-TEMA / café-A / me-decido',
+        'uso': 'Dos usos: cambiar algo aposta (「しずかにしてください」) y elegir al pedir (「わたしはこれにします」). Con adjetivo-な y sustantivos.'
       },
       {
         'kind': 'gramatica',
         'jp': '〜くて',
         'meaning': 'forma-て del adjetivo-い: enlaza cualidades o da un motivo',
-        'ejemplo': '',
-        'literal': '',
-        'uso': ''
+        'ejemplo': 'この へやは ひろくて あかるいです',
+        'literal': 'esta / habitación-TEMA / ancha-y / luminosa-es',
+        'uso': 'El adjetivo-い pasa a 「くて」 para encadenar dos cualidades o dar una causa (「あたまがいたくてねました」). Nunca 「いで」.'
       },
       {
         'kind': 'gramatica',
         'jp': '〜で（な形容詞）',
-        'meaning': 'forma-て del adjetivo-な (y de sustantivos): enlaza o da un motivo',
-        'ejemplo': '',
-        'literal': '',
-        'uso': ''
+        'meaning': 'forma-て del adjetivo-な y del sustantivo: enlaza o da un motivo',
+        'ejemplo': 'この まちは しずかで きれいです',
+        'literal': 'esta / ciudad-TEMA / tranquila-y / bonita-es',
+        'uso': 'El adjetivo-な y los sustantivos pierden 「だ」 y toman 「で」 (「げんきでしんせつなひと」). Es el equivalente de 「くて」 para el otro tipo de adjetivo.'
       }
     ]
   },
@@ -3269,7 +3283,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Abuelo' o señor mayor. Cuidado con la vocal: 「おじさん」 (corta) es 'tío / señor'."
       },
       {
         'kind': 'vocabulario',
@@ -3279,7 +3293,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Abuela' o señora mayor. 「おばさん」 (corta) es 'tía / señora'."
       },
       {
         'kind': 'vocabulario',
@@ -3289,7 +3303,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'El hermano mayor de otra persona, o para dirigirte al tuyo. Del propio, hacia fuera, 「兄」.'
       },
       {
         'kind': 'vocabulario',
@@ -3299,7 +3313,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'La hermana mayor de otro, o para llamar a la tuya. De la propia, hacia fuera, 「姉」.'
       },
       {
         'kind': 'vocabulario',
@@ -3329,7 +3343,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Informal para 'todos'; ante un grupo al que tratas de usted, 「皆さん」."
       },
       {
         'kind': 'vocabulario',
@@ -3339,7 +3353,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Mis padres'. Los de otra persona, con respeto, 「ご両親」."
       },
       {
         'kind': 'vocabulario',
@@ -3359,7 +3373,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Tía'; 「伯母」 si es mayor que tu padre o madre, 「叔母」 si es menor, pero se lee igual. No alargues la vocal: 「おばあさん」 es 'abuela'."
       },
       {
         'kind': 'vocabulario',
@@ -3369,7 +3383,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Tío'; 「伯父」 mayor que tu padre o madre, 「叔父」 menor. 「おじいさん」, con vocal larga, es 'abuelo'."
       },
       {
         'kind': 'vocabulario',
@@ -3389,7 +3403,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Hermanos' en general, e incluye a las hermanas. 「ご兄弟」 para los de otro."
       },
       {
         'kind': 'vocabulario',
@@ -3419,7 +3433,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Adulto'; 「大人になる」 'hacerse mayor'. 「大人しい」 es otra palabra: 'tranquilo, dócil'."
       },
       {
         'kind': 'vocabulario',
@@ -3429,7 +3443,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'La mujer de otro. A la propia esposa, hacia fuera, se la llama 「妻」 o 「家内」.'
       },
       {
         'kind': 'vocabulario',
@@ -3439,7 +3453,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'A secas puede sonar brusco al referirse a alguien; en trato normal, 「女の人」 o 「女性」.'
       },
       {
         'kind': 'vocabulario',
@@ -3509,7 +3523,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Mi familia'. La de otra persona, 「ご家族」."
       },
       {
         'kind': 'vocabulario',
@@ -3529,7 +3543,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Mi madre', al hablar de ella con otros. A la tuya en persona la llamas 「お母さん」; la de otra persona también es 「お母さん」."
       },
       {
         'kind': 'vocabulario',
@@ -3539,7 +3553,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Mi padre', al hablar de él con otros. En persona le dices 「お父さん」; al padre de otro, 「お父さん」."
       },
       {
         'kind': 'vocabulario',
@@ -3549,7 +3563,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Nacer'; el lugar lleva 「で」 y a menudo va en pasado: 「東京で生まれました」."
       },
       {
         'kind': 'vocabulario',
@@ -3559,7 +3573,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'A secas resulta seco para referirse a alguien; mejor 「男の人」 o 「男性」.'
       },
       {
         'kind': 'vocabulario',
@@ -3599,7 +3613,7 @@ CURRICULUM = [
         'tipo': 'contador',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Plural solo para personas y seres vivos (「子供たち」), nunca para objetos. Con 「私」 forma 'nosotros'."
       }
     ]
   },
@@ -3624,7 +3638,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'Pareja intransitiva de 「かける」: 「時間がかかる」「お金がかかる」, 「かぎがかかる」 (estar cerrado con llave), 「電話がかかってくる」.'
       },
       {
         'kind': 'vocabulario',
@@ -3634,7 +3648,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Cerca de', a poca distancia (「駅のそば」); más vago que 「隣」 o 「横」. Se pronuncia como 「そば」 los fideos."
       },
       {
         'kind': 'vocabulario',
@@ -3644,7 +3658,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Casi siempre 「一緒に」 'juntos, a la vez': 「一緒に行く」."
       },
       {
         'kind': 'vocabulario',
@@ -3694,7 +3708,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'La persona con quien te ves lleva 「に」, no 「を」: 「友達に会う」. 「と会う」 sugiere una cita acordada entre ambos.'
       },
       {
         'kind': 'vocabulario',
@@ -3704,7 +3718,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Palabra muy elástica: 'la punta', 'más adelante', 'antes / primero' (「お先に」), 'hace un rato' (「先ほど」)."
       },
       {
         'kind': 'vocabulario',
@@ -3724,7 +3738,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Sustantivo: 'el comienzo' (「月の初め」). 'Por primera vez' es 「初めて」, con 「て」."
       },
       {
         'kind': 'vocabulario',
@@ -3734,7 +3748,7 @@ CURRICULUM = [
         'tipo': 'adverbio',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Adverbio: 'por primera vez' (「初めて会う」). El sustantivo 'el principio' es 「初め」."
       },
       {
         'kind': 'vocabulario',
@@ -3824,7 +3838,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Sitio, lugar'. Tras un verbo marca el momento: 「今、着いたところです」 'acabo de llegar'."
       },
       {
         'kind': 'vocabulario',
@@ -3854,7 +3868,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Al costado de' algo, sin más (「駅の横」). No implica ser del mismo tipo, a diferencia de 「隣」."
       },
       {
         'kind': 'vocabulario',
@@ -3904,7 +3918,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Por la zona de', impreciso: 「この辺」 'por aquí'."
       },
       {
         'kind': 'vocabulario',
@@ -3944,7 +3958,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Al lado' entre cosas del mismo tipo y en contacto: la casa de al lado, la persona sentada al lado (「隣の人」)."
       },
       {
         'kind': 'vocabulario',
@@ -3974,7 +3988,7 @@ CURRICULUM = [
         'tipo': 'contador',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Delante de' en el espacio (「駅の前」) y 'antes de / hace' en el tiempo (「三日前」). No es 「名前」 'nombre'."
       }
     ]
   },
@@ -3999,7 +4013,7 @@ CURRICULUM = [
         'tipo': 'expresión',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'Versión cortés de 「どう」; se usa sobre todo para ofrecer: 「コーヒーはいかがですか」.'
       },
       {
         'kind': 'vocabulario',
@@ -4039,7 +4053,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "「さけ」 puede ser el sake de arroz en concreto o el alcohol en general. Casi siempre con 「お」: 「お酒を飲む」 = 'beber alcohol'."
       },
       {
         'kind': 'vocabulario',
@@ -4049,7 +4063,7 @@ CURRICULUM = [
         'tipo': 'adjetivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Malo de sabor'. También, coloquial, 'mala cosa, complicado' (「それはまずい」)."
       },
       {
         'kind': 'vocabulario',
@@ -4109,7 +4123,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "「ごはん」 es tanto 'arroz cocido' como 'comida / comer' en general: 「ごはんを食べる」. Formal: 「食事」."
       },
       {
         'kind': 'vocabulario',
@@ -4189,7 +4203,7 @@ CURRICULUM = [
         'tipo': 'adjetivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Caliente' al tacto (objetos, comida, bebida). Para el tiempo caluroso es 「暑い」; para algo grueso, 「厚い」: los tres se dicen 「あつい」."
       },
       {
         'kind': 'vocabulario',
@@ -4219,7 +4233,7 @@ CURRICULUM = [
         'tipo': 'adjetivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Dulce'; también 'blando, indulgente' o 'ingenuo' (「考えが甘い」)."
       },
       {
         'kind': 'vocabulario',
@@ -4239,7 +4253,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Palillos'. Se pronuncia como 「橋」 'puente' y 「端」 'borde', con acento distinto; el contexto los separa."
       },
       {
         'kind': 'vocabulario',
@@ -4249,7 +4263,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Literalmente 'té rojo', es el té negro occidental. El té verde japonés es 「お茶」 o 「緑茶」."
       },
       {
         'kind': 'vocabulario',
@@ -4279,7 +4293,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'Pese al 「茶」, es el cuenco del arroz, no una taza de té. La taza de té es 「湯のみ」.'
       },
       {
         'kind': 'vocabulario',
@@ -4289,7 +4303,7 @@ CURRICULUM = [
         'tipo': 'adjetivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Fino' (「薄い紙」) y 'flojo' de sabor o color (「味が薄い」). Opuestos: 「厚い」 (grosor) y 「濃い」 (intensidad)."
       },
       {
         'kind': 'vocabulario',
@@ -4309,7 +4323,7 @@ CURRICULUM = [
         'tipo': 'adjetivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Con lectura 「からい」 es 'picante' (a veces 'salado'). El mismo kanji leído 「つらい」 significa 'duro, penoso'."
       },
       {
         'kind': 'vocabulario',
@@ -4414,7 +4428,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Abrigo' y también 'pista' de tenis: dos préstamos que suenan igual."
       },
       {
         'kind': 'vocabulario',
@@ -4544,7 +4558,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Ropa de estilo occidental, por oposición al kimono (「和服」). En el día a día es simplemente 'ropa'."
       },
       {
         'kind': 'vocabulario',
@@ -4594,7 +4608,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Apretar, atar' lo que rodea el cuerpo: 「ネクタイを締める」「シートベルトを締める」."
       },
       {
         'kind': 'vocabulario',
@@ -4604,7 +4618,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Traje' de hombre; palabra algo anticuada, hoy se dice más 「スーツ」."
       },
       {
         'kind': 'vocabulario',
@@ -4614,7 +4628,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Quitarse' ropa, zapatos o sombrero. Ponerse ropa de tronco es 「着る」; de piernas o pies, 「はく」."
       },
       {
         'kind': 'vocabulario',
@@ -4664,7 +4678,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'Cubre el azul y, por tradición, parte del verde: 「青信号」 es el semáforo en verde y 「青りんご」 la manzana verde.'
       },
       {
         'kind': 'vocabulario',
@@ -4779,7 +4793,7 @@ CURRICULUM = [
         'tipo': 'adjetivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Frío' al tacto (agua, manos) y 'frío' de trato (「冷たい人」). Para el tiempo frío se usa 「寒い」."
       },
       {
         'kind': 'vocabulario',
@@ -4789,7 +4803,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Soplar' el viento (「風が吹く」) y 'tocar' un instrumento de viento (「笛を吹く」). Suena como 「拭く」 'limpiar frotando'."
       },
       {
         'kind': 'vocabulario',
@@ -4849,7 +4863,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "El paraguas 'se lleva' con 「差す」 (「かさを差す」), no con 「開く」. También 「日が差す」 'entrar el sol'."
       },
       {
         'kind': 'vocabulario',
@@ -4989,7 +5003,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Flor'. Se pronuncia como 「鼻」 'nariz', con acento distinto."
       },
       {
         'kind': 'vocabulario',
@@ -4999,7 +5013,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'Caer lluvia o nieve; lo que cae lleva 「が」: 「雨が降る」. Bajarse de un tren o coche es 「降りる」.'
       },
       {
         'kind': 'vocabulario',
@@ -5054,7 +5068,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Mi casa' y, por extensión, 'nosotros, los de dentro': mi familia, mi empresa (「うちの会社」), frente a los de fuera (「そと」)."
       },
       {
         'kind': 'vocabulario',
@@ -5084,7 +5098,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "La bañera y el baño de agua caliente, no el váter (eso es 「トイレ」). 「お風呂に入る」 = 'bañarse'."
       },
       {
         'kind': 'vocabulario',
@@ -5104,7 +5118,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Encender' (「電気をつける」), frente a 「消す」. También 「気をつける」 (tener cuidado), 「名前をつける」 (poner nombre). Que algo 'se encienda' solo es 「つく」."
       },
       {
         'kind': 'vocabulario',
@@ -5354,7 +5368,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'Puerta corredera de estilo japonés. La de bisagra occidental es 「ドア」.'
       },
       {
         'kind': 'vocabulario',
@@ -5374,7 +5388,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'Mismo 「かける」 en kanji: colgar algo de un gancho, echar (una manta, salsa), sentarse, ponerse las gafas.'
       },
       {
         'kind': 'vocabulario',
@@ -5444,7 +5458,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Intransitivo: 'apagarse, borrarse, desaparecer' (「電気が消える」). Apagar o borrar algo es 「消す」."
       },
       {
         'kind': 'vocabulario',
@@ -5454,7 +5468,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Transitivo: 'apagar' (luz, tele, fuego) y 'borrar' (「字を消す」). Que algo 'se apague' solo es 「消える」."
       },
       {
         'kind': 'vocabulario',
@@ -5464,7 +5478,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Cenicero'. 「灰」 es 'ceniza' y 「皿」 'plato'."
       },
       {
         'kind': 'vocabulario',
@@ -5474,7 +5488,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Cosa' concreta que se puede tocar. Para algo abstracto (un hecho, un asunto) se usa 「こと」."
       },
       {
         'kind': 'vocabulario',
@@ -5494,7 +5508,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'El recibidor a la entrada de la casa, donde te descalzas antes de subir el escalón al interior.'
       },
       {
         'kind': 'vocabulario',
@@ -5544,7 +5558,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Poner, dejar' algo en un sitio (「かばんを置く」). En 「～ておく」 es 'dejar algo hecho de antemano'."
       },
       {
         'kind': 'vocabulario',
@@ -5614,7 +5628,7 @@ CURRICULUM = [
         'tipo': 'contador',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Pisos de un edificio. El 3 suele sonar 「さんがい」. 「何階」 '¿qué planta?' se confunde de oído con 「何回」 '¿cuántas veces?'."
       }
     ]
   },
@@ -5682,59 +5696,74 @@ CURRICULUM = [
       {
         'kind': 'gramatica',
         'jp': '〜てみます',
-        'meaning': 'probar a hacer ~: intentarlo a ver qué tal',
-        'ejemplo': '',
-        'literal': '',
-        'uso': ''
+        'meaning': "'probar a ~ / hacer ~ a ver qué tal': forma-て + みる",
+        'ejemplo': 'この ケーキを 食べてみます',
+        'literal': 'este / pastel-OBJ / pruebo-a-comer',
+        'uso': "Haces algo por primera vez a ver qué tal, sin saber si saldrá bien. 「てみてください」 es 'inténtalo'."
       },
       {
         'kind': 'gramatica',
         'jp': '〜ておきます',
-        'meaning': "preparación anticipada: 'hacer X de antemano para cuando sea necesario'"
+        'meaning': "'dejar ~ hecho de antemano': forma-て + おく",
+        'ejemplo': 'りょこうの まえに きっぷを 買っておきます',
+        'literal': 'viaje-DE / antes / billete-OBJ / lo-dejo-comprado',
+        'uso': 'Preparar algo con vistas a más tarde, o dejarlo tal cual porque va a servir. Al hablar se contrae en 「とく」 (「かっとく」).'
       },
       {
         'kind': 'gramatica',
         'jp': '〜てしまいます',
-        'meaning': "completitud o lamento: 'acabar de hacer X / lamentablemente X'"
+        'meaning': "'terminar ~ del todo', o '~ sin querer / para mi disgusto': forma-て + しまう",
+        'ejemplo': 'しゅくだいを ぜんぶ やってしまいました',
+        'literal': 'deberes-OBJ / todos / los-terminé',
+        'uso': "Dos matices según el contexto: acción rematada ('me lo acabé') o algo que lamentas (「さいふをなくしてしまいました」). Contracción hablada: 「ちゃう」."
       },
       {
         'kind': 'gramatica',
         'jp': '〜てあげます',
-        'meaning': "dar un favor: 'hacerle X a alguien (favor que yo doy)'"
+        'meaning': 'hacer algo por otro como favor: forma-て + あげる',
+        'ejemplo': 'ともだちに 日本語を 教えてあげます',
+        'literal': 'amigo-A / japonés-OBJ / se-lo-enseño',
+        'uso': 'El favor va del hablante hacia fuera. Dicho a la cara puede sonar a que te las das de generoso; mejor entre iguales o de arriba abajo.'
       },
       {
         'kind': 'gramatica',
         'jp': '〜てくれます',
-        'meaning': "recibir favor (alguien lo hace por mí/nosotros): 'X me hace X'"
+        'meaning': 'alguien hace algo por mí (o por los míos): forma-て + くれる',
+        'ejemplo': 'ちちが かさを 貸してくれました',
+        'literal': 'padre-SUJ / paraguas-OBJ / me-lo-prestó',
+        'uso': 'El favor entra hacia el hablante o los suyos; quien lo hace lleva 「が」. Sirve para agradecer: 「てつだってくれてありがとう」.'
       },
       {
         'kind': 'gramatica',
         'jp': '〜てもらいます',
-        'meaning': "recibir un favor: 'X me hace el favor de...'"
+        'meaning': 'conseguir que alguien haga algo por mí: forma-て + もらう',
+        'ejemplo': 'せんせいに 日本語を 教えてもらいました',
+        'literal': 'profesor-A / japonés-OBJ / me-lo-enseñó',
+        'uso': 'Yo recibo el favor y normalmente lo he pedido; la persona que lo hace lleva 「に」. 「くれる」, en cambio, no implica que lo pidieras.'
       },
       {
         'kind': 'gramatica',
         'jp': 'あげます',
-        'meaning': 'dar algo a alguien (fuera del propio grupo, o de igual a igual)',
-        'ejemplo': '',
-        'literal': '',
-        'uso': ''
+        'meaning': 'dar algo (del hablante o su grupo hacia fuera, o entre iguales)',
+        'ejemplo': 'ラウラさんに 花を あげます',
+        'literal': 'Laura-san-A / flores-OBJ / doy',
+        'uso': 'El que da soy yo o alguien de mi lado; nunca para algo que me dan a mí (eso es 「くれる」). Con un superior se sube a 「さしあげます」.'
       },
       {
         'kind': 'gramatica',
         'jp': 'もらいます',
         'meaning': 'recibir algo de alguien',
-        'ejemplo': '',
-        'literal': '',
-        'uso': ''
+        'ejemplo': 'ともだちに プレゼントを もらいました',
+        'literal': 'amigo-DE / regalo-OBJ / recibí',
+        'uso': 'El que recibe es el sujeto (yo, casi siempre); la fuente lleva 「に」 o 「から」. Educado hacia arriba: 「いただきます」.'
       },
       {
         'kind': 'gramatica',
         'jp': 'くれます',
-        'meaning': 'alguien me da algo a mí (o a mi grupo)',
-        'ejemplo': '',
-        'literal': '',
-        'uso': ''
+        'meaning': 'alguien me da algo a mí (o a alguien de mi grupo)',
+        'ejemplo': 'あねが 本を くれました',
+        'literal': 'hermana-mayor-SUJ / libro-OBJ / me-dio',
+        'uso': 'Solo cuando quien recibe soy yo o los míos; el que da lleva 「が」. Si es un superior: 「くださいます」.'
       },
       {
         'kind': 'vocabulario',
@@ -5788,18 +5817,18 @@ CURRICULUM = [
       {
         'kind': 'gramatica',
         'jp': '〜なくてはいけません',
-        'meaning': 'obligación: hay que hacer ~ (variante de 〜なければなりません)',
-        'ejemplo': '',
-        'literal': '',
-        'uso': ''
+        'meaning': "obligación: 'hay que ~ / tengo que ~' (variante de なければなりません)",
+        'ejemplo': 'くすりを 飲まなくてはいけません',
+        'literal': 'medicina-OBJ / si-no-la-tomo / no-vale',
+        'uso': 'Misma idea que 「なければなりません」, un poco más de conversación. Contracción muy usada: 「なくちゃ」 (「のまなくちゃ」).'
       },
       {
         'kind': 'gramatica',
         'jp': '〜ないほうがいいです',
-        'meaning': 'consejo negativo: es mejor no hacer ~',
-        'ejemplo': '',
-        'literal': '',
-        'uso': ''
+        'meaning': "consejo en negativo: 'mejor no ~'",
+        'ejemplo': 'たばこは 吸わないほうがいいです',
+        'literal': 'tabaco-TEMA / no-fumar / mejor-es',
+        'uso': 'Recomendación de no hacer algo, más suave que una prohibición. El afirmativo lleva verbo en pasado (「たほうがいい」), pero el negativo va en presente.'
       }
     ]
   },
@@ -5827,73 +5856,82 @@ CURRICULUM = [
       {
         'kind': 'gramatica',
         'jp': '〜たくないです',
-        'meaning': 'deseo negativo: no quiero hacer ~',
-        'ejemplo': '',
-        'literal': '',
-        'uso': ''
+        'meaning': "deseo en negativo: 'no quiero ~'",
+        'ejemplo': 'きょうは 出かけたくないです',
+        'literal': 'hoy-TEMA / no-quiero-salir',
+        'uso': 'Es 「たい」 negado como adjetivo-い (「たい」 -> 「たくない」). Solo para lo que quiere el hablante; para otra persona, 「たがる」. También 「たくありません」.'
       },
       {
         'kind': 'gramatica',
         'jp': '〜たがっています',
-        'meaning': 'deseo de un tercero: se le nota que quiere hacer ~ (no se usa たい para otros)',
-        'ejemplo': '',
-        'literal': '',
-        'uso': ''
+        'meaning': "deseo de un tercero visible desde fuera: 'se le nota que quiere ~'",
+        'ejemplo': 'いもうとが 犬を かいたがっています',
+        'literal': 'hermana-menor-SUJ / perro-OBJ / anda-queriendo-tener',
+        'uso': 'No se usa 「たい」 para lo que siente otro; con 「たがる」 describes lo que se le ve o se le oye querer. El objeto suele ir con 「を」.'
       },
       {
         'kind': 'gramatica',
         'jp': '〜たことがあります',
-        'meaning': "experiencia pasada: 'he hecho X alguna vez'"
+        'meaning': "experiencia: 'he ~ alguna vez'",
+        'ejemplo': '日本へ 行ったことがあります',
+        'literal': 'Japón-A / hay-vez-de-haber-ido',
+        'uso': 'Verbo en pasado llano + 「ことがある」: habla de si algo pasó alguna vez en la vida, no de cuándo. Para algo de ayer no vale.'
       },
       {
         'kind': 'gramatica',
         'jp': '〜たり〜たりします',
-        'meaning': 'enumeración parcial de acciones: hacer cosas como ~ y ~ (entre otras)',
-        'ejemplo': '',
-        'literal': '',
-        'uso': ''
+        'meaning': "enumerar algunas acciones de ejemplo: 'hacer cosas como ~ y ~'",
+        'ejemplo': '日曜日は 本を 読んだり おんがくを 聞いたりします',
+        'literal': 'domingo-TEMA / libro-OBJ / leo-y / música-OBJ / escucho-y-tal',
+        'uso': 'Das una muestra de acciones, no la lista completa ni el orden; se cierra con 「する」 conjugado según el tiempo. Verbo en pasado llano + 「り」.'
       },
       {
         'kind': 'gramatica',
         'jp': '〜たあとで',
-        'meaning': 'secuencia: después de hacer ~',
-        'ejemplo': '',
-        'literal': '',
-        'uso': ''
+        'meaning': "secuencia: 'después de ~'",
+        'ejemplo': 'ごはんを 食べたあとで さんぽします',
+        'literal': 'comida-OBJ / después-de-comer / paseo',
+        'uso': 'Verbo en pasado llano + 「あとで」; la primera acción está del todo terminada. Con sustantivo: 「のあとで」 (「じゅぎょうのあとで」).'
       },
       {
         'kind': 'gramatica',
         'jp': '〜たほうがいいです',
-        'meaning': 'consejo: es mejor hacer ~',
-        'ejemplo': '',
-        'literal': '',
-        'uso': ''
+        'meaning': "consejo: 'mejor ~ / deberías ~'",
+        'ejemplo': 'はやく ねたほうがいいです',
+        'literal': 'pronto / dormir / mejor-es',
+        'uso': 'Consejo bastante directo, casi advertencia; el verbo va en pasado llano aunque el consejo sea para ahora. Negativo: 「ないほうがいい」.'
       },
       {
         'kind': 'gramatica',
         'jp': '〜まえに',
-        'meaning': 'secuencia: antes de hacer ~',
-        'ejemplo': '',
-        'literal': '',
-        'uso': ''
+        'meaning': "secuencia: 'antes de ~'",
+        'ejemplo': 'ねるまえに はを みがきます',
+        'literal': 'antes-de-dormir / dientes-OBJ / cepillo',
+        'uso': 'El verbo va en presente llano aunque la acción sea pasada. Con sustantivo: 「のまえに」 (「しょくじのまえに」); con tiempo: 「三日まえに」.'
       },
       {
         'kind': 'gramatica',
         'jp': '〜ながら',
-        'meaning': "simultaneidad: 'haciendo X al mismo tiempo que Y'"
+        'meaning': "dos acciones a la vez hechas por la misma persona: 'mientras ~'",
+        'ejemplo': 'おんがくを 聞きながら べんきょうします',
+        'literal': 'música-OBJ / escuchando / estudio',
+        'uso': "Raíz de 「ます」 + 「ながら」; la acción principal es la segunda ('estudio escuchando música'). Los dos verbos tienen que hacerlos la misma persona."
       },
       {
         'kind': 'gramatica',
         'jp': '〜ことができます',
-        'meaning': "potencial formal: 'ser capaz de hacer X' (〜こと = nominalización)"
+        'meaning': 'poder / saber hacer algo: verbo en presente llano + ことができる',
+        'ejemplo': 'ラウラさんは ピアノを ひくことができます',
+        'literal': 'Laura-san-TEMA / piano-OBJ / puede-tocar',
+        'uso': 'Más formal y algo más rígido que la forma potencial (「ひける」); típico de carteles y textos. Negativo para lo prohibido o imposible: 「ことができません」.'
       },
       {
         'kind': 'gramatica',
         'jp': '〜ことがあります',
-        'meaning': 'frecuencia baja: a veces pasa que ~',
-        'ejemplo': '',
-        'literal': '',
-        'uso': ''
+        'meaning': "'a veces pasa que ~ / hay veces que ~' (frecuencia baja)",
+        'ejemplo': 'あさ ごはんを 食べないことがあります',
+        'literal': 'mañana / comida-OBJ / hay-veces-de-no-comer',
+        'uso': 'Verbo en presente llano + 「ことがある」: ocurre de vez en cuando. Con verbo en pasado (「たことがある」) cambia a experiencia de toda la vida.'
       },
       {
         'kind': 'gramatica',
@@ -5906,7 +5944,10 @@ CURRICULUM = [
       {
         'kind': 'gramatica',
         'jp': '〜ば',
-        'meaning': "condicional hipotético: 'si hago X' (たべれば = si como)"
+        'meaning': "condicional hipotético: 'si ~'",
+        'ejemplo': 'じかんが あれば 行きます',
+        'literal': 'tiempo-SUJ / si-hay / voy',
+        'uso': "Pone el foco en la condición ('con que se dé esto, basta'); el resultado suele ser algo deseado. Formación: 「う」 -> 「えば」, adjetivo-い -> 「ければ」."
       },
       {
         'kind': 'gramatica',
@@ -5919,12 +5960,18 @@ CURRICULUM = [
       {
         'kind': 'gramatica',
         'jp': 'と（条件）',
-        'meaning': "consecuencia natural: 'si haces X, siempre ocurre Y'"
+        'meaning': "consecuencia automática: 'si ~, (siempre) pasa ~'",
+        'ejemplo': 'この ボタンを おすと でんきが つきます',
+        'literal': 'este / botón-OBJ / al-pulsar / luz-SUJ / se-enciende',
+        'uso': 'Verbo en presente llano + 「と」: para leyes naturales, mecanismos e instrucciones. El resultado no puede ser una orden ni una petición.'
       },
       {
         'kind': 'gramatica',
         'jp': '〜なら',
-        'meaning': "condicional contextual: 'si es el caso de X, entonces Y'"
+        'meaning': "condición sobre un tema que el otro acaba de sacar: 'si es (lo de) ~, entonces ~'",
+        'ejemplo': '京都へ 行くなら バスが べんりです',
+        'literal': 'Kioto-A / si-vas / autobús-SUJ / práctico-es',
+        'uso': 'Recoges un tema que el otro acaba de sacar y das tu consejo o reacción. Con sustantivo va directo: 「日本語なら田中さんです」.'
       },
       {
         'kind': 'gramatica',
@@ -5937,7 +5984,10 @@ CURRICULUM = [
       {
         'kind': 'gramatica',
         'jp': '〜ので',
-        'meaning': "causal suave y formal: 'porque X' (más neutro que 〜から)"
+        'meaning': "causa presentada con suavidad: 'como ~ / dado que ~'",
+        'ejemplo': 'あたまが いたいので 帰ります',
+        'literal': 'cabeza-SUJ / como-duele / me-voy',
+        'uso': 'Razón expuesta como un hecho, más blanda y educada que 「から」; buena para excusas y peticiones. Tras adjetivo-な o sustantivo: 「なので」.'
       },
       {
         'kind': 'vocabulario',
@@ -5972,7 +6022,7 @@ CURRICULUM = [
         'tipo': 'adverbio',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Siempre, normalmente'. Con verbo en negativo: 'no siempre'."
       },
       {
         'kind': 'vocabulario',
@@ -6032,7 +6082,7 @@ CURRICULUM = [
         'tipo': 'adverbio',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Despacio'; también 'con calma, sin prisa': 「ゆっくりしてください」 'ponte cómodo, tómate tu tiempo'."
       },
       {
         'kind': 'vocabulario',
@@ -6042,7 +6092,7 @@ CURRICULUM = [
         'tipo': 'adverbio',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Dos sentidos según el contexto: 'a menudo' (「よく来る」) y 'bien, con habilidad' (「よくできた」). También admiración: 「よく分かったね」."
       },
       {
         'kind': 'vocabulario',
@@ -6062,7 +6112,7 @@ CURRICULUM = [
         'tipo': 'adverbio',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Con verbo en negativo, 'no mucho, apenas' (「あまり食べない」). Sin negación, como sustantivo, 'lo que sobra'; 「あまりに」 = 'demasiado'."
       },
       {
         'kind': 'vocabulario',
@@ -6082,7 +6132,7 @@ CURRICULUM = [
         'tipo': 'adjetivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'No se pone con soltura delante del nombre: se dice 「人が多い」 o 「多くの人」, no 「多い人」.'
       },
       {
         'kind': 'vocabulario',
@@ -6092,7 +6142,7 @@ CURRICULUM = [
         'tipo': 'adverbio',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Probablemente'; suele acompañarse de 「～でしょう」 o 「～と思う」."
       },
       {
         'kind': 'vocabulario',
@@ -6102,7 +6152,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Mucha gente'; solo para personas (「大勢の人」), nunca para cosas."
       },
       {
         'kind': 'vocabulario',
@@ -6152,7 +6202,7 @@ CURRICULUM = [
         'tipo': 'adverbio',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Mucho', para cosas y también personas. Si son solo personas, se puede usar 「大勢」."
       },
       {
         'kind': 'vocabulario',
@@ -6162,7 +6212,7 @@ CURRICULUM = [
         'tipo': 'contador',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'Cantidad o grado aproximados (「千円ぐらい」). Tras 「これ・それ」 se dice 「くらい」. Para una hora aproximada se usa 「ごろ」, no 「くらい」.'
       },
       {
         'kind': 'vocabulario',
@@ -6172,7 +6222,7 @@ CURRICULUM = [
         'tipo': 'contador',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Pasadas las ~' con horas (「六時すぎ」). Tras la raíz de un verbo o de un adjetivo significa 'demasiado' (「食べすぎ」)."
       },
       {
         'kind': 'vocabulario',
@@ -6182,7 +6232,7 @@ CURRICULUM = [
         'tipo': 'contador',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Reparto en partes iguales: 'de ~ en ~' (「一つずつ」), 'poco a poco' (「少しずつ」)."
       },
       {
         'kind': 'vocabulario',
@@ -6192,7 +6242,7 @@ CURRICULUM = [
         'tipo': 'contador',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Solo ~', sin idea negativa. 「しか」 + verbo en negativo da un sentido parecido pero con matiz de 'no más que'."
       },
       {
         'kind': 'vocabulario',
@@ -6202,7 +6252,7 @@ CURRICULUM = [
         'tipo': 'contador',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'~ etcétera'; suele cerrar una enumeración abierta hecha con 「や」 (「本やノートなど」). Según el tono puede sonar humilde o despectivo."
       }
     ]
   },
@@ -6230,7 +6280,7 @@ CURRICULUM = [
         'tipo': 'expresión',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Contracción hablada de 「では」: 'bueno, pues…'. Sirve para cerrar o cambiar de tema (「じゃあ、また」)."
       }
     ]
   },
@@ -6258,7 +6308,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Forma cercana y cotidiana de 'policía', sobre todo el de barrio. En contexto formal, 「警察官」 o 「警官」."
       },
       {
         'kind': 'vocabulario',
@@ -6298,7 +6348,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Buzón' de correos (rojo, en la calle) y también 'puesto, cargo'."
       },
       {
         'kind': 'vocabulario',
@@ -6318,7 +6368,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'Garita de policía de barrio, muy presente en las ciudades japonesas; se va allí a preguntar direcciones o a entregar algo perdido.'
       },
       {
         'kind': 'vocabulario',
@@ -6448,7 +6498,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Montaña'; también 'montón' (「仕事が山ほどある」)."
       },
       {
         'kind': 'vocabulario',
@@ -6518,7 +6568,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Girar' en una esquina: 「次の角を右に曲がる」. También 'estar torcido'."
       },
       {
         'kind': 'vocabulario',
@@ -6548,7 +6598,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Puente'. Se pronuncia como 「箸」 'palillos' y 「端」 'borde'; los separa el acento y el contexto."
       },
       {
         'kind': 'vocabulario',
@@ -6558,7 +6608,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Intransitivo: 'pararse, detenerse' (「電車が止まる」). Parar algo es 「止める」."
       },
       {
         'kind': 'vocabulario',
@@ -6578,7 +6628,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Intransitivo: 'cruzar' (「道を渡る」, con 「を」 de recorrido). Dar algo en mano es 「渡す」."
       },
       {
         'kind': 'vocabulario',
@@ -6598,7 +6648,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'Subir con esfuerzo, sobre todo montañas (「山に登る」); también escaleras o una cuesta.'
       },
       {
         'kind': 'vocabulario',
@@ -6608,7 +6658,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Llegar' a un sitio; el destino lleva 「に」: 「駅に着く」. Suena como 「着る」 'ponerse ropa' y 「付く」."
       },
       {
         'kind': 'vocabulario',
@@ -6668,7 +6718,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'La esquina vista desde fuera, de una calle o un edificio (「角を曲がる」). El rincón interior de una sala es 「隅」.'
       },
       {
         'kind': 'vocabulario',
@@ -6698,7 +6748,7 @@ CURRICULUM = [
         'tipo': 'adjetivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Rápido' de velocidad (「足が速い」). 'Temprano' en el tiempo se escribe 「早い」."
       },
       {
         'kind': 'vocabulario',
@@ -6758,7 +6808,7 @@ CURRICULUM = [
         'tipo': 'contador',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Tienda de ~' y, por extensión, quien la lleva (「パン屋さん」 el panadero). Nada que ver con 「部屋」 'habitación'."
       }
     ]
   },
@@ -6791,7 +6841,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "En expresiones de hambre y saciedad: 「おなかがすいた」 'tengo hambre', 「おなかがいっぱい」 'estoy lleno'."
       },
       {
         'kind': 'vocabulario',
@@ -6801,7 +6851,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "「たばこを吸う」 'fumar' (no 「飲む」)."
       },
       {
         'kind': 'vocabulario',
@@ -6831,7 +6881,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Al referirte a él con respeto, 「お医者さん」. 「医者に行く」 = 'ir al médico'."
       },
       {
         'kind': 'vocabulario',
@@ -6861,7 +6911,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'La voz de una persona o un animal (「大きな声」). El sonido de las cosas es 「音」.'
       },
       {
         'kind': 'vocabulario',
@@ -6871,7 +6921,7 @@ CURRICULUM = [
         'tipo': 'adjetivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Grueso' para cosas (「太い線」). De una persona gorda se dice 「太っている」, no 「太い」."
       },
       {
         'kind': 'vocabulario',
@@ -6911,7 +6961,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Diente'. 「歯を磨く」 'cepillarse los dientes'. Se pronuncia como 「葉」 'hoja'."
       },
       {
         'kind': 'vocabulario',
@@ -6921,7 +6971,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'Es directo y algo brusco; para personas, por respeto se dice 「亡くなる」 o 「亡くなりました」.'
       },
       {
         'kind': 'vocabulario',
@@ -6931,7 +6981,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Ducharse': 「シャワーを浴びる」. Meterse en la bañera es 「お風呂に入る」."
       },
       {
         'kind': 'vocabulario',
@@ -6941,7 +6991,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Se usa en pasado para el estado de ahora: 「疲れた」 = 'estoy cansado'."
       },
       {
         'kind': 'vocabulario',
@@ -6981,7 +7031,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Cepillarse' los dientes (「歯を磨く」) y 'sacar brillo' a zapatos o metal."
       },
       {
         'kind': 'vocabulario',
@@ -6991,7 +7041,7 @@ CURRICULUM = [
         'tipo': 'adjetivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Fino, estrecho' (「細い道」). 'Detallado, menudo' es otra palabra: 「細かい」."
       },
       {
         'kind': 'vocabulario',
@@ -7011,7 +7061,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Estatura': 「背が高い/低い」. También 'espalda' en 「背中」."
       },
       {
         'kind': 'vocabulario',
@@ -7061,7 +7111,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Resfriado'. Se pronuncia igual que 「風」 'viento'. Se 'coge' con 「引く」: 「風邪を引く」."
       },
       {
         'kind': 'vocabulario',
@@ -7071,7 +7121,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Nariz'. Se pronuncia igual que 「花」 'flor'; se distinguen por el acento y el contexto."
       }
     ]
   },
@@ -7088,7 +7138,14 @@ CURRICULUM = [
     'prerequisito': 'cuerpo_salud',
     'umbral_prereq': 0.75,
     'items': [
-      {'kind': 'gramatica', 'jp': '〜つもりです', 'meaning': "intención / plan: 'tengo pensado hacer X'"},
+      {
+        'kind': 'gramatica',
+        'jp': '〜つもりです',
+        'meaning': "intención decidida: 'tengo pensado ~ / pienso ~'",
+        'ejemplo': 'なつやすみに 国へ 帰るつもりです',
+        'literal': 'vacaciones-verano-EN / país-A / pienso-volver',
+        'uso': "Plan firme y personal, pero no una promesa. 「行かないつもりです」 ('no pienso ir') no es lo mismo que 「行くつもりはありません」 ('ni me lo planteo')."
+      },
       {
         'kind': 'gramatica',
         'jp': '〜でしょう',
@@ -7108,7 +7165,10 @@ CURRICULUM = [
       {
         'kind': 'gramatica',
         'jp': '〜そうです',
-        'meaning': "apariencia directa: 'parece que va a X / tiene aspecto de X'"
+        'meaning': "impresión por lo que se ve: 'parece que ~ / tiene pinta de ~'",
+        'ejemplo': 'この ケーキは おいしそうです',
+        'literal': 'este / pastel-TEMA / tiene-pinta-de-rico',
+        'uso': "Juicio inmediato por lo que se ve; raíz de adjetivo o verbo + 「そう」 (「いい」 -> 「よさそう」). Distinto del 「そうです」 de 'dicen que', que va tras forma llana completa."
       },
       {
         'kind': 'gramatica',
@@ -7137,26 +7197,26 @@ CURRICULUM = [
       {
         'kind': 'gramatica',
         'jp': '〜ほど〜ない',
-        'meaning': 'comparación negativa: no es tan ~ como (otra cosa)',
-        'ejemplo': '',
-        'literal': '',
-        'uso': ''
+        'meaning': "comparación en negativo: 'no tan ~ como ~'",
+        'ejemplo': 'きょうは きのうほど さむくないです',
+        'literal': 'hoy-TEMA / como-ayer / no-hace-frío',
+        'uso': "El término de comparación lleva 「ほど」 y el adjetivo va en negativo; equivale a 'A es menos ~ que B', dicho desde A."
       },
       {
         'kind': 'gramatica',
         'jp': '〜が好きです',
-        'meaning': "gusto: 'me gusta ~' (con が, no を)",
-        'ejemplo': '',
-        'literal': '',
-        'uso': ''
+        'meaning': "gusto: 'me gusta ~' (lo que gusta va con が, no を)",
+        'ejemplo': 'わたしは くだものが 好きです',
+        'literal': 'yo-TEMA / fruta-SUJ / gusta',
+        'uso': '「好き」 es adjetivo-な, no un verbo, por eso lo que gusta lleva 「が」. Mucho: 「大好きです」. Negar con tacto: 「あまり好きじゃないです」.'
       },
       {
         'kind': 'gramatica',
         'jp': '〜が嫌いです',
-        'meaning': "disgusto: 'no me gusta ~ / me disgusta ~'",
-        'ejemplo': '',
-        'literal': '',
-        'uso': ''
+        'meaning': "disgusto: 'no me gusta ~ / detesto ~'",
+        'ejemplo': 'おとうとは やさいが 嫌いです',
+        'literal': 'hermano-menor-TEMA / verdura-SUJ / no-gusta',
+        'uso': "「嫌い」 es adjetivo-な y suena fuerte, casi 'odio'; para rebajarlo, 「あまり好きじゃないです」. Muy fuerte: 「大嫌いです」."
       },
       {
         'kind': 'gramatica',
@@ -7169,26 +7229,26 @@ CURRICULUM = [
       {
         'kind': 'gramatica',
         'jp': '〜が上手です',
-        'meaning': "habilidad: 'se me da bien ~'",
-        'ejemplo': '',
-        'literal': '',
-        'uso': ''
+        'meaning': "habilidad: 'se te da bien ~'",
+        'ejemplo': 'ラウラさんは りょうりが 上手です',
+        'literal': 'Laura-san-TEMA / cocina-SUJ / hábil-es',
+        'uso': 'Se dice de otras personas; de uno mismo suena a fanfarronada, mejor 「ができます」. Elogio típico: 「日本語が上手ですね」.'
       },
       {
         'kind': 'gramatica',
         'jp': '〜が下手です',
-        'meaning': "habilidad: 'se me da mal ~'",
-        'ejemplo': '',
-        'literal': '',
-        'uso': ''
+        'meaning': "torpeza: 'se te da mal ~'",
+        'ejemplo': 'わたしは うたが 下手です',
+        'literal': 'yo-TEMA / canción-SUJ / torpe-soy',
+        'uso': 'De uno mismo sí se usa, como modestia; soltárselo a otro a la cara es grosero. Más suave: 「あまり上手じゃないです」.'
       },
       {
         'kind': 'gramatica',
         'jp': '〜がわかります',
-        'meaning': "comprensión: 'entiendo ~' (con が)",
-        'ejemplo': '',
-        'literal': '',
-        'uso': ''
+        'meaning': "comprensión: 'entiendo ~ / se me da ~' (con が)",
+        'ejemplo': 'ラウラさんは 英語がわかります',
+        'literal': 'Laura-san-TEMA / inglés-SUJ / entiende',
+        'uso': "「わかる」 no lleva 「を」: lo que se entiende va con 「が」. No es 「知る」 ('saber, conocer'): 「わかる」 es captar o comprender."
       },
       {
         'kind': 'vocabulario',
@@ -7218,7 +7278,7 @@ CURRICULUM = [
         'tipo': 'adjetivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'Delante de un nombre va directo, sin 「な」: 「同じ本」. Para predicar sí lleva 「だ/です」: 「これと同じです」.'
       },
       {
         'kind': 'vocabulario',
@@ -7228,7 +7288,7 @@ CURRICULUM = [
         'tipo': 'adjetivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Me encanta'; lo que gusta lleva 「が」: 「犬が大好きです」. Negativo fuerte: 「大嫌い」."
       },
       {
         'kind': 'vocabulario',
@@ -7248,7 +7308,7 @@ CURRICULUM = [
         'tipo': 'adjetivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "「いや」 es un rechazo visceral y del momento: 'eso no quiero', 'eso me da rabia'. Más suave: 「あまり好きじゃない」."
       },
       {
         'kind': 'vocabulario',
@@ -7258,7 +7318,7 @@ CURRICULUM = [
         'tipo': 'adjetivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': '「きらい」 es aversión a algo en general (「野菜が嫌い」); lo que no gusta lleva 「が」. Suena fuerte; para rebajarlo, 「あまり好きじゃない」.'
       },
       {
         'kind': 'vocabulario',
@@ -7268,7 +7328,7 @@ CURRICULUM = [
         'tipo': 'adjetivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Querer una cosa'; lo deseado lleva 「が」: 「車が欲しい」. Solo para uno mismo; de un tercero, 「欲しがっている」."
       },
       {
         'kind': 'vocabulario',
@@ -7278,7 +7338,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Es verbo, no adjetivo: 「答えが違う」. Como respuesta, 「違います」 corrige al otro ('no es así'), más directo que 「いいえ」."
       }
     ]
   },
@@ -7303,7 +7363,7 @@ CURRICULUM = [
         'tipo': 'expresión',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Sin embargo', al inicio de frase; de registro escrito o formal. Hablando se usa 「でも」, y en tono casual 「けど」."
       },
       {
         'kind': 'vocabulario',
@@ -7323,7 +7383,7 @@ CURRICULUM = [
         'tipo': 'expresión',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Después de eso, y luego'; encadena acciones o añade algo a una lista. También 'desde entonces'."
       },
       {
         'kind': 'vocabulario',
@@ -7333,7 +7393,7 @@ CURRICULUM = [
         'tipo': 'expresión',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Bueno, pues nada': para despedirse o pasar a otra cosa, algo más formal que 「じゃあ」."
       },
       {
         'kind': 'vocabulario',
@@ -7343,7 +7403,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "La dimensión vertical o de fondo; se opone a 「横」 (horizontal). 「たてに書く」 'escribir en vertical'."
       },
       {
         'kind': 'vocabulario',
@@ -7353,7 +7413,7 @@ CURRICULUM = [
         'tipo': 'expresión',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Entonces, bueno'; para abrir o cerrar algo. Al hablar suele acortarse a 「じゃ」/「じゃあ」."
       },
       {
         'kind': 'vocabulario',
@@ -7363,7 +7423,7 @@ CURRICULUM = [
         'tipo': 'expresión',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Pero', al empezar una frase, en conversación. Tras un sustantivo, 「～でも」 es 'o algo así': 「コーヒーでも飲みませんか」."
       },
       {
         'kind': 'vocabulario',
@@ -7373,7 +7433,7 @@ CURRICULUM = [
         'tipo': 'adverbio',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Otra vez' (「また会いましょう」) y 'además'. 「また今度」 = 'otro día será'."
       },
       {
         'kind': 'vocabulario',
@@ -7573,7 +7633,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Pedir prestado' y quedártelo un tiempo (「本を借りる」). Quien deja la cosa es 「貸す」."
       },
       {
         'kind': 'vocabulario',
@@ -7643,7 +7703,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Diccionario', palabra algo anticuada; hoy se dice 「辞書」."
       },
       {
         'kind': 'vocabulario',
@@ -7673,7 +7733,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'Tocar un instrumento de cuerda o de teclado (「ギターを弾く」). Los de viento van con 「吹く」. Se pronuncia como 「引く」.'
       },
       {
         'kind': 'vocabulario',
@@ -7733,7 +7793,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Con lectura 「かた」, 'persona' en cortés (「あの方」); tras la raíz de un verbo, 'manera de ~' (「作り方」)."
       },
       {
         'kind': 'vocabulario',
@@ -7763,7 +7823,7 @@ CURRICULUM = [
         'tipo': 'adjetivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "「本当に」 = 'de verdad, muy'; 「本当？」 (subiendo el tono) = '¿en serio?'."
       },
       {
         'kind': 'vocabulario',
@@ -7783,7 +7843,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Cantar' una canción (「歌を歌う」). Lo que canta un pájaro es 「鳴く」."
       },
       {
         'kind': 'vocabulario',
@@ -7833,7 +7893,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'Alumno de primaria a bachillerato. El universitario es 「学生」; quien estudia en otro país, 「留学生」.'
       },
       {
         'kind': 'vocabulario',
@@ -7853,7 +7913,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'La pregunta o la persona a la que respondes lleva 「に」: 「質問に答える」.'
       },
       {
         'kind': 'vocabulario',
@@ -7873,7 +7933,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Aprender' de un profesor, en clases (「ピアノを習う」). 'Memorizar' es 「覚える」; estudiar por tu cuenta, 「勉強する」."
       },
       {
         'kind': 'vocabulario',
@@ -7893,7 +7953,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Hacer falta'; lo necesario lleva 「が」: 「お金がいる」. Suena como 「居る」 'estar', pero es verbo-u (「いります」「いらない」)."
       },
       {
         'kind': 'vocabulario',
@@ -7903,7 +7963,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Aprender de memoria' y 'retener'. 「覚えている」 = 'me acuerdo' (estado); 'traer a la memoria' es 「思い出す」. Opuesto: 「忘れる」."
       },
       {
         'kind': 'vocabulario',
@@ -7923,7 +7983,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Prestar' algo a alguien (「お金を貸す」). Recibir algo prestado es 「借りる」."
       },
       {
         'kind': 'vocabulario',
@@ -7933,7 +7993,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Pegar' algo plano con adhesivo (「切手を貼る」「ポスターを貼る」)."
       },
       {
         'kind': 'vocabulario',
@@ -7963,7 +8023,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Devolver' lo que te prestaron (「本を返す」); pareja de 「借りる」."
       },
       {
         'kind': 'vocabulario',
@@ -8003,7 +8063,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Pedir un favor' (「友達に頼む」) y 'pedir' en un bar o restaurante (「コーヒーを頼む」). 「頼むよ」 = 'cuento contigo'."
       },
       {
         'kind': 'vocabulario',
@@ -8023,7 +8083,7 @@ CURRICULUM = [
         'tipo': 'sustantivo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Pájaro'. Para la carne se dice 「とり肉」, aunque en cocina 「とり」 a secas también vale por 'pollo'."
       },
       {
         'kind': 'vocabulario',
@@ -8033,7 +8093,7 @@ CURRICULUM = [
         'tipo': 'verbo',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': 'El sonido de un animal (「犬が鳴く」). Cuando llora una persona es 「泣く」, que se pronuncia igual.'
       },
       {
         'kind': 'vocabulario',
@@ -8043,7 +8103,7 @@ CURRICULUM = [
         'tipo': 'contador',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "Se pega a adjetivos de emoción para hablar de lo que siente OTRA persona a la vista: 「寒がる」 'tener pinta de frío', 「ほしがる」 'querer algo (un tercero)'."
       },
       {
         'kind': 'vocabulario',
@@ -8053,7 +8113,7 @@ CURRICULUM = [
         'tipo': 'contador',
         'ejemplo': '',
         'literal': '',
-        'uso': ''
+        'uso': "'Idioma ~': 「日本語」「フランス語」. Para 'la asignatura de lengua' se usa 「国語」."
       }
     ]
   },
@@ -8075,7 +8135,8 @@ CURRICULUM = [
         'jp': 'できる',
         'reading': 'できる',
         'meaning': 'poder / ser capaz de / estar listo',
-        'tipo': 'verbo'
+        'tipo': 'verbo',
+        'uso': "'Poder hacer' algo (「日本語ができる」), 'estar terminado o listo' (「ごはんができた」) y 'surgir' (「友達ができた」)."
       }
     ]
   },
@@ -8097,21 +8158,24 @@ CURRICULUM = [
         'jp': '始まる',
         'reading': 'はじまる',
         'meaning': 'comenzar / empezar (intransitivo)',
-        'tipo': 'verbo'
+        'tipo': 'verbo',
+        'uso': "Intransitivo: 'empezar' (「授業が始まる」). Empezar algo uno mismo es 「始める」."
       },
       {
         'kind': 'vocabulario',
         'jp': '閉まる',
         'reading': 'しまる',
         'meaning': 'cerrarse (intransitivo)',
-        'tipo': 'verbo'
+        'tipo': 'verbo',
+        'uso': "Intransitivo: 'cerrarse' (「店が閉まる」). Cerrar algo es 「閉める」."
       },
       {
         'kind': 'vocabulario',
         'jp': '開く',
         'reading': 'あく',
         'meaning': 'abrirse (intransitivo: la puerta se abre sola)',
-        'tipo': 'verbo'
+        'tipo': 'verbo',
+        'uso': "Intransitivo: 'abrirse' (「ドアが開く」, sola). Abrir algo es 「開ける」."
       }
     ]
   },

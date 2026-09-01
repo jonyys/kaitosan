@@ -82,7 +82,11 @@ def test_gramatica():
 
 def test_items_conservados_mantienen_su_texto_verbatim():
     """Los ítems que ya existían y siguen en la lista conservan sus campos de
-    texto (uso incluido) carácter a carácter respecto al snapshot pre-Fase 02."""
+    texto carácter a carácter respecto al snapshot pre-Fase 02.
+
+    Excepción de la Fase 05: `uso` se comprueba verbatim solo si el snapshot ya
+    lo traía. Donde estaba vacío, la Fase 05 pudo generar una nota de uso
+    (matiz/registro); eso es esperado y no rompe el 'verbatim' del resto."""
     snap = json.load(open(SNAPSHOT, encoding="utf-8"))
     actuales = {it["jp"]: it for it in _vocab_items()}
     revisados = 0
@@ -91,6 +95,8 @@ def test_items_conservados_mantienen_su_texto_verbatim():
             continue  # se eliminó por no estar en la lista N5: correcto
         revisados += 1
         for campo in CAMPOS_TEXTO:
+            if campo == "uso" and not (previo.get("uso") or "").strip():
+                continue  # Fase 05: uso generado donde antes estaba vacío
             assert actuales[jp].get(campo, "") == previo.get(campo, ""), (jp, campo)
     # el snapshot tiene 299 jp; en la lista N5 sobreviven ~202
     assert revisados >= 200, revisados
