@@ -21,7 +21,7 @@ Estados: `pendiente` · `en_curso:<agente>` · `verificada` · `bloqueada:<motiv
 | 14 | Conectar estado del juego con el profesor | IV | 🟢 | verificada | cando/fase14 | 6f4f249 | circuito ya unificado (todo lee estado_item). marcar_completo escribe status compatible. test_circuito verde. bulk estado_items aparcado a Fase 18 |
 | 15 | Notas del profe | V | 🟢 | verificada | cando/fase15 | ede48d2 | campo nota_profe en extractor, columna en japanese_sessions (+migración), 3 últimas en RECUERDAS_DE_LAURA bajo "Cómo va Laura" |
 | 16 | Deberes entre sesiones | V | 🟢 | verificada | cando/fase16 | f515b4b | campo deberes en extractor + ritual de cierre, columna en japanese_sessions, getter deberes_ultima_sesion, línea primera del FOCO en sesión siguiente ("ya preguntados" vía ended_at) |
-| 17 | Arco de sesión | V | 🟢 | pendiente | | | |
+| 17 | Arco de sesión | V | 🟢 | verificada | cando/fase17 | ba29e17 | línea FASE DE LA SESIÓN en FOCO: calentamiento (turnos 1-2) / foco / cierre (heurística de despedida). +prompt. adaptado test_unidad_funcion |
 | 18 | Limpieza final | VI | 🟢 | pendiente | | | |
 
 ## Registro
