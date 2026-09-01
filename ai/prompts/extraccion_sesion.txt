@@ -3,7 +3,7 @@ Analiza la conversación y devuelve ÚNICAMENTE un JSON con este esquema exacto:
 
 {
   "summary": "<2-3 frases sobre qué se trabajó en la sesión>",
-  "reviewed": [{"jp": "<ítem en japonés sin corchetes>", "resultado": "bien|duda|mal"}],
+  "can_dos": [{"id": "<id de la lista de can-dos activos>", "resultado": "conseguido|parcial|no_intentado", "evidencia": "<cita textual de algo que se dijo en la conversación>"}],
   "new_items": [{"category": "vocabulario|gramatica", "jp": "<japonés sin corchetes>", "es": "<español>"}],
   "sin_corregir": ["<error de Laura que el profesor NO corrigió, en una frase corta>"],
   "episodios": ["<algo que Laura contó de su vida: un viaje, sus perros, cómo le fue la semana…>"],
@@ -13,18 +13,20 @@ Analiza la conversación y devuelve ÚNICAMENTE un JSON con este esquema exacto:
 Reglas:
 - Incluye SOLO ítems que aparecieron realmente en la conversación.
 - Los ítems en japonés van sin los corchetes 【】.
-- reviewed: TODO lo que el alumno intentó producir o practicar, en dos tipos:
-  * VOCABULARIO: palabras sueltas y expresiones fijas (みず, ありがとう, みずをください…).
-  * GRAMÁTICA / CONJUGACIÓN: cuando Laura usó un patrón de conjugación o estructura,
-    añade el PATRÓN CANÓNICO, NO el verbo concreto. Ejemplos:
-      - dijo 食べた, 行った → jp: '〜た'
-      - dijo 食べています → jp: '〜ている'
-      - dijo むずかしくない → jp: '〜くない'
-      - dijo おいしかった → jp: '〜かった'
-      - dijo 食べてください → jp: '〜てください'
-      - usó は/が/を/に en una oración → jp: la partícula (は, が…)
-    Usa el jp exacto del FOCO si el patrón aparece en él.
-  Juzga resultado: bien (correcto o casi), duda (intentó con errores), mal (no lo logró).
+- can_dos: al principio del mensaje se te pasa la lista de CAN-DOS ACTIVOS de la sesión
+  (cada uno con su `id` y su texto "Puedo…"). Solo puedes calificar can-dos de esa lista;
+  usa su `id` EXACTO. No inventes ids.
+  * resultado:
+      - "conseguido": Laura cumplió la función EN JAPONÉS por sí misma, sin que el profesor
+        le diera la frase justo antes.
+      - "parcial": lo intentó pero con ayuda, con errores que lo dejaron a medias, o solo
+        una parte.
+      - "no_intentado": ese can-do no llegó a surgir en la sesión. No cambia nada; inclúyelo
+        solo si aporta, o simplemente omítelo.
+  * evidencia: OBLIGATORIA. Una CITA TEXTUAL de algo que se dijo en la conversación
+    (lo que dijo Laura o el profesor), no una valoración vaga. Mal: "lo hizo bien".
+    Bien: "Laura dijo 「コーヒーをください」 sin que Kaito se lo diera".
+  * Si ninguno de los can-dos activos surgió, can_dos = [].
 - new_items: vocabulario, expresiones o puntos gramaticales introducidos por primera vez.
   Para gramática usa el jp canónico del patrón (〜て, 〜た, る動詞…).
 - sin_corregir: errores que Laura cometió y el profesor dejó pasar sin comentarlos
@@ -36,38 +38,30 @@ Reglas:
 - kaito_dijo: afirmaciones que el PROFESOR hizo sobre sí mismo (gustos, anécdotas, recuerdos
   inventados). En español, una frase corta por afirmación, para que sesiones futuras no lo
   contradigan. Si no dijo nada de sí mismo, kaito_dijo = [].
-- Si el alumno no intentó producir nada, reviewed = [].
 - Responde SOLO con el JSON, sin markdown ni texto adicional.
 
 === EJEMPLO ===
-FOCO:
-  Vocabulario para repasar: 【みず】 agua
-  Gramática para repasar: 【〜てください】 petición formal
-  Ítem nuevo: 【〜た】 pasado casual
+CAN-DOS ACTIVOS:
+  - comida_pedir: Puedo pedir algo señalando la carta
+  - comida_gustos: Puedo decir qué comida y bebida me gusta y no
 Conversación:
-Profesor: Hoy repasamos 【みず】. Di conmigo.
-Laura: みず
-Profesor: 【いいね】! Ahora 【みずをください】.
-Laura: みずをくなさい
-Profesor: Casi, es 【みずをください】. ¿Puedes repetirlo?
-Laura: みずをください
-Profesor: 【いいね】! Ahora el pasado: ayer comiste, que se dice 【食べた】.
-Laura: たべた
-Profesor: 【すごい】! ¿Y bebiste? 【飲んだ】.
-Laura: わたし は のんだ
+Profesor: Estamos en la cafetería. Pídeme algo de la carta.
+Laura: コーヒーをください
+Profesor: 【いいね】! Perfecto. ¿Y qué comida te gusta?
+Laura: Eh… no sé cómo se dice.
+Profesor: すし が すきです. Prueba tú.
+Laura: すし が すきです
 Salida esperada:
 {
-  "summary": "Se repasó みず y 〜てください; Laura logró みずをください al segundo intento. Se introdujo el pasado casual 〜た: acertó 食べた y 飲んだ sin dificultad.",
-  "reviewed": [
-    {"jp": "みず", "resultado": "bien"},
-    {"jp": "〜てください", "resultado": "duda"},
-    {"jp": "〜た", "resultado": "bien"}
+  "summary": "Laura pidió un café en japonés sin ayuda (コーヒーをください). Para decir qué comida le gusta necesitó que Kaito le diera la frase primero.",
+  "can_dos": [
+    {"id": "comida_pedir", "resultado": "conseguido", "evidencia": "Laura dijo 「コーヒーをください」 sin que Kaito se lo diera"},
+    {"id": "comida_gustos", "resultado": "parcial", "evidencia": "Laura dijo 「すし が すきです」 solo después de que Kaito se lo dictara"}
   ],
   "new_items": [
-    {"category": "vocabulario", "jp": "みず", "es": "agua"},
-    {"category": "gramatica", "jp": "〜た", "es": "pasado casual del verbo"}
+    {"category": "vocabulario", "jp": "コーヒー", "es": "café"}
   ],
-  "sin_corregir": ["separó la partícula は de わたし; el profesor lo dejó pasar"],
+  "sin_corregir": [],
   "episodios": [],
   "kaito_dijo": []
 }
