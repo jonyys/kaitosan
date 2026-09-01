@@ -148,10 +148,42 @@ def test_deberes_sin_campo_no_rompe():
     assert "DEBERES DE LA SEMANA" not in foco, foco
 
 
+# ── Fase 17 — Arco de sesión ────────────────────────────────────────────────
+
+def _par(u, a="ok"):
+    return [{"role": "user", "content": u}, {"role": "assistant", "content": a}]
+
+
+def test_arco():
+    jap = JapaneseMemory(os.path.join(tempfile.mkdtemp(), "t.db"))
+    prof = _profesor(jap)
+    prof.entrar()
+    if prof.timer:
+        prof.timer.cancel()
+
+    # Turnos 1 y 2 → calentamiento, con la nota de "aún no metas ejercicio".
+    for pares in (0, 1):
+        prof.mensajes = _par("hola") * pares
+        foco = prof._montar_estado()[1]
+        assert "FASE DE LA SESIÓN: calentamiento" in foco
+        assert "aún no metas ejercicio de temario" in foco
+
+    # Turno 4 (primero del cuerpo) → foco.
+    prof.mensajes = _par("sigo") * 3
+    foco = prof._montar_estado()[1]
+    assert "FASE DE LA SESIÓN: foco" in foco
+
+    # Laura se despide → cierre (gana a la cuenta de turno).
+    prof.mensajes = _par("vale, lo dejamos por hoy, hasta la semana")
+    foco = prof._montar_estado()[1]
+    assert "FASE DE LA SESIÓN: cierre" in foco
+
+
 if __name__ == "__main__":
     test_nota_profe()
     test_montar_estado_incluye_notas_bajo_como_va_laura()
     test_extractor_sin_nota_profe_no_rompe_y_guarda_vacia()
     test_deberes()
     test_deberes_sin_campo_no_rompe()
+    test_arco()
     print("OK")

@@ -97,6 +97,34 @@ _PISTAS_PRODUCCION = (
 )
 
 
+# Fase 17 — arco de sesión. Palabras con que Laura suele despedirse; heurística
+# a propósito simple (el gate real es calentamiento vs foco por turno).
+_DESPEDIDAS_LAURA = (
+    "adiós", "adios", "hasta luego", "hasta la próxima", "hasta la proxima",
+    "hasta mañana", "hasta manana", "hasta la semana", "me voy", "nos vemos",
+    "lo dejamos", "lo dejo aquí", "lo dejo aqui", "lo dejo por hoy",
+    "ya es suficiente", "suficiente por hoy", "ya está bien por hoy",
+    "じゃあね", "またね", "さようなら", "バイバイ",
+)
+
+
+def _fase_sesion(turno: int, ultimo_de_laura: str) -> str:
+    """Pista de arco de sesión para la cabecera del FOCO (Fase 17).
+
+    turnos 1-2 → calentamiento (charla, deberes, cómo está Laura; temario aún no).
+    Laura se despide → cierre (el prompt ya trae el ritual). Resto → foco."""
+    if ultimo_de_laura and any(
+        p in ultimo_de_laura.lower() for p in _DESPEDIDAS_LAURA
+    ):
+        return "FASE DE LA SESIÓN: cierre"
+    if turno <= 2:
+        return (
+            "FASE DE LA SESIÓN: calentamiento — (turnos 1-2: charla, deberes, "
+            "cómo está Laura; aún no metas ejercicio de temario)"
+        )
+    return "FASE DE LA SESIÓN: foco"
+
+
 def _nivel_inmersion(perfil_jap: dict) -> int:
     """Nivel de inmersión 1→4 a partir del vocabulario que Laura ya domina.
 
@@ -452,6 +480,17 @@ class ProfesorJapones:
                 f"de entrar en materia): {deberes}"
             )
 
+        # Fase 17: arco de sesión. Nº de turno = pares user/assistant ya cerrados
+        # + 1 (el actual aún no está en self.mensajes). La despedida se mira sobre
+        # el último mensaje de Laura ya registrado, así que en el flujo real va un
+        # turno por detrás; basta para dar la entrada al cierre.
+        turno = len(self.mensajes) // 2 + 1
+        ultimo_de_laura = next(
+            (m["content"] for m in reversed(self.mensajes) if m["role"] == "user"),
+            "",
+        )
+        lineas_f.append(_fase_sesion(turno, ultimo_de_laura))
+
         if unidad:
             lineas_f.append(f"Unidad actual: {unidad['nombre']}")
             if unidad.get("funcion"):
@@ -520,7 +559,9 @@ class ProfesorJapones:
                     lineas_f += _lineas_foco(jp, meaning, sufijo="  [sabida]")
 
         # (la línea de deberes de Fase 16, si está, no cuenta como contenido)
-        if not [ln for ln in lineas_f if not ln.startswith("DEBERES DE LA SEMANA")]:
+        if not [ln for ln in lineas_f
+                if not ln.startswith("DEBERES DE LA SEMANA")
+                and not ln.startswith("FASE DE LA SESIÓN")]:
             lineas_f.append(
                 "Sin unidad abierta. Conversa libremente en japonés sobre cualquier tema."
             )
