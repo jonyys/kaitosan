@@ -6,8 +6,8 @@ Estados: `pendiente` · `en_curso:<agente>` · `verificada` · `bloqueada:<motiv
 | Fase | Título | Bloque | 🔴/🟢 | Estado | Rama | Commit | Nota |
 |---|---|---|---|---|---|---|---|
 | 01 | Fuentes de verdad + validador | I | 🟢 | verificada | cando/fase01 | 64509f0 | data/n5_vocab.csv (717+cab), data/n5_grammar.csv (90+cab, ensamblada de memoria), scripts/validar_curriculum.py |
-| 02 | Reconciliar vocabulario a la lista | I | 🔴 | pendiente | | | |
-| 03 | Reconciliar gramática a la lista | I | 🟢 | pendiente | | | |
+| 02 | Reconciliar vocabulario a la lista | I | 🔴 | verificada | cando/fase02 | 4bd09dd | 202 conservados, 508 añadidos, 103 fuera. CSV=710 jp únicos (no 717: 8 kanji doble lectura). Unidad nueva vocabulario_n5_extra |
+| 03 | Reconciliar gramática a la lista | I | 🟢 | verificada | cando/fase03 | 912caa2 | 54 conservados, 36 añadidos, 101 fuera. gramática=90==CSV. Rehecha sobre fase02 al fusionar |
 | 04 | Borrar unidades vacías + purgar BD | I | 🟢 | pendiente | | | |
 | 05 | Notas de uso del vocabulario + gramática completa | II | 🔴 | pendiente | | | |
 | 06 | Can-dos por unidad (generados) | III | 🟢 | pendiente | | | |
