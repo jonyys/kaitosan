@@ -106,6 +106,9 @@ class JapaneseMemory:
             "next_review": "TEXT",
             "times_seen": "INTEGER DEFAULT 0",
             "times_correct": "INTEGER DEFAULT 0",
+            # espejo de vocab/kanji: lo que Laura pidió en sesión no se purga
+            # (Fase 04) y lo poblará el extractor en la Fase 08.
+            "first_taught_session_id": "INTEGER",
         }
         kanji_cols = {
             "reps": "INTEGER DEFAULT 0",
@@ -381,6 +384,37 @@ class JapaneseMemory:
                 "SELECT grammar_point, description, COALESCE(mastery, 0) AS mastery, "
                 "COALESCE(reps, 0) AS reps FROM japanese_grammar"
             )}
+
+    def purgar_fuera_de_temario(self, jps_vocab, jps_gram):
+        """Borra vocabulario y gramática que solo existían por el temario viejo
+        N4/N3: filas cuyo texto japonés no está en el temario N5 actual Y que
+        nadie pidió en sesión (`first_taught_session_id IS NULL`).
+
+        Idempotente: en la segunda pasada ya no queda nada fuera de temario sin
+        pedir, así que no borra nada. Se corre una vez al desplegar.
+        Devuelve (borradas_vocab, borradas_gram).
+        """
+        jps_vocab = set(jps_vocab)
+        jps_gram = set(jps_gram)
+        with self._conectar() as conn:
+            vocab = conn.execute(
+                "SELECT id, word FROM japanese_vocabulary "
+                "WHERE first_taught_session_id IS NULL"
+            ).fetchall()
+            sobra_v = [(i,) for i, w in vocab if w not in jps_vocab]
+            conn.executemany(
+                "DELETE FROM japanese_vocabulary WHERE id = ?", sobra_v
+            )
+
+            gram = conn.execute(
+                "SELECT id, grammar_point FROM japanese_grammar "
+                "WHERE first_taught_session_id IS NULL"
+            ).fetchall()
+            sobra_g = [(i,) for i, g in gram if g not in jps_gram]
+            conn.executemany(
+                "DELETE FROM japanese_grammar WHERE id = ?", sobra_g
+            )
+        return len(sobra_v), len(sobra_g)
 
     def marcar_completo(self, jp, kind="vocabulario", reading=None, meaning=None, tipo=None):
         """Marca una palabra, kanji o punto de gramática como aprendido del todo:

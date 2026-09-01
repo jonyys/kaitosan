@@ -15,12 +15,6 @@
         flex-wrap: wrap;
       }
 
-      .voc-niveles {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-bottom: 10px;
-      }
       .voc-unidades {
         display: flex;
         flex-wrap: wrap;
@@ -29,7 +23,6 @@
         padding-top: 10px;
         border-top: 1px dashed var(--border-fuerte);
       }
-      .voc-nivel,
       .voc-unidad-btn {
         border: 1px solid var(--border-fuerte);
         border-radius: var(--radio-pill);
@@ -38,20 +31,12 @@
         font: inherit;
         font-weight: 700;
         cursor: pointer;
-      }
-      .voc-nivel {
-        font-size: 14px;
-        padding: 8px 18px;
-      }
-      .voc-unidad-btn {
         font-size: 12px;
         padding: 6px 12px;
       }
-      .voc-nivel:hover,
       .voc-unidad-btn:hover {
         border-color: var(--rosa-accion);
       }
-      .voc-nivel.active,
       .voc-unidad-btn.active {
         background: var(--rosa-accion);
         border-color: var(--rosa-accion);
@@ -215,31 +200,17 @@
         </div>
       </h1>
 
-      <div class="voc-niveles">
-        {% for n in niveles %}
-        <button type="button" class="voc-nivel" data-n="{{ n }}">{{ n }}</button>
-        {% endfor %}
-      </div>
       <div class="voc-unidades">
         <button type="button" class="voc-unidad-btn" data-u="all">Todas</button>
         {% for u in unidades %}
-        <button
-          type="button"
-          class="voc-unidad-btn"
-          data-u="{{ u.id }}"
-          data-n="{{ u.nivel }}"
-        >
+        <button type="button" class="voc-unidad-btn" data-u="{{ u.id }}">
           {{ u.nombre }} ({{ u.hechas }}/{{ u.total }})
         </button>
         {% endfor %}
       </div>
 
       {% for u in unidades %}
-      <section
-        class="voc-unidad card full"
-        data-u="{{ u.id }}"
-        data-n="{{ u.nivel }}"
-      >
+      <section class="voc-unidad card full" data-u="{{ u.id }}">
         <div class="voc-unidad-head">
           <h2>{{ u.nombre }}</h2>
           <form
@@ -330,45 +301,20 @@
 
     <script>
       (function () {
-        var K_NIVEL = "temNivel:{{ kind }}";
         var K_UNIDAD = "temUnidad:{{ kind }}";
-        var nivelBtns = document.querySelectorAll(".voc-nivel");
         var unidadBtns = document.querySelectorAll(".voc-unidad-btn");
         var secciones = document.querySelectorAll(".voc-unidad");
-        var niveles = [].map.call(nivelBtns, function (b) {
-          return b.dataset.n;
-        });
-
-        var activeN = niveles[0] || "";
         var activeU = "all";
 
         function aplicar() {
-          nivelBtns.forEach(function (b) {
-            b.classList.toggle("active", b.dataset.n === activeN);
-          });
           unidadBtns.forEach(function (b) {
-            var mia = !b.dataset.n || b.dataset.n === activeN;
-            b.hidden = !mia;
-            b.classList.toggle("active", mia && b.dataset.u === activeU);
+            b.classList.toggle("active", b.dataset.u === activeU);
           });
           secciones.forEach(function (s) {
-            s.hidden =
-              s.dataset.n !== activeN ||
-              (activeU !== "all" && s.dataset.u !== activeU);
+            s.hidden = activeU !== "all" && s.dataset.u !== activeU;
           });
         }
 
-        nivelBtns.forEach(function (b) {
-          b.addEventListener("click", function () {
-            activeN = b.dataset.n;
-            activeU = "all";
-            try {
-              sessionStorage.setItem(K_NIVEL, activeN);
-              sessionStorage.setItem(K_UNIDAD, "all");
-            } catch (e) {}
-            aplicar();
-          });
-        });
         unidadBtns.forEach(function (b) {
           b.addEventListener("click", function () {
             activeU = b.dataset.u;
@@ -380,15 +326,13 @@
         });
 
         try {
-          var gn = sessionStorage.getItem(K_NIVEL);
-          if (gn && niveles.indexOf(gn) !== -1) activeN = gn;
           var gu = sessionStorage.getItem(K_UNIDAD);
           if (gu) activeU = gu;
         } catch (e) {}
         if (
           activeU !== "all" &&
           ![].some.call(secciones, function (s) {
-            return s.dataset.u === activeU && s.dataset.n === activeN;
+            return s.dataset.u === activeU;
           })
         )
           activeU = "all";

@@ -2785,20 +2785,6 @@ CURRICULUM = [
     ]
   },
   {
-    'id': 'grupos_verbales',
-    'nombre': 'Grupos verbales: る動詞, う動詞, irregulares',
-    'funcion': 'conjugar tú sola cualquier verbo nuevo que oigas, sin tener que preguntar la forma',
-    'frases_hechas': [
-      {'jp': 'なんて言うんですか', 'uso': "'¿cómo se dice?', tu salvavidas cuando falta una palabra"},
-      {'jp': 'どういう意味ですか', 'uso': "'¿qué significa?', cuando la oyes pero no la entiendes"},
-      {'jp': 'ゆっくりお願いします', 'uso': "'más despacio, por favor'; funciona con cualquier japonés"},
-      {'jp': 'わかった！', 'uso': "'¡lo pillé!', informal, cuando por fin te sale la conjugación"}
-    ],
-    'prerequisito': 'verbos_movimiento_objeto_n5',
-    'umbral_prereq': 0.75,
-    'items': []
-  },
-  {
     'id': 'adjetivos_n5',
     'nombre': 'Adjetivos N5 (い y な)',
     'funcion': 'describir cosas y personas, y decir con claridad qué te gusta y qué no',
@@ -2808,7 +2794,7 @@ CURRICULUM = [
       {'jp': 'びみょう', 'uso': "'regulero', ni bien ni mal; muy útil para no mojarte"},
       {'jp': '大丈夫です', 'uso': "también sirve para rechazar algo con educación: 'no, gracias'"}
     ],
-    'prerequisito': 'grupos_verbales',
+    'prerequisito': 'verbos_movimiento_objeto_n5',
     'umbral_prereq': 0.75,
     'items': [
       {
@@ -8073,7 +8059,7 @@ CURRICULUM = [
   },
   {
     'id': 'forma_potencial',
-    'nombre': 'Forma potencial N4: poder hacer X',
+    'nombre': 'Forma potencial: poder hacer X',
     'funcion': 'decir lo que puedes y lo que no puedes hacer, y pedir ayuda cuando algo se te escapa',
     'frases_hechas': [
       {'jp': 'できる', 'uso': "'¿puedes?' preguntando, 'puedo' respondiendo"},
@@ -8094,50 +8080,8 @@ CURRICULUM = [
     ]
   },
   {
-    'id': 'volitiva_proposito',
-    'nombre': 'Volitiva, intención y propósito N4',
-    'funcion': 'proponer planes, decir tus intenciones y explicar para qué haces algo',
-    'frases_hechas': [
-      {'jp': '行こう！', 'uso': "'¡vamos!'; volitiva informal, entre amigos"},
-      {'jp': '〜しようか', 'uso': "'¿hacemos…?', proponer dejando la decisión al otro"},
-      {'jp': 'そろそろ…', 'uso': "'va siendo hora de…'; el aviso suave de que toca irse"},
-      {'jp': 'また誘って', 'uso': "'avísame la próxima', al rechazar un plan sin cerrar la puerta"}
-    ],
-    'prerequisito': 'forma_potencial',
-    'umbral_prereq': 0.75,
-    'items': []
-  },
-  {
-    'id': 'condicionales_n4',
-    'nombre': 'Condicionales N4: 〜ば・〜と・〜なら・〜ても',
-    'funcion': 'hablar de hipótesis y condiciones: si pasa esto, entonces aquello',
-    'frases_hechas': [
-      {'jp': 'もしよかったら', 'uso': "'si te apetece'; abre una invitación sin presionar"},
-      {'jp': 'だったら…', 'uso': "'en ese caso…', para reaccionar a lo que acaban de decirte"},
-      {'jp': 'それなら大丈夫', 'uso': "'así sí, sin problema'"},
-      {'jp': '〜すればよかった', 'uso': "'ojalá hubiera…'; arrepentimiento por lo que no hiciste"}
-    ],
-    'prerequisito': 'volitiva_proposito',
-    'umbral_prereq': 0.75,
-    'items': []
-  },
-  {
-    'id': 'experiencia_aspecto',
-    'nombre': 'Experiencia y cambio aspectual N4',
-    'funcion': 'contar experiencias que has tenido y cambios que notas: lo que ya hiciste y lo que se te fue de las manos',
-    'frases_hechas': [
-      {'jp': '〜たことある', 'uso': "'¿has probado alguna vez…?'; abre mil conversaciones"},
-      {'jp': 'やっちゃった', 'uso': "'la he liado'; el 〜てしまう informal, con resignación"},
-      {'jp': '忘れてた！', 'uso': "'¡se me había olvidado!'"},
-      {'jp': '慣れてきた', 'uso': "'ya me voy acostumbrando'; el 〜てくる del cambio gradual"}
-    ],
-    'prerequisito': 'condicionales_n4',
-    'umbral_prereq': 0.75,
-    'items': []
-  },
-  {
     'id': 'transitivos_intransitivos',
-    'nombre': 'Verbos transitivos e intransitivos N4',
+    'nombre': 'Verbos transitivos e intransitivos',
     'funcion': 'distinguir lo que tú haces de lo que pasa solo: abrir una puerta o que la puerta se abra',
     'frases_hechas': [
       {'jp': '開いてる', 'uso': "'¿está abierto?'; describe el estado, no quién lo abrió"},
@@ -8145,7 +8089,7 @@ CURRICULUM = [
       {'jp': '始まるよ', 'uso': "'que empieza', avisando de que va a comenzar algo"},
       {'jp': '閉めておいて', 'uso': "'déjalo cerrado, porfa'; dejar algo hecho para después"}
     ],
-    'prerequisito': 'experiencia_aspecto',
+    'prerequisito': 'forma_potencial',
     'umbral_prereq': 0.75,
     'items': [
       {
@@ -8172,8 +8116,8 @@ CURRICULUM = [
     ]
   },
   {
-    'id': 'vocabulario_n4_vida',
-    'nombre': 'Vocabulario N4 — Vida cotidiana y sociedad',
+    'id': 'vocabulario_vida',
+    'nombre': 'Vocabulario N5 — Vida cotidiana y sociedad',
     'funcion': 'manejarte en el trabajo y en la vida adulta: quedar, llamar, avisar y resolver problemas',
     'frases_hechas': [
       {
@@ -8245,132 +8189,6 @@ CURRICULUM = [
       }
     ]
   },
-  {
-    'id': 'apariencia_suposicion',
-    'nombre': 'Apariencia y suposición N4: 〜そう・〜らしい・〜ようだ',
-    'funcion': 'decir cómo parece algo y de qué te has enterado, sin afirmarlo del todo',
-    'frases_hechas': [
-      {'jp': '〜みたい', 'uso': "'parece que…'; la versión hablada de 〜ようだ"},
-      {'jp': 'らしいよ', 'uso': "'según dicen'; marcas que la información no es tuya"},
-      {'jp': 'たぶんね', 'uso': "'probablemente'; deja la puerta abierta a equivocarte"},
-      {'jp': 'どうやら…', 'uso': "'por lo visto…', cuando lo deduces de lo que ves"}
-    ],
-    'prerequisito': 'vocabulario_n4_vida',
-    'umbral_prereq': 0.75,
-    'items': []
-  },
-  {
-    'id': 'causativo_pasivo',
-    'nombre': 'Causativo, pasivo y dar/recibir N4',
-    'funcion': 'hablar de favores: quién hace qué por quién, y pedir permiso para hacerlo tú',
-    'frases_hechas': [
-      {'jp': '〜てくれてありがとう', 'uso': "'gracias por hacerlo'; agradece la acción, no la cosa"},
-      {'jp': '〜させてください', 'uso': "'déjame hacerlo'; ofrecerte a hacer algo con educación"},
-      {'jp': 'おごるよ', 'uso': "'invito yo'"},
-      {'jp': '遠慮しないで', 'uso': "'no te cortes'; lo que se dice al que dice que no por educación"}
-    ],
-    'prerequisito': 'apariencia_suposicion',
-    'umbral_prereq': 0.75,
-    'items': []
-  },
-  {
-    'id': 'keigo_intro',
-    'nombre': 'Honoríficos básicos N4: prefijos お・ご y formas respetuosas',
-    'funcion': 'hablar con respeto a un desconocido, a un jefe o en una tienda sin sonar raro',
-    'frases_hechas': [
-      {'jp': 'いらっしゃいませ', 'uso': 'lo que te dicen al entrar en cualquier tienda; no se responde'},
-      {'jp': '少々お待ちください', 'uso': "'un momento, por favor', de quien atiende"},
-      {'jp': 'かしこまりました', 'uso': "'entendido'; solo lo dice quien sirve al cliente"},
-      {'jp': '失礼します', 'uso': 'al entrar y al salir de una sala, y al colgar el teléfono'}
-    ],
-    'prerequisito': 'causativo_pasivo',
-    'umbral_prereq': 0.75,
-    'items': []
-  },
-  {
-    'id': 'keigo_avanzado',
-    'nombre': 'Keigo avanzado N3: 尊敬語 y 謙譲語',
-    'funcion': 'moverte en situaciones formales de verdad: presentarte en una empresa, atender y ser atendida',
-    'frases_hechas': [
-      {'jp': 'お世話になっております', 'uso': 'apertura estándar de cualquier llamada o correo de trabajo'},
-      {'jp': '恐れ入りますが', 'uso': "'disculpe la molestia, pero…', antes de pedir algo incómodo"},
-      {'jp': 'ご確認ください', 'uso': "'compruébelo, por favor'"},
-      {'jp': 'お疲れさまでした', 'uso': 'cierre formal de la jornada, con el お y el でした'}
-    ],
-    'prerequisito': 'keigo_intro',
-    'umbral_prereq': 0.75,
-    'items': []
-  },
-  {
-    'id': 'causativo_pasivo_n3',
-    'nombre': 'Causativo-pasivo y verbos compuestos N3',
-    'funcion': 'contar lo que te han hecho hacer y lo que no paras de hacer, con matiz de obligación o queja',
-    'frases_hechas': [
-      {'jp': '残業させられた', 'uso': "'me hicieron quedarme a currar'; queja clásica de oficina"},
-      {'jp': '〜てばかり', 'uso': "'no para de…'; siempre con tono de reproche"},
-      {'jp': 'しかたない', 'uso': "'qué le vamos a hacer'; muy japonés, resignación sin drama"},
-      {'jp': 'まあ、いいか', 'uso': "'bueno, da igual', para soltar el tema"}
-    ],
-    'prerequisito': 'keigo_avanzado',
-    'umbral_prereq': 0.75,
-    'items': []
-  },
-  {
-    'id': 'matiz_n3_a',
-    'nombre': 'Matiz N3: 〜わけ・〜はず・〜べき・〜もの',
-    'funcion': 'opinar con matiz: lo que debería ser, lo que es imposible y lo que se da por hecho',
-    'frases_hechas': [
-      {'jp': 'そんなわけない', 'uso': "'ni de broma'; niega algo tajantemente"},
-      {'jp': '〜べきだと思う', 'uso': "'creo que habría que…'; suaviza el べき, que solo suena duro"},
-      {'jp': '当たり前じゃん', 'uso': "'pues claro'; informal, casi con reproche cariñoso"},
-      {'jp': 'そういうものだ', 'uso': "'las cosas son así'; tono reflexivo, de conclusión"}
-    ],
-    'prerequisito': 'causativo_pasivo_n3',
-    'umbral_prereq': 0.75,
-    'items': []
-  },
-  {
-    'id': 'causa_contraste_n3',
-    'nombre': 'Causa y contraste formal N3: 〜ため・〜ものの・〜によって',
-    'funcion': 'explicar causas y contrastes en registro formal: informes, noticias y discusiones',
-    'frases_hechas': [
-      {'jp': 'というのは…', 'uso': "'lo que pasa es que…', antes de dar la explicación"},
-      {'jp': 'それに対して', 'uso': "'frente a eso'; para contraponer dos datos"},
-      {'jp': 'にもかかわらず', 'uso': "'pese a todo'; escrito y formal, no en la charla del bar"},
-      {'jp': '結果として', 'uso': "'como resultado', al cerrar un razonamiento"}
-    ],
-    'prerequisito': 'matiz_n3_a',
-    'umbral_prereq': 0.75,
-    'items': []
-  },
-  {
-    'id': 'conjunciones_n3',
-    'nombre': 'Conjunciones y decisiones N3',
-    'funcion': 'encadenar razones y contar decisiones: por qué haces algo y en qué has quedado',
-    'frases_hechas': [
-      {'jp': 'というか…', 'uso': "'o más bien…', para corregirte a media frase"},
-      {'jp': 'ってことは', 'uso': "'¿eso significa que…?', al sacar una conclusión"},
-      {'jp': 'ことにした', 'uso': "'he decidido que…'; la decisión es tuya"},
-      {'jp': '一方で', 'uso': "'por otro lado'; ordena las dos caras de un asunto"}
-    ],
-    'prerequisito': 'causa_contraste_n3',
-    'umbral_prereq': 0.75,
-    'items': []
-  },
-  {
-    'id': 'vocabulario_n3',
-    'nombre': 'Vocabulario N3 — Abstracto, emocional y formal',
-    'funcion': 'hablar de lo que sientes y de lo que piensas: opiniones, experiencias y situaciones abstractas',
-    'frases_hechas': [
-      {'jp': '気にしないで', 'uso': "'no le des importancia', a quien se disculpa o se agobia"},
-      {'jp': '自信ない', 'uso': "'no me veo capaz'; se dice mucho más que en español"},
-      {'jp': 'なんとなく', 'uso': "'sin razón concreta', 'porque sí'; respuesta comodín"},
-      {'jp': '気持ちわかる', 'uso': "'te entiendo'; literalmente 'entiendo tu sentimiento'"}
-    ],
-    'prerequisito': 'conjunciones_n3',
-    'umbral_prereq': 0.75,
-    'items': []
-  }
 ]
 
 

@@ -1,7 +1,6 @@
 import atexit
 import os
 import random
-import re
 import signal
 import sys
 import tempfile
@@ -1076,17 +1075,10 @@ def _temario_unidades(kind):
                 return "aprendida"
             return "en_curso"
 
-    # El nivel (N5/N4/N3…) no está en un campo: va en el nombre de algunas
-    # unidades y el temario está ordenado de mayor a menor. Se arrastra el
-    # último nivel visto y solo se avanza (N5→N4→N3), nunca se retrocede.
-    nivel_re = re.compile(r"\bN([1-5])\b")
-    nivel = "N5"
-
+    # El temario es exactamente el N5 (Fase 04): se renderiza tal cual sale de
+    # CURRICULUM, sin selector de nivel ni arrastre N5→N4→N3.
     unidades, vistos = [], set()
     for u in CURRICULUM:
-        m = nivel_re.search(u.get("nombre", ""))
-        if m and int(m.group(1)) < int(nivel[1]):
-            nivel = "N" + m.group(1)
         items = []
         for e in u.get("items", []):
             # los kanji entran como kind 'vocabulario' pero tienen su propia página
@@ -1110,7 +1102,7 @@ def _temario_unidades(kind):
             })
         if items:
             unidades.append({"id": u["id"], "nombre": u.get("nombre", "N5"),
-                             "nivel": nivel, "items": items})
+                             "items": items})
 
     _mean_key = "description" if kind == "gramatica" else "meaning"
     extra = [{
@@ -1125,7 +1117,7 @@ def _temario_unidades(kind):
         if jp not in vistos and (kind == "gramatica" or r["type"] != "kanji")]
     if extra:
         unidades.append({"id": "_extra", "nombre": _TEMARIO_EXTRA[kind],
-                         "nivel": "Extra", "items": extra})
+                         "items": extra})
 
     for u in unidades:
         u["total"] = len(u["items"])
@@ -1135,11 +1127,9 @@ def _temario_unidades(kind):
 
 
 def _render_temario(kind):
-    unidades = _temario_unidades(kind)
-    niveles = list(dict.fromkeys(u["nivel"] for u in unidades))
     return render_template("japones_temario.html", kind=kind,
                            titulo=_TEMARIO_TITULOS[kind],
-                           unidades=unidades, niveles=niveles)
+                           unidades=_temario_unidades(kind))
 
 
 def _completar_item(kind, jp):
