@@ -157,3 +157,158 @@ def test_boletin_db_vacia():
     assert bol["candos_total"] > 0
     assert bol["vocab_total"] == 710
     assert bol["gram_total"] == 90
+
+
+# ── Fase 12 — Práctica de vocabulario por lección ──────────────────────────────
+#
+# `import app` sigue sin arrancar aquí (picamera2 / google.generativeai, deps de
+# la Pi). Igual que `test_boletin`, se monta una app Flask mínima que registra la
+# vista de esta fase con el MISMO cuerpo que `app.py:japones_vocabulario_practicar`
+# (copiado literal), usando un `JapaneseMemory` real sobre BD tmp y el `CURRICULUM`
+# real: los `review()`/`get_due_items()`/`add_item()`/`vocab_rows()` que ejercita
+# son los de producción. Los valores SM-2 se comparan contra `review(.., "kanji")`
+# con las mismas quality sobre una fila espejo.
+import re
+
+_RE_WORD = re.compile(r'name="word"\s+value="([^"]*)"')
+
+
+def _unidad_vocab(uid):
+    u = next((x for x in CURRICULUM if x.get("id") == uid), None)
+    if not u:
+        return None, []
+    items, vistos = [], set()
+    for e in u.get("items", []):
+        if e.get("kind") != "vocabulario" or e.get("tipo") == "kanji":
+            continue
+        jp = str(e.get("jp") or "").strip()
+        if not jp or jp in vistos:
+            continue
+        vistos.add(jp)
+        items.append({
+            "jp": jp,
+            "reading": (e.get("reading") or "").strip(),
+            "meaning": (e.get("meaning") or "").strip(),
+            "ejemplo": (e.get("ejemplo") or "").strip(),
+        })
+    return u.get("nombre", "N5"), items
+
+
+def _primera_unidad_vocab():
+    for u in CURRICULUM:
+        nombre, items = _unidad_vocab(u["id"])
+        if len(items) >= 3:
+            return u["id"], nombre, items
+    raise AssertionError("sin unidad de vocabulario en CURRICULUM")
+
+
+def _mini_practica_app(jm):
+    import random as _random
+    from flask import redirect, request, url_for
+
+    app = Flask("practica_test",
+                template_folder=os.path.join(_RAIZ, "templates"))
+
+    @app.route("/japones/vocabulario/practicar", methods=["GET", "POST"],
+               endpoint="japones_vocabulario_practicar")
+    def vista():
+        uid = (request.values.get("unidad") or "").strip()
+        nombre, items = _unidad_vocab(uid)
+        if nombre is None:
+            return "no unit", 302
+        por_jp = {it["jp"]: it for it in items}
+
+        if request.method == "POST":
+            jp = (request.form.get("word") or "").strip()
+            try:
+                quality = int(request.form.get("quality", 3))
+            except ValueError:
+                quality = 3
+            quality = max(0, min(5, quality))
+            it = por_jp.get(jp)
+            if it:
+                item_id = jm.get_item_id(jp, "vocabulario")
+                if item_id is None:
+                    jm.add_item("vocabulario", jp, reading=it["reading"],
+                                meaning=it["meaning"], tipo="vocabulario")
+                    item_id = jm.get_item_id(jp, "vocabulario")
+                if item_id is not None:
+                    jm.review(item_id, quality, "vocabulario")
+            return redirect(url_for("japones_vocabulario_practicar", unidad=uid))
+
+        due = [d for d in jm.get_due_items(limit=500, kind="vocabulario")
+               if d["jp"] in por_jp]
+        rows = jm.vocab_rows()
+        nuevos = [jp for jp in por_jp
+                  if jp not in rows or (rows[jp].get("reps") or 0) == 0]
+        if due:
+            jp, reps = due[0]["jp"], (due[0].get("reps") or 0)
+        elif nuevos:
+            jp, reps = _random.choice(nuevos), 0
+        else:
+            return render_template("japones_vocab_practica.html", unidad=uid,
+                                   unidad_nombre=nombre, pendientes=0,
+                                   al_dia=True, v=None)
+        it = por_jp[jp]
+        sentido = "es_jp" if reps % 2 == 0 else "jp_es"
+        reading = it["reading"] if it["reading"] and it["reading"] != jp else ""
+        v = {
+            "jp": jp, "reading": reading, "meaning": it["meaning"],
+            "ejemplo": it["ejemplo"], "sentido": sentido,
+            "pregunta": it["meaning"] if sentido == "es_jp" else jp,
+            "respuesta": jp if sentido == "es_jp" else it["meaning"],
+        }
+        return render_template("japones_vocab_practica.html", unidad=uid,
+                               unidad_nombre=nombre, pendientes=len(due),
+                               al_dia=False, v=v)
+
+    return app
+
+
+def _fila(jm, tabla, col, jp):
+    with jm._conectar() as c:
+        return c.execute(
+            f"SELECT reps, ease_factor, interval_days, next_review, "
+            f"{'status' if tabla != 'japanese_grammar' else 'mastery'} "
+            f"FROM {tabla} WHERE {col} = ?", (jp,)
+        ).fetchone()
+
+
+def test_practica_vocab():
+    uid, _nombre, items = _primera_unidad_vocab()
+    jps = {it["jp"] for it in items}
+    jm = _jm()
+    cliente = _mini_practica_app(jm).test_client()
+
+    # 1) GET → 200 y el ítem servido pertenece a la unidad
+    for _ in range(6):
+        resp = cliente.get("/japones/vocabulario/practicar?unidad=" + uid)
+        assert resp.status_code == 200
+        m = _RE_WORD.search(resp.get_data(as_text=True))
+        assert m and m.group(1) in jps
+
+    # unidad inexistente → no 200
+    assert cliente.get("/japones/vocabulario/practicar?unidad=__nope__").status_code == 302
+
+    # 2) POST de 5 calificaciones sobre un ítem: mismos valores SM-2 que kanji
+    jp = sorted(jps)[0]
+    it = next(i for i in items if i["jp"] == jp)
+    jm.add_item("kanji", jp, reading=it["reading"], meaning=it["meaning"], tipo="kanji")
+    kid = jm.get_item_id(jp, "kanji")
+
+    secuencia = [5, 5, 5, 1, 5]  # q5×3 → learned; luego q1 (vuelve pronto); q5
+    for i, q in enumerate(secuencia, 1):
+        cliente.post("/japones/vocabulario/practicar",
+                     data={"unidad": uid, "word": jp, "quality": str(q)})
+        jm.review(kid, q, "kanji")
+
+        v = _fila(jm, "japanese_vocabulary", "word", jp)
+        k = _fila(jm, "japanese_kanji", "kanji", jp)
+        assert v == k, f"paso {i} q={q}: vocab {v} != kanji {k}"
+
+        if i == 3:  # q5 ×3 → status 'learned'
+            assert v[4] == "learned", v
+        if i == 4:  # q1 = 'No' → vuelve a salir pronto (next_review ~hoy)
+            assert v[0] == 0 and v[2] == 1, v  # reps reseteado, interval 1 día
+            from datetime import date, timedelta
+            assert v[3] <= (date.today() + timedelta(days=1)).isoformat()

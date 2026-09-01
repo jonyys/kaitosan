@@ -1168,6 +1168,97 @@ def japones_gramatica():
     return _render_temario("gramatica")
 
 
+def _vocab_items_unidad(uid):
+    """(nombre, [ítems]) de vocabulario (no kanji) de una unidad del temario por
+    su `id`. nombre None si la unidad no existe. Cada ítem: jp/reading/meaning/
+    ejemplo."""
+    u = next((x for x in CURRICULUM if x.get("id") == uid), None)
+    if not u:
+        return None, []
+    items, vistos = [], set()
+    for e in u.get("items", []):
+        if e.get("kind") != "vocabulario" or e.get("tipo") == "kanji":
+            continue
+        jp = str(e.get("jp") or "").strip()
+        if not jp or jp in vistos:
+            continue
+        vistos.add(jp)
+        items.append({
+            "jp": jp,
+            "reading": (e.get("reading") or "").strip(),
+            "meaning": (e.get("meaning") or "").strip(),
+            "ejemplo": (e.get("ejemplo") or "").strip(),
+        })
+    return u.get("nombre", "N5"), items
+
+
+@app.route("/japones/vocabulario/practicar", methods=["GET", "POST"])
+@login_requerido
+def japones_vocabulario_practicar():
+    """Práctica SRS de vocabulario por lección (Fase 12). Calcada de
+    /japones/kanjis/practicar: autocalificación -> review(id, q, 'vocabulario'),
+    siguiente ítem por get_due_items(kind='vocabulario') filtrado a la unidad."""
+    uid = (request.values.get("unidad") or "").strip()
+    nombre, items = _vocab_items_unidad(uid)
+    if nombre is None:
+        return redirect(url_for("japones_vocabulario"))
+    por_jp = {it["jp"]: it for it in items}
+
+    if request.method == "POST":
+        jp = (request.form.get("word") or "").strip()
+        try:
+            quality = int(request.form.get("quality", 3))
+        except ValueError:
+            quality = 3
+        quality = max(0, min(5, quality))
+        it = por_jp.get(jp)
+        if it:
+            item_id = brain.jap_memory.get_item_id(jp, "vocabulario")
+            if item_id is None:
+                brain.jap_memory.add_item(
+                    "vocabulario", jp,
+                    reading=it["reading"], meaning=it["meaning"], tipo="vocabulario",
+                )
+                item_id = brain.jap_memory.get_item_id(jp, "vocabulario")
+            if item_id is not None:
+                brain.jap_memory.review(item_id, quality, "vocabulario")
+        return redirect(url_for("japones_vocabulario_practicar", unidad=uid))
+
+    # GET: siguiente ítem de la unidad — vencidos primero, luego nunca practicado
+    due = [d for d in brain.jap_memory.get_due_items(limit=500, kind="vocabulario")
+           if d["jp"] in por_jp]
+    rows = brain.jap_memory.vocab_rows()
+    nuevos = [jp for jp in por_jp
+              if jp not in rows or (rows[jp].get("reps") or 0) == 0]
+
+    if due:
+        jp, reps = due[0]["jp"], (due[0].get("reps") or 0)
+    elif nuevos:
+        jp, reps = random.choice(nuevos), 0
+    else:
+        return render_template("japones_vocab_practica.html", unidad=uid,
+                               unidad_nombre=nombre, pendientes=0,
+                               al_dia=True, v=None)
+
+    it = por_jp[jp]
+    # Alterna el sentido de forma estable por paridad de reps: par -> ES→JP
+    # (muestra el significado, pide el japonés), impar -> JP→ES.
+    sentido = "es_jp" if reps % 2 == 0 else "jp_es"
+    reading = it["reading"] if it["reading"] and it["reading"] != jp else ""
+    v = {
+        "jp": jp,
+        "reading": reading,
+        "meaning": it["meaning"],
+        "ejemplo": it["ejemplo"],
+        "sentido": sentido,
+        "pregunta": it["meaning"] if sentido == "es_jp" else jp,
+        "respuesta": jp if sentido == "es_jp" else it["meaning"],
+    }
+    return render_template("japones_vocab_practica.html", unidad=uid,
+                           unidad_nombre=nombre, pendientes=len(due),
+                           al_dia=False, v=v)
+
+
 @app.route("/japones/boletin")
 @login_requerido
 def japones_boletin():
