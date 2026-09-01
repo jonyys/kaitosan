@@ -252,9 +252,12 @@ def test_marcador_estado():
     assert "[sabida]" in metodo and "[en progreso]" in metodo and "[nueva]" in metodo
 
 
-def test_smoke_5_turnos():
-    """Sustituto de `python simulate_sensei.py` (no hay API key en el entorno):
-    5 turnos + _montar_estado() con el LLM mockeado, sin excepción."""
+def test_smoke_8_turnos_y_cierre():
+    """Sustituto de `python simulate_sensei.py` (sin API key / sin
+    google.generativeai en el entorno): 8 turnos + _montar_estado() y luego el
+    cierre/extracción, todo con el LLM mockeado y sin excepción."""
+    import json as _json
+
     jm = _jm()
     prof = _profesor(jm)
     prof.provider.completar.return_value = "Muy bien 【はい、そうです】"
@@ -262,14 +265,28 @@ def test_smoke_5_turnos():
     if prof.timer:
         prof.timer.cancel()
 
-    for i in range(5):
+    for i in range(8):
         recuerdas, foco = prof._montar_estado()
         assert isinstance(recuerdas, str) and isinstance(foco, str)
         assert "Unidad actual:" in foco
         resp = prof.responder_turno(f"turno {i} 【こんにちは】")
         assert resp and resp.strip()
 
-    assert len(prof.mensajes) == 10  # 5 pares user/assistant
+    assert len(prof.mensajes) == 16  # 8 pares user/assistant
+
+    # Cierre + extracción: el extractor devuelve JSON mockeado, no debe lanzar.
+    prof.provider.completar.return_value = _json.dumps({
+        "summary": "Laura practicó saludos y presentaciones.",
+        "can_dos": [], "new_items": [], "sin_corregir": [],
+        "episodios": [], "kaito_dijo": [], "nota_profe": "Va soltándose.",
+    })
+    prof.cerrar_sesion_y_extraer()
+
+    with jm._conectar() as conn:
+        fila = conn.execute(
+            "SELECT summary FROM japanese_sessions ORDER BY id DESC LIMIT 1"
+        ).fetchone()
+    assert fila and fila[0], fila
 
 
 if __name__ == "__main__":
@@ -281,5 +298,5 @@ if __name__ == "__main__":
     test_unidad_avanza_por_candos()
     test_sin_rotar_due()
     test_marcador_estado()
-    test_smoke_5_turnos()
+    test_smoke_8_turnos_y_cierre()
     print("OK")

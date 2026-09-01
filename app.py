@@ -882,14 +882,9 @@ def japones():
     db = brain.jap_memory._conectar()
 
     total_vocab = db.execute("SELECT COUNT(*) FROM japanese_vocabulary").fetchone()[0]
-    due_today = (
-        db.execute(
-            "SELECT COUNT(*) FROM japanese_vocabulary WHERE next_review <= ?", (today,)
-        ).fetchone()[0]
-        + db.execute(
-            "SELECT COUNT(*) FROM japanese_kanji WHERE next_review <= ?", (today,)
-        ).fetchone()[0]
-    )
+    can_dos_dominados = db.execute(
+        "SELECT COUNT(*) FROM can_do_progreso WHERE estado = 'dominado'"
+    ).fetchone()[0]
     vocab_by_status = dict(db.execute(
         "SELECT status, COUNT(*) FROM japanese_vocabulary GROUP BY status"
     ).fetchall())
@@ -980,7 +975,7 @@ def japones():
         today=today,
         total_vocab=total_vocab,
         vocab_corpus=vocab_corpus,
-        due_today=due_today,
+        can_dos_dominados=can_dos_dominados,
         vocab_by_status=vocab_by_status,
         total_kanji=total_kanji,
         kanji_corpus=kanji_corpus,
@@ -1059,13 +1054,16 @@ def _temario_unidades(kind):
 
     # Estado del ítem: fuente única en JapaneseMemory.estado_item (Fase 07). La
     # página conserva su vocabulario propio ('aprendida'/'en_curso'/'nueva').
-    # ponytail: una consulta por ítem al render. Temario, boletín y profesor ya
-    # leen todos estado_item (circuito unificado, Fase 14); el batch
-    # (estado_items_bulk) se aparca para la Fase 18, es más que esta fase.
     _MAP = {"sabido": "aprendida", "en_progreso": "en_curso", "nuevo": "nueva"}
+    _jps = {str(e.get("jp") or "").strip()
+            for u in CURRICULUM for e in u.get("items", [])
+            if e.get("kind") == kind and str(e.get("jp") or "").strip()}
+    _jps |= set(db_rows)
+    _estados = brain.jap_memory.estado_items_bulk((jp, kind) for jp in _jps)
+    _norm = "gramatica" if kind == "gramatica" else "vocabulario"
 
     def estado(jp):
-        return _MAP[brain.jap_memory.estado_item(jp, kind)]
+        return _MAP[_estados.get((jp, _norm), "nuevo")]
 
     # El temario es exactamente el N5 (Fase 04): se renderiza tal cual sale de
     # CURRICULUM, sin selector de nivel ni arrastre N5→N4→N3.

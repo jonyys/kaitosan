@@ -1,9 +1,7 @@
-"""Fase 10 — el selector de temario resuelve el recorrido en memoria."""
+"""Fase 10 / 18 — el selector de temario avanza por progreso de can-dos."""
 import os
 import sys
 import tempfile
-
-import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -21,29 +19,6 @@ def _bd_llena():
     return jap
 
 
-def _contando_conexiones(jap):
-    original, jap.conexiones = jap._conectar, 0
-
-    def espia():
-        jap.conexiones += 1
-        return original()
-
-    jap._conectar = espia
-    return jap
-
-
-@pytest.mark.skip(
-    reason="Fase 09: unidad_actual/siguiente_items_nuevos orquestan por can-do "
-    "(fraccion_can_dos + estado_item), ya no por un snapshot de reps en 2 "
-    "conexiones. Test se reescribe en la Fase 18 (PLAN_CANDO_N5.md §18)."
-)
-def test_recorrido_completo_son_dos_conexiones():
-    jap = _contando_conexiones(_bd_llena())
-    unidad_actual(jap)
-    siguiente_items_nuevos(jap, 2)
-    assert jap.conexiones == 2, jap.conexiones
-
-
 def test_con_la_bd_llena_no_quedan_items_nuevos():
     jap = _bd_llena()
     assert siguiente_items_nuevos(jap, 2) == []
@@ -51,7 +26,22 @@ def test_con_la_bd_llena_no_quedan_items_nuevos():
     assert unidad_actual(jap)["id"] == CURRICULUM[0]["id"]
 
 
+def test_unidad_actual_avanza_cuando_los_can_dos_estan_dominados():
+    """El modelo can-do: unidad_actual sale de una unidad en cuanto la fracción
+    de can-dos 'dominado' llega al umbral (fraccion_can_dos), sin mirar reps."""
+    jap = JapaneseMemory(os.path.join(tempfile.mkdtemp(), "test.db"))
+    primera = next(u for u in CURRICULUM if u.get("can_dos"))
+    assert unidad_actual(jap)["id"] == primera["id"]
+
+    for cd in primera["can_dos"]:
+        jap.set_can_do(cd["id"], "conseguido", "s1")
+        jap.set_can_do(cd["id"], "conseguido", "s2")  # 2 sesiones distintas -> dominado
+
+    assert jap.fraccion_can_dos(primera["id"]) == 1.0
+    assert unidad_actual(jap)["id"] != primera["id"]
+
+
 if __name__ == "__main__":
-    test_recorrido_completo_son_dos_conexiones()
     test_con_la_bd_llena_no_quedan_items_nuevos()
+    test_unidad_actual_avanza_cuando_los_can_dos_estan_dominados()
     print("OK")

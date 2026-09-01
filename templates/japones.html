@@ -33,7 +33,6 @@
             color: var(--rosa-tinta);
             display: block;
         }
-        .stat-due { color: var(--aviso-tinta); }
         .stat-ok  { color: var(--ok-tinta); }
         .stat-label {
             font-size: 11px;
@@ -163,6 +162,8 @@
         <a href="/japones/vocabulario"><button class="btn btn-yellow" style="font-size:13px">Vocabulario</button></a>
         <a href="/japones/gramatica"><button class="btn btn-yellow" style="font-size:13px">Gramática</button></a>
         <a href="/japones/kanjis"><button class="btn btn-yellow" style="font-size:13px">Kanjis</button></a>
+        <a href="/japones/vocabulario/practicar"><button class="btn btn-yellow" style="font-size:13px">Practicar vocab</button></a>
+        <a href="/japones/gramatica/practicar"><button class="btn btn-yellow" style="font-size:13px">Practicar gram</button></a>
     </div>
 </h1>
 
@@ -179,8 +180,8 @@
         <div class="stat-label">kanjis en total</div>
     </div>
     <div class="stat-card">
-        <span class="stat-number stat-due">{{ due_today }}</span>
-        <div class="stat-label">para repasar hoy</div>
+        <span class="stat-number stat-ok">{{ can_dos_dominados }}</span>
+        <div class="stat-label">can-dos dominados</div>
     </div>
     <div class="stat-card">
         <span class="stat-number">{{ total_grammar }}</span>

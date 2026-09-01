@@ -110,8 +110,6 @@ def mostrar_bd_japonesa(jap_memory: JapaneseMemory, titulo_sec: str):
 
     perfil = jap_memory.resumen_perfil()
 
-    linea(f"📊  Ítems en cola de repaso (SRS hoy): {perfil['due_count']}")
-
     if perfil["vocab_by_status"]:
         linea("📚  Vocabulario por estado:")
         for estado, n in sorted(perfil["vocab_by_status"].items()):
@@ -130,23 +128,6 @@ def mostrar_bd_japonesa(jap_memory: JapaneseMemory, titulo_sec: str):
         linea("\n⚠️   Puntos débiles:")
         for wp in perfil["weak_points"]:
             linea(f"    • {wp['word']}  ({wp['errors']} errores)")
-
-    due_v = jap_memory.get_due_items(8, kind="vocabulario")
-    due_g = jap_memory.get_due_items(5, kind="gramatica")
-
-    if due_v:
-        linea(f"\n🔄  Vocabulario para repasar ({len(due_v)} ítems):")
-        for it in due_v:
-            jp = it.get("jp") or it.get("word", "")
-            meaning = it.get("meaning", "")
-            status = it.get("status", "")
-            linea(f"    • 【{jp}】  {meaning}  [{status}]")
-    if due_g:
-        linea(f"\n🔄  Gramática para repasar ({len(due_g)} ítems):")
-        for it in due_g:
-            jp = it.get("jp") or it.get("grammar_point", "")
-            meaning = it.get("meaning") or it.get("description", "")
-            linea(f"    • 【{jp}】  {meaning}")
 
 
 def mostrar_contexto_profesor(profesor: ProfesorJapones, etiqueta: str):
