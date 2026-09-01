@@ -1259,6 +1259,112 @@ def japones_vocabulario_practicar():
                            al_dia=False, v=v)
 
 
+_GRAM_TILDE = "〜～"  # 〜 ～ : marcan "se engancha a una raíz", no forman parte del hueco
+
+
+def _gram_items_unidad(uid):
+    """(nombre, [ítems]) de gramática de una unidad del temario por su `id`.
+    nombre None si la unidad no existe. Cada ítem: jp/meaning/ejemplo/literal/uso."""
+    u = next((x for x in CURRICULUM if x.get("id") == uid), None)
+    if not u:
+        return None, []
+    items, vistos = [], set()
+    for e in u.get("items", []):
+        if e.get("kind") != "gramatica":
+            continue
+        jp = str(e.get("jp") or "").strip()
+        if not jp or jp in vistos:
+            continue
+        vistos.add(jp)
+        items.append({
+            "jp": jp,
+            "meaning": (e.get("meaning") or "").strip(),
+            "ejemplo": (e.get("ejemplo") or "").strip(),
+            "literal": (e.get("literal") or "").strip(),
+            "uso": (e.get("uso") or "").strip(),
+        })
+    return u.get("nombre", "N5"), items
+
+
+def _gram_ejercicio(it):
+    """Ejercicio de hueco a partir del `ejemplo`. Si el patrón (sin la tilde ～)
+    aparece literal y entero en la frase, se tapa con ＿＿＿ y la respuesta es ese
+    fragmento. Si no encaja limpiamente (patrón con hueco interno, forma que no
+    figura tal cual), se muestra `meaning` + `literal` y se pide el patrón `jp`."""
+    jp, ej = it["jp"], it["ejemplo"]
+    core = jp.strip(_GRAM_TILDE)
+    if core and ej and not any(t in core for t in _GRAM_TILDE) and core in ej:
+        return {"modo": "hueco", "pregunta": ej.replace(core, "＿＿＿", 1),
+                "respuesta": core, "patron": jp}
+    return {"modo": "patron",
+            "pregunta": it["meaning"] + (" — " + it["literal"] if it["literal"] else ""),
+            "respuesta": jp, "patron": jp}
+
+
+@app.route("/japones/gramatica/practicar", methods=["GET", "POST"])
+@login_requerido
+def japones_gramatica_practicar():
+    """Práctica SRS de gramática por lección (Fase 13). Gemela de
+    /japones/vocabulario/practicar: autocalificación -> review(id, q, 'gramatica'),
+    siguiente ítem por get_due_items(kind='gramatica') filtrado a la unidad. El
+    ejercicio es la frase-ejemplo con el patrón tapado (hueco)."""
+    uid = (request.values.get("unidad") or "").strip()
+    nombre, items = _gram_items_unidad(uid)
+    if nombre is None:
+        return redirect(url_for("japones_gramatica"))
+    por_jp = {it["jp"]: it for it in items}
+
+    if request.method == "POST":
+        jp = (request.form.get("word") or "").strip()
+        try:
+            quality = int(request.form.get("quality", 3))
+        except ValueError:
+            quality = 3
+        quality = max(0, min(5, quality))
+        it = por_jp.get(jp)
+        if it:
+            item_id = brain.jap_memory.get_item_id(jp, "gramatica")
+            if item_id is None:
+                brain.jap_memory.add_item("gramatica", jp, meaning=it["meaning"])
+                item_id = brain.jap_memory.get_item_id(jp, "gramatica")
+            if item_id is not None:
+                brain.jap_memory.review(item_id, quality, "gramatica")
+        return redirect(url_for("japones_gramatica_practicar", unidad=uid))
+
+    # GET: siguiente ítem de la unidad — vencidos primero, luego nunca practicado
+    due = [d for d in brain.jap_memory.get_due_items(limit=500, kind="gramatica")
+           if d["jp"] in por_jp]
+    rows = brain.jap_memory.gram_rows()
+    nuevos = [jp for jp in por_jp
+              if jp not in rows or (rows[jp].get("reps") or 0) == 0]
+
+    if due:
+        jp = due[0]["jp"]
+    elif nuevos:
+        jp = random.choice(nuevos)
+    else:
+        return render_template("japones_gram_practica.html", unidad=uid,
+                               unidad_nombre=nombre, pendientes=0,
+                               al_dia=True, v=None)
+
+    it = por_jp[jp]
+    ej = _gram_ejercicio(it)
+    v = {
+        "jp": jp,
+        "meaning": it["meaning"],
+        "literal": it["literal"],
+        "uso": it["uso"],
+        "ejemplo": it["ejemplo"],
+        "modo": ej["modo"],
+        "pregunta": ej["pregunta"],
+        "respuesta": ej["respuesta"],
+        "patron": ej["patron"],
+    }
+    return render_template("japones_gram_practica.html", unidad=uid,
+                           unidad_nombre=nombre, pendientes=len(due),
+                           al_dia=False, v=v)
+
+
 @app.route("/japones/boletin")
 @login_requerido
 def japones_boletin():

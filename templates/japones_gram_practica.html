@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Práctica de gramática — Kaitosan</title>
+    {% include 'partials/admin/_estilos.html' %}
+    <style>
+      .jp-wrap {
+        max-width: 720px;
+        margin: 0 auto;
+      }
+      .kp-pend {
+        font-size: 13px;
+        color: var(--text-soft);
+        font-weight: 700;
+        margin: 0 0 14px;
+      }
+      .vp-prompt {
+        font-size: 26px;
+        font-weight: 700;
+        color: var(--rosa-tinta);
+        text-align: center;
+        margin: 10px 0 4px;
+        line-height: 1.5;
+      }
+      .vp-dir {
+        text-align: center;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--text-soft);
+        font-weight: 700;
+        margin-bottom: 18px;
+      }
+      .kp-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+        margin-top: 18px;
+      }
+      .kp-hints {
+        margin-top: 16px;
+        display: grid;
+        gap: 8px;
+      }
+      .kp-hint {
+        background: var(--surface-2);
+        border-radius: var(--radio-sm);
+        padding: 10px 12px;
+        font-size: 14px;
+        line-height: 1.45;
+        color: var(--text);
+      }
+      .kp-hint span {
+        font-weight: 700;
+        color: var(--text-soft);
+      }
+      .kp-reveal {
+        margin-top: 20px;
+        text-align: center;
+      }
+      .kp-reveal .vp-answer {
+        font-size: 32px;
+        line-height: 1.2;
+        font-weight: 700;
+        color: var(--rosa-tinta);
+      }
+      .kp-reveal p {
+        margin: 6px 0 0;
+        font-size: 14px;
+        color: var(--text);
+      }
+    </style>
+  </head>
+  <body>
+    {% include 'partials/_iconos.html' %}
+    <div class="jp-wrap">
+      <h1>
+        <span
+          ><svg class="ico"><use href="#i-lang" /></svg> Práctica de gramática</span
+        >
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap">
+          <a href="/japones"
+            ><button class="btn btn-yellow" style="font-size: 13px">
+              <svg class="ico"><use href="#i-home" /></svg></button
+          ></a>
+          <a href="/japones/gramatica"
+            ><button class="btn btn-yellow" style="font-size: 13px">
+              Temario
+            </button></a
+          >
+        </div>
+      </h1>
+
+      <p class="kp-pend">
+        {{ unidad_nombre }} · {{ pendientes }} ítems por repasar en esta lección
+      </p>
+
+      {% if al_dia %}
+      <div class="card full">
+        <div class="section-header"><h2>Lección al día</h2></div>
+        <p>
+          No hay nada pendiente en esta lección ahora mismo. Vuelve más tarde o
+          practica otra unidad desde el temario.
+        </p>
+      </div>
+      {% else %}
+      <div class="card full">
+        <div class="section-header">
+          <h2>
+            {% if v.modo == 'hueco' %}Completa la frase{% else %}¿Qué patrón
+            es?{% endif %}
+          </h2>
+        </div>
+
+        <p class="vp-dir">
+          {% if v.modo == 'hueco' %}rellena el hueco con la forma / partícula{%
+          else %}significado → patrón{% endif %}
+        </p>
+        <div class="vp-prompt">{{ v.pregunta }}</div>
+
+        <div class="kp-hints" id="kp-hints" hidden>
+          <div class="kp-hint" hidden>
+            <span>Uso:</span> {{ v.uso or '—' }}
+          </div>
+          {% if v.literal %}
+          <div class="kp-hint" hidden><span>Literal:</span> {{ v.literal }}</div>
+          {% endif %}
+          {% if v.modo == 'patron' and v.ejemplo %}
+          <div class="kp-hint" hidden><span>Ejemplo:</span> {{ v.ejemplo }}</div>
+          {% endif %}
+        </div>
+
+        <div class="kp-actions">
+          <button type="button" class="btn btn-yellow" id="kp-hint-btn">
+            <svg class="ico"><use href="#i-bulb" /></svg> Pista
+          </button>
+          <button type="button" class="btn btn-ghost" id="kp-skip-btn">
+            <svg class="ico"><use href="#i-arrow-right" /></svg> Pasar
+          </button>
+          <button type="button" class="btn btn-yellow" id="kp-check-btn">
+            <svg class="ico"><use href="#i-check" /></svg> Comprobar
+          </button>
+        </div>
+
+        <div class="kp-reveal" id="kp-reveal" hidden>
+          <div class="vp-answer">{{ v.respuesta }}</div>
+          {% if v.patron and v.patron != v.respuesta %}<p>patrón: {{ v.patron }}</p>{% endif %}
+          {% if v.ejemplo %}<p>{{ v.ejemplo }}</p>{% endif %}
+          <div class="kp-actions">
+            <button type="button" class="btn btn-yellow" data-quality="5">
+              Lo sabía
+            </button>
+            <button type="button" class="btn btn-ghost" data-quality="3">
+              Casi
+            </button>
+            <button type="button" class="btn btn-ghost" data-quality="1">
+              No
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <form
+        id="grade-form"
+        method="POST"
+        action="/japones/gramatica/practicar"
+        style="display: none"
+      >
+        <input type="hidden" name="unidad" value="{{ unidad }}" />
+        <input type="hidden" name="word" value="{{ v.jp }}" />
+        <input type="hidden" name="quality" id="grade-quality" value="1" />
+      </form>
+
+      <script>
+        (function () {
+          var hintsBox = document.getElementById("kp-hints");
+          document
+            .getElementById("kp-hint-btn")
+            .addEventListener("click", function () {
+              hintsBox.hidden = false;
+              document.querySelectorAll("#kp-hints .kp-hint").forEach(function (h) {
+                h.hidden = false;
+              });
+            });
+
+          var form = document.getElementById("grade-form");
+          var qInput = document.getElementById("grade-quality");
+          function grade(q) {
+            qInput.value = q;
+            form.submit();
+          }
+          document
+            .getElementById("kp-check-btn")
+            .addEventListener("click", function () {
+              document.getElementById("kp-reveal").hidden = false;
+              this.hidden = true;
+            });
+          document
+            .getElementById("kp-skip-btn")
+            .addEventListener("click", function () {
+              grade(1);
+            });
+          document
+            .querySelectorAll("#kp-reveal [data-quality]")
+            .forEach(function (btn) {
+              btn.addEventListener("click", function () {
+                grade(btn.getAttribute("data-quality"));
+              });
+            });
+        })();
+      </script>
+      {% endif %}
+    </div>
+  </body>
+</html>
