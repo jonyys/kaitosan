@@ -14,10 +14,16 @@ UNIDADES_CON_DETALLE = [
 
 
 def test_unidades_0_a_5_completas():
+    # Desde la Fase 02, el vocabulario N5 se reconcilia con la lista oficial y
+    # los ítems nuevos entran sin ejemplo/literal (los improvisa el profesor en
+    # vivo) y sin uso (lo rellena la Fase 05 solo donde el matiz lo pide). El
+    # contrato de "los 4 campos" sigue vigente para la gramática (Fase 05).
     for unit in CURRICULUM:
         if unit["id"] not in UNIDADES_CON_DETALLE:
             continue
         for item in unit["items"]:
+            if item["kind"] != "gramatica":
+                continue
             for campo in ("ejemplo", "literal", "uso"):
                 assert item.get(campo), (unit["id"], item["jp"], campo)
 

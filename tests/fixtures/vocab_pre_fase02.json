@@ -1,0 +1,2394 @@
+{
+ "あそこ": {
+  "ejemplo": "あそこは どこですか",
+  "literal": "allá-TEMA / ¿dónde-es?",
+  "meaning": "allá (lugar lejos de ambos)",
+  "reading": "あそこ",
+  "tipo": "pronombre",
+  "uso": "lugar lejano. Visible en la distancia"
+ },
+ "あまり": {
+  "ejemplo": "あまり たべません",
+  "literal": "no-mucho / no-como",
+  "meaning": "no mucho / no especialmente; a veces 'muy' en negativo",
+  "reading": "あまり",
+  "tipo": "adverbio",
+  "uso": "va con frases negativas: あまり好きじゃない, あまり早くない"
+ },
+ "ありがとう": {
+  "ejemplo": "ありがとう ございます",
+  "literal": "gracias / (forma cortés)",
+  "meaning": "gracias",
+  "reading": "ありがとう",
+  "tipo": "expresión",
+  "uso": "con amigos ありがとう a secas; con desconocidos o gente mayor, siempre con ございます"
+ },
+ "ある": {
+  "ejemplo": "つくえの うえに ほんが あります",
+  "literal": "mesa-DE / encima-EN / libro-SUJ / hay",
+  "meaning": "haber / existir (objetos inanimados)",
+  "reading": "ある",
+  "tipo": "verbo",
+  "uso": "cosas y plantas; también planes y citas: あした しけんが あります"
+ },
+ "あれ": {
+  "ejemplo": "あれは 何ですか",
+  "literal": "aquello-TEMA / ¿qué-es?",
+  "meaning": "aquello (objeto lejos de ambos)",
+  "reading": "あれ",
+  "tipo": "pronombre",
+  "uso": "demostrativo. Lejos de ambos o visible en la distancia"
+ },
+ "いい": {
+  "ejemplo": "いい てんきですね",
+  "literal": "bueno / tiempo-¿verdad?",
+  "meaning": "bueno / bien (adj-い, irregular)",
+  "reading": "いい",
+  "tipo": "adjetivo",
+  "uso": "adj-い irregular: いい → よくない; no se conjuga como un adj normal"
+ },
+ "いいえ": {
+  "ejemplo": "いいえ、ちがいます",
+  "literal": "no / es-diferente",
+  "meaning": "no",
+  "reading": "いいえ",
+  "tipo": "expresión",
+  "uso": "negar con claridad; en el día a día se suaviza con ううん o con ちょっと…, porque un いいえ seco suena cortante"
+ },
+ "いくら": {
+  "ejemplo": "それは いくらですか",
+  "literal": "eso-TEMA / ¿cuánto-cuesta?",
+  "meaning": "cuánto / a cuánto asciende",
+  "reading": "いくら",
+  "tipo": "pronombre",
+  "uso": "pregunta de precio. Muy común en tiendas, supermercados y mercadillos"
+ },
+ "いる": {
+  "ejemplo": "へやに ねこが います",
+  "literal": "habitación-EN / gato-SUJ / hay",
+  "meaning": "estar / existir (personas y animales)",
+  "reading": "いる",
+  "tipo": "verbo",
+  "uso": "lo que se mueve por sí solo. Un coche es ある aunque esté en marcha; la persona que va dentro, いる"
+ },
+ "おいしい": {
+  "ejemplo": "この ラーメン、おいしい！",
+  "literal": "este / ramen / ¡rico!",
+  "meaning": "delicioso / rico (adj-い)",
+  "reading": "おいしい",
+  "tipo": "adjetivo",
+  "uso": "en la mesa se dice sin です y funciona como cumplido a quien ha cocinado"
+ },
+ "おそい": {
+  "ejemplo": "おそい えきです",
+  "literal": "tarde / estación-es",
+  "meaning": "lento / tarde (adj-い)",
+  "reading": "おそい",
+  "tipo": "adjetivo",
+  "uso": "lento por velocidad, o tarde respecto al horario"
+ },
+ "おはようございます": {
+  "ejemplo": "せんせい、おはようございます",
+  "literal": "profesor / buenos-días",
+  "meaning": "buenos días",
+  "reading": "おはようございます",
+  "tipo": "expresión",
+  "uso": "hasta media mañana; entre amigos se corta a おはよう"
+ },
+ "おやすみなさい": {
+  "ejemplo": "おやすみなさい、また あした",
+  "literal": "buenas-noches / otra-vez / mañana",
+  "meaning": "buenas noches (al dormir)",
+  "reading": "おやすみなさい",
+  "tipo": "expresión",
+  "uso": "solo cuando alguien se va a dormir, no al despedirte por la calle de noche"
+ },
+ "お手洗い": {
+  "ejemplo": "おてあらいは どこですか",
+  "literal": "aseo-TEMA / ¿dónde-está?",
+  "meaning": "servicio / aseo",
+  "reading": "おてあらい",
+  "tipo": "sustantivo",
+  "uso": "la forma educada de pedirlo fuera de casa. トイレ es más directo y también normal"
+ },
+ "お母さん": {
+  "ejemplo": "お母さんに 電話しました",
+  "literal": "madre-A / llamé",
+  "meaning": "madre (de otra persona)",
+  "reading": "おかあさん",
+  "tipo": "sustantivo",
+  "uso": "forma respetuosa. El de uno mismo es 母 (はは)"
+ },
+ "お父さん": {
+  "ejemplo": "お父さんは 何をしていますか",
+  "literal": "padre-TEMA / ¿qué-hace?",
+  "meaning": "padre (de otra persona)",
+  "reading": "おとうさん",
+  "tipo": "sustantivo",
+  "uso": "forma respetuosa. El de uno mismo es 父 (ちち)"
+ },
+ "お茶": {
+  "ejemplo": "お茶を どうぞ",
+  "literal": "té-OBJ / adelante",
+  "meaning": "té (japonés)",
+  "reading": "おちゃ",
+  "tipo": "sustantivo",
+  "uso": "té verde, no el té negro. Té negro es 紅茶 (こうちゃ)"
+ },
+ "かなり": {
+  "ejemplo": "かなり ええです",
+  "literal": "bastante / bueno-es",
+  "meaning": "bastante / bastante más que poco",
+  "reading": "かなり",
+  "tipo": "adverbio",
+  "uso": "grado medio-alto; refleja que algo supera lo normal"
+ },
+ "かぶる": {
+  "ejemplo": "ぼうしを かぶります",
+  "literal": "gorra-OBJ / me-pongo",
+  "meaning": "ponerse en la cabeza / cubrirse",
+  "reading": "かぶる",
+  "tipo": "verbo",
+  "uso": "sombreros, gorras, etc. El verbo va con la cabeza o la prenda"
+ },
+ "きらい": {
+  "ejemplo": "なっとうが きらいです",
+  "literal": "natto-SUJ / no-gusta-es",
+  "meaning": "que no gusta / odiar (adj-な)",
+  "reading": "きらい",
+  "tipo": "adjetivo",
+  "uso": "suena fuerte. Para suavizar se dice あまり すきじゃない ('no me gusta mucho')"
+ },
+ "きれい": {
+  "ejemplo": "きれいな へやですね",
+  "literal": "bonita / habitación-es-¿verdad?",
+  "meaning": "bonito / limpio (adj-な)",
+  "reading": "きれい",
+  "tipo": "adjetivo",
+  "uso": "adj-な: necesita な delante del sustantivo. Acaba en い pero NO es adjetivo-い"
+ },
+ "ここ": {
+  "ejemplo": "ここに 座ってください",
+  "literal": "aquí-EN / siéntate / por-favor",
+  "meaning": "aquí (lugar del hablante)",
+  "reading": "ここ",
+  "tipo": "pronombre",
+  "uso": "lugar cercano al que habla. Dentro del mismo espacio"
+ },
+ "これ": {
+  "ejemplo": "これは 何ですか",
+  "literal": "esto-TEMA / ¿qué-es?",
+  "meaning": "esto (objeto cercano al hablante)",
+  "reading": "これ",
+  "tipo": "pronombre",
+  "uso": "demostrativo. Cerca del que habla"
+ },
+ "こんにちは": {
+  "ejemplo": "こんにちは、げんきですか",
+  "literal": "hola / ¿estás-bien?",
+  "meaning": "hola (durante el día)",
+  "reading": "こんにちは",
+  "tipo": "expresión",
+  "uso": "solo de día, de media mañana al atardecer; no se usa con la gente de tu propia casa"
+ },
+ "こんばんは": {
+  "ejemplo": "こんばんは、おそいですね",
+  "literal": "buenas-noches / es-tarde-¿verdad?",
+  "meaning": "buenas noches (saludo)",
+  "reading": "こんばんは",
+  "tipo": "expresión",
+  "uso": "al encontrarte con alguien ya de noche; no sirve como despedida"
+ },
+ "ご飯": {
+  "ejemplo": "朝 ご飯を たべました",
+  "literal": "mañana / arroz-OBJ / comí",
+  "meaning": "arroz cocido / comida",
+  "reading": "ごはん",
+  "tipo": "sustantivo",
+  "uso": "arroz cocido, también 'comida' en general. Cocina se dice りょうり"
+ },
+ "さようなら": {
+  "ejemplo": "さようなら、また らいしゅう",
+  "literal": "adiós / otra-vez / la-semana-que-viene",
+  "meaning": "adiós",
+  "reading": "さようなら",
+  "tipo": "expresión",
+  "uso": "despedida con peso de 'no nos vemos en un tiempo'; para el día a día se dice じゃあね o また あした"
+ },
+ "しずか": {
+  "ejemplo": "しずかな まちです",
+  "literal": "tranquila / ciudad-es",
+  "meaning": "tranquilo / silencioso (adj-な)",
+  "reading": "しずか",
+  "tipo": "adjetivo",
+  "uso": "descríbelo como un lugar o un ambiente sereno; también 'silencioso'"
+ },
+ "じょうず": {
+  "ejemplo": "りょうりが じょうずですね",
+  "literal": "cocina-SUJ / hábil-es-¿verdad?",
+  "meaning": "hábil / bueno en algo (adj-な)",
+  "reading": "じょうず",
+  "tipo": "adjetivo",
+  "uso": "se usa para elogiar a otro, nunca de uno mismo. De uno mismo se dice とくい"
+ },
+ "すき": {
+  "ejemplo": "にほんごが すきです",
+  "literal": "japonés-SUJ / gusta-es",
+  "meaning": "que gusta / favorito (adj-な)",
+  "reading": "すき",
+  "tipo": "adjetivo",
+  "uso": "lo que gusta lleva が. No es un verbo: se construye como un adjetivo"
+ },
+ "すごく": {
+  "ejemplo": "すごく いいです",
+  "literal": "muy / bueno-es",
+  "meaning": "muy / extremadamente",
+  "reading": "すごく",
+  "tipo": "adverbio",
+  "uso": "tono más oral y enfático. Muy natural entre amigos"
+ },
+ "すみません": {
+  "ejemplo": "すみません、みずを ください",
+  "literal": "perdón / agua-OBJ / por-favor",
+  "meaning": "disculpe / perdón",
+  "reading": "すみません",
+  "tipo": "expresión",
+  "uso": "vale para tres cosas: pedir perdón, llamar al camarero y dar las gracias por una molestia"
+ },
+ "する": {
+  "ejemplo": "べんきょうを します",
+  "literal": "estudio-OBJ / hago",
+  "meaning": "hacer",
+  "reading": "する",
+  "tipo": "verbo",
+  "uso": "convierte sustantivos en verbos: そうじする, でんわする, りょこうする. Es el comodín del idioma"
+ },
+ "ぜんぜん": {
+  "ejemplo": "ぜんぜん わかりません",
+  "literal": "para-nada / no-entendo",
+  "meaning": "para nada / en absoluto",
+  "reading": "ぜんぜん",
+  "tipo": "adverbio",
+  "uso": "fuerte: ni mucho ni poco, sino totalmente ausente o nula cantidad"
+ },
+ "そこ": {
+  "ejemplo": "そこで 待ってください",
+  "literal": "ahí-EN / espera / por-favor",
+  "meaning": "ahí (lugar del oyente)",
+  "reading": "そこ",
+  "tipo": "pronombre",
+  "uso": "lugar cercano al oyente. Donde está la otra persona"
+ },
+ "それ": {
+  "ejemplo": "それは いくらですか",
+  "literal": "eso-TEMA / ¿cuánto-cuesta?",
+  "meaning": "eso (objeto cercano al oyente)",
+  "reading": "それ",
+  "tipo": "pronombre",
+  "uso": "demostrativo. Cerca del oyente o ya mencionado"
+ },
+ "たかい": {
+  "ejemplo": "この とけいは たかいです",
+  "literal": "este / reloj-TEMA / caro-es",
+  "meaning": "caro / alto (adj-い)",
+  "reading": "たかい",
+  "tipo": "adjetivo",
+  "uso": "caro y alto son la misma palabra: たかい ビル es un edificio alto"
+ },
+ "たくさん": {
+  "ejemplo": "たくさん のんで います",
+  "literal": "mucho / estoy-bebiendo",
+  "meaning": "mucho / en abundancia",
+  "reading": "たくさん",
+  "tipo": "adverbio",
+  "uso": "cantidad grande. Puede ir con sustantivos o verbos"
+ },
+ "たのしい": {
+  "ejemplo": "パーティーは たのしかったです",
+  "literal": "fiesta-TEMA / divertida-fue",
+  "meaning": "divertido / agradable (adj-い)",
+  "reading": "たのしい",
+  "tipo": "adjetivo",
+  "uso": "divertido porque tú lo pasas bien. Algo gracioso que da risa es おもしろい"
+ },
+ "ちょっと": {
+  "ejemplo": "ちょっと まってください",
+  "literal": "un-poco / espera / por-favor",
+  "meaning": "un poco / un momento",
+  "reading": "ちょっと",
+  "tipo": "adverbio",
+  "uso": "modera una petición o un comentario; también como 'de momento'"
+ },
+ "できる": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "poder / ser capaz de / estar listo",
+  "reading": "できる",
+  "tipo": "verbo",
+  "uso": ""
+ },
+ "とても": {
+  "ejemplo": "とても たのしいです",
+  "literal": "muy / divertido-es",
+  "meaning": "muy / muchísimo",
+  "reading": "とても",
+  "tipo": "adverbio",
+  "uso": "grado fuerte. Es un adverbio neutral y muy frecuente"
+ },
+ "どこ": {
+  "ejemplo": "どこに いますか",
+  "literal": "¿dónde-EN / estás?",
+  "meaning": "dónde",
+  "reading": "どこ",
+  "tipo": "pronombre",
+  "uso": "pregunta de ubicación. La pregunta más importante cuando se pierde"
+ },
+ "どちら": {
+  "ejemplo": "どちらが いいですか",
+  "literal": "¿cuál-entre-los-dos-SUJ / está-bien?",
+  "meaning": "cuál de los dos / ¿por dónde? (formal)",
+  "reading": "どちら",
+  "tipo": "pronombre",
+  "uso": "versión más formal de どっち. Muy útil en tiendas o con desconocidos"
+ },
+ "どっち": {
+  "ejemplo": "どっちが いいですか",
+  "literal": "¿cuál-de-los-dos-SUJ / está-bien?",
+  "meaning": "cuál de los dos",
+  "reading": "どっち",
+  "tipo": "pronombre",
+  "uso": "interrogativo de elección entre dos. Se oye más que どちら si hablas con amigos"
+ },
+ "どれ": {
+  "ejemplo": "どれが ほしいですか",
+  "literal": "¿cuál-SUJ / quieres?",
+  "meaning": "cuál (de tres o más)",
+  "reading": "どれ",
+  "tipo": "pronombre",
+  "uso": "pregunta entre muchas opciones. Con dos opciones usa どっち"
+ },
+ "なん": {
+  "ejemplo": "なんの えいごを べんきょうしますか",
+  "literal": "¿qué-tipo-de / idioma-OBJ / estudias?",
+  "meaning": "qué / cuántos (antes de un sustantivo)",
+  "reading": "なん",
+  "tipo": "pronombre",
+  "uso": "forma corta de 何. Antes del sustantivo se usa なんの, なんと, なんで: なんの本, なんで?"
+ },
+ "はい": {
+  "ejemplo": "はい、そうです",
+  "literal": "sí / así-es",
+  "meaning": "sí",
+  "reading": "はい",
+  "tipo": "expresión",
+  "uso": "confirmar; también es el '¿sí?' de coger el teléfono o de responder cuando te llaman"
+ },
+ "はく": {
+  "ejemplo": "くつを はきます",
+  "literal": "zapatos-OBJ / me-pongo",
+  "meaning": "poner(se) / llevar (pantalones, zapatos)",
+  "reading": "はく",
+  "tipo": "verbo",
+  "uso": "vestido y calzado por encima de pies o piernas. No todos los verbos se usan igual"
+ },
+ "はやい": {
+  "ejemplo": "はやい バスです",
+  "literal": "rápido / autobús-es",
+  "meaning": "rápido / temprano (adj-い)",
+  "reading": "はやい",
+  "tipo": "adjetivo",
+  "uso": "rápido en movimiento, o temprano en el tiempo. No confundir con 速い (はやい) y 早い (はやい) en otros contextos"
+ },
+ "へた": {
+  "ejemplo": "うたが へたです",
+  "literal": "canto-SUJ / torpe-es",
+  "meaning": "torpe / malo en algo (adj-な)",
+  "reading": "へた",
+  "tipo": "adjetivo",
+  "uso": "de uno mismo sin problema; dicho de otra persona es de mala educación"
+ },
+ "まだ": {
+  "ejemplo": "まだ かえっていません",
+  "literal": "todavía / no-ha-vuelto",
+  "meaning": "todavía / aún / no ... todavía",
+  "reading": "まだ",
+  "tipo": "adverbio",
+  "uso": "si el estado sigue siendo así. A menudo marca espera o no finalización"
+ },
+ "まっすぐ": {
+  "ejemplo": "ここからまっすぐです",
+  "literal": "desde-aquí / todo-recto",
+  "meaning": "recto / todo recto",
+  "reading": "まっすぐ",
+  "tipo": "adverbio",
+  "uso": "dirección. La instrucción más simple para no perderse"
+ },
+ "むずかしい": {
+  "ejemplo": "かんじは むずかしいです",
+  "literal": "kanji-TEMA / difícil-es",
+  "meaning": "difícil (adj-い)",
+  "reading": "むずかしい",
+  "tipo": "adjetivo",
+  "uso": "difícil de hacer o de entender; su contrario natural es かんたん o やさしい"
+ },
+ "もう": {
+  "ejemplo": "もう ねました",
+  "literal": "ya / dormí",
+  "meaning": "ya / otra vez / más",
+  "reading": "もう",
+  "tipo": "adverbio",
+  "uso": "se usa para afirmar que algo ya ha pasado o que ya no falta más"
+ },
+ "もう一度": {
+  "ejemplo": "もういちど おねがいします",
+  "literal": "una-vez-más / por-favor",
+  "meaning": "una vez más / repetir",
+  "reading": "もういちど",
+  "tipo": "expresión",
+  "uso": "la frase de supervivencia en clase; casi siempre con おねがいします detrás"
+ },
+ "もっと": {
+  "ejemplo": "もっと ゆっくり してください",
+  "literal": "más / despacio / haz",
+  "meaning": "más (grado o cantidad): 'más despacio', 'más grande'",
+  "reading": "もっと",
+  "tipo": "adverbio",
+  "uso": "más de algo. Con adjetivo: もっと + adj"
+ },
+ "やさしい": {
+  "ejemplo": "この 先生は やさしいです",
+  "literal": "este / profesor-TEMA / amable-es",
+  "meaning": "fácil / amable (adj-い)",
+  "reading": "やさしい",
+  "tipo": "adjetivo",
+  "uso": "cuando habla de una persona, significa 'amable, gentil'. Cuando se habla de un problema o ejercicio, significa 'fácil': この もんだいは やさしいです"
+ },
+ "やすい": {
+  "ejemplo": "スーパーは やすいですね",
+  "literal": "súper-TEMA / barato-es-¿verdad?",
+  "meaning": "barato (adj-い)",
+  "reading": "やすい",
+  "tipo": "adjetivo",
+  "uso": "barato de precio, sin juicio. 'Barato' de mala calidad es やすっぽい"
+ },
+ "ゆっくり": {
+  "ejemplo": "ゆっくり はなして ください",
+  "literal": "despacio / habla / por-favor",
+  "meaning": "despacio / lentamente",
+  "reading": "ゆっくり",
+  "tipo": "adverbio",
+  "uso": "es adverbio: va delante del verbo, nunca detrás"
+ },
+ "りんご": {
+  "ejemplo": "りんごは 赤いです",
+  "literal": "manzana-TEMA / roja-es",
+  "meaning": "manzana",
+  "reading": "りんご",
+  "tipo": "sustantivo",
+  "uso": "fruta común. Manzana verde es 青いりんご (aunque suene raro)"
+ },
+ "わかりました": {
+  "ejemplo": "はい、わかりました",
+  "literal": "sí / he-entendido",
+  "meaning": "entendido / comprendido",
+  "reading": "わかりました",
+  "tipo": "expresión",
+  "uso": "va en pasado: 'ya lo he captado'. Responder わかります suena raro"
+ },
+ "わかりません": {
+  "ejemplo": "すみません、わかりません",
+  "literal": "perdón / no-entiendo",
+  "meaning": "no entiendo",
+  "reading": "わかりません",
+  "tipo": "expresión",
+  "uso": "en presente negativo; para 'no te he entendido ahora mismo' nunca se usa わかりませんでした"
+ },
+ "わるい": {
+  "ejemplo": "わるい きもちです",
+  "literal": "mal / sentimiento-es",
+  "meaning": "malo / mal (adj-い)",
+  "reading": "わるい",
+  "tipo": "adjetivo",
+  "uso": "malo o mal hecho; también se usa como 'pobre' cuando alguien no se siente bien"
+ },
+ "アイスクリーム": {
+  "ejemplo": "なつに アイスクリームを たべたいです",
+  "literal": "verano-EN / helado-OBJ / comer-quiero",
+  "meaning": "helado",
+  "reading": "アイスクリーム",
+  "tipo": "sustantivo",
+  "uso": "congelado dulce. En Japón también es ソフトクリーム (suave) o アイス"
+ },
+ "インターネット": {
+  "ejemplo": "インターネットで しらべました",
+  "literal": "internet-EN / investigué",
+  "meaning": "internet",
+  "reading": "インターネット",
+  "tipo": "sustantivo",
+  "uso": "ネット es la abreviación. Conectarse es インターネットに つなぐ"
+ },
+ "カメラ": {
+  "ejemplo": "あたらしい カメラで しゃしんを とりました",
+  "literal": "nueva / cámara-EN / foto-OBJ / hice",
+  "meaning": "cámara (fotográfica)",
+  "reading": "カメラ",
+  "tipo": "sustantivo",
+  "uso": "de fotos. La de vídeo es ビデオカメラ. Hacer fotos es しゃしんを とる"
+ },
+ "ケータイ": {
+  "ejemplo": "ケータイが ありますか",
+  "literal": "teléfono-móvil-SUJ / ¿tienes?",
+  "meaning": "teléfono móvil",
+  "reading": "ケータイ",
+  "tipo": "sustantivo",
+  "uso": "forma coloquial de 携帯電話. En formal, スマートフォン o スマホ"
+ },
+ "コーヒー": {
+  "ejemplo": "毎朝 コーヒーを のみます",
+  "literal": "cada-mañana / café-OBJ / bebo",
+  "meaning": "café (bebida)",
+  "reading": "コーヒー",
+  "tipo": "sustantivo",
+  "uso": "la bebida más común en las cafeterías. El café solo es ブラック, con leche es ミルク"
+ },
+ "シャツ": {
+  "ejemplo": "しろい シャツを きます",
+  "literal": "blanca / camisa-OBJ / me-pongo",
+  "meaning": "camisa / camiseta",
+  "reading": "しゃつ",
+  "tipo": "sustantivo",
+  "uso": "para las prendas de la parte de arriba, el verbo es きる"
+ },
+ "スーパー": {
+  "ejemplo": "スーパーで かいものを します",
+  "literal": "supermercado-EN / compras-OBJ / hago",
+  "meaning": "supermercado",
+  "reading": "スーパー",
+  "tipo": "sustantivo",
+  "uso": "abreviación de スーパーマーケット. Hay スーパーが やすい"
+ },
+ "ズボン": {
+  "ejemplo": "くろい ズボンを はきます",
+  "literal": "negro / pantalón-OBJ / me-pongo",
+  "meaning": "pantalón",
+  "reading": "ずぼん",
+  "tipo": "sustantivo",
+  "uso": "del francés 'jupon'. Para el pantalón y lo que se sube por las piernas, el verbo es はく, no きる"
+ },
+ "タクシー": {
+  "ejemplo": "駅の そばに タクシーが あります",
+  "literal": "estación-DE / cerca-EN / taxi-SUJ / hay",
+  "meaning": "taxi",
+  "reading": "タクシー",
+  "tipo": "sustantivo",
+  "uso": "muy caro en Japón. Solo se coge de parada u hotel, nunca en la calle"
+ },
+ "テレビ": {
+  "ejemplo": "ばん テレビを みます",
+  "literal": "noche-TEMA / tele-OBJ / veo",
+  "meaning": "televisión",
+  "reading": "テレビ",
+  "tipo": "sustantivo",
+  "uso": "para mirar tele se usa みる. En casos muy coloquiales, つける (encender)"
+ },
+ "ドア": {
+  "ejemplo": "ドアを しめて ください",
+  "literal": "puerta-OBJ / cierra / por-favor",
+  "meaning": "puerta",
+  "reading": "どあ",
+  "tipo": "sustantivo",
+  "uso": "la puerta de estilo occidental, con bisagras. La corredera tradicional es と"
+ },
+ "バス": {
+  "ejemplo": "バスで 学校に いきます",
+  "literal": "autobús-EN / escuela-A / voy",
+  "meaning": "autobús",
+  "reading": "バス",
+  "tipo": "sustantivo",
+  "uso": "el transporte urbano. バス停 es la parada. A veces va lleno"
+ },
+ "パン": {
+  "ejemplo": "あさごはんに パンを たべます",
+  "literal": "desayuno-EN / pan-OBJ / como",
+  "meaning": "pan",
+  "reading": "パン",
+  "tipo": "sustantivo",
+  "uso": "el pan de panadería, de todas formas. El de molde también es パン"
+ },
+ "ベッド": {
+  "ejemplo": "ベッドで ねます",
+  "literal": "cama-EN / duermo",
+  "meaning": "cama",
+  "reading": "べっど",
+  "tipo": "sustantivo",
+  "uso": "la cama occidental. El futón que se tiende en el suelo es ふとん"
+ },
+ "ホテル": {
+  "ejemplo": "りょこうで ホテルに とまります",
+  "literal": "viaje-EN / hotel-EN / me-hospedo",
+  "meaning": "hotel",
+  "reading": "ホテル",
+  "tipo": "sustantivo",
+  "uso": "alojamiento occidental. El tradicional es 旅館 (りょかん)"
+ },
+ "ラーメン": {
+  "ejemplo": "ラーメンを 食べたいです",
+  "literal": "ramen-OBJ / quiero-comer",
+  "meaning": "ramen (sopa de fideos)",
+  "reading": "らーめん",
+  "tipo": "sustantivo",
+  "uso": "sopa de fideos japonesa. Barato, accesible y adictivo"
+ },
+ "レストラン": {
+  "ejemplo": "しゅうまつに レストランに いきました",
+  "literal": "fin-de-semana-EN / restaurante-A / fui",
+  "meaning": "restaurante",
+  "reading": "レストラン",
+  "tipo": "sustantivo",
+  "uso": "restaurante occidental. El de comida japonesa es 日本料理屋"
+ },
+ "一": {
+  "ejemplo": "一つ ください",
+  "literal": "uno-contador / por-favor",
+  "meaning": "uno (1)",
+  "reading": "いち",
+  "tipo": "número",
+  "uso": "número base. Para contar objetos sin especificar: ひとつ (informal)"
+ },
+ "一月": {
+  "ejemplo": "一月に うまれました",
+  "literal": "enero-EN / nací",
+  "meaning": "enero",
+  "reading": "いちがつ",
+  "tipo": "sustantivo",
+  "uso": "mes de enero; 1月 es muy común en cumpleaños y vacaciones"
+ },
+ "一番": {
+  "ejemplo": "これが 一番 好きです",
+  "literal": "esto-SUJ / el-más / gusta",
+  "meaning": "el más / lo mejor (superlativo): 'el más rápido'",
+  "reading": "いちばん",
+  "tipo": "adverbio",
+  "uso": "superlativo. Entre todos. 一番 + adj-い"
+ },
+ "丁寧": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "cortés / cuidadoso / formal (adj-な)",
+  "reading": "ていねい",
+  "tipo": "adjetivo",
+  "uso": ""
+ },
+ "七": {
+  "ejemplo": "七月 ですね",
+  "literal": "julio-TEMA-¿verdad?",
+  "meaning": "siete (7)",
+  "reading": "しち / なな",
+  "tipo": "número",
+  "uso": "しち (formal), なな (coloquial). 700 se lee ななひゃく"
+ },
+ "七月": {
+  "ejemplo": "七月は やすみが ありました",
+  "literal": "julio-TEMA / vacaciones-SUJ / hubo",
+  "meaning": "julio",
+  "reading": "しちがつ",
+  "tipo": "sustantivo",
+  "uso": "julio se lee しちがつ, usado en fechas o vacaciones"
+ },
+ "万": {
+  "ejemplo": "一万円 です",
+  "literal": "10000-yen / es",
+  "meaning": "diez mil (10.000)",
+  "reading": "まん",
+  "tipo": "número",
+  "uso": "la unidad de 10.000. Es la base del sistema sinojaponés para cantidades grandes; 3万 = 30000"
+ },
+ "三": {
+  "ejemplo": "三つください",
+  "literal": "tres-contador / por-favor",
+  "meaning": "tres (3)",
+  "reading": "さん",
+  "tipo": "número",
+  "uso": "número base. Contador general: みっつ"
+ },
+ "三十": {
+  "ejemplo": "三十分 です",
+  "literal": "30-minutos / son",
+  "meaning": "treinta (30)",
+  "reading": "さんじゅう",
+  "tipo": "número",
+  "uso": "forma de decena con la lectura 3 × 10. Se usa mucho para tiempos y edades"
+ },
+ "上": {
+  "ejemplo": "本が 机の 上に あります",
+  "literal": "libro-SUJ / mesa-DE / encima-EN / hay",
+  "meaning": "encima / arriba",
+  "reading": "うえ",
+  "tipo": "sustantivo",
+  "uso": "posición. Va con の o に según la frase: 机の上, 机の上にある"
+ },
+ "下": {
+  "ejemplo": "猫が ベッドの 下に います",
+  "literal": "gato-SUJ / cama-DE / debajo-EN / está",
+  "meaning": "debajo / abajo",
+  "reading": "した",
+  "tipo": "sustantivo",
+  "uso": "posición vertical opuesta a 上. Muy útil para dar indicaciones"
+ },
+ "不安": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "ansiedad / inquietud (adj-な / sustantivo)",
+  "reading": "ふあん",
+  "tipo": "sustantivo",
+  "uso": ""
+ },
+ "中": {
+  "ejemplo": "教室の 中に います",
+  "literal": "aula-DE / dentro-EN / estoy",
+  "meaning": "dentro / en medio",
+  "reading": "なか",
+  "tipo": "sustantivo",
+  "uso": "alude a un espacio interior. 〜の中 = 'dentro de'"
+ },
+ "乗る": {
+  "ejemplo": "バスに のります",
+  "literal": "autobús-A / me-subo",
+  "meaning": "subir / montarse",
+  "reading": "のる",
+  "tipo": "verbo",
+  "uso": "montarse en un transporte o en un elevador. Con caballos también se usa のる"
+ },
+ "九": {
+  "ejemplo": "九時 です",
+  "literal": "9h / es",
+  "meaning": "nueve (9)",
+  "reading": "きゅう / く",
+  "tipo": "número",
+  "uso": "きゅう (formal), く (coloquial). 900 se lee きゅうひゃく"
+ },
+ "九月": {
+  "ejemplo": "九月に かえる",
+  "literal": "septiembre-EN / vuelvo",
+  "meaning": "septiembre",
+  "reading": "くがつ",
+  "tipo": "sustantivo",
+  "uso": "9月 es くがつ, una de las lecturas históricas más conocidas"
+ },
+ "予定": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "plan / programa / horario previsto",
+  "reading": "よてい",
+  "tipo": "sustantivo",
+  "uso": ""
+ },
+ "二": {
+  "ejemplo": "二人 います",
+  "literal": "dos-personas / hay",
+  "meaning": "dos (2)",
+  "reading": "に",
+  "tipo": "número",
+  "uso": "número base. Con contador de personas: ふたり"
+ },
+ "二十": {
+  "ejemplo": "二十人 です",
+  "literal": "20-personas / son",
+  "meaning": "veinte (20)",
+  "reading": "にじゅう",
+  "tipo": "número",
+  "uso": "se compone como 2 × 10. 21 = 二十一 (にじゅういち), 30 = 三十 (さんじゅう)"
+ },
+ "五": {
+  "ejemplo": "五百円 です",
+  "literal": "500-yen / es",
+  "meaning": "cinco (5)",
+  "reading": "ご",
+  "tipo": "número",
+  "uso": "número base. En composición con cientos, 500 se lee ごひゃく"
+ },
+ "人": {
+  "ejemplo": "日本人は どのくらい いますか",
+  "literal": "japoneses-SUJ / ¿cuántos-aprox / hay?",
+  "meaning": "persona",
+  "reading": "ひと",
+  "tipo": "sustantivo",
+  "uso": "persona cualquiera. Para contar personas lleva contador ～人"
+ },
+ "今": {
+  "ejemplo": "今 何時ですか",
+  "literal": "ahora / ¿qué-hora-es?",
+  "meaning": "ahora",
+  "reading": "いま",
+  "tipo": "sustantivo",
+  "uso": "ahora mismo. Para referirse al presente en general se usa 現在 (げんざい)"
+ },
+ "今日": {
+  "ejemplo": "今日も いい天気です",
+  "literal": "hoy-TAMBién / buen-tiempo-es",
+  "meaning": "hoy",
+  "reading": "きょう",
+  "tipo": "sustantivo",
+  "uso": "prácticamente siempre viene con は u に en frases de rutina"
+ },
+ "仕事": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "trabajo / empleo",
+  "reading": "しごと",
+  "tipo": "sustantivo",
+  "uso": ""
+ },
+ "休む": {
+  "ejemplo": "今日は 休みます",
+  "literal": "hoy / descanso",
+  "meaning": "descansar / tomar descanso",
+  "reading": "やすむ",
+  "tipo": "verbo",
+  "uso": "descansar, no necesariamente dormir. En el trabajo significa 'tomarse un día libre'"
+ },
+ "会社": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "empresa / compañía",
+  "reading": "かいしゃ",
+  "tipo": "sustantivo",
+  "uso": ""
+ },
+ "会議": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "reunión / junta",
+  "reading": "かいぎ",
+  "tipo": "sustantivo",
+  "uso": ""
+ },
+ "体": {
+  "ejemplo": "体が 疲れています",
+  "literal": "cuerpo-SUJ / estoy-cansado",
+  "meaning": "cuerpo",
+  "reading": "からだ",
+  "tipo": "sustantivo",
+  "uso": "cuerpo entero. Cuidar el cuerpo es 体を 大事にする"
+ },
+ "使う": {
+  "ejemplo": "コンピューターを つかいます",
+  "literal": "ordenador-OBJ / uso",
+  "meaning": "usar",
+  "reading": "つかう",
+  "tipo": "verbo",
+  "uso": "usar una herramienta o un servicio; el objeto que usa lleva を"
+ },
+ "便利": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "conveniente / práctico (adj-な)",
+  "reading": "べんり",
+  "tipo": "adjetivo",
+  "uso": ""
+ },
+ "元気": {
+  "ejemplo": "元気ですか",
+  "literal": "¿estás-bien?",
+  "meaning": "con energía / estar bien (adj-な)",
+  "reading": "げんき",
+  "tipo": "adjetivo",
+  "uso": "salud. Falta de energía es 元気がない"
+ },
+ "兄": {
+  "ejemplo": "兄は 会社員です",
+  "literal": "hermano-TEMA / empleado-es",
+  "meaning": "hermano mayor (propio)",
+  "reading": "あに",
+  "tipo": "sustantivo",
+  "uso": "tu hermano mayor. El de otro es お兄さん"
+ },
+ "先生": {
+  "ejemplo": "先生は 何時に 来ますか",
+  "literal": "profesor-TEMA / ¿a-qué-hora / viene?",
+  "meaning": "profesor/a / maestro/a",
+  "reading": "せんせい",
+  "tipo": "sustantivo",
+  "uso": "maestro, profesor o doctor. Dirigirse con 先生 es respetuoso"
+ },
+ "入る": {
+  "ejemplo": "部屋に はいります",
+  "literal": "habitación-A / entro",
+  "meaning": "entrar / entrar en",
+  "reading": "はいる",
+  "tipo": "verbo",
+  "uso": "entrar a un sitio. Como verbo útil para lugares y horarios: ８じに はいる"
+ },
+ "八": {
+  "ejemplo": "八百円 です",
+  "literal": "800-yen / es",
+  "meaning": "ocho (8)",
+  "reading": "はち",
+  "tipo": "número",
+  "uso": "número base. 800 se lee はっぴゃく, con la alteración fonética 8 + 百"
+ },
+ "公園": {
+  "ejemplo": "公園で あそびました",
+  "literal": "parque-EN / jugué",
+  "meaning": "parque",
+  "reading": "こうえん",
+  "tipo": "sustantivo",
+  "uso": "parque público. Lleva で para la acción que ocurre allí"
+ },
+ "六": {
+  "ejemplo": "六時 に",
+  "literal": "6h-EN",
+  "meaning": "seis (6)",
+  "reading": "ろく",
+  "tipo": "número",
+  "uso": "número base. En cientos, 600 se lee ろっぴゃく"
+ },
+ "冬": {
+  "ejemplo": "ふゆは ゆきが おおいです",
+  "literal": "invierno-TEMA / nieve-SUJ / abundante-es",
+  "meaning": "invierno",
+  "reading": "ふゆ",
+  "tipo": "sustantivo",
+  "uso": "ふゆやすみ son las vacaciones de invierno, en torno al año nuevo"
+ },
+ "冷蔵庫": {
+  "ejemplo": "ぎゅうにゅうは れいぞうこに あります",
+  "literal": "leche-TEMA / nevera-EN / está",
+  "meaning": "nevera / frigorífico",
+  "reading": "れいぞうこ",
+  "tipo": "sustantivo",
+  "uso": "palabra larga pero muy frecuente; conviene memorizarla entera"
+ },
+ "出る": {
+  "ejemplo": "学校を でます",
+  "literal": "escuela-OBJ / salgo",
+  "meaning": "salir / irse / aparecer",
+  "reading": "でる",
+  "tipo": "verbo",
+  "uso": "salir de un sitio. También 'aparecer' o 'surgir' en un contexto"
+ },
+ "分": {
+  "ejemplo": "五分 かかります",
+  "literal": "5-minutos / tarda",
+  "meaning": "minuto",
+  "reading": "ふん / ぷん",
+  "tipo": "sustantivo",
+  "uso": "usa ふん para 1-10 minutos con excepciones, ぷん en combinación con 3/4/6/8? Se suele memorizar"
+ },
+ "分かる": {
+  "ejemplo": "いみが わかります",
+  "literal": "significado-SUJ / entiendo",
+  "meaning": "entender / comprender",
+  "reading": "わかる",
+  "tipo": "verbo",
+  "uso": "lleva が, no を: lo entendido es el sujeto. Es 'me queda claro', no 'lo comprendo a base de esfuerzo'"
+ },
+ "切符": {
+  "ejemplo": "切符を 買いました",
+  "literal": "billete-OBJ / compré",
+  "meaning": "billete / ticket",
+  "reading": "きっぷ",
+  "tipo": "sustantivo",
+  "uso": "billete de tren, autobús o avión"
+ },
+ "判断": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "juicio / decisión / valoración",
+  "reading": "はんだん",
+  "tipo": "sustantivo",
+  "uso": ""
+ },
+ "前": {
+  "ejemplo": "駅の 前に います",
+  "literal": "estación-DE / delante-EN / estoy",
+  "meaning": "delante / frente",
+  "reading": "まえ",
+  "tipo": "sustantivo",
+  "uso": "delante de una cosa o de una persona. También 'antes' en el tiempo: まえに"
+ },
+ "努力": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "esfuerzo",
+  "reading": "どりょく",
+  "tipo": "sustantivo",
+  "uso": ""
+ },
+ "十": {
+  "ejemplo": "十個 買いました",
+  "literal": "10-piezas / compré",
+  "meaning": "diez (10)",
+  "reading": "じゅう",
+  "tipo": "número",
+  "uso": "base para contar decenas. 11 = 十一 (じゅういち), 20 = 二十 (にじゅう)"
+ },
+ "十一": {
+  "ejemplo": "十一時に きます",
+  "literal": "11h-EN / vengo",
+  "meaning": "once (11)",
+  "reading": "じゅういち",
+  "tipo": "número",
+  "uso": "composición de 十 + 一: al unir 10 y 1, la lectura sigue la regla de decenas + unidades"
+ },
+ "千": {
+  "ejemplo": "千円 で いいですか",
+  "literal": "1000-yen / ¿está-bien?",
+  "meaning": "mil (1000)",
+  "reading": "せん",
+  "tipo": "número",
+  "uso": "miles. 2000 = 二千 (にせん), 3000 = 三千 (さんぜん), 8000 = 八千 (はっせん)"
+ },
+ "午前": {
+  "ejemplo": "午前九時です",
+  "literal": "mañana-9h-es",
+  "meaning": "mañana / antes del mediodía",
+  "reading": "ごぜん",
+  "tipo": "sustantivo",
+  "uso": "muy útil para horarios formales; se usa en trenes, entradas y citas"
+ },
+ "午後": {
+  "ejemplo": "午後三時です",
+  "literal": "tarde-3h-es",
+  "meaning": "tarde / después del mediodía",
+  "reading": "ごご",
+  "tipo": "sustantivo",
+  "uso": "también en horarios formales. Es el sistema más claro para hablar de la tarde"
+ },
+ "半": {
+  "ejemplo": "三時半です",
+  "literal": "3h-media-es",
+  "meaning": "media hora / mitad",
+  "reading": "はん",
+  "tipo": "sustantivo",
+  "uso": "añadido a la hora: 3時半 = tres y media. 30分 = media hora, también muy útil"
+ },
+ "卵": {
+  "ejemplo": "卵を 買ってください",
+  "literal": "huevo-OBJ / compra-por-favor",
+  "meaning": "huevo",
+  "reading": "たまご",
+  "tipo": "sustantivo",
+  "uso": "huevo de gallina. En japonés no se especifica si es singular o plural"
+ },
+ "原因": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "causa / motivo (de un problema)",
+  "reading": "げんいん",
+  "tipo": "sustantivo",
+  "uso": ""
+ },
+ "友達": {
+  "ejemplo": "友達と 遊びました",
+  "literal": "amigo-CON / jugué",
+  "meaning": "amigo/a",
+  "reading": "ともだち",
+  "tipo": "sustantivo",
+  "uso": "amigo informal. Amigo de verdad es 親友 (しんゆう)"
+ },
+ "口": {
+  "ejemplo": "口が 痛いです",
+  "literal": "boca-SUJ / duele",
+  "meaning": "boca",
+  "reading": "くち",
+  "tipo": "sustantivo",
+  "uso": "boca. Hablar es 口を 聞く (de verdad) o はなす (lo normal)"
+ },
+ "古い": {
+  "ejemplo": "この ビルは ふるいです",
+  "literal": "este / edificio-TEMA / viejo-es",
+  "meaning": "viejo / antiguo (adj-い)",
+  "reading": "ふるい",
+  "tipo": "adjetivo",
+  "uso": "solo cosas. Una persona mayor nunca es ふるい: es としうえ o おとしより"
+ },
+ "台所": {
+  "ejemplo": "ははが だいどころに います",
+  "literal": "madre-SUJ / cocina-EN / está",
+  "meaning": "cocina (estancia)",
+  "reading": "だいどころ",
+  "tipo": "sustantivo",
+  "uso": "la cocina como sala de la casa. Cocinar es りょうりを する; el office moderno, キッチン"
+ },
+ "右": {
+  "ejemplo": "右に 曲がってください",
+  "literal": "derecha-A / gira / por-favor",
+  "meaning": "derecha",
+  "reading": "みぎ",
+  "tipo": "sustantivo",
+  "uso": "dirección. Izquierda es 左 (ひだり)"
+ },
+ "向こう": {
+  "ejemplo": "向こう側に あります",
+  "literal": "allá / lado-EN / está",
+  "meaning": "allá / al otro lado / frente",
+  "reading": "むこう",
+  "tipo": "sustantivo",
+  "uso": "dirigido a un sitio visible más lejos o al lado opuesto. Muy útil para dar direcciones"
+ },
+ "命令": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "orden / mandato",
+  "reading": "めいれい",
+  "tipo": "sustantivo",
+  "uso": ""
+ },
+ "問題": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "problema / cuestión",
+  "reading": "もんだい",
+  "tipo": "sustantivo",
+  "uso": ""
+ },
+ "四": {
+  "ejemplo": "四時に 来ます",
+  "literal": "4h-EN / vengo",
+  "meaning": "cuatro (4)",
+  "reading": "し / よん",
+  "tipo": "número",
+  "uso": "dos formas: し (formal), よん (coloquial). Con personas: よにん"
+ },
+ "四月": {
+  "ejemplo": "四月は 学校が はじまります",
+  "literal": "abril-TEMA / escuela-SUJ / empieza",
+  "meaning": "abril",
+  "reading": "しがつ",
+  "tipo": "sustantivo",
+  "uso": "abril se pronuncia しがつ, no よんがつ"
+ },
+ "土曜日": {
+  "ejemplo": "土曜日に うみへ 行きます",
+  "literal": "sábado-EN / mar-A / voy",
+  "meaning": "sábado",
+  "reading": "どようび",
+  "tipo": "sustantivo",
+  "uso": "si alguien te dice 土曜日, ya sabes que es fin de semana"
+ },
+ "地下鉄": {
+  "ejemplo": "地下鉄で 行った方が 早いです",
+  "literal": "metro-EN / ir-es / más-rápido",
+  "meaning": "metro / subte",
+  "reading": "ちかてつ",
+  "tipo": "sustantivo",
+  "uso": "metro urbano. Rápido en ciudades grandes"
+ },
+ "地図": {
+  "ejemplo": "地図を 見ています",
+  "literal": "mapa-OBJ / estoy-mirando",
+  "meaning": "mapa",
+  "reading": "ちず",
+  "tipo": "sustantivo",
+  "uso": "mapa. En móvil es 地図アプリ (ちずあぷり)"
+ },
+ "場合": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "caso / situación / circunstancia",
+  "reading": "ばあい",
+  "tipo": "sustantivo",
+  "uso": ""
+ },
+ "壊す": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "romper algo (transitivo)",
+  "reading": "こわす",
+  "tipo": "verbo",
+  "uso": ""
+ },
+ "壊れる": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "romperse / averiarse (intransitivo)",
+  "reading": "こわれる",
+  "tipo": "verbo",
+  "uso": ""
+ },
+ "夏": {
+  "ejemplo": "なつやすみに うみへ いきます",
+  "literal": "vacaciones-de-verano-EN / mar-A / voy",
+  "meaning": "verano",
+  "reading": "なつ",
+  "tipo": "sustantivo",
+  "uso": "なつやすみ son las vacaciones de verano, largas para los estudiantes"
+ },
+ "外": {
+  "ejemplo": "外で たってください",
+  "literal": "fuera-EN / ponte-de-pie / por-favor",
+  "meaning": "fuera / exterior",
+  "reading": "そと",
+  "tipo": "sustantivo",
+  "uso": "fuera del espacio. También 'exterior' o 'afuera de la casa'"
+ },
+ "大きい": {
+  "ejemplo": "おおきい いえですね",
+  "literal": "grande / casa-es-¿verdad?",
+  "meaning": "grande (adj-い)",
+  "reading": "おおきい",
+  "tipo": "adjetivo",
+  "uso": "adj-い: va pegado delante del sustantivo, sin nada en medio"
+ },
+ "大切": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "importante / valioso (adj-な)",
+  "reading": "たいせつ",
+  "tipo": "adjetivo",
+  "uso": ""
+ },
+ "天気": {
+  "ejemplo": "きょうは いい てんきです",
+  "literal": "hoy-TEMA / buen / tiempo-es",
+  "meaning": "tiempo (meteorológico)",
+  "reading": "てんき",
+  "tipo": "sustantivo",
+  "uso": "'buen tiempo' es いい てんき; 'mal tiempo', わるい てんき. お天気 con お suena más suave"
+ },
+ "失敗": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "fracaso / error",
+  "reading": "しっぱい",
+  "tipo": "sustantivo",
+  "uso": ""
+ },
+ "失礼": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "descortesía / perdone la molestia",
+  "reading": "しつれい",
+  "tipo": "sustantivo",
+  "uso": ""
+ },
+ "妹": {
+  "ejemplo": "妹は 中学生です",
+  "literal": "hermana-menor-TEMA / estudiante-de-ESO-es",
+  "meaning": "hermana menor (propia)",
+  "reading": "いもうと",
+  "tipo": "sustantivo",
+  "uso": "tu hermana menor. La de otro es 妹さん"
+ },
+ "姉": {
+  "ejemplo": "姉と 話しました",
+  "literal": "hermana-CON / hablé",
+  "meaning": "hermana mayor (propia)",
+  "reading": "あね",
+  "tipo": "sustantivo",
+  "uso": "tu hermana mayor. La de otro es お姉さん"
+ },
+ "始まる": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "comenzar / empezar (intransitivo)",
+  "reading": "はじまる",
+  "tipo": "verbo",
+  "uso": ""
+ },
+ "始める": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "empezar algo (transitivo)",
+  "reading": "はじめる",
+  "tipo": "verbo",
+  "uso": ""
+ },
+ "子供": {
+  "ejemplo": "子供が いますか",
+  "literal": "niño-SUJ / ¿tienes?",
+  "meaning": "niño/a / hijo/a",
+  "reading": "こども",
+  "tipo": "sustantivo",
+  "uso": "niño o hijo. Cuando crecen se dice 大人 (おとな)"
+ },
+ "季節": {
+  "ejemplo": "にほんには しきが あります",
+  "literal": "Japón-EN-TEMA / cuatro-estaciones-SUJ / hay",
+  "meaning": "estación del año",
+  "reading": "きせつ",
+  "tipo": "sustantivo",
+  "uso": "las cuatro estaciones juntas son 四季 (しき), una idea muy repetida sobre Japón"
+ },
+ "学ぶ": {
+  "ejemplo": "日本語を まなびます",
+  "literal": "japonés-OBJ / aprendo",
+  "meaning": "estudiar / aprender",
+  "reading": "まなぶ",
+  "tipo": "verbo",
+  "uso": "aprender de manera más profunda; estudiar en la escuela es べんきょうする"
+ },
+ "学校": {
+  "ejemplo": "学校は どこですか",
+  "literal": "escuela-TEMA / ¿dónde-está?",
+  "meaning": "escuela / colegio",
+  "reading": "がっこう",
+  "tipo": "sustantivo",
+  "uso": "institución educativa. Instituto es 高校 (こうこう), universidad es 大学 (だいがく)"
+ },
+ "学生": {
+  "ejemplo": "彼は 大学の 学生です",
+  "literal": "él-TEMA / universidad-DE / estudiante-es",
+  "meaning": "estudiante",
+  "reading": "がくせい",
+  "tipo": "sustantivo",
+  "uso": "estudiante de instituto o universidad"
+ },
+ "家": {
+  "ejemplo": "家に 帰りました",
+  "literal": "casa-A / volví",
+  "meaning": "casa / hogar",
+  "reading": "うち",
+  "tipo": "sustantivo",
+  "uso": "tu casa. Es coloquial. Formal es 家 (いえ). Mi casa se dice うちの家"
+ },
+ "寒い": {
+  "ejemplo": "そとは さむいですよ",
+  "literal": "fuera-TEMA / frío-es-¡eh!",
+  "meaning": "frío (adj-い)",
+  "reading": "さむい",
+  "tipo": "adjetivo",
+  "uso": "del tiempo y del ambiente. Una bebida o un objeto frío es つめたい"
+ },
+ "寝る": {
+  "ejemplo": "１１じに ねます",
+  "literal": "11h-EN / me-acuesto",
+  "meaning": "dormir / acostarse",
+  "reading": "ねる",
+  "tipo": "verbo",
+  "uso": "irse a la cama. Estar durmiendo ahora mismo es ねています"
+ },
+ "寿司": {
+  "ejemplo": "寿司が 好きです",
+  "literal": "sushi-SUJ / me-gusta",
+  "meaning": "sushi",
+  "reading": "すし",
+  "tipo": "sustantivo",
+  "uso": "símbolo de Japón para los extranjeros. En Japón es comida corriente"
+ },
+ "小さい": {
+  "ejemplo": "ちいさい こえで はなします",
+  "literal": "pequeña / voz-CON / hablo",
+  "meaning": "pequeño (adj-い)",
+  "reading": "ちいさい",
+  "tipo": "adjetivo",
+  "uso": "también 'bajito' de volumen y 'de poca edad'"
+ },
+ "少し": {
+  "ejemplo": "すこし 休みましょう",
+  "literal": "un-poco / descansenos",
+  "meaning": "un poco / poco",
+  "reading": "すこし",
+  "tipo": "adverbio",
+  "uso": "cantidad pequeña y poco marcada; muy útil para suavizar una petición"
+ },
+ "左": {
+  "ejemplo": "左から 来た",
+  "literal": "izquierda-desde / vino",
+  "meaning": "izquierda",
+  "reading": "ひだり",
+  "tipo": "sustantivo",
+  "uso": "dirección. Viene con la partícula から o に según contexto"
+ },
+ "帰る": {
+  "ejemplo": "うちに かえります",
+  "literal": "casa-A / vuelvo",
+  "meaning": "regresar / volver a casa",
+  "reading": "かえる",
+  "tipo": "verbo",
+  "uso": "volver al sitio al que perteneces (casa, país). Acaba en る pero es grupo 1: かえって"
+ },
+ "帽子": {
+  "ejemplo": "ぼうしを かぶって ください",
+  "literal": "gorra-OBJ / ponte / por-favor",
+  "meaning": "sombrero / gorra",
+  "reading": "ぼうし",
+  "tipo": "sustantivo",
+  "uso": "lo que va en la cabeza usa un tercer verbo: かぶる"
+ },
+ "店": {
+  "ejemplo": "この 店は 新しいです",
+  "literal": "esta / tienda-TEMA / nueva-es",
+  "meaning": "tienda / establecimiento",
+  "reading": "みせ",
+  "tipo": "sustantivo",
+  "uso": "comercio pequeño. Tienda de ropa es ふく屋 (ふくや)"
+ },
+ "座る": {
+  "ejemplo": "ここに すわってください",
+  "literal": "aquí-EN / siéntate / por-favor",
+  "meaning": "sentarse",
+  "reading": "すわる",
+  "tipo": "verbo",
+  "uso": "sentarse en una silla o en el suelo. El verbo se usa para tolerar una situación: すわるは difícil"
+ },
+ "弟": {
+  "ejemplo": "弟に 手伝ってもらいました",
+  "literal": "hermano-menor-A / me-ayudó",
+  "meaning": "hermano menor (propio)",
+  "reading": "おとうと",
+  "tipo": "sustantivo",
+  "uso": "tu hermano menor. El de otro es 弟さん"
+ },
+ "強制": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "obligación / coacción",
+  "reading": "きょうせい",
+  "tipo": "sustantivo",
+  "uso": ""
+ },
+ "当然": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "natural / obvio / como es debido (adj-な / adv)",
+  "reading": "とうぜん",
+  "tipo": "adjetivo",
+  "uso": ""
+ },
+ "影響": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "influencia / impacto",
+  "reading": "えいきょう",
+  "tipo": "sustantivo",
+  "uso": ""
+ },
+ "待つ": {
+  "ejemplo": "ちょっと まって ください",
+  "literal": "un-momento / espera / por-favor",
+  "meaning": "esperar",
+  "reading": "まつ",
+  "tipo": "verbo",
+  "uso": "grupo 1 en つ: まって, まちます. Esa frase se oye cien veces al día"
+ },
+ "後ろ": {
+  "ejemplo": "後ろを 見てください",
+  "literal": "atrás-OBJ / mira / por-favor",
+  "meaning": "detrás / atrás",
+  "reading": "うしろ",
+  "tipo": "sustantivo",
+  "uso": "posición detrás de algo. En tiempo, うしろ significa 'después' o 'al final'"
+ },
+ "必要": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "necesario (adj-な): 〜が必要です",
+  "reading": "ひつよう",
+  "tipo": "adjetivo",
+  "uso": ""
+ },
+ "忘れる": {
+  "ejemplo": "かばんを わすれました",
+  "literal": "bolso-OBJ / olvidé",
+  "meaning": "olvidar",
+  "reading": "わすれる",
+  "tipo": "verbo",
+  "uso": "olvidar algo; el objeto directo lleva を. También se usa para 'dejar de acordarse'"
+ },
+ "思う": {
+  "ejemplo": "いいと おもいます",
+  "literal": "bueno-QUE / pienso",
+  "meaning": "pensar / creer",
+  "reading": "おもう",
+  "tipo": "verbo",
+  "uso": "la opinión va delante marcada con と. Es la forma educada de opinar: sin おもいます suena a verdad absoluta"
+ },
+ "意見": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "opinión",
+  "reading": "いけん",
+  "tipo": "sustantivo",
+  "uso": ""
+ },
+ "成功": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "éxito",
+  "reading": "せいこう",
+  "tipo": "sustantivo",
+  "uso": ""
+ },
+ "手": {
+  "ejemplo": "手が 冷たいです",
+  "literal": "mano-SUJ / fría-es",
+  "meaning": "mano",
+  "reading": "て",
+  "tipo": "sustantivo",
+  "uso": "mano. Mano derecha es 右手 (みぎて)"
+ },
+ "持つ": {
+  "ejemplo": "かばんを もちます",
+  "literal": "bolso-OBJ / llevo",
+  "meaning": "tener / sostener / llevar",
+  "reading": "もつ",
+  "tipo": "verbo",
+  "uso": "sostener en la mano. 'Tener' en el sentido de poseer se dice もっています"
+ },
+ "教える": {
+  "ejemplo": "先生が じゅんばんを おしえます",
+  "literal": "profesor-SUJ / orden-OBJ / enseña",
+  "meaning": "enseñar / decir",
+  "reading": "おしえる",
+  "tipo": "verbo",
+  "uso": "enseñar a alguien o explicar cómo se hace. El objeto directo es lo que enseñan"
+ },
+ "敬語": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "lenguaje de cortesía / sistema de honoríficos",
+  "reading": "けいご",
+  "tipo": "sustantivo",
+  "uso": ""
+ },
+ "新しい": {
+  "ejemplo": "あたらしい ケータイを かいました",
+  "literal": "nuevo / móvil-OBJ / compré",
+  "meaning": "nuevo (adj-い)",
+  "reading": "あたらしい",
+  "tipo": "adjetivo",
+  "uso": "nuevo de recién hecho o recién comprado. Algo usado que es nuevo para ti no es あたらしい"
+ },
+ "日": {
+  "ejemplo": "今日 は 二十五日です",
+  "literal": "hoy-TEMA / 25-día-es",
+  "meaning": "día del mes / sol",
+  "reading": "にち / ひ",
+  "tipo": "sustantivo",
+  "uso": "にち es el día del mes; ひ es el sol y se usa en varias combinaciones. En fechas, casi siempre 〜にち"
+ },
+ "日曜日": {
+  "ejemplo": "日曜日は 休みです",
+  "literal": "domingo-TEMA / descanso-es",
+  "meaning": "domingo",
+  "reading": "にちようび",
+  "tipo": "sustantivo",
+  "uso": "equivale al día de descanso más claro"
+ },
+ "明日": {
+  "ejemplo": "明日 いきます",
+  "literal": "mañana / voy",
+  "meaning": "mañana",
+  "reading": "あした",
+  "tipo": "sustantivo",
+  "uso": "el día que viene. Muy útil para citas, trabajo y escuela"
+ },
+ "春": {
+  "ejemplo": "はるに さくらを みます",
+  "literal": "primavera-EN / cerezos-OBJ / vemos",
+  "meaning": "primavera",
+  "reading": "はる",
+  "tipo": "sustantivo",
+  "uso": "la estación como punto en el tiempo lleva に"
+ },
+ "昨日": {
+  "ejemplo": "昨日 しっていますか",
+  "literal": "ayer / ¿lo sabías?",
+  "meaning": "ayer",
+  "reading": "きのう",
+  "tipo": "sustantivo",
+  "uso": "frecuente para contar acciones pasadas"
+ },
+ "時": {
+  "ejemplo": "三時に きます",
+  "literal": "3h-EN / vengo",
+  "meaning": "hora (unidad horaria)",
+  "reading": "じ",
+  "tipo": "sustantivo",
+  "uso": "para la hora en punto: 1時, 5時 etc. La lectura cambia según la hora, no siempre いちじ"
+ },
+ "時計": {
+  "ejemplo": "へやに とけいが あります",
+  "literal": "habitación-EN / reloj-SUJ / hay",
+  "meaning": "reloj",
+  "reading": "とけい",
+  "tipo": "sustantivo",
+  "uso": "de pared y de pulsera es el mismo とけい; el de muñeca puede precisarse como うでどけい"
+ },
+ "時間": {
+  "ejemplo": "時間が ありません",
+  "literal": "tiempo-SUJ / no-hay",
+  "meaning": "tiempo / hora",
+  "reading": "じかん",
+  "tipo": "sustantivo",
+  "uso": "tiempo disponible o cantidad de horas. Para la hora concreta usa 時 (じ)"
+ },
+ "晴れ": {
+  "ejemplo": "あしたは はれです",
+  "literal": "mañana-TEMA / despejado-es",
+  "meaning": "despejado / buen tiempo",
+  "reading": "はれ",
+  "tipo": "sustantivo",
+  "uso": "en el parte del tiempo va como sustantivo. El verbo es はれる: あした はれます"
+ },
+ "暑い": {
+  "ejemplo": "なつは とても あついです",
+  "literal": "verano-TEMA / muy / caluroso-es",
+  "meaning": "caluroso (adj-い)",
+  "reading": "あつい",
+  "tipo": "adjetivo",
+  "uso": "solo del tiempo y del ambiente. Un objeto caliente al tacto es あつい escrito 熱い"
+ },
+ "暖かい": {
+  "ejemplo": "はるは あたたかいです",
+  "literal": "primavera-TEMA / templada-es",
+  "meaning": "templado / cálido (adj-い)",
+  "reading": "あたたかい",
+  "tipo": "adjetivo",
+  "uso": "del tiempo. Para comida o bebida caliente y agradable se escribe 温かい, misma lectura"
+ },
+ "曇り": {
+  "ejemplo": "きょうは くもりです",
+  "literal": "hoy-TEMA / nublado-es",
+  "meaning": "nublado",
+  "reading": "くもり",
+  "tipo": "sustantivo",
+  "uso": "verbo くもる. 'Nublado con claros' es はれ ときどき くもり"
+ },
+ "書く": {
+  "ejemplo": "なまえを かきます",
+  "literal": "nombre-OBJ / escribo",
+  "meaning": "escribir",
+  "reading": "かく",
+  "tipo": "verbo",
+  "uso": "grupo 1 en く: かいて, かきます. Dibujar es el mismo かく pero se escribe 描く"
+ },
+ "月": {
+  "ejemplo": "来月 は やく です",
+  "literal": "mes-que-viene / es / apurada",
+  "meaning": "mes / luna",
+  "reading": "つき / がつ",
+  "tipo": "sustantivo",
+  "uso": "がつ es el mes del calendario; つき es la luna. En fechas, siempre 〜がつ"
+ },
+ "月曜日": {
+  "ejemplo": "月曜日に 会います",
+  "literal": "lunes-EN / nos vemos",
+  "meaning": "lunes",
+  "reading": "げつようび",
+  "tipo": "sustantivo",
+  "uso": "el día de la semana. Los días se forman como 'día + 曜日'"
+ },
+ "服": {
+  "ejemplo": "あたらしい ふくを かいました",
+  "literal": "nueva / ropa-OBJ / compré",
+  "meaning": "ropa",
+  "reading": "ふく",
+  "tipo": "sustantivo",
+  "uso": "genérico para 'ropa'. 洋服 (ようふく) es la ropa de estilo occidental, casi todo lo que se lleva hoy"
+ },
+ "木曜日": {
+  "ejemplo": "木曜日は たくさん べんきょうします",
+  "literal": "jueves-TEMA / mucho / estudio",
+  "meaning": "jueves",
+  "reading": "もくようび",
+  "tipo": "sustantivo",
+  "uso": "día medio de la semana, muy útil para rutinas"
+ },
+ "本棚": {
+  "ejemplo": "ほんだなに ほんを ならべます",
+  "literal": "estantería-EN / libros-OBJ / coloco",
+  "meaning": "estantería / librería (mueble)",
+  "reading": "ほんだな",
+  "tipo": "sustantivo",
+  "uso": "たな solo es cualquier estante; con 本 delante, el de los libros"
+ },
+ "机": {
+  "ejemplo": "つくえの うえに ほんが あります",
+  "literal": "escritorio-DE / encima-EN / libro-SUJ / hay",
+  "meaning": "mesa / escritorio",
+  "reading": "つくえ",
+  "tipo": "sustantivo",
+  "uso": "la mesa de estudio o de trabajo. La de comedor es テーブル"
+ },
+ "来る": {
+  "ejemplo": "ともだちが きます",
+  "literal": "amigo-SUJ / viene",
+  "meaning": "venir",
+  "reading": "くる",
+  "tipo": "verbo",
+  "uso": "acercarse a donde estás tú. Si eres tú quien va a casa del otro, en japonés es いく"
+ },
+ "果物": {
+  "ejemplo": "果物を 買いました",
+  "literal": "fruta-OBJ / compré",
+  "meaning": "fruta",
+  "reading": "くだもの",
+  "tipo": "sustantivo",
+  "uso": "frutas en general. Fruta singular: りんご (manzana), みかん (mandarina)"
+ },
+ "椅子": {
+  "ejemplo": "いすに すわって ください",
+  "literal": "silla-EN / siéntate / por-favor",
+  "meaning": "silla",
+  "reading": "いす",
+  "tipo": "sustantivo",
+  "uso": "sentarse en una silla lleva に, no を"
+ },
+ "様子": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "apariencia / aspecto / situación",
+  "reading": "ようす",
+  "tipo": "sustantivo",
+  "uso": ""
+ },
+ "毎日": {
+  "ejemplo": "毎日 学校に 行きます",
+  "literal": "todos-los-días / escuela-A / voy",
+  "meaning": "todos los días",
+  "reading": "まいにち",
+  "tipo": "sustantivo",
+  "uso": "cada día. Tampoco lleva に. Otros: 毎週 (まいしゅう = cada semana), 毎月 (まいつき)"
+ },
+ "気持ち": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "sentimiento / emoción / cómo te sientes",
+  "reading": "きもち",
+  "tipo": "sustantivo",
+  "uso": ""
+ },
+ "水": {
+  "ejemplo": "水を ください",
+  "literal": "agua-OBJ / por-favor",
+  "meaning": "agua",
+  "reading": "みず",
+  "tipo": "sustantivo",
+  "uso": "agua fría. Agua caliente para beber es お湯 (おゆ)"
+ },
+ "水曜日": {
+  "ejemplo": "水曜日に テストがあります",
+  "literal": "miércoles-EN / examen-hay",
+  "meaning": "miércoles",
+  "reading": "すいようび",
+  "tipo": "sustantivo",
+  "uso": "suele aparecer en horarios y planificación"
+ },
+ "泳ぐ": {
+  "ejemplo": "プールで およぎます",
+  "literal": "piscina-EN / nado",
+  "meaning": "nadar",
+  "reading": "およぐ",
+  "tipo": "verbo",
+  "uso": "nadar. Se usa con で por el sitio en el que ocurre la acción"
+ },
+ "涼しい": {
+  "ejemplo": "あきは すずしくて きもちいいです",
+  "literal": "otoño-TEMA / fresco-y / agradable-es",
+  "meaning": "fresco / agradable (adj-い)",
+  "reading": "すずしい",
+  "tipo": "adjetivo",
+  "uso": "fresco en el buen sentido, ni frío ni calor. El fresco desagradable ya es さむい"
+ },
+ "火曜日": {
+  "ejemplo": "火曜日は 休みです",
+  "literal": "martes-TEMA / descanso-es",
+  "meaning": "martes",
+  "reading": "かようび",
+  "tipo": "sustantivo",
+  "uso": "se usa con は para el día libre/ahí"
+ },
+ "無理": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "imposible / sin sentido / forzado (adj-な / sustantivo)",
+  "reading": "むり",
+  "tipo": "sustantivo",
+  "uso": ""
+ },
+ "牛乳": {
+  "ejemplo": "朝 牛乳を のみます",
+  "literal": "mañana / leche-OBJ / bebo",
+  "meaning": "leche",
+  "reading": "ぎゅうにゅう",
+  "tipo": "sustantivo",
+  "uso": "leche de vaca. En Japón se bebe fría o templada, no hervida"
+ },
+ "特別": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "especial / en particular (adj-な)",
+  "reading": "とくべつ",
+  "tipo": "adjetivo",
+  "uso": ""
+ },
+ "状況": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "situación / estado de las cosas",
+  "reading": "じょうきょう",
+  "tipo": "sustantivo",
+  "uso": ""
+ },
+ "病院": {
+  "ejemplo": "病院に 行きました",
+  "literal": "hospital-A / fui",
+  "meaning": "hospital",
+  "reading": "びょういん",
+  "tipo": "sustantivo",
+  "uso": "hospital o clínica. El doctor es 医者 (いしゃ), el enfermero es 看護師 (かんごし)"
+ },
+ "痛い": {
+  "ejemplo": "すごく 痛いです",
+  "literal": "mucho / duele",
+  "meaning": "doloroso / me duele (adj-い)",
+  "reading": "いたい",
+  "tipo": "adjetivo",
+  "uso": "adjetivo-い. Duele va en la frase como sujeto + 痛い"
+ },
+ "白い": {
+  "ejemplo": "しろい シャツを きます",
+  "literal": "blanca / camisa-OBJ / me-pongo",
+  "meaning": "blanco (adj-い)",
+  "reading": "しろい",
+  "tipo": "adjetivo",
+  "uso": "adj-い. Sustantivo: しろ"
+ },
+ "百": {
+  "ejemplo": "百円 です",
+  "literal": "100-yen / es",
+  "meaning": "cien (100)",
+  "reading": "ひゃく",
+  "tipo": "número",
+  "uso": "centenas. 200 = 二百 (にひゃく), 300 = 三百 (さんびゃく), 600 = 六百 (ろっぴゃく)"
+ },
+ "目": {
+  "ejemplo": "目が 疲れています",
+  "literal": "ojo-SUJ / estoy-cansado",
+  "meaning": "ojo/s",
+  "reading": "め",
+  "tipo": "sustantivo",
+  "uso": "ojo, puede ir singular o plural. Llorar es 泣く (なく)"
+ },
+ "目的": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "objetivo / propósito",
+  "reading": "もくてき",
+  "tipo": "sustantivo",
+  "uso": ""
+ },
+ "着る": {
+  "ejemplo": "シャツを きます",
+  "literal": "camisa-OBJ / me-pongo",
+  "meaning": "ponerse / llevar puesto (ropa de torso)",
+  "reading": "きる",
+  "tipo": "verbo",
+  "uso": "ropa superior o prendas que se ponen sobre el cuerpo; el verbo cambia según la prenda"
+ },
+ "知る": {
+  "ejemplo": "その 人を しっています",
+  "literal": "esa / persona-OBJ / conozco",
+  "meaning": "saber / conocer",
+  "reading": "しる",
+  "tipo": "verbo",
+  "uso": "saber o conocer algo. No confundir con わかる: 知る es más 'conocer' / 'tener noticia'"
+ },
+ "秋": {
+  "ejemplo": "あきは たべものが おいしいです",
+  "literal": "otoño-TEMA / comida-SUJ / rica-es",
+  "meaning": "otoño",
+  "reading": "あき",
+  "tipo": "sustantivo",
+  "uso": "se le llama el otoño del apetito, del deporte y de la lectura"
+ },
+ "空": {
+  "ejemplo": "そらが あおいです",
+  "literal": "cielo-SUJ / azul-es",
+  "meaning": "cielo",
+  "reading": "そら",
+  "tipo": "sustantivo",
+  "uso": "el cielo físico. El 'cielo' religioso es てん"
+ },
+ "空港": {
+  "ejemplo": "空港に 行きます",
+  "literal": "aeropuerto-A / voy",
+  "meaning": "aeropuerto",
+  "reading": "くうこう",
+  "tipo": "sustantivo",
+  "uso": "aeropuerto. Lleva に para el destino"
+ },
+ "窓": {
+  "ejemplo": "まどを あけても いいですか",
+  "literal": "ventana-OBJ / aunque-abra / ¿está-bien?",
+  "meaning": "ventana",
+  "reading": "まど",
+  "tipo": "sustantivo",
+  "uso": "abrir y cerrar con あける／しめる"
+ },
+ "立つ": {
+  "ejemplo": "みんな 立ちました",
+  "literal": "todos / se-levantaron",
+  "meaning": "levantarse / ponerse de pie",
+  "reading": "たつ",
+  "tipo": "verbo",
+  "uso": "ponerse de pie; también 'estar en pie' o 'tener lugar' en un contexto"
+ },
+ "答え": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "respuesta",
+  "reading": "こたえ",
+  "tipo": "sustantivo",
+  "uso": ""
+ },
+ "終わる": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "terminar / acabar (intransitivo)",
+  "reading": "おわる",
+  "tipo": "verbo",
+  "uso": ""
+ },
+ "経験": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "experiencia",
+  "reading": "けいけん",
+  "tipo": "sustantivo",
+  "uso": ""
+ },
+ "結果": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "resultado / consecuencia",
+  "reading": "けっか",
+  "tipo": "sustantivo",
+  "uso": ""
+ },
+ "緑": {
+  "ejemplo": "みどりの ぼうしを かぶります",
+  "literal": "verde-DE / gorra-OBJ / me-pongo",
+  "meaning": "verde",
+  "reading": "みどり",
+  "tipo": "sustantivo",
+  "uso": "sustantivo; se usa con の. No tiene forma en 〜い de uso común"
+ },
+ "練習": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "práctica / ejercicio",
+  "reading": "れんしゅう",
+  "tipo": "sustantivo",
+  "uso": ""
+ },
+ "耳": {
+  "ejemplo": "耳が 痛いです",
+  "literal": "oído-SUJ / duele",
+  "meaning": "oreja / oído",
+  "reading": "みみ",
+  "tipo": "sustantivo",
+  "uso": "oído o parte externa. Limpiar oídos es 耳を 掃除する"
+ },
+ "聞く": {
+  "ejemplo": "おんがくを ききます",
+  "literal": "música-OBJ / escucho",
+  "meaning": "escuchar / preguntar",
+  "reading": "きく",
+  "tipo": "verbo",
+  "uso": "dos sentidos: escuchar algo, y preguntar a alguien (せんせいに ききます = 'le pregunto al profe')"
+ },
+ "肉": {
+  "ejemplo": "肉は 好きですか",
+  "literal": "carne-TEMA / ¿te-gusta?",
+  "meaning": "carne",
+  "reading": "にく",
+  "tipo": "sustantivo",
+  "uso": "carne cualquiera. Vaca es 牛肉 (ぎゅうにく), cerdo es 豚肉 (ぶたにく)"
+ },
+ "自信": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "confianza en uno mismo / seguridad",
+  "reading": "じしん",
+  "tipo": "sustantivo",
+  "uso": ""
+ },
+ "色": {
+  "ejemplo": "すきな いろは なんですか",
+  "literal": "favorito / color-TEMA / ¿qué-es?",
+  "meaning": "color",
+  "reading": "いろ",
+  "tipo": "sustantivo",
+  "uso": "cada color tiene forma de sustantivo y, muchos, forma en 〜い. 何色 (なにいろ) es '¿qué color?'"
+ },
+ "色々": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "varios / diverso / de todo tipo",
+  "reading": "いろいろ",
+  "tipo": "adjetivo",
+  "uso": ""
+ },
+ "茶色": {
+  "ejemplo": "ちゃいろの コートです",
+  "literal": "marrón-DE / abrigo-es",
+  "meaning": "marrón",
+  "reading": "ちゃいろ",
+  "tipo": "sustantivo",
+  "uso": "literalmente 'color del té'. Como adjetivo casi siempre con の: ちゃいろの…"
+ },
+ "薬": {
+  "ejemplo": "薬を 飲みました",
+  "literal": "medicina-OBJ / tomé",
+  "meaning": "medicina / medicamento",
+  "reading": "くすり",
+  "tipo": "sustantivo",
+  "uso": "medicina. Tomar medicina es 薬を 飲む (no たべる)"
+ },
+ "行く": {
+  "ejemplo": "がっこうに いきます",
+  "literal": "escuela-A / voy",
+  "meaning": "ir",
+  "reading": "いく",
+  "tipo": "verbo",
+  "uso": "alejarte de donde estás. Su forma-て es la única irregular del grupo 1: いって"
+ },
+ "見つかる": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "ser encontrado / aparecer (intransitivo)",
+  "reading": "みつかる",
+  "tipo": "verbo",
+  "uso": ""
+ },
+ "見つける": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "encontrar algo (transitivo)",
+  "reading": "みつける",
+  "tipo": "verbo",
+  "uso": ""
+ },
+ "見る": {
+  "ejemplo": "テレビを みます",
+  "literal": "tele-OBJ / veo",
+  "meaning": "ver / mirar",
+  "reading": "みる",
+  "tipo": "verbo",
+  "uso": "mirar con intención. Lo que se ve sin querer, lo que está a la vista, es みえる"
+ },
+ "許す": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "perdonar / permitir",
+  "reading": "ゆるす",
+  "tipo": "verbo",
+  "uso": ""
+ },
+ "話す": {
+  "ejemplo": "にほんごを はなします",
+  "literal": "japonés-OBJ / hablo",
+  "meaning": "hablar",
+  "reading": "はなす",
+  "tipo": "verbo",
+  "uso": "hablar un idioma o contar algo. Charlar CON alguien lleva と: ともだちと はなす"
+ },
+ "読む": {
+  "ejemplo": "ほんを よみます",
+  "literal": "libro-OBJ / leo",
+  "meaning": "leer",
+  "reading": "よむ",
+  "tipo": "verbo",
+  "uso": "grupo 1 en む: よんで. También 'leer' el ambiente de una sala: くうきを よむ"
+ },
+ "買う": {
+  "ejemplo": "スーパーで くつを かいます",
+  "literal": "súper-EN / zapatos-OBJ / compro",
+  "meaning": "comprar",
+  "reading": "かう",
+  "tipo": "verbo",
+  "uso": "grupo 1 en う: かって, かいます. El sitio donde compras lleva で"
+ },
+ "赤い": {
+  "ejemplo": "あかい りんごを かいました",
+  "literal": "roja / manzana-OBJ / compré",
+  "meaning": "rojo (adj-い)",
+  "reading": "あかい",
+  "tipo": "adjetivo",
+  "uso": "adj-い. El sustantivo 'el rojo' es あか, sin い"
+ },
+ "走る": {
+  "ejemplo": "駅まで 走ります",
+  "literal": "estación-hasta / corro",
+  "meaning": "correr",
+  "reading": "はしる",
+  "tipo": "verbo",
+  "uso": "correr a pie. Es un verbo importante para expresar rapidez o prisa"
+ },
+ "起きる": {
+  "ejemplo": "６じに おきます",
+  "literal": "6h-EN / me-levanto",
+  "meaning": "levantarse / despertarse",
+  "reading": "おきる",
+  "tipo": "verbo",
+  "uso": "levantarse de dormir; también 'ocurrir' algo (じこが おきる = 'pasa un accidente')"
+ },
+ "足": {
+  "ejemplo": "足が 痛いです",
+  "literal": "pie-SUJ / duele",
+  "meaning": "pie / pierna",
+  "reading": "あし",
+  "tipo": "sustantivo",
+  "uso": "pie o pierna. El contexto aclara cuál. Correr es 走る"
+ },
+ "車": {
+  "ejemplo": "車を 運転します",
+  "literal": "coche-OBJ / conduzco",
+  "meaning": "coche / automóvil",
+  "reading": "くるま",
+  "tipo": "sustantivo",
+  "uso": "cualquier automóvil. Conducir es 運転する"
+ },
+ "近く": {
+  "ejemplo": "駅の 近くに 住んでいます",
+  "literal": "estación-DE / cerca-EN / vivo",
+  "meaning": "cerca / vecindario",
+  "reading": "ちかく",
+  "tipo": "sustantivo",
+  "uso": "lugar cercano. Se usa como sustantivo o adverbio: 近くに, 近くまで"
+ },
+ "連絡": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "contacto / comunicación",
+  "reading": "れんらく",
+  "tipo": "sustantivo",
+  "uso": ""
+ },
+ "週": {
+  "ejemplo": "毎週 です",
+  "literal": "cada-semana",
+  "meaning": "semana",
+  "reading": "しゅう",
+  "tipo": "sustantivo",
+  "uso": "la semana como unidad de tiempo. Con 毎 ma se repite"
+ },
+ "遊ぶ": {
+  "ejemplo": "ともだちと あそびます",
+  "literal": "amigos-CON / me-divierto",
+  "meaning": "jugar / divertirse",
+  "reading": "あそぶ",
+  "tipo": "verbo",
+  "uso": "jugar o pasarlo bien. No se usa para 'jugar a la consola' cuando se dice する"
+ },
+ "部屋": {
+  "ejemplo": "わたしの へやは ひろいです",
+  "literal": "yo-DE / habitación-TEMA / amplia-es",
+  "meaning": "habitación / cuarto",
+  "reading": "へや",
+  "tipo": "sustantivo",
+  "uso": "cualquier estancia. 'Mi cuarto' es わたしの へや"
+ },
+ "野菜": {
+  "ejemplo": "野菜が 好きですか",
+  "literal": "verduras-SUJ / ¿te-gustan?",
+  "meaning": "verduras",
+  "reading": "やさい",
+  "tipo": "sustantivo",
+  "uso": "grupo de verduras. Verdura singular se especifica: トマト, ニンジン"
+ },
+ "金曜日": {
+  "ejemplo": "金曜日は たのしいです",
+  "literal": "viernes-TEMA / divertido-es",
+  "meaning": "viernes",
+  "reading": "きんようび",
+  "tipo": "sustantivo",
+  "uso": "días de la semana con su lectura especial"
+ },
+ "鍵": {
+  "ejemplo": "かぎを かけましたか",
+  "literal": "llave-OBJ / ¿echaste?",
+  "meaning": "llave",
+  "reading": "かぎ",
+  "tipo": "sustantivo",
+  "uso": "cerrar con llave es かぎを かける; abrir, かぎを あける. También es la cerradura"
+ },
+ "閉まる": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "cerrarse (intransitivo)",
+  "reading": "しまる",
+  "tipo": "verbo",
+  "uso": ""
+ },
+ "閉める": {
+  "ejemplo": "ドアを しめます",
+  "literal": "puerta-OBJ / cierro",
+  "meaning": "cerrar / cerrar con llave",
+  "reading": "しめる",
+  "tipo": "verbo",
+  "uso": "cerrar un objeto o una puerta. Se usa mucho en la casa y al salir"
+ },
+ "開く": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "abrirse (intransitivo: la puerta se abre sola)",
+  "reading": "あく",
+  "tipo": "verbo",
+  "uso": ""
+ },
+ "開ける": {
+  "ejemplo": "まどを あけます",
+  "literal": "ventana-OBJ / abro",
+  "meaning": "abrir",
+  "reading": "あける",
+  "tipo": "verbo",
+  "uso": "abrir; muy útil para puertas, ventanas y paquetes"
+ },
+ "関係": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "relación / conexión",
+  "reading": "かんけい",
+  "tipo": "sustantivo",
+  "uso": ""
+ },
+ "降りる": {
+  "ejemplo": "駅で おりました",
+  "literal": "estación-EN / bajé",
+  "meaning": "bajar / apearse",
+  "reading": "おりる",
+  "tipo": "verbo",
+  "uso": "bajar del transporte o del tren. También se usa para 'bajar de un vehículo'"
+ },
+ "雨": {
+  "ejemplo": "あめが ふって います",
+  "literal": "lluvia-SUJ / está-cayendo",
+  "meaning": "lluvia",
+  "reading": "あめ",
+  "tipo": "sustantivo",
+  "uso": "llover es あめが ふる, nunca *あめする. 'Bajo la lluvia' es あめの なか"
+ },
+ "雪": {
+  "ejemplo": "ふゆは ゆきが ふります",
+  "literal": "invierno-TEMA / nieve-SUJ / cae",
+  "meaning": "nieve",
+  "reading": "ゆき",
+  "tipo": "sustantivo",
+  "uso": "también con ふる, igual que la lluvia"
+ },
+ "電気": {
+  "ejemplo": "でんきを つけて ください",
+  "literal": "luz-OBJ / enciende / por-favor",
+  "meaning": "luz / electricidad",
+  "reading": "でんき",
+  "tipo": "sustantivo",
+  "uso": "encender y apagar: でんきを つける／けす. La factura de la luz es でんきだい"
+ },
+ "電話": {
+  "ejemplo": "",
+  "literal": "",
+  "meaning": "teléfono / llamada telefónica",
+  "reading": "でんわ",
+  "tipo": "sustantivo",
+  "uso": ""
+ },
+ "電車": {
+  "ejemplo": "電車で 学校に いきます",
+  "literal": "tren-EN / escuela-A / voy",
+  "meaning": "tren",
+  "reading": "でんしゃ",
+  "tipo": "sustantivo",
+  "uso": "tren urbano o de cercanías. Tren de larga distancia es 列車 (れっしゃ)"
+ },
+ "青い": {
+  "ejemplo": "そらが あおいです",
+  "literal": "cielo-SUJ / azul-es",
+  "meaning": "azul (adj-い)",
+  "reading": "あおい",
+  "tipo": "adjetivo",
+  "uso": "あおい cubre el azul y, en cosas como el semáforo o la fruta verde, también el verde"
+ },
+ "靴": {
+  "ejemplo": "げんかんで くつを ぬぎます",
+  "literal": "recibidor-EN / zapatos-OBJ / me-quito",
+  "meaning": "zapatos",
+  "reading": "くつ",
+  "tipo": "sustantivo",
+  "uso": "se ponen con はく y se quitan con ぬぐ. En una casa japonesa se quitan siempre en el げんかん"
+ },
+ "頭": {
+  "ejemplo": "頭が 痛いです",
+  "literal": "cabeza-SUJ / duele",
+  "meaning": "cabeza",
+  "reading": "あたま",
+  "tipo": "sustantivo",
+  "uso": "cabeza o parte del cuerpo que duele. Peinarse es 髪を とく"
+ },
+ "風": {
+  "ejemplo": "きょうは かぜが つよいです",
+  "literal": "hoy-TEMA / viento-SUJ / fuerte-es",
+  "meaning": "viento",
+  "reading": "かぜ",
+  "tipo": "sustantivo",
+  "uso": "'hace viento' es かぜが つよい. El mismo かぜ, escrito 風邪, es el resfriado: かぜを ひく"
+ },
+ "風呂": {
+  "ejemplo": "よる おふろに はいります",
+  "literal": "noche / baño-EN / entro",
+  "meaning": "baño (para bañarse)",
+  "reading": "ふろ",
+  "tipo": "sustantivo",
+  "uso": "casi siempre con お: おふろ. Bañarse es おふろに はいる. Es la bañera y su sala, no el váter"
+ },
+ "飛行機": {
+  "ejemplo": "飛行機は 好きじゃないです",
+  "literal": "avión-TEMA / no-me-gusta",
+  "meaning": "avión",
+  "reading": "ひこうき",
+  "tipo": "sustantivo",
+  "uso": "avión. Subir a un avión es 飛行機に 乗る"
+ },
+ "食べる": {
+  "ejemplo": "パンを たべます",
+  "literal": "pan-OBJ / como",
+  "meaning": "comer",
+  "reading": "たべる",
+  "tipo": "verbo",
+  "uso": "grupo 2: quitas る y pones ます. Comer con la boca; tomarse una medicina es のむ, no たべる"
+ },
+ "飲む": {
+  "ejemplo": "みずを のみます",
+  "literal": "agua-OBJ / bebo",
+  "meaning": "beber",
+  "reading": "のむ",
+  "tipo": "verbo",
+  "uso": "en japonés se 'beben' también la sopa, las pastillas y hasta el tabaco (たばこを のむ)"
+ },
+ "駅": {
+  "ejemplo": "駅はどこですか",
+  "literal": "estación-TEMA / ¿dónde-está?",
+  "meaning": "estación de tren",
+  "reading": "えき",
+  "tipo": "sustantivo",
+  "uso": "estación de ferrocarril. Lleva に para el destino (駅に行く)"
+ },
+ "魚": {
+  "ejemplo": "魚を たべます",
+  "literal": "pescado-OBJ / como",
+  "meaning": "pescado / pez",
+  "reading": "さかな",
+  "tipo": "sustantivo",
+  "uso": "pez o pescado como comida. Sushi es すし"
+ },
+ "黄色い": {
+  "ejemplo": "きいろい はなが すきです",
+  "literal": "amarillas / flores-SUJ / gustan",
+  "meaning": "amarillo (adj-い)",
+  "reading": "きいろい",
+  "tipo": "adjetivo",
+  "uso": "lleva 色 dentro. Sustantivo: きいろ"
+ },
+ "黒い": {
+  "ejemplo": "くろい かばんを もって います",
+  "literal": "negro / bolso-OBJ / llevo",
+  "meaning": "negro (adj-い)",
+  "reading": "くろい",
+  "tipo": "adjetivo",
+  "uso": "adj-い. Sustantivo: くろ. El café solo es ブラック"
+ }
+}
