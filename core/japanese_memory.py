@@ -527,21 +527,26 @@ class JapaneseMemory:
                 return "sabido"
             return "en_progreso"
 
-    def set_can_do(self, can_do_id: str, resultado: str, session_id):
+    def set_can_do(self, can_do_id: str, resultado: str, session_id, nota: str = None):
         """Registra el resultado de un can-do en una sesión y recalcula su estado.
 
         resultado: 'conseguido' | 'parcial' | 'error' | 'no_intentado'
         - 'conseguido' en 2 sesiones distintas (session_id distinto) → 'dominado'
         - un solo 'conseguido' → 'en_progreso', veces_ok = 1
         - 'error' / 'parcial' estando ya 'dominado' → baja a 'en_progreso'
+        - 'no_intentado' no cambia el estado.
+        `nota` — evidencia textual de la sesión (cita del extractor). Si se pasa
+        no vacía, se guarda; si es None se conserva la nota previa.
         Upsert: crea la fila si no existe. Actualiza veces_ok y ultima_sesion.
         """
         with self._conectar() as conn:
             row = conn.execute(
-                "SELECT estado, veces_ok, ultima_sesion FROM can_do_progreso "
+                "SELECT estado, veces_ok, ultima_sesion, nota FROM can_do_progreso "
                 "WHERE can_do_id = ?", (can_do_id,),
             ).fetchone()
-            estado, veces_ok, ultima = row if row else ("no_intentado", 0, None)
+            estado, veces_ok, ultima, nota_prev = (
+                row if row else ("no_intentado", 0, None, None)
+            )
 
             if resultado == "conseguido":
                 if session_id != ultima:
@@ -550,15 +555,18 @@ class JapaneseMemory:
             elif resultado in ("error", "parcial") and estado == "dominado":
                 estado = "en_progreso"
 
+            nota_final = nota if nota else nota_prev
+
             conn.execute(
                 """INSERT INTO can_do_progreso
-                       (can_do_id, estado, veces_ok, ultima_sesion)
-                   VALUES (?, ?, ?, ?)
+                       (can_do_id, estado, veces_ok, ultima_sesion, nota)
+                   VALUES (?, ?, ?, ?, ?)
                    ON CONFLICT(can_do_id) DO UPDATE SET
                        estado = excluded.estado,
                        veces_ok = excluded.veces_ok,
-                       ultima_sesion = excluded.ultima_sesion""",
-                (can_do_id, estado, veces_ok, session_id),
+                       ultima_sesion = excluded.ultima_sesion,
+                       nota = excluded.nota""",
+                (can_do_id, estado, veces_ok, session_id, nota_final),
             )
 
     def can_dos_progreso(self) -> dict:

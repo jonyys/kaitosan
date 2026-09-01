@@ -59,7 +59,8 @@ CAMBIO_A_ESTUDIO = [
 
 REGISTROS = ("clase", "mixto", "charla")  # densidad de ejercicio, no identidad
 
-_QUALITY_MAP = {"bien": 5, "duda": 3, "mal": 1}
+# Resultados que el extractor puede devolver por can-do (Fase 08).
+_RESULTADOS_CAN_DO = {"conseguido", "parcial", "no_intentado", "error"}
 
 # Bloques 【...】 que contienen al menos un kana/kanji (con o sin puntuación dentro).
 _RE_BLOQUE_JP = re.compile(r'【([^【】]*[぀-ゟ゠-ヿ一-鿿][^【】]*)】')
@@ -175,8 +176,6 @@ class ProfesorJapones:
         self.ultima_frase_objetivo = None
 
         # Estado del último FOCO (para cierre resiliente en Fase 4)
-        self._foco_due_vocab = []
-        self._foco_due_gram = []
         self._foco_nuevos = []
         self._foco_unidad = None
         # Rotación de due items dentro de la sesión (el SRS no se recalifica
@@ -206,8 +205,6 @@ class ProfesorJapones:
         self.set_registro(registro or ("charla" if conv else "clase"))
         self.mensajes = []
         self.ultima_frase_objetivo = None
-        self._foco_due_vocab = []
-        self._foco_due_gram = []
         self._foco_vistos = {}
         self._foco_agotados = []
 
@@ -445,9 +442,6 @@ class ProfesorJapones:
         due_count = perfil_jap["due_count"]
         nuevos = self._foco_nuevos      # elegidos en entrar(), solo lectura aquí
 
-        self._foco_due_vocab = due_vocab
-        self._foco_due_gram = due_gram
-
         lineas_f = []
         if self._foco_agotados:
             lineas_f.append(
@@ -523,13 +517,13 @@ class ProfesorJapones:
             self.jap_memory.guardar_resumen_sesion(session_id, summary=None)
             return
 
-        # Copia local: una sesión nueva puede pisar self._foco_nuevos mientras
+        # Copia local: una sesión nueva puede pisar self._foco_* mientras
         # esta extracción corre en segundo plano (igual que session_id).
         foco_nuevos = list(self._foco_nuevos)
+        unidad = self._foco_unidad or {}
+        can_dos_activos = unidad.get("can_dos", []) if isinstance(unidad, dict) else []
 
-        # Persistir aquí los ítems nuevos de la sesión, antes de cualquier
-        # review(): sin esto get_item_id() devuelve None y las dos rutas de
-        # calificación (rescate y aprobado de oficio) quedarían mudas.
+        # Persistir aquí los ítems nuevos de la sesión.
         for nuevo in foco_nuevos:
             try:
                 self.jap_memory.add_item(
@@ -549,12 +543,19 @@ class ProfesorJapones:
         # la extracción completa no sea posible.
         summary_basico = self._extraer_resumen_basico(transcript)
 
-        # Nivel 2: extracción completa de vocabulario y gramática.
+        # Nivel 2: extracción completa. El extractor califica los CAN-DOS ACTIVOS
+        # de la unidad abierta (se los pasamos con id + texto), no ítems SRS.
         # Solo con el modelo principal (strict=True) — los alternativos producen
         # JSON con japonés corrupto que contamina la BD.
+        if can_dos_activos:
+            bloque_can_dos = "CAN-DOS ACTIVOS:\n" + "\n".join(
+                f"  - {cd['id']}: {cd['texto']}" for cd in can_dos_activos
+            ) + "\n\n"
+        else:
+            bloque_can_dos = ""
         historial = [
             {"role": "system", "content": _EXTRACCION_PROMPT},
-            {"role": "user", "content": f"Conversación:\n{transcript}"},
+            {"role": "user", "content": f"{bloque_can_dos}Conversación:\n{transcript}"},
         ]
 
         data = None
@@ -576,22 +577,14 @@ class ProfesorJapones:
                 print(f"⚠️ Error en extractor (intento 2): {e}")
 
         if data is None:
-            print(f"⚠️ Extracción completa no disponible (sesión {session_id}). Aplicando review de rescate.")
-            # ponytail: review con quality=3 (duda) para marcar los ítems del FOCO como vistos
-            for item in self._foco_due_vocab:
-                try:
-                    self.jap_memory.review(item["id"], 3, "vocabulario")
-                except Exception:
-                    pass
-            for item in self._foco_due_gram:
-                try:
-                    self.jap_memory.review(item["id"], 3, "gramatica")
-                except Exception:
-                    pass
+            # Extractor caído: no se toca ningún can-do, solo se guarda el
+            # resumen básico para dar continuidad a la próxima sesión.
+            print(f"⚠️ Extracción completa no disponible (sesión {session_id}). No se tocan can-dos.")
             self.jap_memory.guardar_resumen_sesion(session_id, summary=summary_basico)
             return
 
-        # Añadir ítems nuevos primero para que review los encuentre si son de esta sesión
+        # Ítems nuevos que introdujo la sesión: se registran en la BD de vocab/gram
+        # (su progreso SRS ya no lo mueve el profesor — lo hará el juego web).
         for item in data.get("new_items", []):
             jp = (item.get("jp") or "").strip()
             es = (item.get("es") or "").strip()
@@ -604,48 +597,27 @@ class ProfesorJapones:
             except Exception as e:
                 print(f"⚠️ Error añadiendo ítem '{jp}': {e}")
 
-        words_learned = 0
-        grammar_list = []
-
-        for r in data.get("reviewed", []):
-            jp = (r.get("jp") or "").strip()
-            resultado = (r.get("resultado") or "").lower()
-            quality = _QUALITY_MAP.get(resultado)
-            if not jp or quality is None:
+        # Calificar can-dos: el extractor solo devuelve los de la unidad abierta.
+        # 'no_intentado' no cambia estado (lo decide set_can_do). La evidencia
+        # (cita textual) se guarda como nota del can-do.
+        ids_validos = {cd["id"] for cd in can_dos_activos}
+        for cd in data.get("can_dos", []):
+            cid = (cd.get("id") or "").strip()
+            resultado = (cd.get("resultado") or "").strip().lower()
+            if not cid or resultado not in _RESULTADOS_CAN_DO:
                 continue
-            item_id = self.jap_memory.get_item_id(jp, "vocabulario")
-            kind = "vocabulario"
-            if item_id is None:
-                item_id = self.jap_memory.get_item_id(jp, "gramatica")
-                kind = "gramatica"
-            if item_id is None:
-                print(f"⚠️ Ítem '{jp}' no encontrado en BD para review.")
+            if ids_validos and cid not in ids_validos:
+                print(f"⚠️ Can-do '{cid}' no está entre los activos de la sesión; ignorado.")
                 continue
+            evidencia = (cd.get("evidencia") or "").strip() or None
             try:
-                self.jap_memory.review(item_id, quality, kind)
-                if kind == "vocabulario":
-                    words_learned += 1
-                else:
-                    grammar_list.append(jp)
+                self.jap_memory.set_can_do(cid, resultado, session_id, nota=evidencia)
             except Exception as e:
-                print(f"⚠️ Error en review de '{jp}': {e}")
-
-        # Ítems nuevos del FOCO que el extractor no capturó: mínimo reps=1 (duda)
-        reviewed_jp = {(r.get("jp") or "").strip() for r in data.get("reviewed", [])}
-        for nuevo in foco_nuevos:
-            if nuevo["jp"] not in reviewed_jp:
-                item_id = self.jap_memory.get_item_id(nuevo["jp"], nuevo["kind"])
-                if item_id is not None:
-                    try:
-                        self.jap_memory.review(item_id, 3, nuevo["kind"])
-                    except Exception:
-                        pass
+                print(f"⚠️ Error registrando can-do '{cid}': {e}")
 
         self.jap_memory.guardar_resumen_sesion(
             session_id,
             summary=data.get("summary") or summary_basico or None,
-            words_learned=words_learned,
-            grammar_practiced=", ".join(grammar_list),
             # Lo que Kaito decidió no corregir en el momento: lo recupera
             # la próxima sesión desde RECUERDAS_DE_LAURA.
             errors_noted="; ".join(
@@ -710,7 +682,7 @@ class ProfesorJapones:
         if not isinstance(data, dict):
             return None
         data.setdefault("summary", "")
-        data.setdefault("reviewed", [])
+        data.setdefault("can_dos", [])
         data.setdefault("new_items", [])
         data.setdefault("sin_corregir", [])
         data.setdefault("episodios", [])
