@@ -13,6 +13,7 @@ from core.config import groq_seleccion
 from core.japanese_memory import JapaneseMemory
 from core.memory import DB_PATH, Memory
 from ai.sensei.profesor import ProfesorJapones, SALUDOS, SALUDOS_CONV, CAMBIO_A_ESTUDIO, DESPEDIDAS
+from ai.sensei.curriculum import CURRICULUM
 import re as regex
 
 MAX_MENSAJES = 20
@@ -33,6 +34,12 @@ class Brain:
         self.provider = FallbackProvider()  # modelo principal de Ajustes → Modelos
         self.memory = Memory()
         self.jap_memory = JapaneseMemory(DB_PATH)
+        # Fase 04: al arrancar, quita de la BD el vocabulario/gramática que solo
+        # existía por el temario viejo N4/N3 y que nadie pidió en sesión.
+        self.jap_memory.purgar_fuera_de_temario(
+            {it["jp"] for u in CURRICULUM for it in u["items"] if it["kind"] == "vocabulario"},
+            {it["jp"] for u in CURRICULUM for it in u["items"] if it["kind"] == "gramatica"},
+        )
         self.session_id = None
         self._iniciar_sesion()
         self.dispatcher = ToolDispatcher(
