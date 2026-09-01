@@ -312,3 +312,164 @@ def test_practica_vocab():
             assert v[0] == 0 and v[2] == 1, v  # reps reseteado, interval 1 día
             from datetime import date, timedelta
             assert v[3] <= (date.today() + timedelta(days=1)).isoformat()
+
+
+# ── Fase 13 — Práctica de gramática por lección ────────────────────────────────
+#
+# Gemela de test_practica_vocab. Misma razón para no `import app` (deps de la Pi):
+# app Flask mínima con el cuerpo real de app.py:japones_gramatica_practicar sobre
+# un JapaneseMemory real (BD tmp) y el CURRICULUM real. Los valores SM-2 se
+# comparan contra review(.., "kanji") sobre una fila espejo; `mastery` es columna
+# propia de japanese_grammar y la recalcula review() en cada paso — se comprueba
+# aparte (100 tras cada q5, baja tras el q1).
+
+_GRAM_TILDE = "〜～"
+
+
+def _unidad_gram(uid):
+    u = next((x for x in CURRICULUM if x.get("id") == uid), None)
+    if not u:
+        return None, []
+    items, vistos = [], set()
+    for e in u.get("items", []):
+        if e.get("kind") != "gramatica":
+            continue
+        jp = str(e.get("jp") or "").strip()
+        if not jp or jp in vistos:
+            continue
+        vistos.add(jp)
+        items.append({
+            "jp": jp,
+            "meaning": (e.get("meaning") or "").strip(),
+            "ejemplo": (e.get("ejemplo") or "").strip(),
+            "literal": (e.get("literal") or "").strip(),
+            "uso": (e.get("uso") or "").strip(),
+        })
+    return u.get("nombre", "N5"), items
+
+
+def _gram_ejercicio(it):
+    jp, ej = it["jp"], it["ejemplo"]
+    core = jp.strip(_GRAM_TILDE)
+    if core and ej and not any(t in core for t in _GRAM_TILDE) and core in ej:
+        return {"modo": "hueco", "pregunta": ej.replace(core, "＿＿＿", 1),
+                "respuesta": core, "patron": jp}
+    return {"modo": "patron",
+            "pregunta": it["meaning"] + (" — " + it["literal"] if it["literal"] else ""),
+            "respuesta": jp, "patron": jp}
+
+
+def _primera_unidad_gram():
+    for u in CURRICULUM:
+        nombre, items = _unidad_gram(u["id"])
+        if len(items) >= 3:
+            return u["id"], nombre, items
+    raise AssertionError("sin unidad de gramática en CURRICULUM")
+
+
+def _mini_practica_gram_app(jm):
+    import random as _random
+    from flask import redirect, request, url_for
+
+    app = Flask("practica_gram_test",
+                template_folder=os.path.join(_RAIZ, "templates"))
+
+    @app.route("/japones/gramatica/practicar", methods=["GET", "POST"],
+               endpoint="japones_gramatica_practicar")
+    def vista():
+        uid = (request.values.get("unidad") or "").strip()
+        nombre, items = _unidad_gram(uid)
+        if nombre is None:
+            return "no unit", 302
+        por_jp = {it["jp"]: it for it in items}
+
+        if request.method == "POST":
+            jp = (request.form.get("word") or "").strip()
+            try:
+                quality = int(request.form.get("quality", 3))
+            except ValueError:
+                quality = 3
+            quality = max(0, min(5, quality))
+            it = por_jp.get(jp)
+            if it:
+                item_id = jm.get_item_id(jp, "gramatica")
+                if item_id is None:
+                    jm.add_item("gramatica", jp, meaning=it["meaning"])
+                    item_id = jm.get_item_id(jp, "gramatica")
+                if item_id is not None:
+                    jm.review(item_id, quality, "gramatica")
+            return redirect(url_for("japones_gramatica_practicar", unidad=uid))
+
+        due = [d for d in jm.get_due_items(limit=500, kind="gramatica")
+               if d["jp"] in por_jp]
+        rows = jm.gram_rows()
+        nuevos = [jp for jp in por_jp
+                  if jp not in rows or (rows[jp].get("reps") or 0) == 0]
+        if due:
+            jp = due[0]["jp"]
+        elif nuevos:
+            jp = _random.choice(nuevos)
+        else:
+            return render_template("japones_gram_practica.html", unidad=uid,
+                                   unidad_nombre=nombre, pendientes=0,
+                                   al_dia=True, v=None)
+        it = por_jp[jp]
+        ej = _gram_ejercicio(it)
+        v = {"jp": jp, "meaning": it["meaning"], "literal": it["literal"],
+             "uso": it["uso"], "ejemplo": it["ejemplo"], "modo": ej["modo"],
+             "pregunta": ej["pregunta"], "respuesta": ej["respuesta"],
+             "patron": ej["patron"]}
+        return render_template("japones_gram_practica.html", unidad=uid,
+                               unidad_nombre=nombre, pendientes=len(due),
+                               al_dia=False, v=v)
+
+    return app
+
+
+def test_practica_gram():
+    uid, _nombre, items = _primera_unidad_gram()
+    jps = {it["jp"] for it in items}
+    jm = _jm()
+    cliente = _mini_practica_gram_app(jm).test_client()
+
+    # 1) GET → 200 y el ítem servido pertenece a la unidad
+    for _ in range(6):
+        resp = cliente.get("/japones/gramatica/practicar?unidad=" + uid)
+        assert resp.status_code == 200
+        m = _RE_WORD.search(resp.get_data(as_text=True))
+        assert m and m.group(1) in jps
+
+    # unidad inexistente → no 200
+    assert cliente.get("/japones/gramatica/practicar?unidad=__nope__").status_code == 302
+
+    # 2) POST de 5 calificaciones sobre un ítem: SM-2 igual que kanji + mastery
+    jp = sorted(jps)[0]
+    it = next(i for i in items if i["jp"] == jp)
+    jm.add_item("kanji", jp, reading="", meaning=it["meaning"], tipo="kanji")
+    kid = jm.get_item_id(jp, "kanji")
+
+    secuencia = [5, 5, 5, 1, 5]  # q5×3 → aprendida; luego q1 (vuelve pronto); q5
+    masteries = []
+    for i, q in enumerate(secuencia, 1):
+        cliente.post("/japones/gramatica/practicar",
+                     data={"unidad": uid, "word": jp, "quality": str(q)})
+        jm.review(kid, q, "kanji")
+
+        g = _fila(jm, "japanese_grammar", "grammar_point", jp)
+        k = _fila(jm, "japanese_kanji", "kanji", jp)
+        assert g[:4] == k[:4], f"paso {i} q={q}: gram {g[:4]} != kanji {k[:4]}"
+
+        mastery = g[4]
+        assert mastery is not None, f"paso {i}: mastery no calculado"
+        masteries.append(mastery)
+
+        if i <= 3:  # q5 ×3 → 'aprendida' = mastery >= 100
+            assert mastery >= 100, (i, mastery)
+        if i == 4:  # q1 = 'No' → mastery recalculado a la baja, vuelve pronto
+            assert mastery < 100, mastery
+            assert g[0] == 0 and g[2] == 1, g  # reps reseteado, interval 1 día
+            from datetime import date, timedelta
+            assert g[3] <= (date.today() + timedelta(days=1)).isoformat()
+
+    # mastery se recalcula en cada review, no es estático: cae del paso 3 al 4
+    assert masteries[3] < masteries[2], masteries
