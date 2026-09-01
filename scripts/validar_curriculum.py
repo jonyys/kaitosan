@@ -7,12 +7,16 @@ check DURO falla. No modifica `curriculum.py`.
 Checks duros (fallan hoy si se rompen):
   - todo `jp` es japonés válido (contiene al menos un carácter kana/kanji).
 
-Checks tolerantes (solo avisan por stdout; se endurecen en fases 02/03/05,
-cuando `curriculum.py` ya está reconciliado con `data/n5_vocab.csv` y
-`data/n5_grammar.csv`):
+Checks duros de contenido (Fase 05 en adelante):
+  - todo punto de gramática tiene `ejemplo` y `uso` no vacíos (los 90).
+  - `meaning` sin inglés en gramática y en el vocabulario que lleva `uso`.
+  - si un ítem de vocabulario lleva `uso`, no está vacío de texto español.
+
+Checks tolerantes (solo avisan por stdout):
   - `jp` único dentro de vocabulario y dentro de gramática por separado.
   - todo ítem de vocabulario tiene `kind`, `reading` y `meaning` no vacíos.
-  - todo punto de gramática tiene `ejemplo` y `uso` no vacíos.
+  - `uso` de vocabulario con japonés fuera de 「」 (las notas anteriores a la
+    Fase 05 lo usan como estilo de casa; las nuevas no).
 
 TODO (Fase 06): cuando el curriculum tenga `can_do` por unidad, añadir aquí
 el check de `can_do.id` único en todo el temario.
@@ -42,6 +46,29 @@ JP_CHAR_RE = re.compile(r"[぀-ヿ㐀-鿿豈-﫿]")
 
 def es_japones_valido(jp):
     return bool(jp and jp.strip() and JP_CHAR_RE.search(jp))
+
+
+# Palabras función inglesas que delatan una glosa EN->ES sin traducir.
+INGLES_RE = re.compile(
+    r"\b(the|and|of|is|are|was|were|with|for|you|your|yours|that|this|these|those|"
+    r"they|them|their|there|what|when|where|which|who|whom|whose|from|have|has|"
+    r"had|will|would|should|could|about|into|than|then|because|its|it's)\b",
+    re.IGNORECASE,
+)
+# Letras del español; si el `uso` no tiene ninguna, no es una nota en español.
+ES_LETRA_RE = re.compile(r"[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]")
+
+
+def sin_citas(texto):
+    return re.sub("「[^」]*」", "", texto or "")
+
+
+def tiene_ingles(texto):
+    return bool(INGLES_RE.search(sin_citas(texto)))
+
+
+def japones_fuera_de_cita(texto):
+    return bool(JP_CHAR_RE.search(sin_citas(texto)))
 
 
 def main():
@@ -77,22 +104,50 @@ def main():
             f"(se corrige en Fase 02): {incompletos_vocab}"
         )
 
-    # --- gramática: ejemplo/uso no vacíos (tolerante en Fase 01, se endurece en 05) ---
+    # --- gramática: ejemplo/uso no vacíos (DURO desde Fase 05) ---
     incompletos_gram = [
         it["jp"] for it in gram_items
-        if not it.get("ejemplo") or not it.get("uso")
+        if not (it.get("ejemplo") or "").strip() or not (it.get("uso") or "").strip()
     ]
     if incompletos_gram:
+        errores.append(
+            f"gramatica: {len(incompletos_gram)} puntos sin ejemplo/uso: {incompletos_gram}"
+        )
+
+    # --- meaning sin inglés: gramática (todos) + vocab que lleva uso (DURO) ---
+    meaning_ingles = [
+        f"{it['kind']}:{it['jp']}" for it in gram_items + vocab_items
+        if (it["kind"] == "gramatica" or (it.get("uso") or "").strip())
+        and tiene_ingles(it.get("meaning", ""))
+    ]
+    if meaning_ingles:
+        errores.append(
+            f"{len(meaning_ingles)} meaning con inglés sin traducir: {meaning_ingles}"
+        )
+
+    # --- uso de vocabulario: opcional, pero si está debe ser español (DURO) ---
+    uso_no_es = [
+        it["jp"] for it in vocab_items
+        if (it.get("uso") or "").strip() and not ES_LETRA_RE.search(sin_citas(it["uso"]))
+    ]
+    if uso_no_es:
+        errores.append(f"vocabulario: {len(uso_no_es)} `uso` sin texto en español: {uso_no_es}")
+
+    # --- uso de vocabulario con japonés fuera de 「」 (TOLERANTE: estilo de casa) ---
+    uso_jp_suelto = [
+        it["jp"] for it in vocab_items
+        if (it.get("uso") or "").strip() and japones_fuera_de_cita(it["uso"])
+    ]
+    if uso_jp_suelto:
         avisos.append(
-            f"gramatica: {len(incompletos_gram)} puntos sin ejemplo/uso "
-            f"(se corrige en Fase 05): {incompletos_gram[:15]}"
-            + (" ..." if len(incompletos_gram) > 15 else "")
+            f"vocabulario: {len(uso_jp_suelto)} `uso` con japonés fuera de 「」 "
+            f"(las notas previas a la Fase 05 lo usan como estilo de casa)"
         )
 
     print(f"Unidades: {len(CURRICULUM)} · vocabulario: {len(vocab_items)} · gramatica: {len(gram_items)}")
 
     for aviso in avisos:
-        print(f"AVISO (tolerado en Fase 01): {aviso}")
+        print(f"AVISO (tolerado): {aviso}")
 
     if errores:
         print(f"\n{len(errores)} ERROR(ES):")
