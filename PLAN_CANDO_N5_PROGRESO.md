@@ -19,7 +19,7 @@ Estados: `pendiente` · `en_curso:<agente>` · `verificada` · `bloqueada:<motiv
 | 12 | Práctica de vocabulario por lección | IV | 🔴 | verificada | cando/fase12 | c7a9c69 | /japones/vocabulario/practicar?unidad=<id>, calcada de kanji. q5/q3/q1→review(...,"vocabulario"). alterna ES↔JP por paridad de reps. botón Practicar en temario. SM-2 idéntico a kanji (test) |
 | 13 | Práctica de gramática por lección | IV | 🔴 | verificada | cando/fase13 | 9da4255 | /japones/gramatica/practicar?unidad=<id>. ejercicio hueco (64/90) o patrón (26/90). review(...,"gramatica"), mastery recalculado. botón Practicar ampliado a gramática |
 | 14 | Conectar estado del juego con el profesor | IV | 🟢 | verificada | cando/fase14 | 6f4f249 | circuito ya unificado (todo lee estado_item). marcar_completo escribe status compatible. test_circuito verde. bulk estado_items aparcado a Fase 18 |
-| 15 | Notas del profe | V | 🟢 | pendiente | | | |
+| 15 | Notas del profe | V | 🟢 | verificada | cando/fase15 | ede48d2 | campo nota_profe en extractor, columna en japanese_sessions (+migración), 3 últimas en RECUERDAS_DE_LAURA bajo "Cómo va Laura" |
 | 16 | Deberes entre sesiones | V | 🟢 | pendiente | | | |
 | 17 | Arco de sesión | V | 🟢 | pendiente | | | |
 | 18 | Limpieza final | VI | 🟢 | pendiente | | | |
