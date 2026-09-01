@@ -1,0 +1,191 @@
+{
+  "saludos_basicos": [
+    {"id": "saludos_saludar", "texto": "Puedo saludar y despedirme según la hora del día"},
+    {"id": "saludos_gracias", "texto": "Puedo dar las gracias y responder a un agradecimiento"},
+    {"id": "saludos_disculpa", "texto": "Puedo disculparme por una molestia y quitarle importancia con 大丈夫"},
+    {"id": "saludos_noentiendo", "texto": "Puedo decir que no he entendido y pedir que me lo repitan"}
+  ],
+  "desu_masu": [
+    {"id": "desumasu_presentar", "texto": "Puedo presentarme diciendo mi nombre con です"},
+    {"id": "desumasu_afirmar_negar", "texto": "Puedo decir qué soy y qué no soy con です y ではありません"},
+    {"id": "desumasu_rutina", "texto": "Puedo contar lo que hago normalmente con verbos en 〜ます"},
+    {"id": "desumasu_pasado", "texto": "Puedo decir lo que hice o cómo fue algo con 〜ました y でした"},
+    {"id": "desumasu_proponer", "texto": "Puedo proponer hacer algo juntos con 〜ましょう"}
+  ],
+  "demostrativos": [
+    {"id": "demo_senalar", "texto": "Puedo señalar un objeto y decir si está cerca de mí, de ti o lejos con これ・それ・あれ"},
+    {"id": "demo_preguntar_que", "texto": "Puedo preguntar qué es algo y quién es alguien con 何 y 誰"},
+    {"id": "demo_lugar", "texto": "Puedo preguntar y decir dónde está un sitio con ここ・そこ・あそこ・どこ"},
+    {"id": "demo_elegir", "texto": "Puedo preguntar cuál de varias cosas con どれ・どの・どっち"},
+    {"id": "demo_indefinido", "texto": "Puedo decir que hay alguien o que no hay nadie con 誰か y 誰も"}
+  ],
+  "particulas_basicas": [
+    {"id": "part_tema", "texto": "Puedo marcar de qué estoy hablando con は"},
+    {"id": "part_objeto_accion", "texto": "Puedo decir qué hago y sobre qué con を y un verbo"},
+    {"id": "part_lugar_tiempo", "texto": "Puedo decir dónde y cuándo pasa algo con に y で"},
+    {"id": "part_compania_y", "texto": "Puedo decir con quién hago algo y enlazar sustantivos con と"},
+    {"id": "part_pregunta_matiz", "texto": "Puedo convertir una frase en pregunta con か y pedir confirmación con ね"}
+  ],
+  "katakana_comun": [
+    {"id": "kata_pedir", "texto": "Puedo pedir un café o algo de comer señalando y añadiendo ください"},
+    {"id": "kata_precio", "texto": "Puedo preguntar cuánto cuesta algo con いくらですか"},
+    {"id": "kata_transporte_lugar", "texto": "Puedo nombrar medios de transporte y sitios como バス, タクシー u ホテル"},
+    {"id": "kata_foto", "texto": "Puedo pedir o avisar de que voy a hacer una foto con 写真 y 撮る"}
+  ],
+  "numeros": [
+    {"id": "num_contar", "texto": "Puedo contar del uno al diez y decir números grandes hasta el millar"},
+    {"id": "num_precio", "texto": "Puedo decir y entender un precio en yenes con 〜円"},
+    {"id": "num_edad", "texto": "Puedo decir cuántos años tengo con 〜歳"},
+    {"id": "num_cantidad", "texto": "Puedo preguntar cuántos hay con いくつ y responder con ひとつ, ふたつ…"},
+    {"id": "num_telefono", "texto": "Puedo dar y pedir un número con 番号"}
+  ],
+  "contadores_n5": [
+    {"id": "cont_personas", "texto": "Puedo decir cuántas personas somos con ひとり, ふたり y 〜人"},
+    {"id": "cont_objetos", "texto": "Puedo contar objetos eligiendo el contador según su forma (〜個, 〜本, 〜枚)"},
+    {"id": "cont_animales_vehiculos", "texto": "Puedo contar animales con 〜匹 y vehículos o aparatos con 〜台"},
+    {"id": "cont_veces", "texto": "Puedo decir cuántas veces hago algo con 〜回"}
+  ],
+  "hora_fecha_n5": [
+    {"id": "hora_hora", "texto": "Puedo decir y preguntar la hora con 〜時, 〜分 y 半"},
+    {"id": "hora_diasemana", "texto": "Puedo decir qué día de la semana es con los 曜日"},
+    {"id": "hora_fecha", "texto": "Puedo decir la fecha con el mes (〜月) y el día (〜日)"},
+    {"id": "hora_referencias", "texto": "Puedo situar algo en hoy, ayer, mañana, esta semana o la que viene"},
+    {"id": "hora_cita", "texto": "Puedo preguntar cuándo con いつ y proponer una hora aproximada con 〜ごろ"}
+  ],
+  "verbos_n5": [
+    {"id": "verbos_rutina", "texto": "Puedo contar mi rutina diaria: levantarme, comer, estudiar y acostarme"},
+    {"id": "verbos_comunicar", "texto": "Puedo decir que hablo, escucho, pregunto o entiendo algo con 話す, 聞く, 分かる"},
+    {"id": "verbos_ir_volver", "texto": "Puedo decir que voy, vengo o vuelvo a un sitio con 行く, 来る, 帰る"},
+    {"id": "verbos_estudio_trabajo", "texto": "Puedo decir que estudio o trabajo con 勉強する y 働く"}
+  ],
+  "verbos_movimiento_objeto_n5": [
+    {"id": "vmov_transporte", "texto": "Puedo decir que me subo o me bajo de un transporte con 乗る y 降りる"},
+    {"id": "vmov_entrar_salir", "texto": "Puedo decir que entro o salgo de un sitio con 入る y 出る"},
+    {"id": "vmov_usar_objetos", "texto": "Puedo pedir a alguien que use, abra o cierre algo con 使う, 開ける, 閉める"},
+    {"id": "vmov_vestirse", "texto": "Puedo decir qué me pongo según la prenda con 着る, はく y かぶる"},
+    {"id": "vmov_actividades", "texto": "Puedo decir que corro, nado o juego con 走る, 泳ぐ, 遊ぶ"}
+  ],
+  "adjetivos_n5": [
+    {"id": "adj_describir_cosas", "texto": "Puedo describir un objeto con adjetivos como 大きい, 小さい, 新しい o 古い"},
+    {"id": "adj_opinar", "texto": "Puedo decir si algo me parece interesante o aburrido con 面白い y つまらない"},
+    {"id": "adj_na", "texto": "Puedo describir un sitio o una persona con adjetivos な como 静か, にぎやか o 有名"},
+    {"id": "adj_valorar", "texto": "Puedo decir si algo está bien o mal con いい y 悪い"}
+  ],
+  "conjugacion_adj": [
+    {"id": "conjadj_cambio", "texto": "Puedo decir que algo cambia de estado con 〜くなる y 〜になる (寒くなる, 元気になる)"},
+    {"id": "conjadj_enlazar", "texto": "Puedo enlazar dos cualidades o dar un motivo con 〜くて y 〜で"},
+    {"id": "conjadj_facil_dificil", "texto": "Puedo decir que algo es fácil o difícil de hacer con 〜やすい y 〜にくい"},
+    {"id": "conjadj_provocar_cambio", "texto": "Puedo decir que dejo algo de una manera o me decido por una opción con 〜くする y 〜にする"}
+  ],
+  "familia_personas": [
+    {"id": "familia_mi_familia", "texto": "Puedo presentar a mi familia con 父, 母, 兄, 姉, 弟, 妹"},
+    {"id": "familia_otra", "texto": "Puedo preguntar por la familia de otra persona con las formas お〜さん"},
+    {"id": "familia_relaciones", "texto": "Puedo hablar de mis amigos y mi profesor con 友達 y 先生"},
+    {"id": "familia_estado", "texto": "Puedo decir si alguien está casado o es joven con 結婚 y 若い"}
+  ],
+  "tiempo_lugar": [
+    {"id": "tiempolugar_posicion", "texto": "Puedo decir dónde está una cosa con 上, 下, 中, 前, 後ろ, 隣"},
+    {"id": "tiempolugar_preguntar_sitio", "texto": "Puedo preguntar dónde está un lugar y si está cerca o lejos con 近い y 遠い"},
+    {"id": "tiempolugar_quedar", "texto": "Puedo quedar con alguien diciendo a qué hora y dónde con 会う"},
+    {"id": "tiempolugar_disponibilidad", "texto": "Puedo decir si tengo tiempo libre con 暇 y 時間"}
+  ],
+  "comida_bebida": [
+    {"id": "comida_gustos", "texto": "Puedo decir qué comida y bebida me gusta y cuál no"},
+    {"id": "comida_pedir", "texto": "Puedo pedir un plato o una bebida en un restaurante"},
+    {"id": "comida_precio", "texto": "Puedo preguntar cuánto cuesta y entender el precio"},
+    {"id": "comida_valorar", "texto": "Puedo decir si algo está rico o malo y si es dulce o picante con おいしい, まずい, 甘い, 辛い"},
+    {"id": "comida_mesa", "texto": "Puedo usar las fórmulas de antes y después de comer (いただきます, ごちそうさま)"}
+  ],
+  "colores_ropa": [
+    {"id": "ropa_color", "texto": "Puedo decir de qué color es algo con 赤, 青, 白, 黒 y preguntar 何色ですか"},
+    {"id": "ropa_prendas", "texto": "Puedo nombrar prendas de ropa como シャツ, ズボン, 帽子 y 靴"},
+    {"id": "ropa_llevar_quitar", "texto": "Puedo decir qué ropa llevo puesta y qué me quito con 着る y 脱ぐ"},
+    {"id": "ropa_probar", "texto": "Puedo pedir probarme una prenda y decir que me queda grande o pequeña"}
+  ],
+  "clima_estaciones": [
+    {"id": "clima_tiempo_hoy", "texto": "Puedo decir qué tiempo hace hoy con 晴れ, 曇り y 雨"},
+    {"id": "clima_sensacion", "texto": "Puedo decir si hace calor o frío con 暑い, 寒い, 暖かい y 涼しい"},
+    {"id": "clima_estaciones", "texto": "Puedo nombrar las cuatro estaciones y decir cuál me gusta"},
+    {"id": "clima_prevision", "texto": "Puedo decir que parece que va a llover (雨が降りそうです)"}
+  ],
+  "casa_objetos": [
+    {"id": "casa_habitaciones", "texto": "Puedo nombrar las partes de una casa como 部屋, 台所, 玄関 y お風呂"},
+    {"id": "casa_objetos", "texto": "Puedo nombrar los muebles y objetos de cada habitación (椅子, 机, テーブル, ベッド)"},
+    {"id": "casa_ubicar", "texto": "Puedo decir dónde está un objeto de la casa combinando 上, 中, 隣 con la partícula"},
+    {"id": "casa_vivienda", "texto": "Puedo decir dónde vivo y cómo es mi casa con 住む, 広い y 狭い"},
+    {"id": "casa_acciones", "texto": "Puedo decir que enciendo o apago la luz y que cierro con llave con 電気, 消す y 鍵"}
+  ],
+  "te_forma": [
+    {"id": "teforma_encadenar", "texto": "Puedo encadenar dos acciones seguidas con la forma 〜て"},
+    {"id": "teforma_pedir", "texto": "Puedo pedir algo con educación con 〜てください"},
+    {"id": "teforma_permiso", "texto": "Puedo pedir permiso con 〜てもいいですか y entender una prohibición con 〜てはいけません"},
+    {"id": "teforma_progresivo", "texto": "Puedo decir lo que estoy haciendo ahora con 〜ています"},
+    {"id": "teforma_favores", "texto": "Puedo hablar de favores con 〜てあげる, 〜てくれる y 〜てもらう"}
+  ],
+  "permiso_obligacion": [
+    {"id": "permiso_prohibir_pedir", "texto": "Puedo pedir a alguien que no haga algo con 〜ないでください"},
+    {"id": "permiso_obligacion", "texto": "Puedo decir que hay que hacer algo con 〜なければなりません"},
+    {"id": "permiso_no_hace_falta", "texto": "Puedo decir que no hace falta hacer algo con 〜なくてもいいです"},
+    {"id": "permiso_consejo", "texto": "Puedo aconsejar que mejor no se haga algo con 〜ないほうがいいです"}
+  ],
+  "negacion_condicional": [
+    {"id": "negcond_deseo", "texto": "Puedo decir lo que quiero y lo que no quiero hacer con 〜たいです y 〜たくないです"},
+    {"id": "negcond_condicion", "texto": "Puedo proponer un plan con condición con 〜たら y 〜ば"},
+    {"id": "negcond_motivo", "texto": "Puedo dar el motivo de algo con 〜から y 〜ので"},
+    {"id": "negcond_secuencia", "texto": "Puedo ordenar acciones con 〜まえに, 〜たあとで y 〜ながら"},
+    {"id": "negcond_opinion", "texto": "Puedo dar mi opinión con 〜と思います"}
+  ],
+  "adverbios_cantidad": [
+    {"id": "advcant_intensidad", "texto": "Puedo graduar un adjetivo con とても, ちょっと y あまり"},
+    {"id": "advcant_frecuencia", "texto": "Puedo decir cada cuánto hago algo con いつも, よく y 時々"},
+    {"id": "advcant_cantidad", "texto": "Puedo decir si hay mucho o poco de algo con たくさん, 少し y 全部"},
+    {"id": "advcant_estado", "texto": "Puedo decir que algo ya pasó o todavía no con もう y まだ"}
+  ],
+  "forma_casual": [
+    {"id": "casual_si_no", "texto": "Puedo decir sí y no de forma coloquial con うん y ううん"},
+    {"id": "casual_plain", "texto": "Puedo hablar con un amigo sin です ni ます, en forma llana"},
+    {"id": "casual_conectar", "texto": "Puedo cerrar o cambiar de tema en registro casual con じゃあ"}
+  ],
+  "viaje_transporte": [
+    {"id": "viaje_billete", "texto": "Puedo comprar un billete y preguntar por el tren o el metro con 切符, 電車, 地下鉄"},
+    {"id": "viaje_direcciones", "texto": "Puedo pedir direcciones y entender 右, 左, まっすぐ y 曲る"},
+    {"id": "viaje_sitios", "texto": "Puedo preguntar dónde está un sitio como el 銀行, el 郵便局 o la 図書館"},
+    {"id": "viaje_orientarse", "texto": "Puedo situar algo por puntos cardinales con 北, 南, 東 y 西"}
+  ],
+  "cuerpo_salud": [
+    {"id": "cuerpo_partes", "texto": "Puedo nombrar las partes del cuerpo como 頭, お腹, 目, 手 y 足"},
+    {"id": "cuerpo_dolor", "texto": "Puedo decir que me duele algo con 〜が痛いです"},
+    {"id": "cuerpo_estado", "texto": "Puedo decir cómo me encuentro con 元気, 病気, 風邪 y 疲れる"},
+    {"id": "cuerpo_explicar", "texto": "Puedo explicar por qué no me encuentro bien con 〜んです"}
+  ],
+  "comparaciones_deseos": [
+    {"id": "comp_comparar", "texto": "Puedo comparar dos cosas con 〜より y 〜のほうが"},
+    {"id": "comp_preferir", "texto": "Puedo decir cuál prefiero y cuál me gusta más con どっち y 一番"},
+    {"id": "comp_gustos", "texto": "Puedo decir qué me gusta, qué no y qué quiero con 〜が好き, 〜が嫌い y 〜がほしい"},
+    {"id": "comp_habilidad", "texto": "Puedo decir qué se me da bien o mal con 〜が上手です y 〜が下手です"},
+    {"id": "comp_suavizar", "texto": "Puedo suavizar una opinión con 〜でしょう y 〜かもしれません"}
+  ],
+  "vocabulario_n5_extra": [
+    {"id": "extra_andamiaje", "texto": "Puedo preguntar qué significa una palabra o cómo se dice algo en japonés"},
+    {"id": "extra_escuela", "texto": "Puedo hablar de la clase, los deberes y los exámenes con 授業, 宿題 y テスト"},
+    {"id": "extra_ocio", "texto": "Puedo hablar de libros, películas y música con 本, 映画, 音楽 y 歌"},
+    {"id": "extra_animales_paises", "texto": "Puedo nombrar animales y países con 犬, 猫, 鳥, 国 y 外国"},
+    {"id": "extra_pedir_prestar", "texto": "Puedo pedir prestado y prestar algo con 借りる y 貸す"}
+  ],
+  "forma_potencial": [
+    {"id": "potencial_poder", "texto": "Puedo decir lo que puedo y lo que no puedo hacer con できる"},
+    {"id": "potencial_ayuda", "texto": "Puedo pedir ayuda cuando algo se me escapa con 手伝ってくれますか"},
+    {"id": "potencial_intentar", "texto": "Puedo decir que voy a intentarlo con やってみます"}
+  ],
+  "transitivos_intransitivos": [
+    {"id": "transint_pasa_solo", "texto": "Puedo decir que algo pasa solo con verbos intransitivos como 始まる, 開く y 閉まる"},
+    {"id": "transint_yo_hago", "texto": "Puedo distinguir 'yo abro la puerta' de 'la puerta se abre' con la pareja 開ける / 開く"},
+    {"id": "transint_estado", "texto": "Puedo describir el estado en que está algo (開いている, 閉まっている)"}
+  ],
+  "vocabulario_vida": [
+    {"id": "vida_trabajo", "texto": "Puedo hablar de mi trabajo y mi empresa con 仕事 y 会社"},
+    {"id": "vida_telefono", "texto": "Puedo decir que llamo por teléfono o que aviso de algo con 電話"},
+    {"id": "vida_problema", "texto": "Puedo decir que hay un problema y que lo voy a comprobar con 問題 y 確認"},
+    {"id": "vida_valorar", "texto": "Puedo decir que algo es práctico o importante con 便利 y 大切"}
+  ]
+}
