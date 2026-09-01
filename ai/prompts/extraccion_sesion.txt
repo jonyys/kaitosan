@@ -7,7 +7,8 @@ Analiza la conversación y devuelve ÚNICAMENTE un JSON con este esquema exacto:
   "new_items": [{"category": "vocabulario|gramatica", "jp": "<japonés sin corchetes>", "es": "<español>"}],
   "sin_corregir": ["<error de Laura que el profesor NO corrigió, en una frase corta>"],
   "episodios": ["<algo que Laura contó de su vida: un viaje, sus perros, cómo le fue la semana…>"],
-  "kaito_dijo": ["<algo que el profesor afirmó sobre sí mismo: una anécdota, un gusto, un recuerdo>"]
+  "kaito_dijo": ["<algo que el profesor afirmó sobre sí mismo: una anécdota, un gusto, un recuerdo>"],
+  "nota_profe": "<1-2 frases sobre cómo va Laura COMO ALUMNA: ánimo, actitud, ritmo, tendencias. NO qué se trabajó>"
 }
 
 Reglas:
@@ -38,6 +39,14 @@ Reglas:
 - kaito_dijo: afirmaciones que el PROFESOR hizo sobre sí mismo (gustos, anécdotas, recuerdos
   inventados). En español, una frase corta por afirmación, para que sesiones futuras no lo
   contradigan. Si no dijo nada de sí mismo, kaito_dijo = [].
+- nota_profe: una o dos frases sobre cómo va Laura COMO ALUMNA / PERSONA — su ánimo, su
+  actitud, su ritmo, su constancia: si se frustra o insiste, si viene con energía o cansada,
+  si arranca ella los temas o espera a que la lleven, si va suelta o dubitativa. NO es un
+  resumen de qué se trabajó ni de qué aprendió (eso ya va en summary / can_dos / new_items):
+  nada de "practicó は/が" ni "vio 5 palabras nuevas".
+  Bien: "Se frustra cuando no le sale la partícula a la primera, pero insiste hasta sacarla".
+  Bien: "Hoy con energía, ha arrancado ella los temas sin que Kaito tirara".
+  Si no hay señal clara de la persona en la conversación, nota_profe = "".
 - Responde SOLO con el JSON, sin markdown ni texto adicional.
 
 === EJEMPLO ===
@@ -63,6 +72,7 @@ Salida esperada:
   ],
   "sin_corregir": [],
   "episodios": [],
-  "kaito_dijo": []
+  "kaito_dijo": [],
+  "nota_profe": "Va con ganas: pide un café ella sola sin dudar. Con los gustos se queda callada y espera a que Kaito le dé la frase antes de intentarlo."
 }
 === FIN EJEMPLO ===
