@@ -189,11 +189,27 @@ CURRICULUM = [
       },
       {
         'kind': 'gramatica',
+        'jp': 'じゃありません',
+        'meaning': "cópula negativa hablada: 'no es / no son' (más natural que ではありません)",
+        'ejemplo': '',
+        'literal': '',
+        'uso': ''
+      },
+      {
+        'kind': 'gramatica',
         'jp': 'でした',
         'meaning': "cópula formal pasada: 'era / fueron'",
         'ejemplo': 'きのうは やすみでした',
         'literal': 'ayer-TEMA / descanso-fue',
         'uso': 'solo con sustantivos y adjetivos-な; con adjetivos-い se usa 〜かった'
+      },
+      {
+        'kind': 'gramatica',
+        'jp': 'ではありませんでした',
+        'meaning': "cópula formal negativa en pasado: 'no era / no fueron'",
+        'ejemplo': '',
+        'literal': '',
+        'uso': ''
       },
       {
         'kind': 'gramatica',
@@ -227,13 +243,14 @@ CURRICULUM = [
         'literal': 'anoche / no-dormí',
         'uso': 'dos piezas pegadas: negativo + pasado. Es larga, por eso en informal se abrevia a 〜なかった'
       },
+      {'kind': 'gramatica', 'jp': '〜ましょう', 'meaning': "sugerencia formal: 'hagamos X / vamos a X'"},
       {
         'kind': 'gramatica',
-        'jp': '〜ますか',
-        'meaning': "pregunta formal sobre acción: '¿hace X?'",
-        'ejemplo': 'あした きますか',
-        'literal': 'mañana / ¿vienes?',
-        'uso': "pregunta directa. Para invitar de forma suave se usa 〜ませんか ('¿no te vienes?')"
+        'jp': '〜ましょうか',
+        'meaning': "ofrecimiento o propuesta: '¿hacemos ~?' / '¿te ayudo con ~?'",
+        'ejemplo': '',
+        'literal': '',
+        'uso': ''
       },
       {
         'kind': 'vocabulario',
@@ -292,35 +309,19 @@ CURRICULUM = [
     'items': [
       {
         'kind': 'gramatica',
-        'jp': 'この〜',
-        'meaning': 'este/esta + sustantivo (この本 = este libro)',
-        'ejemplo': 'この本は 面白いです',
-        'literal': 'este-libro-TEMA / interesante-es',
-        'uso': 'modificador de sustantivo. Va sin の'
+        'jp': '疑問詞+か',
+        'meaning': 'interrogativo + か: algo / alguien / en algún sitio (indefinido afirmativo)',
+        'ejemplo': '',
+        'literal': '',
+        'uso': ''
       },
       {
         'kind': 'gramatica',
-        'jp': 'その〜',
-        'meaning': 'ese/esa + sustantivo (その本 = ese libro)',
-        'ejemplo': 'その人を 知っていますか',
-        'literal': 'esa-persona-OBJ / ¿la-conoces?',
-        'uso': "modificador. 'Esa' persona que está ahí o que ya hablamos"
-      },
-      {
-        'kind': 'gramatica',
-        'jp': 'あの〜',
-        'meaning': 'aquel/aquella + sustantivo (あの本 = aquel libro)',
-        'ejemplo': 'あの人は 誰ですか',
-        'literal': 'aquel-persona-TEMA / ¿quién-es?',
-        'uso': 'modificador. Lejos de ambos'
-      },
-      {
-        'kind': 'gramatica',
-        'jp': 'どの〜',
-        'meaning': 'qué/cuál + sustantivo (¿どの本? = ¿qué libro?)',
-        'ejemplo': 'どの色が 好きですか',
-        'literal': '¿qué-color-SUJ / te-gusta?',
-        'uso': 'pregunta entre múltiples opciones'
+        'jp': '疑問詞+も',
+        'meaning': 'interrogativo + も + verbo negativo: nada / nadie / en ningún sitio',
+        'ejemplo': '',
+        'literal': '',
+        'uso': ''
       },
       {
         'kind': 'vocabulario',
@@ -689,11 +690,11 @@ CURRICULUM = [
       },
       {
         'kind': 'gramatica',
-        'jp': 'の',
-        'meaning': "partícula posesiva: A の B → 'B de A'",
-        'ejemplo': 'ラウラの ねこ',
-        'literal': 'Laura-DE / gato',
-        'uso': 'orden inverso al español: el poseedor va delante. También encadena: にほんごの せんせいの くるま'
+        'jp': 'と',
+        'meaning': "partícula 'y' (sustantivos) / 'con' (compañía)",
+        'ejemplo': 'ともだちと はなします',
+        'literal': 'amigo-CON / hablo',
+        'uso': "'y' solo entre sustantivos y en lista cerrada. Para unir dos frases no sirve: eso es la forma-て"
       },
       {
         'kind': 'gramatica',
@@ -705,11 +706,36 @@ CURRICULUM = [
       },
       {
         'kind': 'gramatica',
-        'jp': 'と',
-        'meaning': "partícula 'y' (sustantivos) / 'con' (compañía)",
-        'ejemplo': 'ともだちと はなします',
-        'literal': 'amigo-CON / hablo',
-        'uso': "'y' solo entre sustantivos y en lista cerrada. Para unir dos frases no sirve: eso es la forma-て"
+        'jp': 'の',
+        'meaning': "partícula posesiva: A の B → 'B de A'",
+        'ejemplo': 'ラウラの ねこ',
+        'literal': 'Laura-DE / gato',
+        'uso': 'orden inverso al español: el poseedor va delante. También encadena: にほんごの せんせいの くるま'
+      },
+      {
+        'kind': 'gramatica',
+        'jp': 'から',
+        'meaning': 'partícula: desde / a partir de (lugar, tiempo o motivo)',
+        'ejemplo': '',
+        'literal': '',
+        'uso': ''
+      },
+      {'kind': 'gramatica', 'jp': 'まで', 'meaning': "límite: 'hasta X' (tiempo, lugar o condición)"},
+      {
+        'kind': 'gramatica',
+        'jp': 'や',
+        'meaning': "partícula 'y' para listas no exhaustivas: A や B (entre otras cosas)",
+        'ejemplo': '',
+        'literal': '',
+        'uso': ''
+      },
+      {
+        'kind': 'gramatica',
+        'jp': 'へ',
+        'meaning': "partícula de dirección: hacia ~ (se pronuncia 'e')",
+        'ejemplo': '',
+        'literal': '',
+        'uso': ''
       },
       {
         'kind': 'gramatica',
@@ -734,6 +760,14 @@ CURRICULUM = [
         'ejemplo': 'あの みせは やすいですよ',
         'literal': 'esa / tienda-TEMA / barata-es-¡eh!',
         'uso': 'informa de algo nuevo para el otro. Abusar de よ suena insistente o sabelotodo'
+      },
+      {
+        'kind': 'gramatica',
+        'jp': 'という',
+        'meaning': "cita o definición: 'que se llama ~' / 'que dice que ~'",
+        'ejemplo': '',
+        'literal': '',
+        'uso': ''
       }
     ]
   },
@@ -875,22 +909,6 @@ CURRICULUM = [
     'prerequisito': 'katakana_comun',
     'umbral_prereq': 0.75,
     'items': [
-      {
-        'kind': 'gramatica',
-        'jp': '数の合成',
-        'meaning': 'composición de números: 12 = 十二, 24 = 二十四, 105 = 百五, 1001 = 千一',
-        'ejemplo': '二百十一円です',
-        'literal': '211-yen / es',
-        'uso': 'se leen por bloques: 100s + 10s + 1s. La clave es que la estructura del número no cambia aunque el valor sí'
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '音便・変化',
-        'meaning': 'alteraciones fonéticas: 300 = 三百 (さんびゃく), 600 = 六百 (ろっぴゃく), 800 = 八百 (はっぴゃく), 3000 = 三千 (さんぜん)',
-        'ejemplo': '三百円です',
-        'literal': '300-yen / es',
-        'uso': 'las lecturas cambian al combinarse. Se aprenden por frecuencia más que por lógica pura'
-      },
       {
         'kind': 'vocabulario',
         'jp': 'いくつ',
@@ -1266,70 +1284,6 @@ CURRICULUM = [
     'prerequisito': 'numeros',
     'umbral_prereq': 0.75,
     'items': [
-      {
-        'kind': 'gramatica',
-        'jp': 'つ (serie general)',
-        'meaning': 'contador general para objetos pequeños: 1ひとつ, 2ふたつ, 3みっつ, 4よっつ, 5いつつ, 6むっつ, 7ななつ, 8やっつ, 9ここのつ, 10とお',
-        'ejemplo': 'りんごを 三つ ください',
-        'literal': 'manzanas-OBJ / tres / por-favor',
-        'uso': 'la serie más básica para cosas pequeñas; tiene varias irregularidades claras'
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '人 (serie de personas)',
-        'meaning': 'contador de personas: 1ひとり, 2ふたり, 3さんにん, 4よにん, 5ごにん, 6ろくにん, 7しちにん / ななにん, 8はちにん, 9くにん, 10じゅうにん',
-        'ejemplo': '友達が 二人 います',
-        'literal': 'amigos-SUJ / dos-personas / hay',
-        'uso': 'se usa para gente. Recordar ひとり/ふたり es clave; después ya son regulares'
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '本 (serie de cosas alargadas)',
-        'meaning': 'contador para lápices, botellas, libros, bolígrafos: 1ぽん, 2ほん, 3ぽん, 4ほん, 5ぽん, 6ほん, 7ぽん, 8ほん, 9ぽん, 10ぽん',
-        'ejemplo': 'ペンを 三本 もっています',
-        'literal': 'bolígrafos-OBJ / tres-álargados / tengo',
-        'uso': 'serie muy frecuente. La irregularidad es 1, 3, 6, 8, 9, 10 con ぽん; 2,4,5,7 suelen ser ほん'
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '枚 (serie de hojas, cartas, fotos)',
-        'meaning': 'contador para cosas planas: 1まい, 2まい, 3まい, 4まい... 10まい, 100まい, con algunas lecturas de 1/300 como いちまい, さんまい',
-        'ejemplo': '写真を 二枚 ください',
-        'literal': 'fotos-OBJ / dos-hojas / por-favor',
-        'uso': 'la serie de los objetos planos y finos: folios, fotos, platos, camisas'
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '匹 (serie de animales)',
-        'meaning': 'contador para animales y peces pequeños: 1ひき, 2ひき, 3ひき, 4ひき, 5ひき...',
-        'ejemplo': '猫が 三匹 います',
-        'literal': 'gatos-SUJ / tres-animales / hay',
-        'uso': 'se usa normalmente para seres vivos pequeños: gatos, perros, peces'
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '杯 (serie de bebidas)',
-        'meaning': 'contador para vasos/bebidas: 1はい, 2はい, 3はい, 4はい...',
-        'ejemplo': 'コーヒーを 二杯 ください',
-        'literal': 'café-OBJ / dos-vasos / por-favor',
-        'uso': 'muy útil para bebidas, tazas y alcohol. No es para objetos de otros tipos'
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '回 (serie de veces)',
-        'meaning': 'contador de eventos y repeticiones: 1かい, 2かい, 3かい, 4かい, 5かい...',
-        'ejemplo': '二回 きました',
-        'literal': 'dos-veces / vine',
-        'uso': 'la serie de las repeticiones: veces, frecuencia, intentos'
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '台 (serie de aparatos)',
-        'meaning': 'contador para máquinas y electrodomésticos: 1だい, 2だい, 3だい...',
-        'ejemplo': '冷蔵庫が 二台 あります',
-        'literal': 'frigorífico-SUJ / dos-aparatos / hay',
-        'uso': 'se usa para coches, ordenadores, bicicletas, maquinaria y aparatos'
-      },
       {
         'kind': 'vocabulario',
         'jp': '一人',
@@ -2842,48 +2796,7 @@ CURRICULUM = [
     ],
     'prerequisito': 'verbos_movimiento_objeto_n5',
     'umbral_prereq': 0.75,
-    'items': [
-      {
-        'kind': 'gramatica',
-        'jp': 'る動詞',
-        'meaning': 'grupo 2 (ichidan): terminan en え/い + る. Raíz = quita る: 食べ-, 見-, 起き-, 寝-. Ej: 食べる→食べます→食べて→食べた→食べない',
-        'ejemplo': 'たべる → たべます → たべて → たべた',
-        'literal': 'comer / como / comiendo / comí',
-        'uso': 'si la sílaba antes de る es え o い, casi siempre es grupo 2. Trampas: かえる, はいる y はしる acaban en る y son grupo 1'
-      },
-      {
-        'kind': 'gramatica',
-        'jp': 'う動詞',
-        'meaning': 'grupo 1 (godan): terminan en consonante+u. La columna del hiragana cambia según la forma: 書く→書いて, 飲む→飲んで, 話す→話して, 待つ→待って',
-        'ejemplo': 'のむ → のみます → のんで → のんだ',
-        'literal': 'beber / bebo / bebiendo / bebí',
-        'uso': 'la forma-て depende de la última sílaba: く→いて, ぐ→いで, む・ぬ・ぶ→んで, る・う・つ→って, す→して'
-      },
-      {
-        'kind': 'gramatica',
-        'jp': 'する活用',
-        'meaning': 'irregular する: します・して・した・しない・しなかった (verbo comodín para cualquier sustantivo verbal)',
-        'ejemplo': 'べんきょうする → べんきょうします → べんきょうして',
-        'literal': 'estudiar / estudio / estudiando',
-        'uso': 'cualquier sustantivo de acción + する se conjuga igual: そうじ, りょこう, でんわ, うんてん'
-      },
-      {
-        'kind': 'gramatica',
-        'jp': 'くる活用',
-        'meaning': 'irregular くる: きます・きて・きた・こない・こなかった',
-        'ejemplo': 'くる → きます → きて → こない',
-        'literal': 'venir / vengo / viniendo / no-vengo',
-        'uso': 'cambia la raíz entera (く→き→こ). No hay regla: se aprende de memoria'
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '行くのて形',
-        'meaning': 'excepción: 行く→行って (no *行いて): única irregularidad de う動詞 en て形',
-        'ejemplo': 'がっこうに いって、それから かえります',
-        'literal': 'escuela-A / voy-y / después / vuelvo',
-        'uso': 'la única excepción de la forma-て en grupo 1. Se aprende sola porque sale todos los días'
-      }
-    ]
+    'items': []
   },
   {
     'id': 'adjetivos_n5',
@@ -3285,51 +3198,67 @@ CURRICULUM = [
     'items': [
       {
         'kind': 'gramatica',
-        'jp': '〜かった',
-        'meaning': 'pasado de adj-い: おいしかった, たのしかった, たかかった',
-        'ejemplo': 'えいがは おもしろかったです',
-        'literal': 'película-TEMA / interesante-fue',
-        'uso': 'quitas い y pones かった. El です va detrás, nunca おもしろいでした'
+        'jp': '〜やすいです',
+        'meaning': 'facilidad: fácil de hacer ~',
+        'ejemplo': '',
+        'literal': '',
+        'uso': ''
       },
       {
         'kind': 'gramatica',
-        'jp': '〜くない',
-        'meaning': 'negativo de adj-い: おいしくない, むずかしくない',
-        'ejemplo': 'この もんだいは むずかしくないです',
-        'literal': 'este / problema-TEMA / no-difícil-es',
-        'uso': 'quitas い y pones くない. いい es irregular: よくない, nunca いくない'
+        'jp': '〜にくいです',
+        'meaning': 'dificultad: difícil de hacer ~',
+        'ejemplo': '',
+        'literal': '',
+        'uso': ''
       },
       {
         'kind': 'gramatica',
-        'jp': '〜くなかった',
-        'meaning': 'negativo pasado de adj-い: おいしくなかった',
-        'ejemplo': 'レストランは たかくなかったです',
-        'literal': 'restaurante-TEMA / no-fue-caro',
-        'uso': 'negativo y pasado encadenados: 〜く + なかった'
+        'jp': '〜くなります',
+        'meaning': 'cambio de estado con adjetivo-い: volverse / ponerse ~',
+        'ejemplo': '',
+        'literal': '',
+        'uso': ''
       },
       {
         'kind': 'gramatica',
-        'jp': '〜じゃない',
-        'meaning': 'negativo informal de adj-な / sustantivo: きれいじゃない, 学生じゃない',
-        'ejemplo': 'へやは きれいじゃないです',
-        'literal': 'habitación-TEMA / no-bonita-es',
-        'uso': 'para adj-な y sustantivos. じゃない es la versión hablada de ではない'
+        'jp': '〜になります',
+        'meaning': 'cambio de estado con adjetivo-な o sustantivo: volverse / convertirse en ~',
+        'ejemplo': '',
+        'literal': '',
+        'uso': ''
       },
       {
         'kind': 'gramatica',
-        'jp': '〜だった',
-        'meaning': 'pasado de adj-な / sustantivo: きれいだった, 学生だった',
-        'ejemplo': 'がくせいだった とき、よく あそびました',
-        'literal': 'estudiante-era / cuando / mucho / jugué',
-        'uso': 'pasado informal de です; en formal se dice でした'
+        'jp': '〜くします',
+        'meaning': 'provocar un cambio con adjetivo-い: hacer que algo quede ~',
+        'ejemplo': '',
+        'literal': '',
+        'uso': ''
       },
       {
         'kind': 'gramatica',
-        'jp': '〜じゃなかった',
-        'meaning': 'negativo pasado de adj-な / sustantivo: きれいじゃなかった',
-        'ejemplo': 'へやは しずかじゃなかったです',
-        'literal': 'habitación-TEMA / no-fue-tranquila',
-        'uso': 'adj-な y sustantivos en negativo pasado; la versión formal es ではありませんでした'
+        'jp': '〜にします',
+        'meaning': 'provocar un cambio o elegir: hacer que algo sea ~ / decidirse por ~',
+        'ejemplo': '',
+        'literal': '',
+        'uso': ''
+      },
+      {
+        'kind': 'gramatica',
+        'jp': '〜くて',
+        'meaning': 'forma-て del adjetivo-い: enlaza cualidades o da un motivo',
+        'ejemplo': '',
+        'literal': '',
+        'uso': ''
+      },
+      {
+        'kind': 'gramatica',
+        'jp': '〜で（な形容詞）',
+        'meaning': 'forma-て del adjetivo-な (y de sustantivos): enlaza o da un motivo',
+        'ejemplo': '',
+        'literal': '',
+        'uso': ''
       }
     ]
   },
@@ -5718,19 +5647,11 @@ CURRICULUM = [
     'items': [
       {
         'kind': 'gramatica',
-        'jp': '〜て',
+        'jp': '〜て（て形）',
         'meaning': "forma-て: conecta acciones secuenciales ('y luego')",
         'ejemplo': 'おきて、ごはんを たべて、でかけます',
         'literal': 'me-levanto-y / comida-OBJ / como-y / salgo',
         'uso': 'encadena acciones en orden. El tiempo verbal lo marca solo el último verbo de la frase'
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜ている',
-        'meaning': '〜て + いる: acción en progreso o estado resultante',
-        'ejemplo': 'いま ごはんを たべています',
-        'literal': 'ahora / comida-OBJ / estoy-comiendo',
-        'uso': "para lo que pasa ahora mismo, y también para estados: けっこんしています es 'estoy casado', no 'me estoy casando'. Al hablar se come la い: たべてます"
       },
       {
         'kind': 'gramatica',
@@ -5742,7 +5663,7 @@ CURRICULUM = [
       },
       {
         'kind': 'gramatica',
-        'jp': '〜てもいいですか',
+        'jp': '〜てもいいです',
         'meaning': "pedir permiso: '¿puedo hacer X?'",
         'ejemplo': 'ここに すわっても いいですか',
         'literal': 'aquí-EN / aunque-me-siente / ¿está-bien?',
@@ -5758,11 +5679,76 @@ CURRICULUM = [
       },
       {
         'kind': 'gramatica',
+        'jp': '〜ています',
+        'meaning': '〜て + いる: acción en progreso o estado resultante',
+        'ejemplo': 'いま ごはんを たべています',
+        'literal': 'ahora / comida-OBJ / estoy-comiendo',
+        'uso': "para lo que pasa ahora mismo, y también para estados: けっこんしています es 'estoy casado', no 'me estoy casando'. Al hablar se come la い: たべてます"
+      },
+      {
+        'kind': 'gramatica',
         'jp': '〜てから',
         'meaning': "secuencia: 'después de hacer X'",
         'ejemplo': 'ごはんを たべてから、でかけます',
         'literal': 'comida-OBJ / después-de-comer / salgo',
         'uso': 'deja claro que la primera acción termina antes de empezar la segunda; más explícito que 〜て a secas'
+      },
+      {
+        'kind': 'gramatica',
+        'jp': '〜てみます',
+        'meaning': 'probar a hacer ~: intentarlo a ver qué tal',
+        'ejemplo': '',
+        'literal': '',
+        'uso': ''
+      },
+      {
+        'kind': 'gramatica',
+        'jp': '〜ておきます',
+        'meaning': "preparación anticipada: 'hacer X de antemano para cuando sea necesario'"
+      },
+      {
+        'kind': 'gramatica',
+        'jp': '〜てしまいます',
+        'meaning': "completitud o lamento: 'acabar de hacer X / lamentablemente X'"
+      },
+      {
+        'kind': 'gramatica',
+        'jp': '〜てあげます',
+        'meaning': "dar un favor: 'hacerle X a alguien (favor que yo doy)'"
+      },
+      {
+        'kind': 'gramatica',
+        'jp': '〜てくれます',
+        'meaning': "recibir favor (alguien lo hace por mí/nosotros): 'X me hace X'"
+      },
+      {
+        'kind': 'gramatica',
+        'jp': '〜てもらいます',
+        'meaning': "recibir un favor: 'X me hace el favor de...'"
+      },
+      {
+        'kind': 'gramatica',
+        'jp': 'あげます',
+        'meaning': 'dar algo a alguien (fuera del propio grupo, o de igual a igual)',
+        'ejemplo': '',
+        'literal': '',
+        'uso': ''
+      },
+      {
+        'kind': 'gramatica',
+        'jp': 'もらいます',
+        'meaning': 'recibir algo de alguien',
+        'ejemplo': '',
+        'literal': '',
+        'uso': ''
+      },
+      {
+        'kind': 'gramatica',
+        'jp': 'くれます',
+        'meaning': 'alguien me da algo a mí (o a mi grupo)',
+        'ejemplo': '',
+        'literal': '',
+        'uso': ''
       },
       {
         'kind': 'vocabulario',
@@ -5799,14 +5785,6 @@ CURRICULUM = [
       },
       {
         'kind': 'gramatica',
-        'jp': '〜なければなりません',
-        'meaning': "obligación: 'hay que hacer X / debes hacer X'",
-        'ejemplo': 'きょうは しゅくだいを しなければなりません',
-        'literal': 'hoy-TEMA / tarea-OBJ / tengo-que-hacer',
-        'uso': "obligación fuerte, normativa o diaria. Es la forma literal: 'si no lo haces, no vale'"
-      },
-      {
-        'kind': 'gramatica',
         'jp': '〜なくてもいいです',
         'meaning': 'no hace falta / no es necesario hacer X',
         'ejemplo': '今日は べんきょうしなくても いいです',
@@ -5815,11 +5793,27 @@ CURRICULUM = [
       },
       {
         'kind': 'gramatica',
-        'jp': '〜てもいいですか',
-        'meaning': "pedir permiso: '¿puedo hacer X?'",
-        'ejemplo': 'ここで しゃしんを とっても いいですか',
-        'literal': 'aquí-EN / fotos-OBJ / tomar-aunque / ¿está-bien?',
-        'uso': 'se pregunta si la acción está permitida. Es la manera normal de pedir permiso'
+        'jp': '〜なければなりません',
+        'meaning': "obligación: 'hay que hacer X / debes hacer X'",
+        'ejemplo': 'きょうは しゅくだいを しなければなりません',
+        'literal': 'hoy-TEMA / tarea-OBJ / tengo-que-hacer',
+        'uso': "obligación fuerte, normativa o diaria. Es la forma literal: 'si no lo haces, no vale'"
+      },
+      {
+        'kind': 'gramatica',
+        'jp': '〜なくてはいけません',
+        'meaning': 'obligación: hay que hacer ~ (variante de 〜なければなりません)',
+        'ejemplo': '',
+        'literal': '',
+        'uso': ''
+      },
+      {
+        'kind': 'gramatica',
+        'jp': '〜ないほうがいいです',
+        'meaning': 'consejo negativo: es mejor no hacer ~',
+        'ejemplo': '',
+        'literal': '',
+        'uso': ''
       }
     ]
   },
@@ -5838,35 +5832,95 @@ CURRICULUM = [
     'items': [
       {
         'kind': 'gramatica',
-        'jp': '〜ない',
-        'meaning': 'forma negativa casual del verbo (presente)',
-        'ejemplo': '私は 肉を 食べない',
-        'literal': 'yo-TEMA / carne-OBJ / no-como',
-        'uso': 'negativo informal. Formal es 〜ません'
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜なかった',
-        'meaning': 'forma negativa casual del verbo (pasado)',
-        'ejemplo': '昨日 映画を 見なかった',
-        'literal': 'ayer / película-OBJ / no-vi',
-        'uso': 'pasado negativo informal. Formal es 〜ませんでした'
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜たい',
-        'meaning': "expresar deseo: 'quiero hacer X'",
-        'ejemplo': '日本に 行きたいです',
-        'literal': 'Japón-A / quiero-ir',
-        'uso': 'deseo personal. Solo de uno mismo; nunca de otro salvo preguntando'
-      },
-      {
-        'kind': 'gramatica',
         'jp': '〜たいです',
         'meaning': "expresar deseo (formal): 'quisiera hacer X'",
         'ejemplo': '何を したいですか',
         'literal': '¿qué-OBJ / quieres-hacer?',
         'uso': 'versión formal de 〜たい. Pregunta típica de entrevista'
+      },
+      {
+        'kind': 'gramatica',
+        'jp': '〜たくないです',
+        'meaning': 'deseo negativo: no quiero hacer ~',
+        'ejemplo': '',
+        'literal': '',
+        'uso': ''
+      },
+      {
+        'kind': 'gramatica',
+        'jp': '〜たがっています',
+        'meaning': 'deseo de un tercero: se le nota que quiere hacer ~ (no se usa たい para otros)',
+        'ejemplo': '',
+        'literal': '',
+        'uso': ''
+      },
+      {
+        'kind': 'gramatica',
+        'jp': '〜たことがあります',
+        'meaning': "experiencia pasada: 'he hecho X alguna vez'"
+      },
+      {
+        'kind': 'gramatica',
+        'jp': '〜たり〜たりします',
+        'meaning': 'enumeración parcial de acciones: hacer cosas como ~ y ~ (entre otras)',
+        'ejemplo': '',
+        'literal': '',
+        'uso': ''
+      },
+      {
+        'kind': 'gramatica',
+        'jp': '〜たあとで',
+        'meaning': 'secuencia: después de hacer ~',
+        'ejemplo': '',
+        'literal': '',
+        'uso': ''
+      },
+      {
+        'kind': 'gramatica',
+        'jp': '〜たほうがいいです',
+        'meaning': 'consejo: es mejor hacer ~',
+        'ejemplo': '',
+        'literal': '',
+        'uso': ''
+      },
+      {
+        'kind': 'gramatica',
+        'jp': '〜まえに',
+        'meaning': 'secuencia: antes de hacer ~',
+        'ejemplo': '',
+        'literal': '',
+        'uso': ''
+      },
+      {
+        'kind': 'gramatica',
+        'jp': '〜ながら',
+        'meaning': "simultaneidad: 'haciendo X al mismo tiempo que Y'"
+      },
+      {
+        'kind': 'gramatica',
+        'jp': '〜ことができます',
+        'meaning': "potencial formal: 'ser capaz de hacer X' (〜こと = nominalización)"
+      },
+      {
+        'kind': 'gramatica',
+        'jp': '〜ことがあります',
+        'meaning': 'frecuencia baja: a veces pasa que ~',
+        'ejemplo': '',
+        'literal': '',
+        'uso': ''
+      },
+      {
+        'kind': 'gramatica',
+        'jp': '〜と思います',
+        'meaning': "expresar opinión: 'creo que / pienso que'",
+        'ejemplo': 'いいと 思います',
+        'literal': 'bueno-QUE / pienso',
+        'uso': 'opinión educada. La opinión va marcada con と antes'
+      },
+      {
+        'kind': 'gramatica',
+        'jp': '〜ば',
+        'meaning': "condicional hipotético: 'si hago X' (たべれば = si como)"
       },
       {
         'kind': 'gramatica',
@@ -5878,19 +5932,26 @@ CURRICULUM = [
       },
       {
         'kind': 'gramatica',
-        'jp': '〜と思う',
-        'meaning': "expresar opinión: 'creo que / pienso que'",
-        'ejemplo': 'いいと 思います',
-        'literal': 'bueno-QUE / pienso',
-        'uso': 'opinión educada. La opinión va marcada con と antes'
+        'jp': 'と（条件）',
+        'meaning': "consecuencia natural: 'si haces X, siempre ocurre Y'"
       },
       {
         'kind': 'gramatica',
-        'jp': '〜から',
+        'jp': '〜なら',
+        'meaning': "condicional contextual: 'si es el caso de X, entonces Y'"
+      },
+      {
+        'kind': 'gramatica',
+        'jp': '〜から（理由）',
         'meaning': "causal: 'porque X' / 'así que Y'",
         'ejemplo': '忙しいから、行けません',
         'literal': 'ocupado-porque / no-puedo-ir',
         'uso': "causal. Más fuerte que 〜ので. 'Así que' cuando cierra un razonamiento"
+      },
+      {
+        'kind': 'gramatica',
+        'jp': '〜ので',
+        'meaning': "causal suave y formal: 'porque X' (más neutro que 〜から)"
       },
       {
         'kind': 'vocabulario',
@@ -6175,46 +6236,6 @@ CURRICULUM = [
     'prerequisito': 'adverbios_cantidad',
     'umbral_prereq': 0.75,
     'items': [
-      {
-        'kind': 'gramatica',
-        'jp': '〜た',
-        'meaning': 'pasado plain form (casual): 食べた, 行った, した, きた',
-        'ejemplo': '昨日 何 食べた？',
-        'literal': 'ayer / ¿qué-comiste?',
-        'uso': 'pasado informal. Equivale a 〜ました pero para amigos'
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜だ',
-        'meaning': 'cópula casual / plain form: 学生だ, きれいだ',
-        'ejemplo': '俺は 学生だ',
-        'literal': 'yo-TEMA / estudiante-soy',
-        'uso': 'cópula informal. Solo entre hombres o muy informal. Equivale a です'
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜んだ',
-        'meaning': "forma explicativa 'es que…': どうしたの？→ 疲れたんだ",
-        'ejemplo': 'ちょっと 疲れたんだ',
-        'literal': 'un-poco / estoy-cansado-porque-sí',
-        'uso': 'añade contexto o justificación. Abre la conversación sin cerrar la idea'
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜けど',
-        'meaning': "adversativo suave 'pero / aunque': おいしかったけど、高かった",
-        'ejemplo': 'いい映画だけど、ちょっと 長い',
-        'literal': 'buena-película-pero / un-poco / larga',
-        'uso': 'pero suave. También abre contexto sin terminar la idea'
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜し',
-        'meaning': 'enumerar razones con tono acumulativo: やさしいし、おもしろいし…',
-        'ejemplo': '安いし、おいしいし、いい店ですね',
-        'literal': 'barato-y / delicioso-y / buena-tienda-¿verdad?',
-        'uso': "'es amable, además es interesante…' Acumula razones con tono de lista"
-      },
       {
         'kind': 'vocabulario',
         'jp': 'じゃ; じゃあ',
@@ -6770,14 +6791,6 @@ CURRICULUM = [
     'items': [
       {
         'kind': 'gramatica',
-        'jp': '〜が痛い',
-        'meaning': 'me duele X: あたまが痛い = me duele la cabeza',
-        'ejemplo': '歯が 痛いです',
-        'literal': 'diente-SUJ / duele',
-        'uso': 'estructura fija. El que duele es el sujeto (con が), no el objeto'
-      },
-      {
-        'kind': 'gramatica',
         'jp': '〜んです',
         'meaning': "forma explicativa: da contexto o explicación ('es que...')",
         'ejemplo': 'ちょっと 風邪なんです',
@@ -7089,38 +7102,7 @@ CURRICULUM = [
     'prerequisito': 'cuerpo_salud',
     'umbral_prereq': 0.75,
     'items': [
-      {
-        'kind': 'gramatica',
-        'jp': '〜より',
-        'meaning': "comparativo: 'más que X' (AはBよりおおきい = A es más grande que B)",
-        'ejemplo': '彼は 私より 背が 高いです',
-        'literal': 'él-TEMA / yo-que / altura-SUJ / alto-es',
-        'uso': 'comparación de dos. B lleva より, A es lo que se compara'
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜のほうが',
-        'meaning': "preferencia: 'X es mejor' (BよりAのほうが〜 = A es más ~ que B)",
-        'ejemplo': '紅茶より、コーヒーのほうが 好きです',
-        'literal': 'té-que / café-de-parte-TEMA / gusta',
-        'uso': 'marca preferencia clara. A es lo preferido'
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜ほしい',
-        'meaning': "querer una cosa: 'ほしい' (solo objetos; para acciones usar 〜たい)",
-        'ejemplo': '新しい 靴が ほしいです',
-        'literal': 'nuevo / zapatos-SUJ / quiero',
-        'uso': 'deseo de objeto. El objeto es el sujeto (con が), no el objeto directo'
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜すぎる',
-        'meaning': "exceso: 'demasiado X' (たべすぎる = comer demasiado)",
-        'ejemplo': '甘すぎます',
-        'literal': 'demasiado-dulce-es',
-        'uso': 'demasiado. Verbo + すぎる = hacer demasiado de eso'
-      },
+      {'kind': 'gramatica', 'jp': '〜つもりです', 'meaning': "intención / plan: 'tengo pensado hacer X'"},
       {
         'kind': 'gramatica',
         'jp': '〜でしょう',
@@ -7139,11 +7121,88 @@ CURRICULUM = [
       },
       {
         'kind': 'gramatica',
-        'jp': '〜でも',
-        'meaning': "adversativo: 'pero / sin embargo' (conector entre oraciones)",
-        'ejemplo': '忙しいです。でも、頑張ります',
-        'literal': 'ocupado-soy / pero / haré-mi-mejor',
-        'uso': 'pero que conecta dos pensamientos completos'
+        'jp': '〜そうです',
+        'meaning': "apariencia directa: 'parece que va a X / tiene aspecto de X'"
+      },
+      {
+        'kind': 'gramatica',
+        'jp': '〜すぎます',
+        'meaning': "exceso: 'demasiado X' (たべすぎる = comer demasiado)",
+        'ejemplo': '甘すぎます',
+        'literal': 'demasiado-dulce-es',
+        'uso': 'demasiado. Verbo + すぎる = hacer demasiado de eso'
+      },
+      {
+        'kind': 'gramatica',
+        'jp': '〜より',
+        'meaning': "comparativo: 'más que X' (AはBよりおおきい = A es más grande que B)",
+        'ejemplo': '彼は 私より 背が 高いです',
+        'literal': 'él-TEMA / yo-que / altura-SUJ / alto-es',
+        'uso': 'comparación de dos. B lleva より, A es lo que se compara'
+      },
+      {
+        'kind': 'gramatica',
+        'jp': '〜のほうが',
+        'meaning': "preferencia: 'X es mejor' (BよりAのほうが〜 = A es más ~ que B)",
+        'ejemplo': '紅茶より、コーヒーのほうが 好きです',
+        'literal': 'té-que / café-de-parte-TEMA / gusta',
+        'uso': 'marca preferencia clara. A es lo preferido'
+      },
+      {
+        'kind': 'gramatica',
+        'jp': '〜ほど〜ない',
+        'meaning': 'comparación negativa: no es tan ~ como (otra cosa)',
+        'ejemplo': '',
+        'literal': '',
+        'uso': ''
+      },
+      {
+        'kind': 'gramatica',
+        'jp': '〜が好きです',
+        'meaning': "gusto: 'me gusta ~' (con が, no を)",
+        'ejemplo': '',
+        'literal': '',
+        'uso': ''
+      },
+      {
+        'kind': 'gramatica',
+        'jp': '〜が嫌いです',
+        'meaning': "disgusto: 'no me gusta ~ / me disgusta ~'",
+        'ejemplo': '',
+        'literal': '',
+        'uso': ''
+      },
+      {
+        'kind': 'gramatica',
+        'jp': '〜がほしいです',
+        'meaning': "querer una cosa: 'ほしい' (solo objetos; para acciones usar 〜たい)",
+        'ejemplo': '新しい 靴が ほしいです',
+        'literal': 'nuevo / zapatos-SUJ / quiero',
+        'uso': 'deseo de objeto. El objeto es el sujeto (con が), no el objeto directo'
+      },
+      {
+        'kind': 'gramatica',
+        'jp': '〜が上手です',
+        'meaning': "habilidad: 'se me da bien ~'",
+        'ejemplo': '',
+        'literal': '',
+        'uso': ''
+      },
+      {
+        'kind': 'gramatica',
+        'jp': '〜が下手です',
+        'meaning': "habilidad: 'se me da mal ~'",
+        'ejemplo': '',
+        'literal': '',
+        'uso': ''
+      },
+      {
+        'kind': 'gramatica',
+        'jp': '〜がわかります',
+        'meaning': "comprensión: 'entiendo ~' (con が)",
+        'ejemplo': '',
+        'literal': '',
+        'uso': ''
       },
       {
         'kind': 'vocabulario',
@@ -8026,31 +8085,6 @@ CURRICULUM = [
     'umbral_prereq': 0.75,
     'items': [
       {
-        'kind': 'gramatica',
-        'jp': '〜られる',
-        'meaning': "potencial de verbos る: 'poder hacer X' (たべられる = puedo comer)"
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜える',
-        'meaning': "potencial de verbos う: 'poder hacer X' (かける = puedo escribir)"
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜ことができる',
-        'meaning': "potencial formal: 'ser capaz de hacer X' (〜こと = nominalización)"
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜ようになる',
-        'meaning': "cambio de habilidad: 'llegar a poder / ponerse a hacer X'"
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜ようにする',
-        'meaning': "esfuerzo o hábito: 'procurar hacer X habitualmente'"
-      },
-      {
         'kind': 'vocabulario',
         'jp': 'できる',
         'reading': 'できる',
@@ -8071,22 +8105,7 @@ CURRICULUM = [
     ],
     'prerequisito': 'forma_potencial',
     'umbral_prereq': 0.75,
-    'items': [
-      {'kind': 'gramatica', 'jp': '〜ましょう', 'meaning': "sugerencia formal: 'hagamos X / vamos a X'"},
-      {
-        'kind': 'gramatica',
-        'jp': '〜よう',
-        'meaning': "volitiva casual: 'vamos a X' / expresar intención propia"
-      },
-      {'kind': 'gramatica', 'jp': '〜つもり', 'meaning': "intención / plan: 'tengo pensado hacer X'"},
-      {'kind': 'gramatica', 'jp': '〜ために', 'meaning': "propósito: 'para hacer X / con el fin de X'"},
-      {'kind': 'gramatica', 'jp': '〜まで', 'meaning': "límite: 'hasta X' (tiempo, lugar o condición)"},
-      {
-        'kind': 'gramatica',
-        'jp': '〜ながら',
-        'meaning': "simultaneidad: 'haciendo X al mismo tiempo que Y'"
-      }
-    ]
+    'items': []
   },
   {
     'id': 'condicionales_n4',
@@ -8100,35 +8119,7 @@ CURRICULUM = [
     ],
     'prerequisito': 'volitiva_proposito',
     'umbral_prereq': 0.75,
-    'items': [
-      {
-        'kind': 'gramatica',
-        'jp': '〜ば',
-        'meaning': "condicional hipotético: 'si hago X' (たべれば = si como)"
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜と (condicional)',
-        'meaning': "consecuencia natural: 'si haces X, siempre ocurre Y'"
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜なら',
-        'meaning': "condicional contextual: 'si es el caso de X, entonces Y'"
-      },
-      {'kind': 'gramatica', 'jp': '〜ても', 'meaning': "concesiva: 'aunque / incluso si X, Y'"},
-      {'kind': 'gramatica', 'jp': '〜なくても', 'meaning': "concesiva negativa: 'aunque no hagas X, Y'"},
-      {
-        'kind': 'gramatica',
-        'jp': '〜のに (contraste)',
-        'meaning': "contraste de expectativa: 'aunque X, Y (resultado inesperado)'"
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜ので',
-        'meaning': "causal suave y formal: 'porque X' (más neutro que 〜から)"
-      }
-    ]
+    'items': []
   },
   {
     'id': 'experiencia_aspecto',
@@ -8142,39 +8133,7 @@ CURRICULUM = [
     ],
     'prerequisito': 'condicionales_n4',
     'umbral_prereq': 0.75,
-    'items': [
-      {
-        'kind': 'gramatica',
-        'jp': '〜たことがある',
-        'meaning': "experiencia pasada: 'he hecho X alguna vez'"
-      },
-      {'kind': 'gramatica', 'jp': '〜たことがない', 'meaning': "falta de experiencia: 'nunca he hecho X'"},
-      {
-        'kind': 'gramatica',
-        'jp': '〜ていく',
-        'meaning': "cambio progresivo (alejándose): 'ir haciéndose X / seguirá ocurriendo'"
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜てくる',
-        'meaning': "cambio que se acerca (hacia ahora): 'ha venido ocurriendo / empieza a X'"
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜てしまう',
-        'meaning': "completitud o lamento: 'acabar de hacer X / lamentablemente X'"
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜てある',
-        'meaning': "estado resultado de acción intencional: 'X está hecho (a propósito)'"
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜ておく',
-        'meaning': "preparación anticipada: 'hacer X de antemano para cuando sea necesario'"
-      }
-    ]
+    'items': []
   },
   {
     'id': 'transitivos_intransitivos',
@@ -8298,38 +8257,7 @@ CURRICULUM = [
     ],
     'prerequisito': 'vocabulario_n4_vida',
     'umbral_prereq': 0.75,
-    'items': [
-      {
-        'kind': 'gramatica',
-        'jp': '〜そう',
-        'meaning': "apariencia directa: 'parece que va a X / tiene aspecto de X'"
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜らしい',
-        'meaning': "suposición por evidencia indirecta: 'parece que / se dice que X'"
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜ようだ',
-        'meaning': "deducción por evidencia directa: 'parece que / da la impresión de X'"
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜はずだ',
-        'meaning': "expectativa razonada: 'debería ser X / se supone que X'"
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜わけだ',
-        'meaning': "conclusión lógica: 'eso explica que / por eso X / lógicamente X'"
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜と言われている',
-        'meaning': "referencia general: 'se dice que X / es conocido que X'"
-      }
-    ]
+    'items': []
   },
   {
     'id': 'causativo_pasivo',
@@ -8343,43 +8271,7 @@ CURRICULUM = [
     ],
     'prerequisito': 'apariencia_suposicion',
     'umbral_prereq': 0.75,
-    'items': [
-      {
-        'kind': 'gramatica',
-        'jp': '〜させる',
-        'meaning': "causativo: 'hacer que alguien haga X / dejar hacer X'"
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜させてください',
-        'meaning': "petición de permiso: 'permítame hacer X / déjeme hacer X'"
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜られる (pasivo)',
-        'meaning': "pasivo: 'ser hecho X por alguien' (たべられる = ser comido)"
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜に〜られる',
-        'meaning': "pasivo con agente explícito: 'me hacen X a mí / me lo hicieron'"
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜てもらう',
-        'meaning': "recibir un favor: 'X me hace el favor de...'"
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜てあげる',
-        'meaning': "dar un favor: 'hacerle X a alguien (favor que yo doy)'"
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜てくれる',
-        'meaning': "recibir favor (alguien lo hace por mí/nosotros): 'X me hace X'"
-      }
-    ]
+    'items': []
   },
   {
     'id': 'keigo_intro',
@@ -8393,35 +8285,7 @@ CURRICULUM = [
     ],
     'prerequisito': 'causativo_pasivo',
     'umbral_prereq': 0.75,
-    'items': [
-      {
-        'kind': 'gramatica',
-        'jp': 'お〜 / ご〜',
-        'meaning': 'prefijos honoríficos: お + 和語 / ご + 漢語 (お名前、ご家族)'
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜でございます',
-        'meaning': 'cópula muy formal: equivale a 〜です pero más deferente'
-      },
-      {
-        'kind': 'gramatica',
-        'jp': 'いらっしゃる',
-        'meaning': "verbo honorífico de 'estar / ir / venir': forma respetuosa"
-      },
-      {'kind': 'gramatica', 'jp': 'おっしゃる', 'meaning': 'decir (honorífico): forma respetuosa de 言う'},
-      {'kind': 'gramatica', 'jp': 'なさる', 'meaning': 'hacer (honorífico): forma respetuosa de する'},
-      {
-        'kind': 'gramatica',
-        'jp': 'くださる',
-        'meaning': 'dar honorífico hacia abajo: forma respetuosa de くれる'
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜ていただく',
-        'meaning': "recibir favor con humildad: 'le pido que haga X / me hace X (agradecimiento)'"
-      }
-    ]
+    'items': []
   },
   {
     'id': 'keigo_avanzado',
@@ -8435,23 +8299,7 @@ CURRICULUM = [
     ],
     'prerequisito': 'keigo_intro',
     'umbral_prereq': 0.75,
-    'items': [
-      {
-        'kind': 'gramatica',
-        'jp': 'ご覧になる',
-        'meaning': "尊敬語 de 見る: 'verlo/mirarlo (usted)' — forma muy respetuosa"
-      },
-      {'kind': 'gramatica', 'jp': '召し上がる', 'meaning': "尊敬語 de 食べる・飲む: 'comer / beber (usted)'"},
-      {
-        'kind': 'gramatica',
-        'jp': 'いただく',
-        'meaning': "謙譲語 de もらう・食べる・飲む: 'recibir / comer (yo, humilde)'"
-      },
-      {'kind': 'gramatica', 'jp': '申す', 'meaning': "謙譲語 de 言う: 'decir (yo, humilde)'"},
-      {'kind': 'gramatica', 'jp': '参る', 'meaning': "謙譲語 de 行く・来る: 'ir / venir (yo, humilde)'"},
-      {'kind': 'gramatica', 'jp': 'おる', 'meaning': "謙譲語 de いる: 'estar (yo, humilde)'"},
-      {'kind': 'gramatica', 'jp': '存じる', 'meaning': "謙譲語 de 知る・思う: 'saber / creer (yo, humilde)'"}
-    ]
+    'items': []
   },
   {
     'id': 'causativo_pasivo_n3',
@@ -8465,39 +8313,7 @@ CURRICULUM = [
     ],
     'prerequisito': 'keigo_avanzado',
     'umbral_prereq': 0.75,
-    'items': [
-      {
-        'kind': 'gramatica',
-        'jp': '〜させられる',
-        'meaning': "causativo-pasivo: 'me hacen hacer X a la fuerza / me obligan a X'"
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜させてもらう',
-        'meaning': "permiso causativo (yo solicito): 'me permiten hacer X'"
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜ずに',
-        'meaning': "sin hacer X: 'sin comer / sin dormir' (forma más formal que 〜ないで)"
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜てばかりいる',
-        'meaning': "reproche de hábito: 'estar siempre haciendo X / no hacer nada más'"
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜きる',
-        'meaning': "completitud total: 'hacer X por completo / hasta el final'"
-      },
-      {'kind': 'gramatica', 'jp': '〜だす', 'meaning': "comienzo repentino: 'ponerse a X de repente'"},
-      {
-        'kind': 'gramatica',
-        'jp': '〜続ける',
-        'meaning': "continuación: 'seguir haciendo X / continuar X'"
-      }
-    ]
+    'items': []
   },
   {
     'id': 'matiz_n3_a',
@@ -8511,39 +8327,7 @@ CURRICULUM = [
     ],
     'prerequisito': 'causativo_pasivo_n3',
     'umbral_prereq': 0.75,
-    'items': [
-      {
-        'kind': 'gramatica',
-        'jp': '〜わけがない',
-        'meaning': "imposibilidad lógica: 'no hay manera de que X / es imposible que X'"
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜わけにはいかない',
-        'meaning': "restricción moral/social: 'no puedo permitirme hacer X / no está bien que X'"
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜はずがない',
-        'meaning': "descarte razonado: 'no puede ser que X / no debería ser X'"
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜べきだ',
-        'meaning': "obligación / deber moral: 'debería hacer X / lo correcto es X'"
-      },
-      {'kind': 'gramatica', 'jp': '〜べきではない', 'meaning': "prohibición moral: 'no debería hacer X'"},
-      {
-        'kind': 'gramatica',
-        'jp': '〜ものだ',
-        'meaning': "generalización / norma natural: 'así son las cosas / es natural que X'"
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜ものではない',
-        'meaning': "reproche de norma: 'no se debe hacer X / no está bien X'"
-      }
-    ]
+    'items': []
   },
   {
     'id': 'causa_contraste_n3',
@@ -8557,39 +8341,7 @@ CURRICULUM = [
     ],
     'prerequisito': 'matiz_n3_a',
     'umbral_prereq': 0.75,
-    'items': [
-      {
-        'kind': 'gramatica',
-        'jp': '〜ため(に)',
-        'meaning': "causa o propósito formal: 'debido a X / por causa de X' (o 'para X' con verbo)"
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜ものの',
-        'meaning': "concesión formal: 'aunque X, sin embargo Y' (más formal que 〜けど)"
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜くせに',
-        'meaning': "reproche: 'a pesar de X, Y (con tono de crítica)'"
-      },
-      {'kind': 'gramatica', 'jp': '〜にもかかわらず', 'meaning': "a pesar de (formal): 'a pesar de X, Y'"},
-      {
-        'kind': 'gramatica',
-        'jp': '〜に対して',
-        'meaning': "contraste o relación: 'frente a X / hacia X / en contraste con X'"
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜によって',
-        'meaning': "agente o medio formal: 'mediante X / por X / dependiendo de X'"
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜において',
-        'meaning': "localización formal (escrito): 'en el ámbito de X / en X'"
-      }
-    ]
+    'items': []
   },
   {
     'id': 'conjunciones_n3',
@@ -8603,39 +8355,7 @@ CURRICULUM = [
     ],
     'prerequisito': 'causa_contraste_n3',
     'umbral_prereq': 0.75,
-    'items': [
-      {
-        'kind': 'gramatica',
-        'jp': '〜一方で',
-        'meaning': "contraste: 'por un lado X, por otro Y / mientras que X, Y'"
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜上に',
-        'meaning': "adición con agravante: 'además de X (que ya es mucho), también Y'"
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜というのは',
-        'meaning': "explicación de definición: 'lo que se llama X significa...'"
-      },
-      {'kind': 'gramatica', 'jp': '〜かどうか', 'meaning': "duda indirecta: 'si X o no X / no sé si X'"},
-      {
-        'kind': 'gramatica',
-        'jp': '〜ということ',
-        'meaning': "nominalización/cita: 'el hecho de que X / lo de X'"
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜ことにする',
-        'meaning': "decisión personal: 'decidir hacer X / voy a hacer X (decisión propia)'"
-      },
-      {
-        'kind': 'gramatica',
-        'jp': '〜ことになる',
-        'meaning': "resultado o decisión externa: 'resulta que X / se ha decidido que X'"
-      }
-    ]
+    'items': []
   },
   {
     'id': 'vocabulario_n3',
