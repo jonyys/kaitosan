@@ -36,8 +36,10 @@ def test_el_foco_abre_con_la_funcion_de_la_unidad():
     lineas = foco.split("\n")
 
     unidad = CURRICULUM[0]
-    assert lineas[0] == f"Unidad actual: {unidad['nombre']}"
-    assert unidad["funcion"] in lineas[1]
+    # Fase 17: el FOCO abre con la pista de arco de sesión; la unidad va detrás.
+    assert lineas[0].startswith("FASE DE LA SESIÓN")
+    assert lineas[1] == f"Unidad actual: {unidad['nombre']}"
+    assert unidad["funcion"] in lineas[2]
     assert "【おつかれさま】" in foco
     # y los ítems del temario siguen ahí, detrás de la cabecera
     assert "Ítems nuevos a introducir" in foco
