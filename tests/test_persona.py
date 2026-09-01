@@ -11,6 +11,7 @@ except Exception:
     pass
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from ai.prompts import cargar_prompt
 from core.japanese_memory import JapaneseMemory
 from ai.sensei.profesor import ProfesorJapones
 
@@ -179,6 +180,55 @@ def test_arco():
     assert "FASE DE LA SESIÓN: cierre" in foco
 
 
+# ── Follow-up — marca intra-sesión [trabajándose hoy] ───────────────────────
+
+def _linea_de(foco, jp):
+    return next(l for l in foco.splitlines() if f"【{jp}】" in l)
+
+
+def test_marca_trabajandose_hoy():
+    jap = JapaneseMemory(os.path.join(tempfile.mkdtemp(), "t.db"))
+    prof = _profesor(jap)
+    prof.entrar()
+    if prof.timer:
+        prof.timer.cancel()
+
+    jp_nuevo, jp_sabido = "メニュー", "みず"
+    with jap._conectar() as conn:
+        conn.execute(
+            "INSERT INTO japanese_vocabulary (word, status, reps) VALUES (?, 'learned', 2)",
+            (jp_sabido,),
+        )
+    prof._foco_unidad = {
+        "nombre": "U-test",
+        "can_dos": [{"id": "cd_test", "texto": "Puedo pedir en un restaurante"}],
+        "items": [
+            {"kind": "vocabulario", "jp": jp_nuevo, "meaning": "la carta"},
+            {"kind": "vocabulario", "jp": jp_sabido, "meaning": "agua"},
+        ],
+    }
+    prof._foco_nuevos = []
+
+    # Kaito aún no lo ha dicho → [nueva].
+    foco = prof._montar_estado()[1]
+    assert "[nueva]" in _linea_de(foco, jp_nuevo), foco
+    assert "[trabajándose hoy]" not in foco, foco
+    assert "[sabida]" in _linea_de(foco, jp_sabido), foco
+
+    # Kaito ya explicó 【メニュー】 este turno → [trabajándose hoy], sin salir del FOCO.
+    prof.mensajes = [
+        {"role": "user", "content": "¿qué es メニュー?"},
+        {"role": "assistant", "content": "【メニュー】 significa 'la carta'."},
+    ]
+    foco = prof._montar_estado()[1]
+    assert "[trabajándose hoy]" in _linea_de(foco, jp_nuevo), foco
+    assert f"【{jp_nuevo}】" in foco, foco  # sigue listado en el FOCO
+    assert "[sabida]" in _linea_de(foco, jp_sabido), foco  # 'sabido' intacto
+
+    # El prompt describe el cuarto estado.
+    assert "[trabajándose hoy]" in cargar_prompt("profesor_japones")
+
+
 if __name__ == "__main__":
     test_nota_profe()
     test_montar_estado_incluye_notas_bajo_como_va_laura()
@@ -186,4 +236,5 @@ if __name__ == "__main__":
     test_deberes()
     test_deberes_sin_campo_no_rompe()
     test_arco()
+    test_marca_trabajandose_hoy()
     print("OK")
