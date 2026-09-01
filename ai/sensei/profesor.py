@@ -528,11 +528,21 @@ class ProfesorJapones:
                 estados_it = self.jap_memory.estado_items_bulk(
                     (it["jp"], it["kind"]) for it in items
                 )
+                # Marca intra-sesión: si Kaito ya citó 【jp】 en un turno suyo de
+                # esta sesión, un ítem que aún sería [nueva] pasa a
+                # [trabajándose hoy] (no repitas la glosa, pero sigue en el FOCO).
+                # Se busca el bloque 【jp】 con corchetes, no el jp suelto, para no
+                # dar falsos positivos con ítems de una sola kana (「て」, 「に」).
+                dicho_por_kaito = "\n".join(
+                    m["content"] for m in self.mensajes if m["role"] == "assistant"
+                )
                 for it in items:
                     kind = "gramatica" if it["kind"] == "gramatica" else "vocabulario"
-                    marca = _MARCA_ESTADO.get(
-                        estados_it.get((it["jp"], kind), "nuevo"), "[nueva]"
-                    )
+                    estado = estados_it.get((it["jp"], kind), "nuevo")
+                    if estado == "nuevo" and f"【{it['jp']}】" in dicho_por_kaito:
+                        marca = "[trabajándose hoy]"
+                    else:
+                        marca = _MARCA_ESTADO.get(estado, "[nueva]")
                     lineas_f += _lineas_foco(
                         it["jp"], it.get("meaning", ""), sufijo=f"  {marca}"
                     )
