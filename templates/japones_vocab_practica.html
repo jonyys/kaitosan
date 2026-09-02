@@ -5,17 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Práctica de vocabulario — Kaitosan</title>
     {% include 'partials/admin/_estilos.html' %}
+    <link rel="stylesheet" href="/static/japones_practica.css" />
     <style>
-      .jp-wrap {
-        max-width: 720px;
-        margin: 0 auto;
-      }
-      .kp-pend {
-        font-size: 13px;
-        color: var(--text-soft);
-        font-weight: 700;
-        margin: 0 0 14px;
-      }
       .vp-prompt {
         font-size: 30px;
         font-weight: 700;
@@ -33,44 +24,11 @@
         font-weight: 700;
         margin-bottom: 18px;
       }
-      .kp-actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        justify-content: center;
-        margin-top: 18px;
-      }
-      .kp-hints {
-        margin-top: 16px;
-        display: grid;
-        gap: 8px;
-      }
-      .kp-hint {
-        background: var(--surface-2);
-        border-radius: var(--radio-sm);
-        padding: 10px 12px;
-        font-size: 14px;
-        line-height: 1.45;
-        color: var(--text);
-      }
-      .kp-hint span {
-        font-weight: 700;
-        color: var(--text-soft);
-      }
-      .kp-reveal {
-        margin-top: 20px;
-        text-align: center;
-      }
       .kp-reveal .vp-answer {
         font-size: 34px;
         line-height: 1.2;
         font-weight: 700;
         color: var(--rosa-tinta);
-      }
-      .kp-reveal p {
-        margin: 6px 0 0;
-        font-size: 14px;
-        color: var(--text);
       }
     </style>
   </head>
