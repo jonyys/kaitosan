@@ -14,7 +14,7 @@ import time
 for _s in (sys.stdout, sys.stderr):
     if hasattr(_s, "reconfigure"):
         _s.reconfigure(line_buffering=True)
-from flask import Flask, render_template, request, jsonify, Response, send_file
+from flask import Flask, render_template, request, jsonify, Response, send_file, abort
 from werkzeug.utils import secure_filename
 from flask_socketio import SocketIO
 from dotenv import load_dotenv
@@ -195,6 +195,55 @@ def grabar():
 @app.route("/reloj")
 def reloj():
     return render_template("reloj.html", noche=system_settings.noche_get())
+
+
+# ── KIOSKO: gestos y ajustes rápidos de la pantalla del propio robot ──────────
+# Sin login (es la pantalla del aparato), pero las escrituras solo desde
+# localhost: un móvil en la LAN usa /admin/ajustes con contraseña.
+
+def _solo_local():
+    return request.remote_addr in ("127.0.0.1", "::1")
+
+
+def _kiosko_config():
+    b = system_settings.brillo_get()
+    pct = round(b["valor"] / b["max"] * 100) if b.get("max") else 0
+    return {
+        "screensaver_min": system_settings.pantalla_inactividad_get(),
+        "volumen": system_settings.volumen_get(),
+        "brillo": {"soportado": bool(b.get("soportado")), "pct": pct},
+        "noche": system_settings.noche_get(),
+    }
+
+
+@app.route("/kiosko/config")
+def kiosko_config():
+    return jsonify(_kiosko_config())
+
+
+@app.route("/kiosko/volumen", methods=["POST"])
+def kiosko_volumen():
+    if not _solo_local():
+        abort(403)
+    r = system_settings.volumen_set(request.form.get("v", ""))
+    return jsonify(r), (200 if r.get("ok") else 400)
+
+
+@app.route("/kiosko/brillo", methods=["POST"])
+def kiosko_brillo():
+    if not _solo_local():
+        abort(403)
+    r = system_settings.brillo_set(request.form.get("v", ""))
+    return jsonify(r), (200 if r.get("ok") else 400)
+
+
+@app.route("/kiosko/noche", methods=["POST"])
+def kiosko_noche():
+    if not _solo_local():
+        abort(403)
+    n = system_settings.noche_get()
+    r = system_settings.noche_set(request.form.get("enabled", ""), n["start"], n["end"])
+    return jsonify(r), (200 if r.get("ok") else 400)
 
 @app.route("/reloj/alarmas", methods=["GET"])
 def reloj_alarmas_listar():
