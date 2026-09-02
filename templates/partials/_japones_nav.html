@@ -31,10 +31,48 @@
   (function () {
     if (window.__navmenuBound) return;
     window.__navmenuBound = true;
-    // Cierra el menú ☰ al pulsar fuera (elegir un enlace ya navega).
+
+    var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    // Cierre animado: mantenemos open hasta que acaba navmenu-out.
+    function cerrar(d) {
+      if (!d.open || d.classList.contains("cerrando")) return;
+      if (reduce) {
+        d.open = false;
+        return;
+      }
+      d.classList.add("cerrando");
+      var panel = d.querySelector(":scope > .navmenu-panel");
+      var fin = function () {
+        d.classList.remove("cerrando");
+        d.open = false;
+      };
+      if (panel) {
+        panel.addEventListener(
+          "animationend",
+          function (ev) {
+            if (ev.animationName === "navmenu-out") fin();
+          },
+          { once: true }
+        );
+        setTimeout(fin, 250);
+      } else {
+        fin();
+      }
+    }
+
+    // Clic en el ☰ estando abierto → cierre animado; clic fuera → ídem.
+    // (Elegir un enlace del panel navega, no hace falta animar.)
     document.addEventListener("click", function (e) {
       document.querySelectorAll("details.navmenu[open]").forEach(function (d) {
-        if (!d.contains(e.target)) d.open = false;
+        if (d.contains(e.target)) {
+          if (e.target.closest("summary")) {
+            e.preventDefault();
+            cerrar(d);
+          }
+        } else {
+          cerrar(d);
+        }
       });
     });
   })();

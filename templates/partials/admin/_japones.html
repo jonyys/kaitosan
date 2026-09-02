@@ -7,18 +7,22 @@
     </div>
 
     {# Stats row #}
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">
-        <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radio-sm);padding:14px;text-align:center;">
-            <div style="font-size:26px;font-weight:700;color:var(--rosa-tinta);">{{ jap_vocab|length }}</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:20px;">
+        <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radio-sm);padding:10px 6px;text-align:center;">
+            <div style="font-size:22px;font-weight:700;color:var(--rosa-tinta);">{{ jap_candos.dominado }}</div>
+            <div style="font-size:11px;color:var(--text-soft);margin-top:4px;">can-dos</div>
+        </div>
+        <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radio-sm);padding:10px 6px;text-align:center;">
+            <div style="font-size:22px;font-weight:700;color:var(--rosa-tinta);">{{ jap_vocab|length }}</div>
             <div style="font-size:11px;color:var(--text-soft);margin-top:4px;">palabras</div>
         </div>
-        <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radio-sm);padding:14px;text-align:center;">
-            <div style="font-size:26px;font-weight:700;color:var(--text);">{{ jap_grammar|length }}</div>
+        <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radio-sm);padding:10px 6px;text-align:center;">
+            <div style="font-size:22px;font-weight:700;color:var(--rosa-tinta);">{{ jap_grammar|length }}</div>
             <div style="font-size:11px;color:var(--text-soft);margin-top:4px;">gramática</div>
         </div>
-        <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radio-sm);padding:14px;text-align:center;">
-            <div style="font-size:26px;font-weight:700;color:var(--ok-tinta);">{{ jap_sessions|length }}</div>
-            <div style="font-size:11px;color:var(--text-soft);margin-top:4px;">sesiones</div>
+        <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radio-sm);padding:10px 6px;text-align:center;">
+            <div style="font-size:22px;font-weight:700;color:var(--rosa-tinta);">{{ jap_kanji_total }}</div>
+            <div style="font-size:11px;color:var(--text-soft);margin-top:4px;">kanjis</div>
         </div>
     </div>
 

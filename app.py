@@ -476,6 +476,14 @@ def admin():
             "errors_noted": r[5], "summary": r[6]
         })
 
+    # Kanjis y can-dos (solo el recuento para la fila de stats del panel)
+    jap_kanji_total = jap_db.execute("SELECT COUNT(*) FROM japanese_kanji").fetchone()[0]
+    _cd_ids = [cd["id"] for u in CURRICULUM for cd in u.get("can_dos", [])]
+    _cd_dom = jap_db.execute(
+        "SELECT COUNT(*) FROM can_do_progreso WHERE estado = 'dominado'"
+    ).fetchone()[0]
+    jap_candos = {"dominado": _cd_dom, "total": len(_cd_ids)}
+
     jap_db.close()
 
     # --- Recordatorios ---
@@ -514,6 +522,8 @@ def admin():
                             jap_vocab=jap_vocab,
                             jap_grammar=jap_grammar,
                             jap_sessions=jap_sessions,
+                            jap_kanji_total=jap_kanji_total,
+                            jap_candos=jap_candos,
                             lista_recordatorios=lista_recordatorios,
                             lista_alarmas=lista_alarmas,
                             uso_tokens=tokens,

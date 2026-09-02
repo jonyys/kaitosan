@@ -342,6 +342,7 @@
         <svg class="ico"><use href="#i-x" /></svg>
       </button>
 
+      <div id="voc-pop-body" class="ficha-body">
       <div class="ficha-hero">
         <div class="ficha-hero-title">
           <h3 id="voc-pop-jp"></h3>
@@ -394,11 +395,13 @@
       >
         <svg class="ico"><use href="#i-check" /></svg> Ya dominada
       </p>
+      </div>
     </dialog>
 
     <script>
       (function () {
         var K_UNIDAD = "temUnidad:{{ kind }}";
+        var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
         var unidadBtns = document.querySelectorAll(".voc-unidad-btn");
         var secciones = document.querySelectorAll(".voc-unidad");
         var praLink = document.getElementById("practicar-unidad-link");
@@ -465,30 +468,101 @@
           a.play();
           audioLento = !audioLento;
         });
-        document.querySelectorAll(".voc-card").forEach(function (card) {
+        var cards = Array.prototype.slice.call(
+          document.querySelectorAll(".voc-card")
+        );
+        var actual = null;
+
+        function abrirCard(card) {
+          if (!card) return;
+          actual = card;
+          var d = card.dataset;
+          audioSrc = d.audio || "";
+          audioLento = false; // cada palabra empieza a velocidad normal
+          audioBtn.hidden = !audioSrc;
+          document.getElementById("voc-pop-jp").textContent = d.jp;
+          document.getElementById("voc-pop-rd").textContent = d.rd || d.roma || "";
+          document.getElementById("voc-pop-es").textContent = d.es || "—";
+          fila("voc-pop-roma", d.roma);
+          fila("voc-pop-tipo", d.tipo);
+          fila("voc-pop-ej", d.ej);
+          fila("voc-pop-lit", d.lit);
+          fila("voc-pop-uso", d.uso);
+          fila("voc-pop-unidad", d.unidad);
+          document.getElementById("voc-pop-estado").textContent =
+            ESTADO[d.estado] || d.estado;
+          document.getElementById("voc-pop-word").value = d.jp;
+          var aprendida = d.estado === "aprendida";
+          document.getElementById("voc-pop-form").hidden = aprendida;
+          document.getElementById("voc-pop-done").hidden = !aprendida;
+          if (!pop.open && pop.showModal) pop.showModal();
+        }
+
+        // Lista navegable: solo las tarjetas de unidades visibles.
+        function visibles() {
+          return cards.filter(function (c) {
+            var s = c.closest(".voc-unidad");
+            return !s || !s.hidden;
+          });
+        }
+        function ir(paso) {
+          if (!actual) return;
+          var lista = visibles();
+          var i = lista.indexOf(actual);
+          if (i < 0) return;
+          var next = lista[(i + paso + lista.length) % lista.length];
+          var body = document.getElementById("voc-pop-body");
+          var dir = paso > 0 ? "next" : "prev";
+          if (reduce || !body) {
+            abrirCard(next);
+            return;
+          }
+          var swapped = false;
+          function swap() {
+            if (swapped) return;
+            swapped = true;
+            body.classList.remove("slide-out-" + dir);
+            abrirCard(next);
+            body.classList.add("slide-in-" + dir);
+            var clr = function () {
+              body.classList.remove("slide-in-" + dir);
+            };
+            body.addEventListener("animationend", clr, { once: true });
+            setTimeout(clr, 320);
+          }
+          body.addEventListener("animationend", swap, { once: true });
+          setTimeout(swap, 200);
+          body.classList.add("slide-out-" + dir);
+        }
+
+        cards.forEach(function (card) {
           card.addEventListener("click", function () {
-            var d = card.dataset;
-            audioSrc = d.audio || "";
-            audioLento = false; // cada palabra empieza a velocidad normal
-            audioBtn.hidden = !audioSrc;
-            document.getElementById("voc-pop-jp").textContent = d.jp;
-            document.getElementById("voc-pop-rd").textContent = d.rd || d.roma || "";
-            document.getElementById("voc-pop-es").textContent = d.es || "—";
-            fila("voc-pop-roma", d.roma);
-            fila("voc-pop-tipo", d.tipo);
-            fila("voc-pop-ej", d.ej);
-            fila("voc-pop-lit", d.lit);
-            fila("voc-pop-uso", d.uso);
-            fila("voc-pop-unidad", d.unidad);
-            document.getElementById("voc-pop-estado").textContent =
-              ESTADO[d.estado] || d.estado;
-            document.getElementById("voc-pop-word").value = d.jp;
-            var aprendida = d.estado === "aprendida";
-            document.getElementById("voc-pop-form").hidden = aprendida;
-            document.getElementById("voc-pop-done").hidden = !aprendida;
-            if (pop.showModal) pop.showModal();
+            abrirCard(card);
           });
         });
+
+        // Deslizar de lado en el pop-up = ficha anterior / siguiente.
+        var tX = 0,
+          tY = 0;
+        pop.addEventListener(
+          "touchstart",
+          function (e) {
+            tX = e.changedTouches[0].clientX;
+            tY = e.changedTouches[0].clientY;
+          },
+          { passive: true }
+        );
+        pop.addEventListener("touchend", function (e) {
+          var dx = e.changedTouches[0].clientX - tX;
+          var dy = e.changedTouches[0].clientY - tY;
+          if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5)
+            ir(dx < 0 ? 1 : -1);
+        });
+        pop.addEventListener("keydown", function (e) {
+          if (e.key === "ArrowRight") ir(1);
+          else if (e.key === "ArrowLeft") ir(-1);
+        });
+
         document
           .getElementById("voc-pop-close")
           .addEventListener("click", function () {
