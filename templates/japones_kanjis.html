@@ -430,6 +430,12 @@
               <span id="dom-cat-label">Marcar todos como dominados</span>
             </button>
           </form>
+          <a id="practicar-cat-link" href="/japones/kanjis/practicar">
+            <button type="button" class="btn btn-yellow" style="font-size: 12px">
+              <svg class="ico"><use href="#i-play" /></svg>
+              <span id="practicar-cat-label">Practicar todos</span>
+            </button>
+          </a>
         </div>
         <div class="kanji-grid">
           {% for item in kanjis %}
@@ -816,6 +822,9 @@
         var domInput = document.getElementById("dom-cat-input");
         var domLabel = document.getElementById("dom-cat-label");
 
+        var praLink = document.getElementById("practicar-cat-link");
+        var praLabel = document.getElementById("practicar-cat-label");
+
         function sincronizarDominar(cat, nombre) {
           if (domInput) domInput.value = cat;
           if (domLabel)
@@ -823,6 +832,14 @@
               cat === "all"
                 ? "Marcar todos como dominados"
                 : "Marcar «" + nombre + "» como dominado";
+          if (praLink)
+            praLink.href =
+              cat === "all"
+                ? "/japones/kanjis/practicar"
+                : "/japones/kanjis/practicar?categoria=" + encodeURIComponent(cat);
+          if (praLabel)
+            praLabel.textContent =
+              cat === "all" ? "Practicar todos" : "Practicar «" + nombre + "»";
         }
 
         function aplicarFiltro(cat) {

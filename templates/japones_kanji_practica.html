@@ -148,8 +148,20 @@
         </div>
       </h1>
 
-      <p class="kp-pend">{{ pendientes }} kanji por repasar hoy</p>
+      <p class="kp-pend">
+        {% if categoria_nombre %}{{ categoria_nombre }} · {% endif %}{{ pendientes }} kanji por repasar
+      </p>
 
+      {% if al_dia %}
+      <div class="card full">
+        <div class="section-header"><h2>Todo repasado</h2></div>
+        <p>
+          No hay kanji pendientes{% if categoria_nombre %} en «{{ categoria_nombre }}»{% endif %}
+          ahora mismo. Vuelve más tarde o elige otra categoría desde las fichas.
+        </p>
+      </div>
+      </div>
+      {% else %}
       <div class="card full">
         <div class="section-header">
           <h2>Dibuja el kanji de estas lecturas</h2>
@@ -244,6 +256,7 @@
     </dialog>
 
     <form id="grade-form" method="POST" action="/japones/kanjis/practicar" style="display: none">
+      <input type="hidden" name="categoria" value="{{ categoria }}" />
       <input type="hidden" name="kanji" value="{{ k.jp }}" />
       <input type="hidden" name="quality" id="grade-quality" value="2" />
     </form>
@@ -337,5 +350,6 @@
           });
       })();
     </script>
+    {% endif %}
   </body>
 </html>

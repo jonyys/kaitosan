@@ -529,3 +529,124 @@ def test_circuito():
     # 3) el boton "marcar como completa" deja OTRO item igual de 'sabido'
     jm.marcar_completo(otro, "vocabulario")
     assert jm.estado_item(otro, "vocabulario") == "sabido"
+
+
+# ── Práctica de kanji por categoría ───────────────────────────────────────────
+#
+# Gemela de test_practica_vocab pero para /japones/kanjis/practicar?categoria=.
+# Mismo motivo para no `import app` (deps de la Pi): app Flask mínima con el
+# cuerpo real de app.py:japones_kanjis_practicar sobre un JapaneseMemory real
+# (BD tmp) y el KANJI_N5 real.
+
+from ai.sensei.kanji_n5 import KANJI_N5
+
+_RE_KANJI = re.compile(r'name="kanji"\s+value="([^"]*)"')
+
+
+def _mini_kanji_practica_app(jm):
+    import random as _random
+    from flask import redirect, render_template, request, url_for
+
+    app = Flask("practica_kanji_test",
+                template_folder=os.path.join(_RAIZ, "templates"))
+
+    @app.route("/japones/kanjis/practicar", methods=["GET", "POST"],
+               endpoint="japones_kanjis_practicar")
+    def vista():
+        cat = (request.values.get("categoria") or "").strip()
+        pool = [k for k in KANJI_N5
+                if cat in ("", "all") or k.get("categoria") == cat]
+        if cat not in ("", "all") and not pool:
+            return "no cat", 302
+        jps_pool = {k.get("jp") for k in pool}
+        cat_nombre = (pool[0].get("categoria_nombre", cat).split("—")[-1].strip()
+                      if cat not in ("", "all") and pool else "")
+
+        if request.method == "POST":
+            kanji = (request.form.get("kanji") or "").strip()
+            try:
+                quality = int(request.form.get("quality", 2))
+            except ValueError:
+                quality = 2
+            quality = max(0, min(5, quality))
+            item = next((k for k in pool if k.get("jp") == kanji), None)
+            if item:
+                item_id = jm.get_item_id(kanji, "kanji")
+                if item_id is None:
+                    jm.add_item("kanji", kanji,
+                                reading=(item.get("reading") or "").strip(),
+                                meaning=(item.get("meaning") or "").strip(),
+                                tipo="kanji")
+                    item_id = jm.get_item_id(kanji, "kanji")
+                if item_id is not None:
+                    jm.review(item_id, quality, "kanji")
+            return redirect(url_for("japones_kanjis_practicar",
+                                    categoria=cat or None))
+
+        due = [d["jp"] for d in jm.get_due_items(limit=500, kind="kanji")
+               if d["jp"] in jps_pool]
+        practicados = jm.get_practiced_set("kanji")
+        nuevos = [k["jp"] for k in pool if k.get("jp") not in practicados]
+        if due:
+            jp = due[0]
+        elif nuevos:
+            jp = _random.choice(nuevos)
+        else:
+            return render_template("japones_kanji_practica.html", k=None,
+                                   categoria=cat, categoria_nombre=cat_nombre,
+                                   pendientes=0, al_dia=True)
+        item = next(k for k in pool if k.get("jp") == jp)
+        k = dict(item)
+        k["mnemo"] = jm.get_mnemos().get(jp) or item.get("mnemo", "")
+        return render_template("japones_kanji_practica.html", k=k,
+                               categoria=cat, categoria_nombre=cat_nombre,
+                               pendientes=len(due) + len(nuevos), al_dia=False)
+
+    return app
+
+
+def test_practica_kanji_por_categoria():
+    cat = KANJI_N5[0]["categoria"]
+    jps = {k["jp"] for k in KANJI_N5 if k["categoria"] == cat}
+    assert len(jps) >= 2
+    jm = _jm()
+    cliente = _mini_kanji_practica_app(jm).test_client()
+
+    # 1) GET con categoría → 200 y el kanji servido pertenece a la categoría
+    for _ in range(6):
+        resp = cliente.get("/japones/kanjis/practicar?categoria=" + cat)
+        assert resp.status_code == 200
+        m = _RE_KANJI.search(resp.get_data(as_text=True))
+        assert m and m.group(1) in jps
+
+    # categoría inexistente → 302 (no 200)
+    assert cliente.get(
+        "/japones/kanjis/practicar?categoria=__nope__").status_code == 302
+
+    # sin categoría → practica todo el N5
+    resp = cliente.get("/japones/kanjis/practicar")
+    assert resp.status_code == 200
+    m = _RE_KANJI.search(resp.get_data(as_text=True))
+    assert m and m.group(1) in {k["jp"] for k in KANJI_N5}
+
+    # 2) POST califica solo dentro de la categoría; el SM-2 avanza igual que kanji
+    jp = sorted(jps)[0]
+    it = next(k for k in KANJI_N5 if k["jp"] == jp)
+    jm.add_item("kanji", jp + "_espejo", reading="", meaning="x", tipo="kanji")
+    kid = jm.get_item_id(jp + "_espejo", "kanji")
+    for q in (5, 5, 5):
+        cliente.post("/japones/kanjis/practicar",
+                     data={"categoria": cat, "kanji": jp, "quality": str(q)})
+        jm.review(kid, q, "kanji")
+    real = _fila(jm, "japanese_kanji", "kanji", jp)
+    espejo = _fila(jm, "japanese_kanji", "kanji", jp + "_espejo")
+    assert real[:4] == espejo[:4]
+
+    # 3) toda la categoría dominada → estado "al día"
+    for k in KANJI_N5:
+        if k["categoria"] == cat:
+            jm.marcar_completo(k["jp"], "kanji", reading="", meaning="x",
+                               tipo="kanji")
+    resp = cliente.get("/japones/kanjis/practicar?categoria=" + cat)
+    assert resp.status_code == 200
+    assert "Todo repasado" in resp.get_data(as_text=True)
