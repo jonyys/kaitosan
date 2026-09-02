@@ -1,4 +1,5 @@
 import atexit
+import hashlib
 import os
 import random
 import signal
@@ -1042,6 +1043,27 @@ def japones_kanjis():
 _TEMARIO_TITULOS = {"vocabulario": "Vocabulario N5", "gramatica": "Gramática N5"}
 _TEMARIO_EXTRA = {"vocabulario": "Vocabulario extra (sesiones)",
                   "gramatica": "Gramática extra (sesiones)"}
+
+
+_AUDIO_JP_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                             "static", "audio", "jp")
+
+
+def _audio_clave(texto: str) -> str:
+    return hashlib.md5((texto or "").strip().encode("utf-8")).hexdigest()
+
+
+@app.template_global()
+def audio_url(texto: str) -> str:
+    """Ruta web del mp3 pregrabado de `texto` (japonés), o '' si no existe.
+    Los mp3 los genera scripts/generar_audio.py con esta misma clave y se
+    commitean; el kiosko debe sonar offline tras un git pull."""
+    if not (texto or "").strip():
+        return ""
+    nombre = _audio_clave(texto) + ".mp3"
+    if os.path.exists(os.path.join(_AUDIO_JP_DIR, nombre)):
+        return "/static/audio/jp/" + nombre
+    return ""
 
 
 def _temario_unidades(kind):

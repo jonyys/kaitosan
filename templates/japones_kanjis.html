@@ -474,6 +474,20 @@
           <span class="ficha-hero-reading">{{ selected.reading_card or '—' }}</span>
           <span class="ficha-hero-meaning">{{ sig }}</span>
         </div>
+        {% set _audio = audio_url(selected.reading_card or selected.reading) %}
+        {% if _audio %}
+        <button
+          type="button"
+          id="ficha-audio"
+          class="btn btn-yellow"
+          data-audio="{{ _audio }}"
+          aria-label="Escuchar en japonés"
+          title="Escuchar en japonés"
+          style="min-height: 40px; padding: 8px 16px; margin-left: auto"
+        >
+          <svg class="ico"><use href="#i-sound" /></svg>
+        </button>
+        {% endif %}
       </div>
 
       <table class="ficha-table">
@@ -797,6 +811,12 @@
           fichaClose &&
             fichaClose.addEventListener("click", function () {
               fichaPop.close();
+            });
+
+          var fichaAudio = document.getElementById("ficha-audio");
+          fichaAudio &&
+            fichaAudio.addEventListener("click", function () {
+              new Audio(fichaAudio.dataset.audio).play();
             });
           fichaPop.addEventListener("click", function (event) {
             if (event.target === fichaPop) fichaPop.close();
