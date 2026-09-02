@@ -6,15 +6,6 @@
     <title>Boletín — Kaitosan</title>
     {% include 'partials/admin/_estilos.html' %}
     <style>
-      .jp-wrap {
-        max-width: 1100px;
-        margin: 0 auto;
-      }
-      .jp-wrap h1 {
-        justify-content: space-between;
-        flex-wrap: wrap;
-      }
-
       .bol-sec {
         margin-bottom: 18px;
       }
@@ -143,15 +134,10 @@
     <div class="jp-wrap">
       <h1>
         <span
-          ><svg class="ico"><use href="#i-lang" /></svg> Boletín</span
+          ><svg class="ico"><use href="#i-book" /></svg> Boletín N5</span
         >
-        <div
-          style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap"
-        >
-          <a href="/japones"
-            ><button class="btn btn-yellow" style="font-size: 13px">
-              <svg class="ico"><use href="#i-home" /></svg></button
-          ></a>
+        <div style="display: flex; gap: 8px; align-items: center">
+          {% include 'partials/_japones_nav.html' %}
         </div>
       </h1>
 

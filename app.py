@@ -963,9 +963,6 @@ def japones():
     db = brain.jap_memory._conectar()
 
     total_vocab = db.execute("SELECT COUNT(*) FROM japanese_vocabulary").fetchone()[0]
-    can_dos_dominados = db.execute(
-        "SELECT COUNT(*) FROM can_do_progreso WHERE estado = 'dominado'"
-    ).fetchone()[0]
     vocab_by_status = dict(db.execute(
         "SELECT status, COUNT(*) FROM japanese_vocabulary GROUP BY status"
     ).fetchall())
@@ -1007,11 +1004,27 @@ def japones():
             g_learning += 1
     grammar_by_status = {"learning": g_learning, "learned": g_learned, "mastered": g_mastered}
 
+    # Can-dos: total del temario, estado desde can_do_progreso (sin fila = sin empezar).
+    _cd_ids = [cd["id"] for u in CURRICULUM for cd in u.get("can_dos", [])]
+    _cd_estado = dict(db.execute("SELECT can_do_id, estado FROM can_do_progreso").fetchall())
+    candos_corpus = len(_cd_ids) or 1
+    cd_dominado = sum(1 for i in _cd_ids if _cd_estado.get(i) == "dominado")
+    cd_en_progreso = sum(1 for i in _cd_ids if _cd_estado.get(i) == "en_progreso")
+    candos_by_estado = {
+        "dominado": cd_dominado,
+        "en_progreso": cd_en_progreso,
+        "sin": candos_corpus - cd_dominado - cd_en_progreso,
+    }
+
     last_session_row = db.execute("""
         SELECT summary, started_at FROM japanese_sessions
         WHERE summary IS NOT NULL ORDER BY started_at DESC LIMIT 1
     """).fetchone()
-    last_session = {"summary": last_session_row[0], "date": last_session_row[1]} if last_session_row else None
+    last_session = None
+    if last_session_row:
+        _d = last_session_row[1] or ""
+        fecha = f"{_d[8:10]}/{_d[5:7]}/{_d[0:4]}" if len(_d) >= 10 else _d
+        last_session = {"summary": last_session_row[0], "date": fecha}
 
     vocab_rows = db.execute("""
         SELECT id, word, meaning, status, reps, ease_factor, interval_days,
@@ -1056,7 +1069,6 @@ def japones():
         today=today,
         total_vocab=total_vocab,
         vocab_corpus=vocab_corpus,
-        can_dos_dominados=can_dos_dominados,
         vocab_by_status=vocab_by_status,
         total_kanji=total_kanji,
         kanji_corpus=kanji_corpus,
@@ -1064,6 +1076,8 @@ def japones():
         total_grammar=total_grammar,
         gram_corpus=gram_corpus,
         grammar_by_status=grammar_by_status,
+        candos_corpus=candos_corpus,
+        candos_by_estado=candos_by_estado,
         total_sessions=total_sessions,
         last_session=last_session,
         vocab=vocab,

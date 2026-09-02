@@ -1,0 +1,41 @@
+{# Cabecera compartida de las páginas de japonés: botón de salida + menú ☰ para
+   saltar a cualquier sección. Va DENTRO del contenedor flex de acciones del <h1>.
+   CSS en partials/admin/_estilos.html. #}
+{# Botón izquierdo: en el panel es la casita → /admin; en cualquier otra página
+   de japonés es la letra japonesa → vuelve al panel de japonés. #}
+{%- if request.path == '/japones' %}
+<a href="/admin"><button type="button" class="btn btn-yellow hdr-btn" style="font-size: 13px" title="Salir" aria-label="Salir"><svg class="ico"><use href="#i-home" /></svg></button></a>
+{%- else %}
+<a href="/japones"><button type="button" class="btn btn-yellow hdr-btn" style="font-size: 13px" title="Panel de japonés" aria-label="Panel de japonés"><svg class="ico"><use href="#i-lang" /></svg></button></a>
+{%- endif %}
+{# botones específicos de la página van entre el botón izquierdo y el menú (define nav_extra antes del include) #}
+{{ nav_extra | default('', true) }}
+<details class="navmenu">
+  <summary aria-label="Menú de japonés" title="Menú">☰</summary>
+  {# Oculta la entrada de la sección en la que ya estás, incluidas sus subpáginas. #}
+  {%- set _links = [
+    ('/japones/boletin', 'Boletín'),
+    ('/japones/vocabulario', 'Vocabulario'),
+    ('/japones/gramatica', 'Gramática'),
+    ('/japones/kanjis', 'Kanjis'),
+  ] -%}
+  <nav class="navmenu-panel">
+    {%- for href, txt in _links -%}
+    {%- if request.path != href and not request.path.startswith(href ~ '/') %}
+    <a href="{{ href }}">{{ txt }}</a>
+    {%- endif -%}
+    {%- endfor %}
+  </nav>
+</details>
+<script>
+  (function () {
+    if (window.__navmenuBound) return;
+    window.__navmenuBound = true;
+    // Cierra el menú ☰ al pulsar fuera (elegir un enlace ya navega).
+    document.addEventListener("click", function (e) {
+      document.querySelectorAll("details.navmenu[open]").forEach(function (d) {
+        if (!d.contains(e.target)) d.open = false;
+      });
+    });
+  })();
+</script>
