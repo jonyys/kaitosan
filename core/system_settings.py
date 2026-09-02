@@ -1377,6 +1377,43 @@ def pantalla_inactividad_set(valor) -> dict:
     return {"ok": True, "valor": n}
 
 
+# Modo noche: en una franja horaria el /reloj (que es el salvapantallas) pasa a
+# tema oscuro con texto claro — números legibles con la pantalla atenuada y sin
+# mucho brillo. Solo se guarda la franja en `app_settings`; el toggle lo hace el
+# front del /reloj comparando la hora local cada segundo (cruza medianoche si
+# inicio > fin). ponytail: sin atenuar el backlight — eso pide un hilo que
+# programe brillo_set() y recuerde el brillo manual; se añade si hace falta.
+_NOCHE_DEF = {"enabled": False, "start": "23:00", "end": "07:00"}
+_RE_HHMM = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
+
+
+def noche_get() -> dict:
+    """{enabled: bool, start: 'HH:MM', end: 'HH:MM'} del modo noche del /reloj."""
+    s = (settings_get("night_start") or "").strip()
+    e = (settings_get("night_end") or "").strip()
+    return {
+        "enabled": (settings_get("night_enabled") or "0") in _BOOL_TRUE,
+        "start": s if _RE_HHMM.match(s) else _NOCHE_DEF["start"],
+        "end": e if _RE_HHMM.match(e) else _NOCHE_DEF["end"],
+    }
+
+
+def noche_set(enabled, start, end) -> dict:
+    start = (start or "").strip()
+    end = (end or "").strip()
+    on = str(enabled).strip().lower() in _BOOL_TRUE
+    if on and not (_RE_HHMM.match(start) and _RE_HHMM.match(end)):
+        return {"ok": False, "error": "horas no válidas (formato HH:MM 24h)"}
+    if on and start == end:
+        return {"ok": False, "error": "el inicio y el fin no pueden ser iguales"}
+    settings_set("night_enabled", "1" if on else "0")
+    if _RE_HHMM.match(start):
+        settings_set("night_start", start)
+    if _RE_HHMM.match(end):
+        settings_set("night_end", end)
+    return {"ok": True, "enabled": on}
+
+
 # --------------------------------------------------------------------------- #
 # Sistema
 # --------------------------------------------------------------------------- #
