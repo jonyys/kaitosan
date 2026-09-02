@@ -28,6 +28,7 @@ from core.config import FLASK_SECRET_KEY
 from werkzeug.security import check_password_hash, generate_password_hash
 from core.settings_store import settings_get, settings_set
 from core import system_settings
+from core import japanese_items
 from flask import flash, redirect, url_for, session, request
 from functools import wraps
 from datetime import timedelta, date
@@ -299,6 +300,18 @@ def login_requerido(f):
             return redirect(url_for("admin_login"))
         return f(*args, **kwargs)
     return decorated
+
+
+@app.errorhandler(404)
+def _error_404(e):
+    return render_template("error.html", codigo=404, titulo="No encontrado",
+                           mensaje="Esta página no existe o se ha movido."), 404
+
+
+@app.errorhandler(500)
+def _error_500(e):
+    return render_template("error.html", codigo=500, titulo="Algo ha fallado",
+                           mensaje="Error interno. Inténtalo de nuevo en un momento."), 500
 
 @app.route("/admin/login", methods=["GET", "POST"])
 def admin_login():
@@ -1533,223 +1546,94 @@ def japones_kanjis_completar_categoria():
     return redirect(url_for("japones_kanjis"))
 
 
-@app.route("/japones/vocabulario/añadir", methods=["POST"])
-@login_requerido
-def japones_vocab_añadir():
-    jp = request.form.get("jp", "").strip()
-    es = request.form.get("es", "").strip()
-    if jp and es:
-        today = date.today().isoformat()
-        db = brain.jap_memory._conectar()
-        db.execute("""
-            INSERT INTO japanese_vocabulary
-                (word, meaning, status, confidence, errors, times_reviewed,
-                 reps, ease_factor, interval_days, next_review, times_correct)
-            VALUES (?, ?, 'learning', 0, 0, 0, 0, 2.5, 0, ?, 0)
-        """, (jp, es, today))
-        db.commit()
-        db.close()
-        flash(f"✅ '{jp}' añadido al vocabulario", "success")
-    else:
-        flash("❌ La palabra en japonés y el significado son obligatorios", "error")
-    return redirect(url_for("japones"))
+# ── Vocabulario / kanji / gramática: alta y mantenimiento manual desde el panel ─
+#
+# 5 operaciones × 3 tipos. El SQL vive una sola vez en core/japanese_items.py;
+# aquí se registran las 15 URLs (sin cambio de ruta) y cada vista solo hace
+# flash + redirect. Rutas: /japones/<tipo>/{añadir,borrar/<id>,borrar-todo,
+# resetear-srs/<id>,marcar-aprendido/<id>}, tipo ∈ vocabulario|kanji|gramatica.
 
-@app.route("/japones/vocabulario/borrar/<int:item_id>", methods=["POST"])
-@login_requerido
-def japones_vocab_borrar(item_id):
-    db = brain.jap_memory._conectar()
-    db.execute("DELETE FROM japanese_vocabulary WHERE id = ?", (item_id,))
-    db.commit()
-    db.close()
-    flash("✅ Palabra borrada", "success")
-    return redirect(url_for("japones"))
+_ITEM_MSGS = {
+    "vocabulario": {
+        "add_ok": "✅ '{jp}' añadido al vocabulario",
+        "add_err": "❌ La palabra en japonés y el significado son obligatorios",
+        "del": "✅ Palabra borrada",
+        "del_all": "✅ Todo el vocabulario borrado",
+        "reset": "✅ SRS reseteado",
+        "master": "✅ Marcada como aprendida",
+    },
+    "kanji": {
+        "add_ok": "✅ '{jp}' añadido a kanjis",
+        "add_err": "❌ El kanji y su significado son obligatorios",
+        "del": "✅ Kanji borrado",
+        "del_all": "✅ Todos los kanjis borrados",
+        "reset": "✅ SRS de kanji reseteado",
+        "master": "✅ Kanji marcado como aprendido",
+    },
+    "gramatica": {
+        "add_ok": "✅ '{jp}' añadido a gramática",
+        "add_err": "❌ El punto gramatical y la descripción son obligatorios",
+        "del": "✅ Punto gramatical borrado",
+        "del_all": "✅ Toda la gramática borrada",
+        "reset": "✅ SRS de gramática reseteado",
+        "master": "✅ Marcada como aprendida",
+    },
+}
 
-@app.route("/japones/vocabulario/borrar-todo", methods=["POST"])
-@login_requerido
-def japones_vocab_borrar_todo():
-    db = brain.jap_memory._conectar()
-    db.execute("DELETE FROM japanese_vocabulary")
-    db.commit()
-    db.close()
-    flash("✅ Todo el vocabulario borrado", "success")
-    return redirect(url_for("japones"))
 
-@app.route("/japones/vocabulario/resetear-srs/<int:item_id>", methods=["POST"])
-@login_requerido
-def japones_vocab_resetear_srs(item_id):
-    db = brain.jap_memory._conectar()
-    db.execute("""
-        UPDATE japanese_vocabulary SET
-            reps=0, ease_factor=2.5, interval_days=0,
-            next_review=date('now'), status='learning',
-            times_reviewed=0, times_correct=0, errors=0
-        WHERE id=?
-    """, (item_id,))
-    db.commit()
-    db.close()
-    flash("✅ SRS reseteado", "success")
-    return redirect(url_for("japones"))
+def _wire_item_routes(kind):
+    msgs = _ITEM_MSGS[kind]
 
-@app.route("/japones/vocabulario/marcar-aprendido/<int:item_id>", methods=["POST"])
-@login_requerido
-def japones_vocab_marcar_aprendido(item_id):
-    # Aprendida al 100%: fuera de la cola de repaso (next_review a 100 años vista).
-    db = brain.jap_memory._conectar()
-    db.execute("""
-        UPDATE japanese_vocabulary SET
-            status='mastered', reps=8, ease_factor=2.5, interval_days=36500,
-            next_review=date('now','+36500 days'), errors=0
-        WHERE id=?
-    """, (item_id,))
-    db.commit()
-    db.close()
-    flash("✅ Marcada como aprendida", "success")
-    return redirect(url_for("japones"))
+    @login_requerido
+    def añadir():
+        jp = request.form.get("jp", "").strip()
+        es = request.form.get("es", "").strip()
+        if japanese_items.añadir(brain.jap_memory, kind, jp, es):
+            flash(msgs["add_ok"].format(jp=jp), "success")
+        else:
+            flash(msgs["add_err"], "error")
+        return redirect(url_for("japones"))
 
-@app.route("/japones/kanji/añadir", methods=["POST"])
-@login_requerido
-def japones_kanji_añadir():
-    jp = request.form.get("jp", "").strip()
-    es = request.form.get("es", "").strip()
-    if jp and es:
-        today = date.today().isoformat()
-        db = brain.jap_memory._conectar()
-        db.execute("""
-            INSERT INTO japanese_kanji
-                (kanji, meaning, status, confidence, errors, times_reviewed,
-                 reps, ease_factor, interval_days, next_review, times_correct)
-            VALUES (?, ?, 'learning', 0, 0, 0, 0, 2.5, 0, ?, 0)
-        """, (jp, es, today))
-        db.commit()
-        db.close()
-        flash(f"✅ '{jp}' añadido a kanjis", "success")
-    else:
-        flash("❌ El kanji y su significado son obligatorios", "error")
-    return redirect(url_for("japones"))
+    @login_requerido
+    def borrar(item_id):
+        japanese_items.borrar(brain.jap_memory, kind, item_id)
+        flash(msgs["del"], "success")
+        return redirect(url_for("japones"))
 
-@app.route("/japones/kanji/borrar/<int:item_id>", methods=["POST"])
-@login_requerido
-def japones_kanji_borrar(item_id):
-    db = brain.jap_memory._conectar()
-    db.execute("DELETE FROM japanese_kanji WHERE id = ?", (item_id,))
-    db.commit()
-    db.close()
-    flash("✅ Kanji borrado", "success")
-    return redirect(url_for("japones"))
+    @login_requerido
+    def borrar_todo():
+        japanese_items.borrar_todo(brain.jap_memory, kind)
+        flash(msgs["del_all"], "success")
+        return redirect(url_for("japones"))
 
-@app.route("/japones/kanji/borrar-todo", methods=["POST"])
-@login_requerido
-def japones_kanji_borrar_todo():
-    db = brain.jap_memory._conectar()
-    db.execute("DELETE FROM japanese_kanji")
-    db.commit()
-    db.close()
-    flash("✅ Todos los kanjis borrados", "success")
-    return redirect(url_for("japones"))
+    @login_requerido
+    def resetear_srs(item_id):
+        japanese_items.resetear_srs(brain.jap_memory, kind, item_id)
+        flash(msgs["reset"], "success")
+        return redirect(url_for("japones"))
 
-@app.route("/japones/kanji/resetear-srs/<int:item_id>", methods=["POST"])
-@login_requerido
-def japones_kanji_resetear_srs(item_id):
-    db = brain.jap_memory._conectar()
-    db.execute("""
-        UPDATE japanese_kanji SET
-            reps=0, ease_factor=2.5, interval_days=0,
-            next_review=date('now'), status='learning',
-            times_reviewed=0, times_correct=0, errors=0
-        WHERE id=?
-    """, (item_id,))
-    db.commit()
-    db.close()
-    flash("✅ SRS de kanji reseteado", "success")
-    return redirect(url_for("japones"))
+    @login_requerido
+    def marcar_aprendido(item_id):
+        japanese_items.marcar_aprendido(brain.jap_memory, kind, item_id)
+        flash(msgs["master"], "success")
+        return redirect(url_for("japones"))
 
-@app.route("/japones/kanji/marcar-aprendido/<int:item_id>", methods=["POST"])
-@login_requerido
-def japones_kanji_marcar_aprendido(item_id):
-    db = brain.jap_memory._conectar()
-    db.execute("""
-        UPDATE japanese_kanji SET
-            status='mastered', reps=8, ease_factor=2.5, interval_days=36500,
-            next_review=date('now','+36500 days'), errors=0
-        WHERE id=?
-    """, (item_id,))
-    db.commit()
-    db.close()
-    flash("✅ Kanji marcado como aprendido", "success")
-    return redirect(url_for("japones"))
+    base = f"/japones/{kind}"
+    app.add_url_rule(f"{base}/añadir", f"japones_item_{kind}_add",
+                     añadir, methods=["POST"])
+    app.add_url_rule(f"{base}/borrar/<int:item_id>", f"japones_item_{kind}_del",
+                     borrar, methods=["POST"])
+    app.add_url_rule(f"{base}/borrar-todo", f"japones_item_{kind}_del_all",
+                     borrar_todo, methods=["POST"])
+    app.add_url_rule(f"{base}/resetear-srs/<int:item_id>",
+                     f"japones_item_{kind}_reset", resetear_srs, methods=["POST"])
+    app.add_url_rule(f"{base}/marcar-aprendido/<int:item_id>",
+                     f"japones_item_{kind}_master", marcar_aprendido,
+                     methods=["POST"])
 
-@app.route("/japones/gramatica/añadir", methods=["POST"])
-@login_requerido
-def japones_gram_añadir():
-    jp = request.form.get("jp", "").strip()
-    es = request.form.get("es", "").strip()
-    if jp and es:
-        today = date.today().isoformat()
-        db = brain.jap_memory._conectar()
-        db.execute("""
-            INSERT INTO japanese_grammar
-                (grammar_point, description, mastery, errors,
-                 reps, ease_factor, interval_days, next_review, times_seen, times_correct)
-            VALUES (?, ?, 0, 0, 0, 2.5, 0, ?, 0, 0)
-        """, (jp, es, today))
-        db.commit()
-        db.close()
-        flash(f"✅ '{jp}' añadido a gramática", "success")
-    else:
-        flash("❌ El punto gramatical y la descripción son obligatorios", "error")
-    return redirect(url_for("japones"))
 
-@app.route("/japones/gramatica/borrar/<int:item_id>", methods=["POST"])
-@login_requerido
-def japones_gram_borrar(item_id):
-    db = brain.jap_memory._conectar()
-    db.execute("DELETE FROM japanese_grammar WHERE id = ?", (item_id,))
-    db.commit()
-    db.close()
-    flash("✅ Punto gramatical borrado", "success")
-    return redirect(url_for("japones"))
-
-@app.route("/japones/gramatica/borrar-todo", methods=["POST"])
-@login_requerido
-def japones_gram_borrar_todo():
-    db = brain.jap_memory._conectar()
-    db.execute("DELETE FROM japanese_grammar")
-    db.commit()
-    db.close()
-    flash("✅ Toda la gramática borrada", "success")
-    return redirect(url_for("japones"))
-
-@app.route("/japones/gramatica/resetear-srs/<int:item_id>", methods=["POST"])
-@login_requerido
-def japones_gram_resetear_srs(item_id):
-    db = brain.jap_memory._conectar()
-    db.execute("""
-        UPDATE japanese_grammar SET
-            reps=0, ease_factor=2.5, interval_days=0,
-            next_review=date('now'), mastery=0,
-            times_seen=0, times_correct=0, errors=0
-        WHERE id=?
-    """, (item_id,))
-    db.commit()
-    db.close()
-    flash("✅ SRS de gramática reseteado", "success")
-    return redirect(url_for("japones"))
-
-@app.route("/japones/gramatica/marcar-aprendido/<int:item_id>", methods=["POST"])
-@login_requerido
-def japones_gram_marcar_aprendido(item_id):
-    # Aprendida al 100%: mastery a tope y fuera de la cola de repaso.
-    db = brain.jap_memory._conectar()
-    db.execute("""
-        UPDATE japanese_grammar SET
-            mastery=100, reps=8, ease_factor=2.5, interval_days=36500,
-            next_review=date('now','+36500 days'), errors=0
-        WHERE id=?
-    """, (item_id,))
-    db.commit()
-    db.close()
-    flash("✅ Marcada como aprendida", "success")
-    return redirect(url_for("japones"))
+for _k in japanese_items.KINDS:
+    _wire_item_routes(_k)
 
 @app.route("/japones/sesiones/borrar/<int:sesion_id>", methods=["POST"])
 @login_requerido

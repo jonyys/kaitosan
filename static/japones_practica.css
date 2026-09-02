@@ -1,0 +1,48 @@
+/* Reglas comunes a las tres pantallas de práctica SRS (vocab / gramática /
+   kanji). Antes estaban copiadas en cada plantilla; lo específico de cada una
+   (.vp-prompt, .kp-readings, .kp-canvas, .kp-glyph, #hint-pop, .practice-*…)
+   sigue en el <style> de su plantilla. */
+
+.jp-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+}
+.kp-pend {
+  font-size: 13px;
+  color: var(--text-soft);
+  font-weight: 700;
+  margin: 0 0 14px;
+}
+.kp-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 18px;
+}
+.kp-hints {
+  margin-top: 16px;
+  display: grid;
+  gap: 8px;
+}
+.kp-hint {
+  background: var(--surface-2);
+  border-radius: var(--radio-sm);
+  padding: 10px 12px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text);
+}
+.kp-hint span {
+  font-weight: 700;
+  color: var(--text-soft);
+}
+.kp-reveal {
+  margin-top: 20px;
+  text-align: center;
+}
+.kp-reveal p {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: var(--text);
+}
