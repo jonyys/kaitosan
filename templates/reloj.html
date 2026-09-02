@@ -28,6 +28,22 @@
       font-weight: 200; letter-spacing: -2px;
       color: var(--text); font-variant-numeric: tabular-nums; line-height: 1;
     }
+
+    /* ── Modo noche: reloj oscuro con texto claro (pero no blanco puro: menos
+       glare de madrugada). El toggle lo pone el JS según la franja horaria. ── */
+    html.night {
+      --bg: #000000;
+      --surface: #0b0b0b;
+      --surface-2: #151515;
+      --border: #262626;
+      --border-fuerte: #3a3a3a;
+      --text: #d0d0d0;
+      --text-soft: #7c7c7c;
+    }
+    html.night body { background: #000; }
+    body, .clock-header, #hora, #fecha {
+      transition: background-color .8s ease, color .8s ease;
+    }
     #fecha {
       font-size: 16px; color: var(--text-soft);
       margin-top: 8px; text-transform: capitalize; letter-spacing: 1px;
@@ -242,16 +258,30 @@
 
   // ── RELOJ ───────────────────────────────────────────────────────────────
   const DIAS = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
-  const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+  // Modo noche: franja horaria en la que el reloj va oscuro (Ajustes → Pantalla).
+  const NOCHE = {{ noche|tojson }};
+
+  function enFranjaNoche(d) {
+    if (!NOCHE || !NOCHE.enabled) return false;
+    const [sh, sm] = NOCHE.start.split(':').map(Number);
+    const [eh, em] = NOCHE.end.split(':').map(Number);
+    const ahora = d.getHours() * 60 + d.getMinutes();
+    const ini = sh * 60 + sm, fin = eh * 60 + em;
+    return ini <= fin ? (ahora >= ini && ahora < fin) : (ahora >= ini || ahora < fin);
+  }
 
   function actualizarReloj() {
     const ahora = new Date();
     const h = String(ahora.getHours()).padStart(2,'0');
     const m = String(ahora.getMinutes()).padStart(2,'0');
     const s = String(ahora.getSeconds()).padStart(2,'0');
+    const dd = String(ahora.getDate()).padStart(2,'0');
+    const mm = String(ahora.getMonth() + 1).padStart(2,'0');
     document.getElementById('hora').textContent = `${h}:${m}:${s}`;
     document.getElementById('fecha').textContent =
-      `${DIAS[ahora.getDay()]}, ${ahora.getDate()} de ${MESES[ahora.getMonth()]} de ${ahora.getFullYear()}`;
+      `${DIAS[ahora.getDay()]}, ${dd}/${mm}/${ahora.getFullYear()}`;
+    document.documentElement.classList.toggle('night', enFranjaNoche(ahora));
   }
   actualizarReloj();
   setInterval(actualizarReloj, 1000);

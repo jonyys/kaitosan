@@ -35,8 +35,33 @@
         <button class="btn btn-green" style="margin-top:10px">Guardar</button>
     </form>
 
+    {# --- Modo noche: en una franja el /reloj (salvapantallas) pasa a oscuro --- #}
+    <form method="POST" action="/admin/ajustes/pantalla/noche" style="margin-top:24px">
+        <label class="et" for="noche-on">Modo noche</label>
+        <p class="et" style="color:var(--text-soft); margin:4px 0 8px">
+            En esta franja el reloj se muestra oscuro con números claros: se leen
+            con la pantalla atenuada y sin dar mucha luz.
+        </p>
+        <div class="fila">
+            <span class="et">Activado</span>
+            <input type="checkbox" name="enabled" id="noche-on" value="1"
+                   {% if noche.enabled %}checked{% endif %}>
+        </div>
+        <div class="fila">
+            <span class="et">Desde</span>
+            <input type="time" name="start" value="{{ noche.start }}"
+                   style="max-width:8rem; margin:0">
+        </div>
+        <div class="fila">
+            <span class="et">Hasta</span>
+            <input type="time" name="end" value="{{ noche.end }}"
+                   style="max-width:8rem; margin:0">
+        </div>
+        <button class="btn btn-green" style="margin-top:10px">Guardar modo noche</button>
+    </form>
+
     {# --- Sitio reservado para más ajustes de pantalla --- #}
     <p class="et" style="color:var(--text-soft); margin-top:20px">
-        Más ajustes de pantalla (rotación, tema, tiempo hasta apagar) — próximamente.
+        Más ajustes de pantalla (rotación, tiempo hasta apagar) — próximamente.
     </p>
 </div>

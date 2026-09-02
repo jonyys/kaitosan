@@ -194,7 +194,7 @@ def grabar():
 
 @app.route("/reloj")
 def reloj():
-    return render_template("reloj.html")
+    return render_template("reloj.html", noche=system_settings.noche_get())
 
 @app.route("/reloj/alarmas", methods=["GET"])
 def reloj_alarmas_listar():
@@ -480,6 +480,7 @@ def ajustes():
         volumen=system_settings.volumen_get(),
         brillo=system_settings.brillo_get(),
         inactividad_min=system_settings.pantalla_inactividad_get(),
+        noche=system_settings.noche_get(),
         salud=system_settings.salud(),
         admin_user=settings_get("admin_user"),
         audio_salidas=system_settings.audio_salidas(),
@@ -549,6 +550,17 @@ def ajustes_pantalla_inactividad():
     _flash_resultado(
         system_settings.pantalla_inactividad_set(request.form.get("minutos", "")),
         "Tiempo de inactividad actualizado")
+    return redirect(url_for("ajustes"))
+
+@app.route("/admin/ajustes/pantalla/noche", methods=["POST"])
+@login_requerido
+def ajustes_pantalla_noche():
+    _flash_resultado(
+        system_settings.noche_set(
+            request.form.get("enabled", ""),
+            request.form.get("start", ""),
+            request.form.get("end", "")),
+        "Modo noche actualizado")
     return redirect(url_for("ajustes"))
 
 @app.route("/admin/ajustes/audio/salida", methods=["POST"])
