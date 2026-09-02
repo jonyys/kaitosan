@@ -1515,7 +1515,7 @@ def japones_gramatica_completar():
 @login_requerido
 def japones_vocabulario_completar_unidad():
     n = _completar_unidad("vocabulario", (request.form.get("unidad") or "").strip())
-    flash(f"✅ Unidad marcada como aprendida ({n} palabras)", "success")
+    flash(f"✅ Unidad marcada como dominada ({n} palabras)", "success")
     return redirect(url_for("japones_vocabulario"))
 
 
@@ -1523,7 +1523,7 @@ def japones_vocabulario_completar_unidad():
 @login_requerido
 def japones_gramatica_completar_unidad():
     n = _completar_unidad("gramatica", (request.form.get("unidad") or "").strip())
-    flash(f"✅ Unidad marcada como aprendida ({n} puntos)", "success")
+    flash(f"✅ Unidad marcada como dominada ({n} puntos)", "success")
     return redirect(url_for("japones_gramatica"))
 
 
@@ -1647,7 +1647,7 @@ _ITEM_MSGS = {
         "del": "✅ Palabra borrada",
         "del_all": "✅ Todo el vocabulario borrado",
         "reset": "✅ SRS reseteado",
-        "master": "✅ Marcada como aprendida",
+        "master": "✅ Marcada como dominada",
     },
     "kanji": {
         "add_ok": "✅ '{jp}' añadido a kanjis",
@@ -1655,7 +1655,7 @@ _ITEM_MSGS = {
         "del": "✅ Kanji borrado",
         "del_all": "✅ Todos los kanjis borrados",
         "reset": "✅ SRS de kanji reseteado",
-        "master": "✅ Kanji marcado como aprendido",
+        "master": "✅ Kanji marcado como dominado",
     },
     "gramatica": {
         "add_ok": "✅ '{jp}' añadido a gramática",
@@ -1663,7 +1663,7 @@ _ITEM_MSGS = {
         "del": "✅ Punto gramatical borrado",
         "del_all": "✅ Toda la gramática borrada",
         "reset": "✅ SRS de gramática reseteado",
-        "master": "✅ Marcada como aprendida",
+        "master": "✅ Marcada como dominada",
     },
 }
 

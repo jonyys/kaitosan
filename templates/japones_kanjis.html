@@ -169,7 +169,7 @@
         margin-top: 12px;
       }
       .help-pop {
-        position: relative;
+        position: fixed; /* centrado en el viewport al abrir con showModal */
         box-sizing: border-box;
         margin: auto;
         inset: 0;
@@ -240,14 +240,9 @@
       .meta-list strong {
         color: var(--text-soft);
       }
-      .btn-ghost {
-        background: transparent;
-        border: 1px solid var(--border-fuerte);
-        color: var(--text);
-      }
       /* dialog.* para ganar a `dialog.flash-pop { text-align: center }` del partial */
       dialog.ficha-pop {
-        position: relative;
+        position: fixed; /* centrado en el viewport al abrir con showModal */
         box-sizing: border-box;
         text-align: left;
         max-width: 500px;
@@ -834,11 +829,13 @@
         var catButtons = document.querySelectorAll(".kanji-cat");
         var kanjiCards = document.querySelectorAll(".kanji-card");
 
-        // marca que la ficha debe abrirse en la página que carga a continuación
+        // marca que la ficha debe abrirse en la página que carga a continuación,
+        // y guarda el scroll actual para no perder el sitio al recargar
         kanjiCards.forEach(function (card) {
           card.addEventListener("click", function () {
             try {
               sessionStorage.setItem("abrirFicha", "1");
+              sessionStorage.setItem("fichaScroll", String(window.scrollY));
             } catch (e) {}
           });
         });
@@ -921,6 +918,15 @@
           catGuardada = "all";
         }
         if (catGuardada !== "all") aplicarFiltro(catGuardada);
+
+        // recarga tras pinchar un kanji: vuelve al scroll que tenía la lista
+        if (abrirFicha) {
+          try {
+            var y = parseInt(sessionStorage.getItem("fichaScroll"), 10);
+            sessionStorage.removeItem("fichaScroll");
+            if (!isNaN(y)) window.scrollTo(0, y);
+          } catch (e) {}
+        }
       })();
     </script>
   </body>

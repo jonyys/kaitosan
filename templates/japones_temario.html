@@ -150,7 +150,7 @@
       /* ponytail: mismas clases que la ficha de kanjis, copiadas aquí
          (cada plantilla lleva su propio <style>, no hay CSS compartido). */
       #voc-pop {
-        position: relative;
+        position: fixed; /* centrado en el viewport (no en el documento) al abrir con showModal */
         box-sizing: border-box;
         text-align: left;
         max-width: 460px;
@@ -289,7 +289,7 @@
               style="font-size: 12px"
               {% if u.hechas == u.total %}disabled{% endif %}
             >
-              Marcar unidad como aprendida
+              Marcar unidad como dominada
             </button>
           </form>
         </div>
@@ -373,7 +373,7 @@
       >
         <input type="hidden" name="word" id="voc-pop-word" />
         <button type="submit" class="btn btn-yellow" id="voc-pop-complete">
-          <svg class="ico"><use href="#i-check" /></svg> Marcar como completado
+          <svg class="ico"><use href="#i-check" /></svg> Marcar como dominado
         </button>
       </form>
       <p
@@ -386,7 +386,7 @@
           font-weight: 700;
         "
       >
-        <svg class="ico"><use href="#i-check" /></svg> Ya aprendida
+        <svg class="ico"><use href="#i-check" /></svg> Ya dominada
       </p>
     </dialog>
 
@@ -492,13 +492,13 @@
           if (e.target === pop) pop.close();
         });
 
-        // confirmar "marcar unidad como aprendida"
+        // confirmar "marcar unidad como dominada"
         document.querySelectorAll("form.js-unidad").forEach(function (f) {
           f.addEventListener("submit", function (e) {
             if (f.dataset.ok === "1") return;
             e.preventDefault();
             var msg =
-              "¿Marcar toda la unidad como aprendida? No volverá a salir en las sesiones.";
+              "¿Marcar toda la unidad como dominada? No volverá a salir en las sesiones.";
             (window.confirmar
               ? window.confirmar(msg, { ok: "Sí" })
               : Promise.resolve(window.confirm(msg))

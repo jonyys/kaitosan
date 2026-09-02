@@ -171,6 +171,14 @@
         border: 1px solid var(--peligro);
         box-shadow: none;
     }
+    /* fantasma: transparente con borde. Explícito para que iOS no le meta
+       su tinte de sistema al <button> sin fondo. */
+    .btn-ghost {
+        background: transparent;
+        color: var(--text);
+        border: 1px solid var(--border-fuerte);
+        box-shadow: none;
+    }
 
     /* ---- Controles nativos (§13.3.A): time, number, range, select, color… ---- */
     input, select, textarea, button { font-family: inherit; }
