@@ -202,6 +202,9 @@ def reloj():
 # localhost: un móvil en la LAN usa /admin/ajustes con contraseña.
 
 def _solo_local():
+    """La petición viene de la propia Raspberry (el kiosko), no de la LAN.
+    Vale porque la app escucha directa en :5000 sin proxy inverso: el móvil
+    entra por la IP LAN y `remote_addr` es la suya."""
     return request.remote_addr in ("127.0.0.1", "::1")
 
 
@@ -345,7 +348,10 @@ def reloj_recordatorio_borrar(rem_id):
 def login_requerido(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        if not session.get("admin_logged_in"):
+        # La pantalla del propio robot (kiosko, siempre desde localhost) entra
+        # sin contraseña: no tiene teclado y es el aparato de Laura. Desde la
+        # LAN sigue haciendo falta iniciar sesión.
+        if not session.get("admin_logged_in") and not _solo_local():
             return redirect(url_for("admin_login"))
         return f(*args, **kwargs)
     return decorated
