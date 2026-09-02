@@ -1,8 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="16" fill="#9d3564"/>
-  <ellipse cx="23" cy="30" rx="9" ry="11" fill="#73e0ca"/>
-  <ellipse cx="41" cy="30" rx="9" ry="11" fill="#73e0ca"/>
-  <circle cx="25.5" cy="26" r="3" fill="#ffffff"/>
-  <circle cx="43.5" cy="26" r="3" fill="#ffffff"/>
-  <path d="M22 45 q10 8 20 0" stroke="#ffd6be" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <defs>
+    <linearGradient id="k-eye" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="rgb(115,224,202)"/>
+      <stop offset="1" stop-color="rgb(32,95,120)"/>
+    </linearGradient>
+    <radialGradient id="k-glow" cx="50%" cy="44%" r="58%">
+      <stop offset="0" stop-color="rgb(120,230,255)" stop-opacity="0.38"/>
+      <stop offset="60%" stop-color="rgb(80,190,255)" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="rgb(120,220,255)" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="#000000"/>
+  <rect width="64" height="64" rx="14" fill="url(#k-glow)"/>
+  <rect x="12" y="15" width="16" height="23" rx="8" fill="url(#k-eye)"/>
+  <rect x="36" y="15" width="16" height="23" rx="8" fill="url(#k-eye)"/>
+  <circle cx="24" cy="21" r="2.6" fill="#ffffff"/>
+  <circle cx="48" cy="21" r="2.6" fill="#ffffff"/>
+  <path d="M20 45 Q32 53 44 45" stroke="rgb(115,223,201)" stroke-width="4" fill="none" stroke-linecap="round"/>
 </svg>
