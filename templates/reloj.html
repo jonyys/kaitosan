@@ -281,7 +281,10 @@
     document.getElementById('hora').textContent = `${h}:${m}:${s}`;
     document.getElementById('fecha').textContent =
       `${DIAS[ahora.getDay()]}, ${dd}/${mm}/${ahora.getFullYear()}`;
-    document.documentElement.classList.toggle('night', enFranjaNoche(ahora));
+    // window.__nocheManual: override desde el cajón de ajustes rápidos (_kiosko).
+    const noche = (window.__nocheManual != null) ? window.__nocheManual
+                                                 : enFranjaNoche(ahora);
+    document.documentElement.classList.toggle('night', noche);
   }
   actualizarReloj();
   setInterval(actualizarReloj, 1000);

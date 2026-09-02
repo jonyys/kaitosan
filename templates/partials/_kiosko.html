@@ -1,33 +1,230 @@
-{# ── Kiosko · Fase 1 ──────────────────────────────────────────────────────────
-   Si Kaito se despierta (wakeword de voz o botón físico → estado 'listening',
-   emitido por core/state.py a todos los clientes socket.io), la pantalla del
-   robot vuelve a la cara desde donde esté: reloj, ajustes, japonés, error…
+{# ── Kiosko · comportamiento de la pantalla del propio robot ──────────────────
+   Fase 1: si Kaito se despierta (estado 'listening' por socket.io), la pantalla
+           vuelve a la cara (/) desde donde esté.
+   Fase 2: en / y /reloj, doble toque en el fondo alterna cara ↔ reloj; en /
+           tras N min sin tocar (ajuste "inactividad") salta al reloj.
+   Fase 3: en / y /reloj, deslizar desde el borde superior abre un cajón con
+           volumen, brillo y modo noche (escriben en /kiosko/*, solo localhost).
 
-   Se incluye una sola vez desde partials/admin/_estilos.html, así cubre todas
-   las páginas del panel sin tocar cada plantilla. La cara (/) no lo incluye:
-   ya reacciona a 'estado' por su cuenta. Idempotente (guard __kiosko) y carga
-   socket.io solo si la página no lo tenía ya (el /reloj sí). #}
+   Se incluye una vez desde partials/admin/_estilos.html (cubre todo el panel) y
+   desde face.html. Idempotente (window.__kiosko). Carga socket.io solo si hace
+   falta (el /reloj ya lo trae). CSS propio con colores literales: la cara no
+   tiene los tokens pastel. #}
+<style>
+  #kioskoBackdrop {
+    position: fixed; inset: 0; z-index: 9998;
+    background: rgba(0, 0, 0, .4);
+    opacity: 0; pointer-events: none; transition: opacity .28s ease;
+  }
+  #kioskoBackdrop.abierto { opacity: 1; pointer-events: auto; }
+  #kioskoDrawer {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
+    transform: translateY(-106%); transition: transform .28s ease;
+    background: rgba(18, 18, 22, .96); color: #ececec;
+    padding: 14px 20px 20px;
+    box-shadow: 0 12px 34px rgba(0, 0, 0, .55);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  }
+  #kioskoDrawer.abierto { transform: translateY(0); }
+  #kioskoDrawer .grip {
+    width: 42px; height: 4px; border-radius: 2px;
+    background: #5a5a5a; margin: 0 auto 14px;
+  }
+  #kioskoDrawer .fila {
+    display: flex; align-items: center; gap: 14px; margin: 12px 0;
+  }
+  #kioskoDrawer .fila label {
+    width: 92px; font-size: 13px; font-weight: 700; opacity: .85;
+  }
+  #kioskoDrawer input[type="range"] {
+    flex: 1; height: 40px; accent-color: #d9568c;
+  }
+  #kioskoDrawer input[type="checkbox"] {
+    width: 26px; height: 26px; accent-color: #d9568c; margin-left: auto;
+  }
+  #kioskoDrawer .btns { display: flex; gap: 8px; margin-top: 16px; }
+  #kioskoDrawer .btns button {
+    flex: 1; min-height: 46px; padding: 10px; border: 0; border-radius: 11px;
+    background: #2c2c33; color: #ececec; font: inherit; font-weight: 700;
+    cursor: pointer;
+  }
+  #kioskoDrawer .btns button:active { background: #3a3a42; }
+</style>
 <script>
   (function () {
     if (window.__kiosko) return;
     window.__kiosko = true;
 
+    // ── Fase 1: volver a la cara cuando Kaito se despierta ──────────────────
     function irACara(d) {
       if (d && d.estado === "listening" && location.pathname !== "/") {
         location.replace("/");
       }
     }
-    function enganchar() {
-      if (typeof io !== "function") return false;
-      io().on("estado", irACara);
-      return true;
-    }
-    if (!enganchar()) {
+    function conSocket(cb) {
+      if (typeof io === "function") {
+        cb(window.__kioskoSocket || (window.__kioskoSocket = io()));
+        return;
+      }
       var s = document.createElement("script");
       s.src =
         "https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js";
-      s.onload = enganchar;
+      s.onload = function () {
+        cb(window.__kioskoSocket || (window.__kioskoSocket = io()));
+      };
       (document.head || document.documentElement).appendChild(s);
+    }
+    conSocket(function (s) { s.on("estado", irACara); });
+
+    // ── Fases 2 y 3: solo en la cara y el reloj ────────────────────────────
+    function init() {
+      var ruta = location.pathname;
+      if (ruta !== "/" && ruta !== "/reloj") return;
+
+      fetch("/kiosko/config")
+        .then(function (r) { return r.json(); })
+        .then(function (cfg) {
+          var d = construirDrawer(cfg, ruta);
+          wireGestos(ruta, d);
+          if (ruta === "/") wireInactividad(cfg);
+        })
+        .catch(function () {});
+    }
+
+    function post(url, data) {
+      var body = Object.keys(data).map(function (k) {
+        return encodeURIComponent(k) + "=" + encodeURIComponent(data[k]);
+      }).join("&");
+      fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: body,
+      });
+    }
+
+    function construirDrawer(cfg, ruta) {
+      var bd = document.createElement("div");
+      bd.id = "kioskoBackdrop";
+      var dw = document.createElement("div");
+      dw.id = "kioskoDrawer";
+
+      var filaBrillo = cfg.brillo && cfg.brillo.soportado
+        ? '<div class="fila"><label>Brillo</label>' +
+          '<input type="range" id="kioskoBrillo" min="10" max="100" step="5" value="' +
+          (cfg.brillo.pct || 50) + '"></div>'
+        : "";
+
+      dw.innerHTML =
+        '<div class="grip"></div>' +
+        '<div class="fila"><label>Volumen</label>' +
+        '<input type="range" id="kioskoVol" min="0" max="100" step="5" value="' +
+        (cfg.volumen || 0) + '"></div>' +
+        filaBrillo +
+        '<div class="fila"><label>Modo noche</label>' +
+        '<input type="checkbox" id="kioskoNoche"' +
+        (cfg.noche && cfg.noche.enabled ? " checked" : "") + "></div>" +
+        '<div class="btns">' +
+        '<button data-go="/">Cara</button>' +
+        '<button data-go="/reloj">Reloj</button>' +
+        '<button data-go="/admin/ajustes">Ajustes</button>' +
+        "</div>";
+
+      document.body.appendChild(bd);
+      document.body.appendChild(dw);
+
+      function abrir() { dw.classList.add("abierto"); bd.classList.add("abierto"); }
+      function cerrar() { dw.classList.remove("abierto"); bd.classList.remove("abierto"); }
+      bd.addEventListener("click", cerrar);
+      dw.querySelector(".grip").addEventListener("click", cerrar);
+
+      var vol = dw.querySelector("#kioskoVol");
+      vol.addEventListener("change", function () {
+        post("/kiosko/volumen", { v: vol.value });
+      });
+      var bri = dw.querySelector("#kioskoBrillo");
+      if (bri) bri.addEventListener("change", function () {
+        post("/kiosko/brillo", { v: bri.value });
+      });
+      var noche = dw.querySelector("#kioskoNoche");
+      noche.addEventListener("change", function () {
+        post("/kiosko/noche", { enabled: noche.checked ? 1 : 0 });
+        window.__nocheManual = noche.checked;          // el /reloj lo respeta ya
+        document.documentElement.classList.toggle("night", noche.checked);
+      });
+
+      dw.querySelectorAll(".btns button").forEach(function (b) {
+        b.addEventListener("click", function () {
+          var go = b.getAttribute("data-go");
+          if (go === ruta) { cerrar(); return; }
+          location.replace(go);
+        });
+      });
+
+      // cerrar deslizando el cajón hacia arriba
+      var dy = null;
+      dw.addEventListener("touchstart", function (e) {
+        dy = e.touches[0].clientY;
+      }, { passive: true });
+      dw.addEventListener("touchmove", function (e) {
+        if (dy !== null && dy - e.touches[0].clientY > 40) { dy = null; cerrar(); }
+      }, { passive: true });
+
+      return { abrir: abrir, cerrar: cerrar };
+    }
+
+    function wireGestos(ruta, drawer) {
+      // doble toque en el fondo -> alterna cara <-> reloj
+      var SEL_INTERACTIVO =
+        "button,a,input,select,textarea,label,dialog,summary," +
+        "#kioskoDrawer,[data-no-tap],.kanji-card,.voc-card,.item-actions";
+      var ultimoTap = 0;
+      document.addEventListener("pointerup", function (e) {
+        if (e.target.closest(SEL_INTERACTIVO)) { ultimoTap = 0; return; }
+        var t = Date.now();
+        if (t - ultimoTap < 320) {
+          ultimoTap = 0;
+          location.replace(ruta === "/" ? "/reloj" : "/");
+        } else {
+          ultimoTap = t;
+        }
+      });
+
+      // deslizar desde el borde superior -> abre el cajón de ajustes rápidos
+      var y0 = null, x0 = 0;
+      document.addEventListener("touchstart", function (e) {
+        var t = e.touches[0];
+        y0 = t.clientY <= 48 ? t.clientY : null;
+        x0 = t.clientX;
+      }, { passive: true });
+      document.addEventListener("touchmove", function (e) {
+        if (y0 === null) return;
+        var t = e.touches[0];
+        if (t.clientY - y0 > 60 && Math.abs(t.clientX - x0) < 60) {
+          y0 = null;
+          drawer.abrir();
+        }
+      }, { passive: true });
+    }
+
+    function wireInactividad(cfg) {
+      var min = Math.max(1, Math.min(120, parseInt(cfg.screensaver_min, 10) || 5));
+      var tmr;
+      function rearmar() {
+        clearTimeout(tmr);
+        tmr = setTimeout(function () { location.replace("/reloj"); }, min * 60000);
+      }
+      ["pointerdown", "touchstart", "keydown"].forEach(function (ev) {
+        document.addEventListener(ev, rearmar, { passive: true });
+      });
+      conSocket(function (s) { s.on("estado", rearmar); });
+      rearmar();
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", init);
+    } else {
+      init();
     }
   })();
 </script>
