@@ -328,9 +328,8 @@ class ProfesorJapones:
             respuesta = self.provider.completar(
                 historial_sensei,
                 # Techo alto para todos los turnos: el desglose gramatical es
-                # justo lo que se quedaba a medias. La selección por tipo de
-                # turno (MAX_TOKENS_SENSEI para los normales) espera a que el
-                # prompt distinga registros.
+                # justo lo que se quedaba a medias. No se afina el límite por
+                # tipo de turno (MAX_TOKENS_SENSEI existe pero no se usa aquí).
                 max_tokens=MAX_TOKENS_EXPLICACION,
                 temperature=TEMPERATURE_SENSEI,
                 reasoning_effort=REASONING_EFFORT_SENSEI,
