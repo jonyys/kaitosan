@@ -1482,8 +1482,15 @@ def japones_gramatica_practicar():
 @app.route("/japones/boletin")
 @login_requerido
 def japones_boletin():
-    # Boletín can-do (Fase 11): solo lectura. Contexto en JapaneseMemory.boletin.
+    # Boletín can-do (Fase 11). Contexto en JapaneseMemory.boletin.
     return render_template("japones_boletin.html", **brain.jap_memory.boletin())
+
+
+@app.route("/japones/boletin/can-do/<can_do_id>/toggle", methods=["POST"])
+@login_requerido
+def japones_boletin_can_do_toggle(can_do_id):
+    brain.jap_memory.toggle_can_do(can_do_id)
+    return redirect(url_for("japones_boletin"))
 
 
 @app.route("/japones/vocabulario/completar", methods=["POST"])
