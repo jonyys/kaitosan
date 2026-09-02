@@ -1,0 +1,33 @@
+{# ── Kiosko · Fase 1 ──────────────────────────────────────────────────────────
+   Si Kaito se despierta (wakeword de voz o botón físico → estado 'listening',
+   emitido por core/state.py a todos los clientes socket.io), la pantalla del
+   robot vuelve a la cara desde donde esté: reloj, ajustes, japonés, error…
+
+   Se incluye una sola vez desde partials/admin/_estilos.html, así cubre todas
+   las páginas del panel sin tocar cada plantilla. La cara (/) no lo incluye:
+   ya reacciona a 'estado' por su cuenta. Idempotente (guard __kiosko) y carga
+   socket.io solo si la página no lo tenía ya (el /reloj sí). #}
+<script>
+  (function () {
+    if (window.__kiosko) return;
+    window.__kiosko = true;
+
+    function irACara(d) {
+      if (d && d.estado === "listening" && location.pathname !== "/") {
+        location.replace("/");
+      }
+    }
+    function enganchar() {
+      if (typeof io !== "function") return false;
+      io().on("estado", irACara);
+      return true;
+    }
+    if (!enganchar()) {
+      var s = document.createElement("script");
+      s.src =
+        "https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js";
+      s.onload = enganchar;
+      (document.head || document.documentElement).appendChild(s);
+    }
+  })();
+</script>
