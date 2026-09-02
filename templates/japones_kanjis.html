@@ -245,7 +245,8 @@
         border: 1px solid var(--border-fuerte);
         color: var(--text);
       }
-      .ficha-pop {
+      /* dialog.* para ganar a `dialog.flash-pop { text-align: center }` del partial */
+      dialog.ficha-pop {
         position: relative;
         box-sizing: border-box;
         text-align: left;
@@ -275,12 +276,15 @@
         color: var(--rosa-tinta);
       }
       .ficha-hero {
+        padding: 4px 34px 14px 0;
+        margin-bottom: 14px;
+        border-bottom: 1px solid var(--border);
+        text-align: left;
+      }
+      .ficha-hero-title {
         display: flex;
         align-items: center;
         gap: 16px;
-        padding: 4px 0 14px;
-        margin-bottom: 14px;
-        border-bottom: 1px solid var(--border);
       }
       .ficha-hero-char {
         flex: none;
@@ -289,17 +293,15 @@
         font-weight: 700;
         color: var(--rosa-tinta);
       }
-      .ficha-hero-info {
-        display: flex;
-        flex-direction: column;
-        gap: 3px;
-      }
       .ficha-hero-reading {
+        display: block;
+        margin-top: 8px;
         font-size: 15px;
         font-weight: 700;
         color: var(--rosa-accion);
       }
       .ficha-hero-meaning {
+        display: block;
         font-size: 16px;
         color: var(--text);
       }
@@ -384,7 +386,11 @@
       </h1>
 
       <div style="text-align: center; margin: 4px 0 22px">
-        <a href="/japones/kanjis/practicar" style="text-decoration: none">
+        <a
+          id="practicar-cat-link"
+          href="/japones/kanjis/practicar"
+          style="text-decoration: none"
+        >
           <button
             class="btn btn-yellow"
             style="font-size: 19px; padding: 16px 40px"
@@ -430,12 +436,6 @@
               <span id="dom-cat-label">Marcar todos como dominados</span>
             </button>
           </form>
-          <a id="practicar-cat-link" href="/japones/kanjis/practicar">
-            <button type="button" class="btn btn-yellow" style="font-size: 12px">
-              <svg class="ico"><use href="#i-play" /></svg>
-              <span id="practicar-cat-label">Practicar todos</span>
-            </button>
-          </a>
         </div>
         <div class="kanji-grid">
           {% for item in kanjis %}
@@ -469,25 +469,25 @@
       </button>
 
       <div class="ficha-hero">
-        <span class="ficha-hero-char">{{ selected.kanji }}</span>
-        <div class="ficha-hero-info">
-          <span class="ficha-hero-reading">{{ selected.reading_card or '—' }}</span>
-          <span class="ficha-hero-meaning">{{ sig }}</span>
+        <div class="ficha-hero-title">
+          <span class="ficha-hero-char">{{ selected.kanji }}</span>
+          {% set _audio = audio_url(selected.reading_card or selected.reading) %}
+          {% if _audio %}
+          <button
+            type="button"
+            id="ficha-audio"
+            class="btn btn-yellow"
+            data-audio="{{ _audio }}"
+            aria-label="Escuchar en japonés"
+            title="Escuchar en japonés"
+            style="min-height: 40px; padding: 8px 16px"
+          >
+            <svg class="ico"><use href="#i-sound" /></svg>
+          </button>
+          {% endif %}
         </div>
-        {% set _audio = audio_url(selected.reading_card or selected.reading) %}
-        {% if _audio %}
-        <button
-          type="button"
-          id="ficha-audio"
-          class="btn btn-yellow"
-          data-audio="{{ _audio }}"
-          aria-label="Escuchar en japonés"
-          title="Escuchar en japonés"
-          style="min-height: 40px; padding: 8px 16px; margin-left: auto"
-        >
-          <svg class="ico"><use href="#i-sound" /></svg>
-        </button>
-        {% endif %}
+        <span class="ficha-hero-reading">{{ selected.reading_card or '—' }}</span>
+        <span class="ficha-hero-meaning">{{ sig }}</span>
       </div>
 
       <table class="ficha-table">
@@ -814,9 +814,13 @@
             });
 
           var fichaAudio = document.getElementById("ficha-audio");
+          var fichaLento = false; // clics seguidos alternan normal <-> lento
           fichaAudio &&
             fichaAudio.addEventListener("click", function () {
-              new Audio(fichaAudio.dataset.audio).play();
+              var a = new Audio(fichaAudio.dataset.audio);
+              a.playbackRate = fichaLento ? 0.7 : 1;
+              a.play();
+              fichaLento = !fichaLento;
             });
           fichaPop.addEventListener("click", function (event) {
             if (event.target === fichaPop) fichaPop.close();
@@ -843,7 +847,6 @@
         var domLabel = document.getElementById("dom-cat-label");
 
         var praLink = document.getElementById("practicar-cat-link");
-        var praLabel = document.getElementById("practicar-cat-label");
 
         function sincronizarDominar(cat, nombre) {
           if (domInput) domInput.value = cat;
@@ -857,9 +860,6 @@
               cat === "all"
                 ? "/japones/kanjis/practicar"
                 : "/japones/kanjis/practicar?categoria=" + encodeURIComponent(cat);
-          if (praLabel)
-            praLabel.textContent =
-              cat === "all" ? "Practicar todos" : "Practicar «" + nombre + "»";
         }
 
         function aplicarFiltro(cat) {

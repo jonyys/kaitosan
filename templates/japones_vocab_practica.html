@@ -54,7 +54,7 @@
       </h1>
 
       <p class="kp-pend">
-        {{ unidad_nombre }} · {{ pendientes }} ítems por repasar en esta lección
+        {% if unidad_nombre %}{{ unidad_nombre }} · {% endif %}{{ pendientes }} ítems por repasar
       </p>
 
       {% if al_dia %}
@@ -108,13 +108,13 @@
           {% if v.reading %}<p>{{ v.reading }}</p>{% endif %}
           <div class="kp-actions">
             <button type="button" class="btn btn-yellow" data-quality="5">
-              Lo sabía
+              Bien
             </button>
             <button type="button" class="btn btn-ghost" data-quality="3">
               Casi
             </button>
             <button type="button" class="btn btn-ghost" data-quality="1">
-              No
+              Mal
             </button>
           </div>
         </div>

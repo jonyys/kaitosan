@@ -147,38 +147,87 @@
         font-size: 0.9rem;
       }
 
+      /* ponytail: mismas clases que la ficha de kanjis, copiadas aquí
+         (cada plantilla lleva su propio <style>, no hay CSS compartido). */
       #voc-pop {
+        position: relative;
+        box-sizing: border-box;
         text-align: left;
-        max-width: 440px;
+        max-width: 460px;
         width: calc(100vw - 24px);
+        max-height: 85vh;
+        overflow-y: auto;
       }
-      #voc-pop h3 {
-        margin: 0 0 4px;
+      .pop-x {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        border: 1px solid var(--border-fuerte);
+        border-radius: 50%;
+        background: var(--surface-2);
+        color: var(--text-soft);
+        cursor: pointer;
+      }
+      .pop-x:hover {
+        border-color: var(--rosa-accion);
         color: var(--rosa-tinta);
       }
-      #voc-pop .rd {
-        color: var(--rosa-accion);
-        font-weight: 700;
-        margin: 0 0 12px;
+      .ficha-hero {
+        padding: 4px 34px 14px 0;
+        margin-bottom: 14px;
+        border-bottom: 1px solid var(--border);
       }
-      #voc-pop dl {
-        display: grid;
-        grid-template-columns: auto 1fr;
-        gap: 6px 12px;
-        margin: 0 0 16px;
+      .ficha-hero-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .ficha-hero-title h3 {
+        margin: 0;
+        font-size: 1.9rem;
+        line-height: 1.1;
+        color: var(--rosa-tinta);
+      }
+      .ficha-hero-reading {
+        display: block;
+        margin-top: 6px;
         font-size: 14px;
+        font-weight: 700;
+        color: var(--rosa-accion);
       }
-      #voc-pop dt {
+      .ficha-hero-meaning {
+        display: block;
+        font-size: 15px;
+        color: var(--text);
+      }
+      .ficha-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+        margin-bottom: 16px;
+      }
+      .ficha-table th,
+      .ficha-table td {
+        text-align: left;
+        vertical-align: top;
+        padding: 7px 4px;
+        border-bottom: 1px solid var(--border);
+      }
+      .ficha-table th {
+        width: 1%;
+        white-space: nowrap;
+        padding-right: 14px;
         color: var(--text-soft);
         font-weight: 700;
       }
-      #voc-pop dd {
-        margin: 0;
-      }
-      #voc-pop .voc-pop-actions {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
+      .ficha-table tr[hidden] {
+        display: none;
       }
     </style>
   </head>
@@ -200,6 +249,21 @@
         </div>
       </h1>
 
+      <div style="text-align: center; margin: 4px 0 22px">
+        <a
+          id="practicar-unidad-link"
+          href="/japones/{{ kind }}/practicar"
+          style="text-decoration: none"
+        >
+          <button
+            class="btn btn-yellow"
+            style="font-size: 19px; padding: 16px 40px"
+          >
+            <svg class="ico"><use href="#i-play" /></svg>
+          </button>
+        </a>
+      </div>
+
       <div class="voc-unidades">
         <button type="button" class="voc-unidad-btn" data-u="all">Todas</button>
         {% for u in unidades %}
@@ -213,13 +277,6 @@
       <section class="voc-unidad card full" data-u="{{ u.id }}">
         <div class="voc-unidad-head">
           <h2>{{ u.nombre }}</h2>
-          {% if kind in ('vocabulario', 'gramatica') and u.id != '_extra' %}
-          <a href="/japones/{{ kind }}/practicar?unidad={{ u.id }}">
-            <button type="button" class="btn btn-yellow" style="font-size: 12px">
-              Practicar
-            </button>
-          </a>
-          {% endif %}
           <form
             method="POST"
             action="/japones/{{ kind }}/completar-unidad"
@@ -270,52 +327,67 @@
     </div>
 
     <dialog id="voc-pop" class="flash-pop">
-      <h3 id="voc-pop-jp"></h3>
-      <p class="rd" id="voc-pop-rd"></p>
       <button
         type="button"
-        id="voc-pop-audio"
-        class="btn btn-yellow"
-        aria-label="Escuchar en japonés"
-        title="Escuchar en japonés"
-        style="min-height: 38px; padding: 6px 16px; margin-bottom: 12px"
-        hidden
+        class="pop-x"
+        id="voc-pop-close"
+        aria-label="Cerrar ficha"
       >
-        <svg class="ico"><use href="#i-sound" /></svg>
+        <svg class="ico"><use href="#i-x" /></svg>
       </button>
-      <dl>
-        <dt>Lectura</dt>
-        <dd id="voc-pop-kana"></dd>
-        <dt>Significado</dt>
-        <dd id="voc-pop-es"></dd>
-        <dt>Tipo</dt>
-        <dd id="voc-pop-tipo"></dd>
-        <dt>Ejemplo</dt>
-        <dd id="voc-pop-ej"></dd>
-        <dt>Literal</dt>
-        <dd id="voc-pop-lit"></dd>
-        <dt>Uso</dt>
-        <dd id="voc-pop-uso"></dd>
-        <dt>Unidad</dt>
-        <dd id="voc-pop-unidad"></dd>
-        <dt>Estado</dt>
-        <dd id="voc-pop-estado"></dd>
-      </dl>
-      <div class="voc-pop-actions">
-        <form
-          method="POST"
-          action="/japones/{{ kind }}/completar"
-          id="voc-pop-form"
-        >
-          <input type="hidden" name="word" id="voc-pop-word" />
-          <button type="submit" class="btn btn-yellow" id="voc-pop-complete">
-            Marcar como completa
+
+      <div class="ficha-hero">
+        <div class="ficha-hero-title">
+          <h3 id="voc-pop-jp"></h3>
+          <button
+            type="button"
+            id="voc-pop-audio"
+            class="btn btn-yellow"
+            aria-label="Escuchar en japonés"
+            title="Escuchar en japonés"
+            style="min-height: 36px; padding: 6px 14px"
+            hidden
+          >
+            <svg class="ico"><use href="#i-sound" /></svg>
           </button>
-        </form>
-        <button type="button" class="btn btn-ghost" id="voc-pop-close">
-          Cerrar
-        </button>
+        </div>
+        <span class="ficha-hero-reading" id="voc-pop-rd"></span>
+        <span class="ficha-hero-meaning" id="voc-pop-es"></span>
       </div>
+
+      <table class="ficha-table">
+        <tr id="voc-row-roma"><th>Romaji</th><td id="voc-pop-roma"></td></tr>
+        <tr id="voc-row-tipo"><th>Tipo</th><td id="voc-pop-tipo"></td></tr>
+        <tr id="voc-row-ej"><th>Ejemplo</th><td id="voc-pop-ej"></td></tr>
+        <tr id="voc-row-lit"><th>Literal</th><td id="voc-pop-lit"></td></tr>
+        <tr id="voc-row-uso"><th>Uso</th><td id="voc-pop-uso"></td></tr>
+        <tr id="voc-row-unidad"><th>Unidad</th><td id="voc-pop-unidad"></td></tr>
+        <tr><th>Estado</th><td id="voc-pop-estado"></td></tr>
+      </table>
+
+      <form
+        method="POST"
+        action="/japones/{{ kind }}/completar"
+        id="voc-pop-form"
+        style="text-align: center"
+      >
+        <input type="hidden" name="word" id="voc-pop-word" />
+        <button type="submit" class="btn btn-yellow" id="voc-pop-complete">
+          <svg class="ico"><use href="#i-check" /></svg> Marcar como completado
+        </button>
+      </form>
+      <p
+        id="voc-pop-done"
+        hidden
+        style="
+          margin-top: 16px;
+          text-align: center;
+          color: var(--ok-tinta);
+          font-weight: 700;
+        "
+      >
+        <svg class="ico"><use href="#i-check" /></svg> Ya aprendida
+      </p>
     </dialog>
 
     <script>
@@ -323,6 +395,7 @@
         var K_UNIDAD = "temUnidad:{{ kind }}";
         var unidadBtns = document.querySelectorAll(".voc-unidad-btn");
         var secciones = document.querySelectorAll(".voc-unidad");
+        var praLink = document.getElementById("practicar-unidad-link");
         var activeU = "all";
 
         function aplicar() {
@@ -332,6 +405,12 @@
           secciones.forEach(function (s) {
             s.hidden = activeU !== "all" && s.dataset.u !== activeU;
           });
+          if (praLink)
+            praLink.href =
+              activeU === "all"
+                ? "/japones/{{ kind }}/practicar"
+                : "/japones/{{ kind }}/practicar?unidad=" +
+                  encodeURIComponent(activeU);
         }
 
         unidadBtns.forEach(function (b) {
@@ -360,11 +439,10 @@
         // popup de palabra
         var pop = document.getElementById("voc-pop");
         function fila(id, val) {
-          var dd = document.getElementById(id);
-          dd.textContent = val || "—";
-          var dt = dd.previousElementSibling;
-          dd.hidden = !val;
-          if (dt) dt.hidden = !val;
+          var td = document.getElementById(id);
+          td.textContent = val || "—";
+          var tr = td.closest("tr");
+          if (tr) tr.hidden = !val;
         }
         var ESTADO = {
           aprendida: "Aprendida",
@@ -373,18 +451,24 @@
         };
         var audioBtn = document.getElementById("voc-pop-audio");
         var audioSrc = "";
+        var audioLento = false; // clics seguidos alternan normal <-> lento
         audioBtn.addEventListener("click", function () {
-          if (audioSrc) new Audio(audioSrc).play();
+          if (!audioSrc) return;
+          var a = new Audio(audioSrc);
+          a.playbackRate = audioLento ? 0.7 : 1;
+          a.play();
+          audioLento = !audioLento;
         });
         document.querySelectorAll(".voc-card").forEach(function (card) {
           card.addEventListener("click", function () {
             var d = card.dataset;
             audioSrc = d.audio || "";
+            audioLento = false; // cada palabra empieza a velocidad normal
             audioBtn.hidden = !audioSrc;
             document.getElementById("voc-pop-jp").textContent = d.jp;
-            document.getElementById("voc-pop-rd").textContent = d.roma || "";
-            fila("voc-pop-kana", d.rd);
-            fila("voc-pop-es", d.es);
+            document.getElementById("voc-pop-rd").textContent = d.rd || d.roma || "";
+            document.getElementById("voc-pop-es").textContent = d.es || "—";
+            fila("voc-pop-roma", d.roma);
             fila("voc-pop-tipo", d.tipo);
             fila("voc-pop-ej", d.ej);
             fila("voc-pop-lit", d.lit);
@@ -393,8 +477,9 @@
             document.getElementById("voc-pop-estado").textContent =
               ESTADO[d.estado] || d.estado;
             document.getElementById("voc-pop-word").value = d.jp;
-            document.getElementById("voc-pop-complete").hidden =
-              d.estado === "aprendida";
+            var aprendida = d.estado === "aprendida";
+            document.getElementById("voc-pop-form").hidden = aprendida;
+            document.getElementById("voc-pop-done").hidden = !aprendida;
             if (pop.showModal) pop.showModal();
           });
         });

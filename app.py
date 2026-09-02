@@ -1270,27 +1270,33 @@ def japones_gramatica():
 
 
 def _vocab_items_unidad(uid):
-    """(nombre, [ítems]) de vocabulario (no kanji) de una unidad del temario por
-    su `id`. nombre None si la unidad no existe. Cada ítem: jp/reading/meaning/
-    ejemplo."""
-    u = next((x for x in CURRICULUM if x.get("id") == uid), None)
-    if not u:
-        return None, []
+    """(nombre, [ítems]) de vocabulario (no kanji) del temario. `uid` vacío o 'all'
+    -> todas las unidades (nombre ""); si no -> esa unidad por su `id`, nombre None
+    si no existe. Cada ítem: jp/reading/meaning/ejemplo."""
+    uid = (uid or "").strip()
+    if uid in ("", "all"):
+        fuentes, nombre = CURRICULUM, ""
+    else:
+        u = next((x for x in CURRICULUM if x.get("id") == uid), None)
+        if not u:
+            return None, []
+        fuentes, nombre = [u], u.get("nombre", "N5")
     items, vistos = [], set()
-    for e in u.get("items", []):
-        if e.get("kind") != "vocabulario" or e.get("tipo") == "kanji":
-            continue
-        jp = str(e.get("jp") or "").strip()
-        if not jp or jp in vistos:
-            continue
-        vistos.add(jp)
-        items.append({
-            "jp": jp,
-            "reading": (e.get("reading") or "").strip(),
-            "meaning": (e.get("meaning") or "").strip(),
-            "ejemplo": (e.get("ejemplo") or "").strip(),
-        })
-    return u.get("nombre", "N5"), items
+    for u in fuentes:
+        for e in u.get("items", []):
+            if e.get("kind") != "vocabulario" or e.get("tipo") == "kanji":
+                continue
+            jp = str(e.get("jp") or "").strip()
+            if not jp or jp in vistos:
+                continue
+            vistos.add(jp)
+            items.append({
+                "jp": jp,
+                "reading": (e.get("reading") or "").strip(),
+                "meaning": (e.get("meaning") or "").strip(),
+                "ejemplo": (e.get("ejemplo") or "").strip(),
+            })
+    return nombre, items
 
 
 @app.route("/japones/vocabulario/practicar", methods=["GET", "POST"])
@@ -1364,27 +1370,34 @@ _GRAM_TILDE = "〜～"  # 〜 ～ : marcan "se engancha a una raíz", no forman 
 
 
 def _gram_items_unidad(uid):
-    """(nombre, [ítems]) de gramática de una unidad del temario por su `id`.
-    nombre None si la unidad no existe. Cada ítem: jp/meaning/ejemplo/literal/uso."""
-    u = next((x for x in CURRICULUM if x.get("id") == uid), None)
-    if not u:
-        return None, []
+    """(nombre, [ítems]) de gramática del temario. `uid` vacío o 'all' -> todas las
+    unidades (nombre ""); si no -> esa unidad por su `id`, nombre None si no existe.
+    Cada ítem: jp/meaning/ejemplo/literal/uso."""
+    uid = (uid or "").strip()
+    if uid in ("", "all"):
+        fuentes, nombre = CURRICULUM, ""
+    else:
+        u = next((x for x in CURRICULUM if x.get("id") == uid), None)
+        if not u:
+            return None, []
+        fuentes, nombre = [u], u.get("nombre", "N5")
     items, vistos = [], set()
-    for e in u.get("items", []):
-        if e.get("kind") != "gramatica":
-            continue
-        jp = str(e.get("jp") or "").strip()
-        if not jp or jp in vistos:
-            continue
-        vistos.add(jp)
-        items.append({
-            "jp": jp,
-            "meaning": (e.get("meaning") or "").strip(),
-            "ejemplo": (e.get("ejemplo") or "").strip(),
-            "literal": (e.get("literal") or "").strip(),
-            "uso": (e.get("uso") or "").strip(),
-        })
-    return u.get("nombre", "N5"), items
+    for u in fuentes:
+        for e in u.get("items", []):
+            if e.get("kind") != "gramatica":
+                continue
+            jp = str(e.get("jp") or "").strip()
+            if not jp or jp in vistos:
+                continue
+            vistos.add(jp)
+            items.append({
+                "jp": jp,
+                "meaning": (e.get("meaning") or "").strip(),
+                "ejemplo": (e.get("ejemplo") or "").strip(),
+                "literal": (e.get("literal") or "").strip(),
+                "uso": (e.get("uso") or "").strip(),
+            })
+    return nombre, items
 
 
 def _gram_ejercicio(it):

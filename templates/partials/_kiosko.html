@@ -56,6 +56,14 @@
     if (window.__kiosko) return;
     window.__kiosko = true;
 
+    // El override manual de "modo noche" (cajón de ajustes) persiste en este
+    // dispositivo entre recargas; el /reloj lo respeta antes que la franja
+    // horaria, así que hay que restaurarlo antes de que pinte.
+    try {
+      var __nm = localStorage.getItem("nocheManual");
+      if (__nm != null) window.__nocheManual = __nm === "1";
+    } catch (e) {}
+
     // ── Fase 1: volver a la cara cuando Kaito se despierta ──────────────────
     function irACara(d) {
       if (d && d.estado === "listening" && location.pathname !== "/") {
@@ -150,6 +158,9 @@
       noche.addEventListener("change", function () {
         post("/kiosko/noche", { enabled: noche.checked ? 1 : 0 });
         window.__nocheManual = noche.checked;          // el /reloj lo respeta ya
+        try {
+          localStorage.setItem("nocheManual", noche.checked ? "1" : "0");
+        } catch (e) {}
         document.documentElement.classList.toggle("night", noche.checked);
       });
 
