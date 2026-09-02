@@ -249,6 +249,7 @@
             class="voc-card {% if it.estado == 'aprendida' %}aprendida{% endif %}"
             data-jp="{{ it.jp }}"
             data-rd="{{ it.reading }}"
+            data-audio="{{ audio_url(it.reading or it.jp) }}"
             data-roma="{{ it.romaji }}"
             data-es="{{ it.meaning }}"
             data-tipo="{{ it.tipo }}"
@@ -271,6 +272,17 @@
     <dialog id="voc-pop" class="flash-pop">
       <h3 id="voc-pop-jp"></h3>
       <p class="rd" id="voc-pop-rd"></p>
+      <button
+        type="button"
+        id="voc-pop-audio"
+        class="btn btn-yellow"
+        aria-label="Escuchar en japonés"
+        title="Escuchar en japonés"
+        style="min-height: 38px; padding: 6px 16px; margin-bottom: 12px"
+        hidden
+      >
+        <svg class="ico"><use href="#i-sound" /></svg>
+      </button>
       <dl>
         <dt>Lectura</dt>
         <dd id="voc-pop-kana"></dd>
@@ -359,9 +371,16 @@
           en_curso: "En curso",
           nueva: "Sin empezar",
         };
+        var audioBtn = document.getElementById("voc-pop-audio");
+        var audioSrc = "";
+        audioBtn.addEventListener("click", function () {
+          if (audioSrc) new Audio(audioSrc).play();
+        });
         document.querySelectorAll(".voc-card").forEach(function (card) {
           card.addEventListener("click", function () {
             var d = card.dataset;
+            audioSrc = d.audio || "";
+            audioBtn.hidden = !audioSrc;
             document.getElementById("voc-pop-jp").textContent = d.jp;
             document.getElementById("voc-pop-rd").textContent = d.roma || "";
             fila("voc-pop-kana", d.rd);
