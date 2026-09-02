@@ -54,22 +54,6 @@ DESPEDIDAS = [
     "【バイバイ、ラウラさん。気をつけてね】",
 ]
 
-SALUDOS_CONV = [
-    "¡Modo charla activado! Nada de clase, solo tú, yo y 【にほんご】. ¿Qué tal el día?",
-    "¡Modo colega ON! Olvida que soy un profesor, soy tu amigo que resulta que habla japonés. 【はじめよう！】",
-    "Ahora sí, modo conversación. Sin drills, sin temario. Solo 【おしゃべり】. ¿Por dónde empezamos?",
-    "Cambiando al modo charla... Hecho. Ahora dime algo interesante. En español o en 【にほんご】, lo que te salga.",
-    "¡Modo charla! Prometido: cero ejercicios. Solo quiero saber qué has hecho hoy. 【どうだった？】",
-]
-
-CAMBIO_A_ESTUDIO = [
-    "¡Modo estudio activado! Volvemos al temario. 【さあ、べんきょうしましょう！】",
-    "De acuerdo, ponemos el modo serio. Un poco. 【がんばろう！】",
-    "Modo clase activado. Aunque tampoco me voy a poner muy formal, que me conozco. 【はじめましょう！】",
-]
-
-REGISTROS = ("clase", "mixto", "charla")  # densidad de ejercicio, no identidad
-
 # Resultados que el extractor puede devolver por can-do (Fase 08).
 _RESULTADOS_CAN_DO = {"conseguido", "parcial", "no_intentado", "error"}
 
@@ -206,7 +190,6 @@ class ProfesorJapones:
         self.socketio = socketio
 
         self.activo = False
-        self.registro = "clase"
         self.nivel_inmersion = 1    # lo recalcula _montar_estado() cada turno
         self.timer = None
         self.session_id = None
@@ -221,21 +204,14 @@ class ProfesorJapones:
 
     # ── Ciclo de vida ─────────────────────────────────────────────────────────
 
-    @property
-    def modo_conv(self) -> bool:
-        """Compatibilidad: fuera del sensei solo interesa si esto es charla."""
-        return self.registro == "charla"
+    # Un solo modo (profe particular medio colega). Se mantiene el nombre por los
+    # call sites de STT (transcribir_para_turno): False = evalúa pronunciación
+    # cuando hay frase objetivo, igual que hacía el viejo registro "mixto".
+    modo_conv = False
 
-    def set_registro(self, registro: str):
-        self.registro = registro if registro in REGISTROS else "clase"
-
-    def set_modo_conv(self, conv: bool):
-        self.set_registro("charla" if conv else "clase")
-
-    def entrar(self, conv: bool = False, registro: str = None):
+    def entrar(self):
         """Activa el modo sensei y abre una sesión en la BD."""
         self.activo = True
-        self.set_registro(registro or ("charla" if conv else "clase"))
         self.mensajes = []
         self.ultima_frase_objetivo = None
 
@@ -309,9 +285,6 @@ class ProfesorJapones:
         except Exception as e:
             print(f"⚠️ No se pudo cargar prompt profesor_japones: {e}")
             prompt_base = "Eres un profesor de japonés amable. Habla en japonés con 【】."
-        # Un solo prompt con dial: lo que cambia entre clase y charla es la
-        # densidad de ejercicio, no quién es Kaito.
-        prompt_base = prompt_base.replace("{REGISTRO}", self.registro)
 
         recuerdas, foco = self._montar_estado()
         # Cuánto japonés puede hablar: lo fija el progreso de Laura, no el prompt.
