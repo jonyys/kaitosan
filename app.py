@@ -712,6 +712,7 @@ def ajustes_modelos_gemini_guardar():
     datos = request.get_json(silent=True) or {}
     sel = {
         "sensei": datos.get("sensei", ""),
+        "reservas": datos.get("reservas", []),
         "extractor": datos.get("extractor", ""),
     }
     return jsonify(system_settings.gemini_seleccion_set(sel))

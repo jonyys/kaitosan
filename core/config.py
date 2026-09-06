@@ -91,19 +91,28 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
 # Modelos de Gemini: semilla de fábrica. La selección guardada en
 # Ajustes → Modelos (clave `gemini_models` de app_settings) la sobrescribe.
-#  - sensei    → turnos del modo sensei (cuando Gemini es el proveedor / la reserva).
+#  - sensei    → modelo primario de los turnos del modo sensei.
+#  - reservas  → modelos Gemini a los que rotar (en orden) si el primario da
+#                rate limit, ANTES de caer a Groq. El free tier limita a ~20
+#                req/día POR MODELO, así que rotar entre varios flash multiplica
+#                el aforo diario.
 #  - extractor → extracción de cierre de sesión (JSON).
 GEMINI_MODEL_SENSEI = os.getenv("GEMINI_MODEL_SENSEI", "gemini-3.6-flash")
+GEMINI_MODELOS_RESERVA = ["gemini-3.7-flash", "gemini-3.5-flash"]
 GEMINI_MODEL_EXTRACTOR = os.getenv("GEMINI_MODEL_EXTRACTOR", "gemini-3.6-flash")
 
 
 def gemini_seleccion() -> dict:
-    """Selección efectiva de modelos de Gemini: `{sensei, extractor}`.
+    """Selección efectiva de modelos de Gemini: `{sensei, reservas, extractor}`.
 
-    Lee `gemini_models` de `app_settings`; cada campo que falte o esté vacío usa
-    el valor de fábrica de este módulo. Nunca lanza.
+    Lee `gemini_models` de `app_settings`; cada campo que falte usa el valor de
+    fábrica de este módulo. `reservas` puede quedar en `[]` a propósito. Nunca lanza.
     """
-    fabrica = {"sensei": GEMINI_MODEL_SENSEI, "extractor": GEMINI_MODEL_EXTRACTOR}
+    fabrica = {
+        "sensei": GEMINI_MODEL_SENSEI,
+        "reservas": list(GEMINI_MODELOS_RESERVA),
+        "extractor": GEMINI_MODEL_EXTRACTOR,
+    }
     try:
         from core.settings_store import settings_get
         crudo = settings_get("gemini_models")
@@ -117,6 +126,11 @@ def gemini_seleccion() -> dict:
         v = guardado.get(campo)
         if isinstance(v, str) and v.strip():
             sel[campo] = v.strip()
+    r = guardado.get("reservas")
+    if isinstance(r, list):
+        sel["reservas"] = list(dict.fromkeys(
+            m.strip() for m in r if isinstance(m, str) and m.strip()
+        ))
     return sel
 
 

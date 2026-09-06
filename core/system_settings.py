@@ -1395,24 +1395,30 @@ def gemini_seleccion_get() -> dict:
 def gemini_seleccion_set(sel: dict) -> dict:
     """Valida `sel` contra `gemini_modelos()` y lo guarda en
     `app_settings['gemini_models']`. `sensei` y `extractor` son obligatorios y
-    deben existir en la lista real (si se pudo consultar)."""
+    deben existir en la lista real (si se pudo consultar). `reservas` es una
+    lista ordenada de modelos Gemini a los que rotar antes de caer a Groq; puede
+    ir vacía."""
     if not isinstance(sel, dict):
         return {"ok": False, "error": "selección no válida"}
 
     sensei = (sel.get("sensei") or "").strip()
     extractor = (sel.get("extractor") or "").strip()
+    reservas = list(dict.fromkeys(
+        str(m).strip() for m in (sel.get("reservas") or []) if str(m).strip()
+    ))
     if not sensei or not extractor:
         return {"ok": False,
                 "error": "elige un modelo para el sensei y otro para el extractor"}
 
     ids = {m["id"] for m in gemini_modelos()}
     if ids:
-        desconocidos = [x for x in (sensei, extractor) if x not in ids]
+        desconocidos = [x for x in (sensei, extractor, *reservas) if x not in ids]
         if desconocidos:
             return {"ok": False,
                     "error": "modelo no disponible: " + ", ".join(desconocidos)}
 
-    payload = {"sensei": sensei, "extractor": extractor}
+    reservas = [m for m in reservas if m != sensei]  # el primario no se repite
+    payload = {"sensei": sensei, "reservas": reservas, "extractor": extractor}
     settings_set("gemini_models", json.dumps(payload))
     return {"ok": True, "seleccion": payload}
 

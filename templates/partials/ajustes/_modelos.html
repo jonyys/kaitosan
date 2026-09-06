@@ -43,6 +43,11 @@
         <label class="et" for="gem-sensei">Modelo del sensei (turnos)</label>
         <select id="gem-sensei" name="sensei"></select>
 
+        <fieldset style="border:1px solid var(--border); border-radius:var(--radio-sm); padding:12px; margin-top:16px">
+            <legend class="et" style="padding:0 6px">Reservas del sensei (rota a estas ante rate limit, antes de caer a Groq)</legend>
+            <div id="gem-reservas" class="mod-lista"></div>
+        </fieldset>
+
         <label class="et" for="gem-extractor" style="display:block; margin-top:14px">
             Modelo del extractor (cierre de sesión, JSON)
         </label>
@@ -139,6 +144,7 @@
             } else {
                 var g = d.gemini_seleccion || {};
                 opciones(document.getElementById('gem-sensei'), gmodelos, g.sensei);
+                checklist(document.getElementById('gem-reservas'), gmodelos, g.reservas || []);
                 opciones(document.getElementById('gem-extractor'), gmodelos, g.extractor);
                 gmsg.textContent = gmodelos.length + ' modelos de Gemini disponibles.';
                 gform.style.display = '';
@@ -184,6 +190,7 @@
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
                 sensei: document.getElementById('gem-sensei').value,
+                reservas: marcados('gem-reservas'),
                 extractor: document.getElementById('gem-extractor').value
             })
         })
