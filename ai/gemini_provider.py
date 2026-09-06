@@ -2,14 +2,27 @@ import google.generativeai as genai
 from core.config import GEMINI_API_KEY
 
 class GeminiProvider:
-    def __init__(self, model="gemini-3.6-flash"):
+    def __init__(self, model=None, rol="sensei"):
+        """`model` explícito manda; si no, el de Ajustes → Modelos para ese `rol`
+        ('sensei' | 'extractor'), y si eso falla, el de fábrica."""
         genai.configure(api_key=GEMINI_API_KEY)
-        self.model = genai.GenerativeModel(model)
+        if not model:
+            try:
+                from core.config import gemini_seleccion
+                model = gemini_seleccion().get(rol)
+            except Exception:
+                model = None
+        self.model_id = model or "gemini-3.6-flash"
+        self.model = genai.GenerativeModel(self.model_id)
 
-    def completar(self, mensajes: list, max_tokens: int = None, temperature: float = None) -> str:
+    def completar(self, mensajes: list, max_tokens: int = None, temperature: float = None,
+                  raise_on_error: bool = False) -> str:
         """
         Convierte el formato OpenAI (role/content) al formato Gemini
         y devuelve la respuesta.
+
+        `raise_on_error=True` propaga la excepción en vez de devolver un texto de
+        disculpa: lo usa quien tiene un proveedor de reserva al que caer.
         """
         try:
             # Gemini no acepta system role como mensaje normal
@@ -81,4 +94,6 @@ class GeminiProvider:
 
         except Exception as e:
             print(f"❌ Error en Gemini: {e}")
+            if raise_on_error:
+                raise
             return "Lo siento, estoy teniendo problemas para responder. ¿Podemos intentarlo de nuevo?"

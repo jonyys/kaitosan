@@ -688,6 +688,8 @@ def ajustes_modelos():
     return jsonify({
         "disponibles": system_settings.groq_modelos(forzar=True),
         "seleccion": system_settings.groq_seleccion_get(),
+        "gemini_disponibles": system_settings.gemini_modelos(forzar=True),
+        "gemini_seleccion": system_settings.gemini_seleccion_get(),
     })
 
 
@@ -702,6 +704,17 @@ def ajustes_modelos_guardar():
         "tools": datos.get("tools", []),
     }
     return jsonify(system_settings.groq_seleccion_set(sel))
+
+
+@app.route("/admin/ajustes/modelos/gemini", methods=["POST"])
+@login_requerido
+def ajustes_modelos_gemini_guardar():
+    datos = request.get_json(silent=True) or {}
+    sel = {
+        "sensei": datos.get("sensei", ""),
+        "extractor": datos.get("extractor", ""),
+    }
+    return jsonify(system_settings.gemini_seleccion_set(sel))
 
 
 # --- WiFi (Fase 13): API JSON + fetch. Cambiar de red tumba la sesión, así que

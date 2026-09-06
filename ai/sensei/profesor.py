@@ -20,6 +20,7 @@ from ai.sensei.curriculum import (
 )
 from core.config import (
     CHEQUEO_OXIDO_CADA,
+    EXTRACCION_PAUSA_LLAMADAS_SEG,
     EXTRACCION_RETRASO_SEG,
     MAX_ITEMS_NUEVOS,
     NIVEL_INMERSION_FORZADO,
@@ -332,8 +333,9 @@ class ProfesorJapones:
         print("🎌 Modo Sensei activado")
 
     def _resolver_modelo(self):
-        """Apunta el proveedor del sensei al primer modelo vivo de la lista de
-        Groq (ver system_settings.modelo_sensei_efectivo). Silencioso ante
+        """Apunta la RESERVA Groq del sensei al primer modelo vivo de la lista
+        (ver system_settings.modelo_sensei_efectivo). Los turnos van por Gemini;
+        esto solo fija a qué modelo Groq se cae si Gemini falla. Silencioso ante
         fallos: si no se puede consultar, se queda con el modelo que tuviera."""
         groq = getattr(self.provider, "groq", None)
         if groq is None:
@@ -342,10 +344,10 @@ class ProfesorJapones:
             from core.system_settings import modelo_sensei_efectivo
             modelo = modelo_sensei_efectivo()
         except Exception as e:
-            print(f"⚠️ No se pudo resolver el modelo del sensei: {e}")
+            print(f"⚠️ No se pudo resolver el modelo de reserva del sensei: {e}")
             return
         if modelo and modelo != groq.model:
-            print(f"🎌 Modelo del sensei: {groq.model} → {modelo}")
+            print(f"🎌 Reserva Groq del sensei: {groq.model} → {modelo}")
             groq.model = modelo
 
     def saludo_inicial(self) -> str:
@@ -704,12 +706,7 @@ class ProfesorJapones:
         foco_unidad = self._foco_unidad
         self.session_id = None  # liberar ya: la sesión siguiente puede abrir mientras esperamos
 
-        if EXTRACCION_RETRASO_SEG > 0:
-            dormir = getattr(self.socketio, "sleep", None) or time.sleep
-            try:
-                dormir(EXTRACCION_RETRASO_SEG)
-            except Exception:
-                pass
+        self._dormir(EXTRACCION_RETRASO_SEG)
 
         try:
             self._ejecutar_extraccion(session_id, mensajes, foco_nuevos, foco_unidad)
@@ -719,6 +716,17 @@ class ProfesorJapones:
                 self.jap_memory.guardar_resumen_sesion(session_id, summary=None)
             except Exception:
                 pass
+
+    def _dormir(self, segundos: int):
+        """Pausa cooperativa: usa socketio.sleep si existe (en la simulación es
+        un no-op), si no time.sleep. Nunca propaga excepciones."""
+        if not segundos or segundos <= 0:
+            return
+        dormir = getattr(self.socketio, "sleep", None) or time.sleep
+        try:
+            dormir(segundos)
+        except Exception:
+            pass
 
     def _ejecutar_extraccion(self, session_id: int, mensajes=None,
                              foco_nuevos=None, foco_unidad=None):
@@ -756,8 +764,13 @@ class ProfesorJapones:
 
         # Nivel 2: extracción completa. El extractor califica los CAN-DOS ACTIVOS
         # de la unidad abierta (se los pasamos con id + texto), no ítems SRS.
-        # Solo con el modelo principal (strict=True) — los alternativos producen
-        # JSON con japonés corrupto que contamina la BD.
+        # Solo con el modelo principal (strict=True): los alternativos producen
+        # JSON con japonés corrupto y notas de can-do inventadas que contaminan la
+        # BD. Si el modelo fuerte no está disponible, NO se toca ningún can-do
+        # (guardrail más abajo): mejor perder la calificación de una sesión que
+        # corromper el progreso con un modelo flojo.
+        self._dormir(EXTRACCION_PAUSA_LLAMADAS_SEG)  # separa esta llamada del resumen
+
         if can_dos_activos:
             bloque_can_dos = "CAN-DOS ACTIVOS:\n" + "\n".join(
                 f"  - {cd['id']}: {cd['texto']}" for cd in can_dos_activos
@@ -777,7 +790,8 @@ class ProfesorJapones:
             print(f"⚠️ Error en extractor (intento 1): {e}")
 
         if data is None:
-            print("⚠️ JSON inválido en extracción (intento 1). Reintentando…")
+            print("⚠️ JSON inválido / modelo no disponible (intento 1). Reintentando…")
+            self._dormir(EXTRACCION_PAUSA_LLAMADAS_SEG)  # deja que la ventana tokens/min se vacíe
             historial_retry = historial + [
                 {"role": "user", "content": "Devuelve SOLO el JSON válido, sin ningún texto adicional."},
             ]
@@ -788,20 +802,13 @@ class ProfesorJapones:
                 print(f"⚠️ Error en extractor (intento 2): {e}")
 
         if data is None:
-            # El modelo del sensei sigue caído: último intento con la cadena de
-            # reserva (strict=False). Peor japonés en new_items, pero se salvan
-            # las calificaciones de can-dos.
-            print("⚠️ Extractor sin el modelo del sensei. Intento con modelos de reserva…")
-            try:
-                texto = self._llamar_extractor(historial, strict=False)
-                data = self._parsear_json_sesion(texto)
-            except Exception as e:
-                print(f"⚠️ Error en extractor (reserva): {e}")
-
-        if data is None:
-            # Extractor caído: no se toca ningún can-do, solo se guarda el
-            # resumen básico para dar continuidad a la próxima sesión.
-            print(f"⚠️ Extracción completa no disponible (sesión {session_id}). No se tocan can-dos.")
+            # Guardrail: el modelo fuerte no respondió (rate limit o JSON inválido
+            # dos veces). NO se cae a modelos de reserva para calificar can-dos —
+            # producen japonés sucio y calificaciones inventadas que corrompen la
+            # BD. Solo se guarda el resumen básico para dar continuidad; los
+            # can-dos se quedan como estaban y se recalifican la próxima sesión.
+            print(f"⚠️ Extracción completa no disponible (sesión {session_id}). "
+                  f"No se toca can_do_progreso.")
             self.jap_memory.guardar_resumen_sesion(session_id, summary=summary_basico)
             return
 

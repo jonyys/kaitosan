@@ -89,6 +89,37 @@ def groq_seleccion() -> dict:
 # Gemini
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
+# Modelos de Gemini: semilla de fábrica. La selección guardada en
+# Ajustes → Modelos (clave `gemini_models` de app_settings) la sobrescribe.
+#  - sensei    → turnos del modo sensei (cuando Gemini es el proveedor / la reserva).
+#  - extractor → extracción de cierre de sesión (JSON).
+GEMINI_MODEL_SENSEI = os.getenv("GEMINI_MODEL_SENSEI", "gemini-3.6-flash")
+GEMINI_MODEL_EXTRACTOR = os.getenv("GEMINI_MODEL_EXTRACTOR", "gemini-3.6-flash")
+
+
+def gemini_seleccion() -> dict:
+    """Selección efectiva de modelos de Gemini: `{sensei, extractor}`.
+
+    Lee `gemini_models` de `app_settings`; cada campo que falte o esté vacío usa
+    el valor de fábrica de este módulo. Nunca lanza.
+    """
+    fabrica = {"sensei": GEMINI_MODEL_SENSEI, "extractor": GEMINI_MODEL_EXTRACTOR}
+    try:
+        from core.settings_store import settings_get
+        crudo = settings_get("gemini_models")
+        guardado = json.loads(crudo) if crudo else {}
+    except Exception:  # noqa: BLE001 — config nunca debe romper por esto
+        return fabrica
+    if not isinstance(guardado, dict):
+        return fabrica
+    sel = dict(fabrica)
+    for campo in ("sensei", "extractor"):
+        v = guardado.get(campo)
+        if isinstance(v, str) and v.strip():
+            sel[campo] = v.strip()
+    return sel
+
+
 # Flask
 FLASK_SECRET_KEY = os.getenv("FLASK_SECRET_KEY", "fallback_key")
 # Usuario/contraseña del panel: solo semilla inicial. En el primer arranque se
@@ -113,6 +144,12 @@ CHEQUEO_OXIDO_CADA = 5
 # caen en la misma ventana de tokens/min de Groq y salta el rate limit (se
 # perdía la calificación de can-dos). Esperar deja que la ventana se vacíe.
 EXTRACCION_RETRASO_SEG = int(os.getenv("EXTRACCION_RETRASO_SEG", "45"))
+
+# Segundos entre las llamadas internas de la extracción (resumen básico →
+# extractor → reintento). Sin esto se disparan 2-3 llamadas en la misma ventana
+# de tokens/min y el modelo fuerte da 429 en todas: la extracción cae al modelo
+# de reserva (o falla) y el progreso de la sesión se pierde o se corrompe.
+EXTRACCION_PAUSA_LLAMADAS_SEG = int(os.getenv("EXTRACCION_PAUSA_LLAMADAS_SEG", "18"))
 
 # Nivel de inmersión (1→4): cuánto japonés habla Kaito. Se calcula solo a partir
 # del vocabulario dominado (learned + mastered); estos son los umbrales de salto.

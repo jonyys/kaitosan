@@ -3,13 +3,13 @@ import random
 import time
 from ai.prompts import cargar_prompt
 from ai.fallback_provider import FallbackProvider
+from ai.sensei_provider import SenseiProvider
 from ai.search_provider import SearchProvider
 from ai.skills.weather import WeatherSkill
 from ai.skills.alarm import AlarmSkill
 from ai.skills.reminder import ReminderSkill
 from ai.tools import TOOLS, ToolDispatcher
 
-from core.config import groq_seleccion
 from core.japanese_memory import JapaneseMemory
 from core.memory import DB_PATH, Memory
 from ai.sensei.profesor import ProfesorJapones, DESPEDIDAS
@@ -46,10 +46,12 @@ class Brain:
         # Acceso directo para compatibilidad con app.py
         self.reminder = self.dispatcher.reminder
         self.alarm = self.dispatcher.alarm
-        # El profesor usa su propio proveedor: puede convenirle un modelo distinto
-        # al del router (ver "sensei" en Ajustes → Modelos / config.groq_seleccion()).
-        provider_sensei = FallbackProvider(model=groq_seleccion()["sensei"])
-        self.profesor = ProfesorJapones(self.jap_memory, provider_sensei, self.memory, self.socketio)
+        # El profesor usa su propio proveedor: Gemini para los turnos (ver
+        # "sensei" en Ajustes → Modelos), Groq gpt-oss-120b de reserva y para el
+        # extractor de cierre. Ver ai/sensei_provider.py.
+        self.profesor = ProfesorJapones(
+            self.jap_memory, SenseiProvider(), self.memory, self.socketio
+        )
         self._emitir_desactivar_sensei = False
         # Momento del último turno (pregunta o respuesta). Lo usa el filtro de
         # alucinación de Whisper en transcribir_para_turno.
