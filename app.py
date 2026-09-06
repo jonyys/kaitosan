@@ -486,6 +486,14 @@ def admin():
             "errors_noted": r[5], "summary": r[6]
         })
 
+    # Kanjis y can-dos (solo el recuento para la fila de stats del panel)
+    jap_kanji_total = jap_db.execute("SELECT COUNT(*) FROM japanese_kanji").fetchone()[0]
+    _cd_ids = [cd["id"] for u in CURRICULUM for cd in u.get("can_dos", [])]
+    _cd_dom = jap_db.execute(
+        "SELECT COUNT(*) FROM can_do_progreso WHERE estado = 'dominado'"
+    ).fetchone()[0]
+    jap_candos = {"dominado": _cd_dom, "total": len(_cd_ids)}
+
     jap_db.close()
 
     # --- Recordatorios ---
@@ -524,6 +532,8 @@ def admin():
                             jap_vocab=jap_vocab,
                             jap_grammar=jap_grammar,
                             jap_sessions=jap_sessions,
+                            jap_kanji_total=jap_kanji_total,
+                            jap_candos=jap_candos,
                             lista_recordatorios=lista_recordatorios,
                             lista_alarmas=lista_alarmas,
                             uso_tokens=tokens,
@@ -973,9 +983,6 @@ def japones():
     db = brain.jap_memory._conectar()
 
     total_vocab = db.execute("SELECT COUNT(*) FROM japanese_vocabulary").fetchone()[0]
-    can_dos_dominados = db.execute(
-        "SELECT COUNT(*) FROM can_do_progreso WHERE estado = 'dominado'"
-    ).fetchone()[0]
     vocab_by_status = dict(db.execute(
         "SELECT status, COUNT(*) FROM japanese_vocabulary GROUP BY status"
     ).fetchall())
@@ -1017,11 +1024,27 @@ def japones():
             g_learning += 1
     grammar_by_status = {"learning": g_learning, "learned": g_learned, "mastered": g_mastered}
 
+    # Can-dos: total del temario, estado desde can_do_progreso (sin fila = sin empezar).
+    _cd_ids = [cd["id"] for u in CURRICULUM for cd in u.get("can_dos", [])]
+    _cd_estado = dict(db.execute("SELECT can_do_id, estado FROM can_do_progreso").fetchall())
+    candos_corpus = len(_cd_ids) or 1
+    cd_dominado = sum(1 for i in _cd_ids if _cd_estado.get(i) == "dominado")
+    cd_en_progreso = sum(1 for i in _cd_ids if _cd_estado.get(i) == "en_progreso")
+    candos_by_estado = {
+        "dominado": cd_dominado,
+        "en_progreso": cd_en_progreso,
+        "sin": candos_corpus - cd_dominado - cd_en_progreso,
+    }
+
     last_session_row = db.execute("""
         SELECT summary, started_at FROM japanese_sessions
         WHERE summary IS NOT NULL ORDER BY started_at DESC LIMIT 1
     """).fetchone()
-    last_session = {"summary": last_session_row[0], "date": last_session_row[1]} if last_session_row else None
+    last_session = None
+    if last_session_row:
+        _d = last_session_row[1] or ""
+        fecha = f"{_d[8:10]}/{_d[5:7]}/{_d[0:4]}" if len(_d) >= 10 else _d
+        last_session = {"summary": last_session_row[0], "date": fecha}
 
     vocab_rows = db.execute("""
         SELECT id, word, meaning, status, reps, ease_factor, interval_days,
@@ -1066,7 +1089,6 @@ def japones():
         today=today,
         total_vocab=total_vocab,
         vocab_corpus=vocab_corpus,
-        can_dos_dominados=can_dos_dominados,
         vocab_by_status=vocab_by_status,
         total_kanji=total_kanji,
         kanji_corpus=kanji_corpus,
@@ -1074,6 +1096,8 @@ def japones():
         total_grammar=total_grammar,
         gram_corpus=gram_corpus,
         grammar_by_status=grammar_by_status,
+        candos_corpus=candos_corpus,
+        candos_by_estado=candos_by_estado,
         total_sessions=total_sessions,
         last_session=last_session,
         vocab=vocab,
@@ -1280,27 +1304,33 @@ def japones_gramatica():
 
 
 def _vocab_items_unidad(uid):
-    """(nombre, [ítems]) de vocabulario (no kanji) de una unidad del temario por
-    su `id`. nombre None si la unidad no existe. Cada ítem: jp/reading/meaning/
-    ejemplo."""
-    u = next((x for x in CURRICULUM if x.get("id") == uid), None)
-    if not u:
-        return None, []
+    """(nombre, [ítems]) de vocabulario (no kanji) del temario. `uid` vacío o 'all'
+    -> todas las unidades (nombre ""); si no -> esa unidad por su `id`, nombre None
+    si no existe. Cada ítem: jp/reading/meaning/ejemplo."""
+    uid = (uid or "").strip()
+    if uid in ("", "all"):
+        fuentes, nombre = CURRICULUM, ""
+    else:
+        u = next((x for x in CURRICULUM if x.get("id") == uid), None)
+        if not u:
+            return None, []
+        fuentes, nombre = [u], u.get("nombre", "N5")
     items, vistos = [], set()
-    for e in u.get("items", []):
-        if e.get("kind") != "vocabulario" or e.get("tipo") == "kanji":
-            continue
-        jp = str(e.get("jp") or "").strip()
-        if not jp or jp in vistos:
-            continue
-        vistos.add(jp)
-        items.append({
-            "jp": jp,
-            "reading": (e.get("reading") or "").strip(),
-            "meaning": (e.get("meaning") or "").strip(),
-            "ejemplo": (e.get("ejemplo") or "").strip(),
-        })
-    return u.get("nombre", "N5"), items
+    for u in fuentes:
+        for e in u.get("items", []):
+            if e.get("kind") != "vocabulario" or e.get("tipo") == "kanji":
+                continue
+            jp = str(e.get("jp") or "").strip()
+            if not jp or jp in vistos:
+                continue
+            vistos.add(jp)
+            items.append({
+                "jp": jp,
+                "reading": (e.get("reading") or "").strip(),
+                "meaning": (e.get("meaning") or "").strip(),
+                "ejemplo": (e.get("ejemplo") or "").strip(),
+            })
+    return nombre, items
 
 
 @app.route("/japones/vocabulario/practicar", methods=["GET", "POST"])
@@ -1374,27 +1404,34 @@ _GRAM_TILDE = "〜～"  # 〜 ～ : marcan "se engancha a una raíz", no forman 
 
 
 def _gram_items_unidad(uid):
-    """(nombre, [ítems]) de gramática de una unidad del temario por su `id`.
-    nombre None si la unidad no existe. Cada ítem: jp/meaning/ejemplo/literal/uso."""
-    u = next((x for x in CURRICULUM if x.get("id") == uid), None)
-    if not u:
-        return None, []
+    """(nombre, [ítems]) de gramática del temario. `uid` vacío o 'all' -> todas las
+    unidades (nombre ""); si no -> esa unidad por su `id`, nombre None si no existe.
+    Cada ítem: jp/meaning/ejemplo/literal/uso."""
+    uid = (uid or "").strip()
+    if uid in ("", "all"):
+        fuentes, nombre = CURRICULUM, ""
+    else:
+        u = next((x for x in CURRICULUM if x.get("id") == uid), None)
+        if not u:
+            return None, []
+        fuentes, nombre = [u], u.get("nombre", "N5")
     items, vistos = [], set()
-    for e in u.get("items", []):
-        if e.get("kind") != "gramatica":
-            continue
-        jp = str(e.get("jp") or "").strip()
-        if not jp or jp in vistos:
-            continue
-        vistos.add(jp)
-        items.append({
-            "jp": jp,
-            "meaning": (e.get("meaning") or "").strip(),
-            "ejemplo": (e.get("ejemplo") or "").strip(),
-            "literal": (e.get("literal") or "").strip(),
-            "uso": (e.get("uso") or "").strip(),
-        })
-    return u.get("nombre", "N5"), items
+    for u in fuentes:
+        for e in u.get("items", []):
+            if e.get("kind") != "gramatica":
+                continue
+            jp = str(e.get("jp") or "").strip()
+            if not jp or jp in vistos:
+                continue
+            vistos.add(jp)
+            items.append({
+                "jp": jp,
+                "meaning": (e.get("meaning") or "").strip(),
+                "ejemplo": (e.get("ejemplo") or "").strip(),
+                "literal": (e.get("literal") or "").strip(),
+                "uso": (e.get("uso") or "").strip(),
+            })
+    return nombre, items
 
 
 def _gram_ejercicio(it):
@@ -1479,8 +1516,15 @@ def japones_gramatica_practicar():
 @app.route("/japones/boletin")
 @login_requerido
 def japones_boletin():
-    # Boletín can-do (Fase 11): solo lectura. Contexto en JapaneseMemory.boletin.
+    # Boletín can-do (Fase 11). Contexto en JapaneseMemory.boletin.
     return render_template("japones_boletin.html", **brain.jap_memory.boletin())
+
+
+@app.route("/japones/boletin/can-do/<can_do_id>/toggle", methods=["POST"])
+@login_requerido
+def japones_boletin_can_do_toggle(can_do_id):
+    brain.jap_memory.toggle_can_do(can_do_id)
+    return redirect(url_for("japones_boletin"))
 
 
 @app.route("/japones/vocabulario/completar", methods=["POST"])
@@ -1505,7 +1549,7 @@ def japones_gramatica_completar():
 @login_requerido
 def japones_vocabulario_completar_unidad():
     n = _completar_unidad("vocabulario", (request.form.get("unidad") or "").strip())
-    flash(f"✅ Unidad marcada como aprendida ({n} palabras)", "success")
+    flash(f"✅ Unidad marcada como dominada ({n} palabras)", "success")
     return redirect(url_for("japones_vocabulario"))
 
 
@@ -1513,7 +1557,7 @@ def japones_vocabulario_completar_unidad():
 @login_requerido
 def japones_gramatica_completar_unidad():
     n = _completar_unidad("gramatica", (request.form.get("unidad") or "").strip())
-    flash(f"✅ Unidad marcada como aprendida ({n} puntos)", "success")
+    flash(f"✅ Unidad marcada como dominada ({n} puntos)", "success")
     return redirect(url_for("japones_gramatica"))
 
 
@@ -1637,7 +1681,7 @@ _ITEM_MSGS = {
         "del": "✅ Palabra borrada",
         "del_all": "✅ Todo el vocabulario borrado",
         "reset": "✅ SRS reseteado",
-        "master": "✅ Marcada como aprendida",
+        "master": "✅ Marcada como dominada",
     },
     "kanji": {
         "add_ok": "✅ '{jp}' añadido a kanjis",
@@ -1645,7 +1689,7 @@ _ITEM_MSGS = {
         "del": "✅ Kanji borrado",
         "del_all": "✅ Todos los kanjis borrados",
         "reset": "✅ SRS de kanji reseteado",
-        "master": "✅ Kanji marcado como aprendido",
+        "master": "✅ Kanji marcado como dominado",
     },
     "gramatica": {
         "add_ok": "✅ '{jp}' añadido a gramática",
@@ -1653,7 +1697,7 @@ _ITEM_MSGS = {
         "del": "✅ Punto gramatical borrado",
         "del_all": "✅ Toda la gramática borrada",
         "reset": "✅ SRS de gramática reseteado",
-        "master": "✅ Marcada como aprendida",
+        "master": "✅ Marcada como dominada",
     },
 }
 

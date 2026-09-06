@@ -611,6 +611,35 @@ class JapaneseMemory:
                 (can_do_id, estado, veces_ok, session_id, nota_final),
             )
 
+    def toggle_can_do(self, can_do_id: str) -> str:
+        """Alterna a mano un can-do entre 'dominado' y 'no_intentado' (marcar
+        desde el boletín, como 'Aprendida al 100%' en vocab/gram). Al marcarlo
+        dominado deja veces_ok >= 2 para que cuadre con la regla de las 2
+        sesiones. Devuelve el nuevo estado, o '' si el id no está en el temario.
+        """
+        from ai.sensei.curriculum import CURRICULUM
+        ids_validos = {cd["id"] for u in CURRICULUM for cd in u.get("can_dos", [])}
+        if can_do_id not in ids_validos:
+            return ""
+        with self._conectar() as conn:
+            row = conn.execute(
+                "SELECT estado, veces_ok FROM can_do_progreso WHERE can_do_id = ?",
+                (can_do_id,),
+            ).fetchone()
+            estado, veces_ok = row if row else ("no_intentado", 0)
+            if estado == "dominado":
+                nuevo, veces_ok = "no_intentado", 0
+            else:
+                nuevo, veces_ok = "dominado", max(veces_ok, 2)
+            conn.execute(
+                """INSERT INTO can_do_progreso (can_do_id, estado, veces_ok)
+                   VALUES (?, ?, ?)
+                   ON CONFLICT(can_do_id) DO UPDATE SET
+                       estado = excluded.estado, veces_ok = excluded.veces_ok""",
+                (can_do_id, nuevo, veces_ok),
+            )
+        return nuevo
+
     def can_dos_progreso(self) -> dict:
         """{can_do_id: {estado, veces_ok, ultima_sesion, nota}}."""
         with self._conectar() as conn:
@@ -672,6 +701,7 @@ class JapaneseMemory:
                 if estado == "dominado":
                     cd_dominados += 1
                 filas.append({
+                    "id": cd["id"],
                     "texto": cd.get("texto", cd["id"]),
                     "estado": estado,
                     "simbolo": simbolo.get(estado, "○"),

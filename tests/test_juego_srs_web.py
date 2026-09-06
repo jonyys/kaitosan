@@ -174,24 +174,30 @@ _RE_WORD = re.compile(r'name="word"\s+value="([^"]*)"')
 
 
 def _unidad_vocab(uid):
-    u = next((x for x in CURRICULUM if x.get("id") == uid), None)
-    if not u:
-        return None, []
+    uid = (uid or "").strip()
+    if uid in ("", "all"):
+        fuentes, nombre = CURRICULUM, ""
+    else:
+        u = next((x for x in CURRICULUM if x.get("id") == uid), None)
+        if not u:
+            return None, []
+        fuentes, nombre = [u], u.get("nombre", "N5")
     items, vistos = [], set()
-    for e in u.get("items", []):
-        if e.get("kind") != "vocabulario" or e.get("tipo") == "kanji":
-            continue
-        jp = str(e.get("jp") or "").strip()
-        if not jp or jp in vistos:
-            continue
-        vistos.add(jp)
-        items.append({
-            "jp": jp,
-            "reading": (e.get("reading") or "").strip(),
-            "meaning": (e.get("meaning") or "").strip(),
-            "ejemplo": (e.get("ejemplo") or "").strip(),
-        })
-    return u.get("nombre", "N5"), items
+    for u in fuentes:
+        for e in u.get("items", []):
+            if e.get("kind") != "vocabulario" or e.get("tipo") == "kanji":
+                continue
+            jp = str(e.get("jp") or "").strip()
+            if not jp or jp in vistos:
+                continue
+            vistos.add(jp)
+            items.append({
+                "jp": jp,
+                "reading": (e.get("reading") or "").strip(),
+                "meaning": (e.get("meaning") or "").strip(),
+                "ejemplo": (e.get("ejemplo") or "").strip(),
+            })
+    return nombre, items
 
 
 def _primera_unidad_vocab():
@@ -290,6 +296,11 @@ def test_practica_vocab():
     # unidad inexistente → no 200
     assert cliente.get("/japones/vocabulario/practicar?unidad=__nope__").status_code == 302
 
+    # sin unidad → practica TODO el temario (cola de todas las unidades)
+    _n, todos = _unidad_vocab("")
+    assert len(todos) > len(items)
+    assert cliente.get("/japones/vocabulario/practicar").status_code == 200
+
     # 2) POST de 5 calificaciones sobre un ítem: mismos valores SM-2 que kanji
     jp = sorted(jps)[0]
     it = next(i for i in items if i["jp"] == jp)
@@ -327,25 +338,31 @@ _GRAM_TILDE = "〜～"
 
 
 def _unidad_gram(uid):
-    u = next((x for x in CURRICULUM if x.get("id") == uid), None)
-    if not u:
-        return None, []
+    uid = (uid or "").strip()
+    if uid in ("", "all"):
+        fuentes, nombre = CURRICULUM, ""
+    else:
+        u = next((x for x in CURRICULUM if x.get("id") == uid), None)
+        if not u:
+            return None, []
+        fuentes, nombre = [u], u.get("nombre", "N5")
     items, vistos = [], set()
-    for e in u.get("items", []):
-        if e.get("kind") != "gramatica":
-            continue
-        jp = str(e.get("jp") or "").strip()
-        if not jp or jp in vistos:
-            continue
-        vistos.add(jp)
-        items.append({
-            "jp": jp,
-            "meaning": (e.get("meaning") or "").strip(),
-            "ejemplo": (e.get("ejemplo") or "").strip(),
-            "literal": (e.get("literal") or "").strip(),
-            "uso": (e.get("uso") or "").strip(),
-        })
-    return u.get("nombre", "N5"), items
+    for u in fuentes:
+        for e in u.get("items", []):
+            if e.get("kind") != "gramatica":
+                continue
+            jp = str(e.get("jp") or "").strip()
+            if not jp or jp in vistos:
+                continue
+            vistos.add(jp)
+            items.append({
+                "jp": jp,
+                "meaning": (e.get("meaning") or "").strip(),
+                "ejemplo": (e.get("ejemplo") or "").strip(),
+                "literal": (e.get("literal") or "").strip(),
+                "uso": (e.get("uso") or "").strip(),
+            })
+    return nombre, items
 
 
 def _gram_ejercicio(it):
@@ -441,6 +458,11 @@ def test_practica_gram():
 
     # unidad inexistente → no 200
     assert cliente.get("/japones/gramatica/practicar?unidad=__nope__").status_code == 302
+
+    # sin unidad → practica TODO el temario (cola de todas las unidades)
+    _n, todos = _unidad_gram("")
+    assert len(todos) > len(items)
+    assert cliente.get("/japones/gramatica/practicar").status_code == 200
 
     # 2) POST de 5 calificaciones sobre un ítem: SM-2 igual que kanji + mastery
     jp = sorted(jps)[0]

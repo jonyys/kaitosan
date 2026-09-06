@@ -6,24 +6,23 @@
     <title>{{ titulo }} — Kaitosan</title>
     {% include 'partials/admin/_estilos.html' %}
     <style>
-      .jp-wrap {
-        max-width: 1100px;
-        margin: 0 auto;
-      }
-      .jp-wrap h1 {
-        justify-content: space-between;
-        flex-wrap: wrap;
-      }
-
       .voc-unidades {
         display: flex;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         gap: 8px;
         margin-bottom: 20px;
         padding-top: 10px;
         border-top: 1px dashed var(--border-fuerte);
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+      }
+      .voc-unidades::-webkit-scrollbar {
+        display: none;
       }
       .voc-unidad-btn {
+        flex: none;
+        white-space: nowrap;
         border: 1px solid var(--border-fuerte);
         border-radius: var(--radio-pill);
         background: var(--surface-2);
@@ -147,38 +146,99 @@
         font-size: 0.9rem;
       }
 
+      /* ponytail: mismas clases que la ficha de kanjis, copiadas aquí
+         (cada plantilla lleva su propio <style>, no hay CSS compartido). */
       #voc-pop {
+        position: fixed; /* centrado en el viewport (no en el documento) al abrir con showModal */
+        box-sizing: border-box;
         text-align: left;
-        max-width: 440px;
+        max-width: 460px;
         width: calc(100vw - 24px);
+        max-height: 85vh;
+        overflow-y: auto;
+        overflow-x: hidden; /* nada de scroll horizontal: el contenido se ajusta al ancho */
       }
-      #voc-pop h3 {
-        margin: 0 0 4px;
+      .pop-x {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        border: 1px solid var(--border-fuerte);
+        border-radius: 50%;
+        background: var(--surface-2);
+        color: var(--text-soft);
+        cursor: pointer;
+      }
+      .pop-x:hover {
+        border-color: var(--rosa-accion);
         color: var(--rosa-tinta);
       }
-      #voc-pop .rd {
-        color: var(--rosa-accion);
-        font-weight: 700;
-        margin: 0 0 12px;
+      .ficha-hero {
+        padding: 4px 34px 14px 0;
+        margin-bottom: 14px;
+        border-bottom: 1px solid var(--border);
       }
-      #voc-pop dl {
-        display: grid;
-        grid-template-columns: auto 1fr;
-        gap: 6px 12px;
-        margin: 0 0 16px;
+      .ficha-hero-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .ficha-hero-title h3 {
+        margin: 0;
+        font-size: 1.9rem;
+        line-height: 1.1;
+        color: var(--rosa-tinta);
+        overflow-wrap: anywhere;
+      }
+      .ficha-hero-reading,
+      .ficha-hero-meaning {
+        overflow-wrap: anywhere;
+      }
+      .ficha-hero-reading {
+        display: block;
+        margin-top: 6px;
         font-size: 14px;
+        font-weight: 700;
+        color: var(--rosa-accion);
       }
-      #voc-pop dt {
+      .ficha-hero-meaning {
+        display: block;
+        font-size: 15px;
+        color: var(--text);
+      }
+      .ficha-table {
+        width: 100%;
+        min-width: 0; /* anula el `table { min-width: 480px }` de _estilos.html en móvil */
+        table-layout: fixed; /* las columnas no crecen con el contenido: todo cabe y parte de línea */
+        border-collapse: collapse;
+        font-size: 14px;
+        margin-bottom: 16px;
+      }
+      .ficha-table th,
+      .ficha-table td {
+        text-align: left;
+        vertical-align: top;
+        padding: 7px 4px;
+        border-bottom: 1px solid var(--border);
+      }
+      .ficha-table td {
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+      .ficha-table th {
+        width: 78px;
+        padding-right: 14px;
         color: var(--text-soft);
         font-weight: 700;
       }
-      #voc-pop dd {
-        margin: 0;
-      }
-      #voc-pop .voc-pop-actions {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
+      .ficha-table tr[hidden] {
+        display: none;
       }
     </style>
   </head>
@@ -188,17 +248,27 @@
     <div class="jp-wrap">
       <h1>
         <span
-          ><svg class="ico"><use href="#i-lang" /></svg> {{ titulo }}</span
+          ><svg class="ico"><use href="#i-book" /></svg> {{ titulo }}</span
         >
-        <div
-          style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap"
-        >
-          <a href="/japones"
-            ><button class="btn btn-yellow" style="font-size: 13px">
-              <svg class="ico"><use href="#i-home" /></svg></button
-          ></a>
+        <div style="display: flex; gap: 8px; align-items: center">
+          {% include 'partials/_japones_nav.html' %}
         </div>
       </h1>
+
+      <div style="text-align: center; margin: 4px 0 22px">
+        <a
+          id="practicar-unidad-link"
+          href="/japones/{{ kind }}/practicar"
+          style="text-decoration: none"
+        >
+          <button
+            class="btn btn-yellow"
+            style="font-size: 19px; padding: 16px 40px"
+          >
+            <svg class="ico"><use href="#i-play" /></svg>
+          </button>
+        </a>
+      </div>
 
       <div class="voc-unidades">
         <button type="button" class="voc-unidad-btn" data-u="all">Todas</button>
@@ -213,13 +283,6 @@
       <section class="voc-unidad card full" data-u="{{ u.id }}">
         <div class="voc-unidad-head">
           <h2>{{ u.nombre }}</h2>
-          {% if kind in ('vocabulario', 'gramatica') and u.id != '_extra' %}
-          <a href="/japones/{{ kind }}/practicar?unidad={{ u.id }}">
-            <button type="button" class="btn btn-yellow" style="font-size: 12px">
-              Practicar
-            </button>
-          </a>
-          {% endif %}
           <form
             method="POST"
             action="/japones/{{ kind }}/completar-unidad"
@@ -232,7 +295,7 @@
               style="font-size: 12px"
               {% if u.hechas == u.total %}disabled{% endif %}
             >
-              Marcar unidad como aprendida
+              Marcar unidad como dominada
             </button>
           </form>
         </div>
@@ -270,59 +333,78 @@
     </div>
 
     <dialog id="voc-pop" class="flash-pop">
-      <h3 id="voc-pop-jp"></h3>
-      <p class="rd" id="voc-pop-rd"></p>
       <button
         type="button"
-        id="voc-pop-audio"
-        class="btn btn-yellow"
-        aria-label="Escuchar en japonés"
-        title="Escuchar en japonés"
-        style="min-height: 38px; padding: 6px 16px; margin-bottom: 12px"
-        hidden
+        class="pop-x"
+        id="voc-pop-close"
+        aria-label="Cerrar ficha"
       >
-        <svg class="ico"><use href="#i-sound" /></svg>
+        <svg class="ico"><use href="#i-x" /></svg>
       </button>
-      <dl>
-        <dt>Lectura</dt>
-        <dd id="voc-pop-kana"></dd>
-        <dt>Significado</dt>
-        <dd id="voc-pop-es"></dd>
-        <dt>Tipo</dt>
-        <dd id="voc-pop-tipo"></dd>
-        <dt>Ejemplo</dt>
-        <dd id="voc-pop-ej"></dd>
-        <dt>Literal</dt>
-        <dd id="voc-pop-lit"></dd>
-        <dt>Uso</dt>
-        <dd id="voc-pop-uso"></dd>
-        <dt>Unidad</dt>
-        <dd id="voc-pop-unidad"></dd>
-        <dt>Estado</dt>
-        <dd id="voc-pop-estado"></dd>
-      </dl>
-      <div class="voc-pop-actions">
-        <form
-          method="POST"
-          action="/japones/{{ kind }}/completar"
-          id="voc-pop-form"
-        >
-          <input type="hidden" name="word" id="voc-pop-word" />
-          <button type="submit" class="btn btn-yellow" id="voc-pop-complete">
-            Marcar como completa
+
+      <div id="voc-pop-body" class="ficha-body">
+      <div class="ficha-hero">
+        <div class="ficha-hero-title">
+          <h3 id="voc-pop-jp"></h3>
+          <button
+            type="button"
+            id="voc-pop-audio"
+            class="btn btn-yellow"
+            aria-label="Escuchar en japonés"
+            title="Escuchar en japonés"
+            style="min-height: 36px; padding: 6px 14px"
+            hidden
+          >
+            <svg class="ico"><use href="#i-sound" /></svg>
           </button>
-        </form>
-        <button type="button" class="btn btn-ghost" id="voc-pop-close">
-          Cerrar
+        </div>
+        <span class="ficha-hero-reading" id="voc-pop-rd"></span>
+        <span class="ficha-hero-meaning" id="voc-pop-es"></span>
+      </div>
+
+      <table class="ficha-table">
+        <tr id="voc-row-roma"><th>Romaji</th><td id="voc-pop-roma"></td></tr>
+        <tr id="voc-row-tipo"><th>Tipo</th><td id="voc-pop-tipo"></td></tr>
+        <tr id="voc-row-ej"><th>Ejemplo</th><td id="voc-pop-ej"></td></tr>
+        <tr id="voc-row-lit"><th>Literal</th><td id="voc-pop-lit"></td></tr>
+        <tr id="voc-row-uso"><th>Uso</th><td id="voc-pop-uso"></td></tr>
+        <tr id="voc-row-unidad"><th>Unidad</th><td id="voc-pop-unidad"></td></tr>
+        <tr><th>Estado</th><td id="voc-pop-estado"></td></tr>
+      </table>
+
+      <form
+        method="POST"
+        action="/japones/{{ kind }}/completar"
+        id="voc-pop-form"
+        style="text-align: center"
+      >
+        <input type="hidden" name="word" id="voc-pop-word" />
+        <button type="submit" class="btn btn-yellow" id="voc-pop-complete">
+          <svg class="ico"><use href="#i-check" /></svg> Marcar como dominado
         </button>
+      </form>
+      <p
+        id="voc-pop-done"
+        hidden
+        style="
+          margin-top: 16px;
+          text-align: center;
+          color: var(--ok-tinta);
+          font-weight: 700;
+        "
+      >
+        <svg class="ico"><use href="#i-check" /></svg> Ya dominada
+      </p>
       </div>
     </dialog>
 
     <script>
       (function () {
         var K_UNIDAD = "temUnidad:{{ kind }}";
+        var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
         var unidadBtns = document.querySelectorAll(".voc-unidad-btn");
         var secciones = document.querySelectorAll(".voc-unidad");
+        var praLink = document.getElementById("practicar-unidad-link");
         var activeU = "all";
 
         function aplicar() {
@@ -332,6 +414,12 @@
           secciones.forEach(function (s) {
             s.hidden = activeU !== "all" && s.dataset.u !== activeU;
           });
+          if (praLink)
+            praLink.href =
+              activeU === "all"
+                ? "/japones/{{ kind }}/practicar"
+                : "/japones/{{ kind }}/practicar?unidad=" +
+                  encodeURIComponent(activeU);
         }
 
         unidadBtns.forEach(function (b) {
@@ -360,44 +448,121 @@
         // popup de palabra
         var pop = document.getElementById("voc-pop");
         function fila(id, val) {
-          var dd = document.getElementById(id);
-          dd.textContent = val || "—";
-          var dt = dd.previousElementSibling;
-          dd.hidden = !val;
-          if (dt) dt.hidden = !val;
+          var td = document.getElementById(id);
+          td.textContent = val || "—";
+          var tr = td.closest("tr");
+          if (tr) tr.hidden = !val;
         }
         var ESTADO = {
-          aprendida: "Aprendida",
-          en_curso: "En curso",
+          aprendida: "Dominada",
+          en_curso: "En progreso",
           nueva: "Sin empezar",
         };
         var audioBtn = document.getElementById("voc-pop-audio");
         var audioSrc = "";
+        var audioLento = false; // clics seguidos alternan normal <-> lento
         audioBtn.addEventListener("click", function () {
-          if (audioSrc) new Audio(audioSrc).play();
+          if (!audioSrc) return;
+          var a = new Audio(audioSrc);
+          a.playbackRate = audioLento ? 0.7 : 1;
+          a.play();
+          audioLento = !audioLento;
         });
-        document.querySelectorAll(".voc-card").forEach(function (card) {
+        var cards = Array.prototype.slice.call(
+          document.querySelectorAll(".voc-card")
+        );
+        var actual = null;
+
+        function abrirCard(card) {
+          if (!card) return;
+          actual = card;
+          var d = card.dataset;
+          audioSrc = d.audio || "";
+          audioLento = false; // cada palabra empieza a velocidad normal
+          audioBtn.hidden = !audioSrc;
+          document.getElementById("voc-pop-jp").textContent = d.jp;
+          document.getElementById("voc-pop-rd").textContent = d.rd || d.roma || "";
+          document.getElementById("voc-pop-es").textContent = d.es || "—";
+          fila("voc-pop-roma", d.roma);
+          fila("voc-pop-tipo", d.tipo);
+          fila("voc-pop-ej", d.ej);
+          fila("voc-pop-lit", d.lit);
+          fila("voc-pop-uso", d.uso);
+          fila("voc-pop-unidad", d.unidad);
+          document.getElementById("voc-pop-estado").textContent =
+            ESTADO[d.estado] || d.estado;
+          document.getElementById("voc-pop-word").value = d.jp;
+          var aprendida = d.estado === "aprendida";
+          document.getElementById("voc-pop-form").hidden = aprendida;
+          document.getElementById("voc-pop-done").hidden = !aprendida;
+          if (!pop.open && pop.showModal) pop.showModal();
+        }
+
+        // Lista navegable: solo las tarjetas de unidades visibles.
+        function visibles() {
+          return cards.filter(function (c) {
+            var s = c.closest(".voc-unidad");
+            return !s || !s.hidden;
+          });
+        }
+        function ir(paso) {
+          if (!actual) return;
+          var lista = visibles();
+          var i = lista.indexOf(actual);
+          if (i < 0) return;
+          var next = lista[(i + paso + lista.length) % lista.length];
+          var body = document.getElementById("voc-pop-body");
+          var dir = paso > 0 ? "next" : "prev";
+          if (reduce || !body) {
+            abrirCard(next);
+            return;
+          }
+          var swapped = false;
+          function swap() {
+            if (swapped) return;
+            swapped = true;
+            body.classList.remove("slide-out-" + dir);
+            abrirCard(next);
+            body.classList.add("slide-in-" + dir);
+            var clr = function () {
+              body.classList.remove("slide-in-" + dir);
+            };
+            body.addEventListener("animationend", clr, { once: true });
+            setTimeout(clr, 320);
+          }
+          body.addEventListener("animationend", swap, { once: true });
+          setTimeout(swap, 200);
+          body.classList.add("slide-out-" + dir);
+        }
+
+        cards.forEach(function (card) {
           card.addEventListener("click", function () {
-            var d = card.dataset;
-            audioSrc = d.audio || "";
-            audioBtn.hidden = !audioSrc;
-            document.getElementById("voc-pop-jp").textContent = d.jp;
-            document.getElementById("voc-pop-rd").textContent = d.roma || "";
-            fila("voc-pop-kana", d.rd);
-            fila("voc-pop-es", d.es);
-            fila("voc-pop-tipo", d.tipo);
-            fila("voc-pop-ej", d.ej);
-            fila("voc-pop-lit", d.lit);
-            fila("voc-pop-uso", d.uso);
-            fila("voc-pop-unidad", d.unidad);
-            document.getElementById("voc-pop-estado").textContent =
-              ESTADO[d.estado] || d.estado;
-            document.getElementById("voc-pop-word").value = d.jp;
-            document.getElementById("voc-pop-complete").hidden =
-              d.estado === "aprendida";
-            if (pop.showModal) pop.showModal();
+            abrirCard(card);
           });
         });
+
+        // Deslizar de lado en el pop-up = ficha anterior / siguiente.
+        var tX = 0,
+          tY = 0;
+        pop.addEventListener(
+          "touchstart",
+          function (e) {
+            tX = e.changedTouches[0].clientX;
+            tY = e.changedTouches[0].clientY;
+          },
+          { passive: true }
+        );
+        pop.addEventListener("touchend", function (e) {
+          var dx = e.changedTouches[0].clientX - tX;
+          var dy = e.changedTouches[0].clientY - tY;
+          if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5)
+            ir(dx < 0 ? 1 : -1);
+        });
+        pop.addEventListener("keydown", function (e) {
+          if (e.key === "ArrowRight") ir(1);
+          else if (e.key === "ArrowLeft") ir(-1);
+        });
+
         document
           .getElementById("voc-pop-close")
           .addEventListener("click", function () {
@@ -407,13 +572,13 @@
           if (e.target === pop) pop.close();
         });
 
-        // confirmar "marcar unidad como aprendida"
+        // confirmar "marcar unidad como dominada"
         document.querySelectorAll("form.js-unidad").forEach(function (f) {
           f.addEventListener("submit", function (e) {
             if (f.dataset.ok === "1") return;
             e.preventDefault();
             var msg =
-              "¿Marcar toda la unidad como aprendida? No volverá a salir en las sesiones.";
+              "¿Marcar toda la unidad como dominada? No volverá a salir en las sesiones.";
             (window.confirmar
               ? window.confirmar(msg, { ok: "Sí" })
               : Promise.resolve(window.confirm(msg))

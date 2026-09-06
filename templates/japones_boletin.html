@@ -6,15 +6,6 @@
     <title>Boletín — Kaitosan</title>
     {% include 'partials/admin/_estilos.html' %}
     <style>
-      .jp-wrap {
-        max-width: 1100px;
-        margin: 0 auto;
-      }
-      .jp-wrap h1 {
-        justify-content: space-between;
-        flex-wrap: wrap;
-      }
-
       .bol-sec {
         margin-bottom: 18px;
       }
@@ -87,10 +78,23 @@
         font-size: 13px;
         padding: 3px 0;
       }
+      .cd-toggle {
+        margin: 0;
+        flex: none;
+      }
       .cd-mark {
         font-size: 15px;
         line-height: 1;
         color: var(--rosa-accion);
+        background: none;
+        border: 0;
+        padding: 4px 6px;
+        margin: -4px -6px;
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .cd-mark:hover {
+        color: var(--rosa-tinta);
       }
       .cd-list li.dominado .cd-mark {
         color: var(--ok-tinta, var(--rosa-tinta));
@@ -130,22 +134,17 @@
     <div class="jp-wrap">
       <h1>
         <span
-          ><svg class="ico"><use href="#i-lang" /></svg> Boletín</span
+          ><svg class="ico"><use href="#i-book" /></svg> Boletín N5</span
         >
-        <div
-          style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap"
-        >
-          <a href="/japones"
-            ><button class="btn btn-yellow" style="font-size: 13px">
-              <svg class="ico"><use href="#i-home" /></svg></button
-          ></a>
+        <div style="display: flex; gap: 8px; align-items: center">
+          {% include 'partials/_japones_nav.html' %}
         </div>
       </h1>
 
       <section class="bol-sec card full">
         <h2>Inventario N5</h2>
         <div class="prog">
-          <span class="prog-label">Vocabulario sabido</span>
+          <span class="prog-label">Vocabulario</span>
           <div class="prog-track">
             <div class="prog-fill" style="width: {{ vocab_pct }}%"></div>
           </div>
@@ -159,17 +158,11 @@
           <span class="prog-num">{{ gram_sabido }} / {{ gram_total }}</span>
         </div>
         <div class="prog">
-          <span class="prog-label">Can-dos dominados</span>
+          <span class="prog-label">Can-dos</span>
           <div class="prog-track">
             <div class="prog-fill" style="width: {{ candos_pct }}%"></div>
           </div>
           <span class="prog-num">{{ candos_dominados }} / {{ candos_total }}</span>
-        </div>
-        <div class="bol-links">
-          <a href="/japones/kanjis"
-            ><button class="btn btn-yellow" style="font-size: 12px">
-              Kanji — práctica</button
-          ></a>
         </div>
       </section>
 
@@ -190,7 +183,19 @@
           <ul class="cd-list">
             {% for cd in u.can_dos %}
             <li class="{{ cd.estado }}">
-              <span class="cd-mark">{{ cd.simbolo }}</span>
+              <form
+                method="post"
+                action="/japones/boletin/can-do/{{ cd.id }}/toggle"
+                class="cd-toggle"
+              >
+                <button
+                  type="submit"
+                  class="cd-mark"
+                  title="{% if cd.estado == 'dominado' %}Quitar dominado{% else %}Marcar como dominado{% endif %}"
+                >
+                  {{ cd.simbolo }}
+                </button>
+              </form>
               <span>{{ cd.texto }}</span>
               {% if cd.ultima_sesion %}
               <span class="cd-sesion">sesión {{ cd.ultima_sesion }}</span>

@@ -1,4 +1,4 @@
-"""Fase 11 — un solo prompt con dial de registro, y la corrección que no se pierde."""
+"""Un solo modo sensei (profe particular medio colega): no hay dial de registro."""
 import json
 import os
 import sys
@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from ai.prompts import cargar_prompt
 from core.japanese_memory import JapaneseMemory
-from ai.sensei.profesor import ProfesorJapones, REGISTROS
+from ai.sensei.profesor import ProfesorJapones
 
 
 def _profesor(jap=None):
@@ -19,38 +19,28 @@ def _profesor(jap=None):
     return ProfesorJapones(jap, MagicMock(), memoria, MagicMock())
 
 
-def test_solo_queda_un_prompt_de_profesor():
-    assert "{REGISTRO}" in cargar_prompt("profesor_japones")
-    try:
-        cargar_prompt("profesor_japones_conv")
-        assert False, "el prompt de charla debería haber desaparecido"
-    except Exception:
-        pass
-
-
-def test_el_registro_llega_al_sistema_y_modo_conv_sigue_funcionando():
-    prof = _profesor()
-    for registro in REGISTROS:
-        prof.entrar(registro=registro)
-        prof.provider.completar.return_value = "vale 【はい】"
-        prof.responder_turno("hola")
-        sistema = prof.provider.completar.call_args[0][0][0]["content"]
-        assert f"registro: {registro}" in sistema, registro
-        assert "{REGISTRO}" not in sistema
-        assert prof.modo_conv == (registro == "charla")
-
-    # los disparadores viejos siguen mapeando a clase / charla
-    prof.set_modo_conv(True)
-    assert prof.registro == "charla" and prof.modo_conv
-    prof.set_modo_conv(False)
-    assert prof.registro == "clase" and not prof.modo_conv
-
-
-def test_explicar_no_esta_vetado_en_ningun_registro():
+def test_prompt_sin_dial_de_registro():
     prompt = cargar_prompt("profesor_japones")
-    assert "En NINGÚN registro tienes prohibido explicar" in prompt
-    # la vieja prohibición del prompt de charla no vuelve por la puerta de atrás
-    assert "estructura de clase" not in prompt
+    assert "{REGISTRO}" not in prompt
+    # los tres registros viejos ya no se nombran como modos
+    assert "registro clase" not in prompt
+    assert "En mixto y charla" not in prompt
+
+
+def test_el_prompt_llega_al_sistema_sin_placeholders():
+    prof = _profesor()
+    prof.entrar()
+    prof.provider.completar.return_value = "vale 【はい】"
+    prof.responder_turno("hola")
+    sistema = prof.provider.completar.call_args[0][0][0]["content"]
+    assert "{REGISTRO}" not in sistema and "{NIVEL_INMERSION}" not in sistema
+    # modo_conv sigue existiendo para el enrutado de STT, y es siempre False
+    assert prof.modo_conv is False
+
+
+def test_explicar_no_esta_vetado():
+    prompt = cargar_prompt("profesor_japones")
+    assert "Nunca tienes prohibido explicar" in prompt
 
 
 def test_lo_que_no_se_corrige_vuelve_en_la_sesion_siguiente():
@@ -70,8 +60,8 @@ def test_lo_que_no_se_corrige_vuelve_en_la_sesion_siguiente():
 
 
 if __name__ == "__main__":
-    test_solo_queda_un_prompt_de_profesor()
-    test_el_registro_llega_al_sistema_y_modo_conv_sigue_funcionando()
-    test_explicar_no_esta_vetado_en_ningun_registro()
+    test_prompt_sin_dial_de_registro()
+    test_el_prompt_llega_al_sistema_sin_placeholders()
+    test_explicar_no_esta_vetado()
     test_lo_que_no_se_corrige_vuelve_en_la_sesion_siguiente()
     print("OK")

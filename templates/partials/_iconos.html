@@ -71,6 +71,21 @@
         return d.innerHTML;
     };
 
+    // Con cualquier <dialog> modal abierto, se bloquea el scroll de la página
+    // de detrás (iOS no lo hace solo). Cuenta pop-ups anidados.
+    (function () {
+        if (!window.HTMLDialogElement) return;
+        var n = 0;
+        var _showModal = HTMLDialogElement.prototype.showModal;
+        function unlock() { if (n > 0 && --n === 0) document.documentElement.classList.remove('modal-abierto'); }
+        HTMLDialogElement.prototype.showModal = function () {
+            var r = _showModal.apply(this, arguments);
+            if (n++ === 0) document.documentElement.classList.add('modal-abierto');
+            this.addEventListener('close', unlock, { once: true });
+            return r;
+        };
+    })();
+
     // Cierre animado de los desplegables <details class="acc">: al plegar,
     // mantenemos open hasta que termina la animación acc-cerrar.
     (function () {

@@ -274,7 +274,7 @@ def main():
     linea(f"Fecha/Hora : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     linea(f"BD         : {DB_PATH}")
     linea(f"Modo       : {'interactivo' if args.interactive else 'automático (conversación predefinida)'}")
-    linea(f"Prompt     : profesor_japones.txt  (registro charla)")
+    linea(f"Prompt     : profesor_japones.txt")
 
     if args.clean:
         seccion("LIMPIANDO DATOS JAPONESES")
@@ -297,10 +297,9 @@ def main():
     mostrar_bd_japonesa(jap_memory, "ESTADO DE LA BD  —  ANTES DE LA SESIÓN")
     mostrar_contexto_profesor(profesor, "CONTEXTO QUE VE KAITO AL INICIO")
 
-    seccion("ACTIVANDO MODO CONVERSACIONAL  (conv=True)")
-    profesor.entrar(conv=True)
+    seccion("ACTIVANDO MODO SENSEI")
+    profesor.entrar()
     linea(f"Session ID en japanese_sessions: {profesor.session_id}")
-    linea(f"registro: {profesor.registro}")
     linea("Prompt cargado: profesor_japones.txt")
     linea("Timer de inactividad (20 min) activo — se cancela al salir")
 

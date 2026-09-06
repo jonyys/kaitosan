@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Práctica de escritura de kanji — Kaitosan</title>
+    <title>Escritura de kanji — Kaitosan</title>
     {% include 'partials/admin/_estilos.html' %}
     <link rel="stylesheet" href="/static/japones_practica.css" />
     <style>
@@ -90,19 +90,13 @@
     <div class="jp-wrap">
       <h1>
         <span
-          ><svg class="ico"><use href="#i-lang" /></svg> Práctica de
-          escritura</span
+          ><svg class="ico"><use href="#i-book" /></svg>Escritura</span
         >
-        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap">
-          <a href="/japones"
-            ><button class="btn btn-yellow" style="font-size: 13px">
-              <svg class="ico"><use href="#i-home" /></svg></button
-          ></a>
-          <a href="/japones/kanjis"
-            ><button class="btn btn-yellow" style="font-size: 13px">
-              Fichas
-            </button></a
-          >
+        <div style="display: flex; gap: 8px; align-items: center">
+          {% set nav_extra %}
+          <a href="/japones/kanjis"><button type="button" class="btn btn-yellow hdr-btn" style="font-size: 13px" title="Ir a las fichas de kanji" aria-label="Ir a las fichas de kanji"><svg class="ico"><use href="#i-book" /></svg></button></a>
+          {% endset %}
+          {% include 'partials/_japones_nav.html' %}
         </div>
       </h1>
 

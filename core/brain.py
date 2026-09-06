@@ -12,18 +12,11 @@ from ai.tools import TOOLS, ToolDispatcher
 from core.config import groq_seleccion
 from core.japanese_memory import JapaneseMemory
 from core.memory import DB_PATH, Memory
-from ai.sensei.profesor import ProfesorJapones, SALUDOS, SALUDOS_CONV, CAMBIO_A_ESTUDIO, DESPEDIDAS
+from ai.sensei.profesor import ProfesorJapones, SALUDOS, DESPEDIDAS
 from ai.sensei.curriculum import CURRICULUM
 import re as regex
 
 MAX_MENSAJES = 20
-
-# La herramienta que Kaito elige decide el registro del sensei (Fase 11).
-_TOOL_A_REGISTRO = {
-    "activar_modo_sensei": "clase",
-    "activar_modo_mixto_japones": "mixto",
-    "activar_modo_conversacion_japones": "charla",
-}
 
 
 class Brain:
@@ -84,32 +77,24 @@ class Brain:
         turno; solo se usa cuando el modo sensei está activo.
         """
 
-        # ── Comandos de modo sensei ──
+        # ── Comandos de modo sensei (un solo modo: profe particular medio colega) ──
         _msg = mensaje.lower()
-        _triggers_conv = ["modo conversación", "modo conversacion", "modo charla", "modo colega", "modo amigo", "hablemos en japonés", "hablemos en japones", "hablar en japones"]
-        _triggers_estudio = ["modo estudio", "modo clase", "modo lección", "modo leccion", "modo sensei"]
-
-        if any(f in _msg for f in _triggers_conv):
-            if not self.profesor.esta_activo():
-                self.profesor.entrar(conv=True)
-            else:
-                self.profesor.set_modo_conv(True)
-            return random.choice(SALUDOS_CONV), False
-
-        if any(f in _msg for f in ["sensei", "entrar en modo", "entra en modo", "modo sensei on", "activar modo sensei", "activar modo", "en modo"]):
-            if not self.profesor.esta_activo():
-                self.profesor.entrar(conv=False)
-                return random.choice(SALUDOS), False
-
-        if any(f in _msg for f in _triggers_estudio) and self.profesor.esta_activo():
-            self.profesor.set_modo_conv(False)
-            return random.choice(CAMBIO_A_ESTUDIO), False
 
         if any(f in _msg for f in ["salir del modo sensei", "sal del modo sensei", "modo sensei off", "salir del modo", "sal del modo", "desactivar modo", "desctivar", "desactiva"]):
             if self.profesor.esta_activo():
                 self.profesor.salir()
                 self._emitir_desactivar_sensei = True
                 return random.choice(DESPEDIDAS), False
+
+        _triggers_entrar = ["sensei", "entrar en modo", "entra en modo", "activar modo", "en modo",
+                            "modo conversación", "modo conversacion", "modo charla", "modo colega",
+                            "modo estudio", "modo clase", "modo lección", "modo leccion",
+                            "hablemos en japonés", "hablemos en japones", "hablar en japones",
+                            "dame clase de japonés", "dame clase de japones", "practicar japonés",
+                            "practicar japones"]
+        if any(f in _msg for f in _triggers_entrar) and not self.profesor.esta_activo():
+            self.profesor.entrar()
+            return random.choice(SALUDOS), False
 
         if self.profesor.esta_activo():
             lento_extra = any(p in mensaje.lower() for p in ["más lento", "despacio", "lentamente", "despacito"])
@@ -129,16 +114,13 @@ class Brain:
         # Primera llamada: el modelo decide si usar herramientas
         content, tool_calls = self.provider.completar_tools(self.historial, TOOLS)
         if tool_calls:
-            modo_switch = next((tc for tc in tool_calls if tc.function.name in _TOOL_A_REGISTRO), None)
-            if modo_switch:
-                registro = _TOOL_A_REGISTRO[modo_switch.function.name]
-                conv = registro != "clase"
-                self.profesor.entrar(registro=registro)
-                saludo = random.choice(SALUDOS_CONV if conv else SALUDOS)
+            if any(tc.function.name == "activar_modo_sensei" for tc in tool_calls):
+                self.profesor.entrar()
+                saludo = random.choice(SALUDOS)
                 self.historial.append({"role": "assistant", "content": saludo})
                 self.memory.guardar_mensaje(self.session_id, "user", mensaje)
                 self.memory.guardar_mensaje(self.session_id, "assistant", saludo)
-                print(f"🎌 Kaito activa modo {'conversación' if conv else 'sensei'} via tool")
+                print("🎌 Kaito activa modo sensei via tool")
                 return saludo, False
             self._aplicar_tool_calls(tool_calls)
             # Segunda llamada sin herramientas: fuerza respuesta de texto con los resultados

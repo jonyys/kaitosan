@@ -171,6 +171,96 @@
         border: 1px solid var(--peligro);
         box-shadow: none;
     }
+    /* fantasma: transparente con borde. Explícito para que iOS no le meta
+       su tinte de sistema al <button> sin fondo. */
+    .btn-ghost {
+        background: transparent;
+        color: var(--text);
+        border: 1px solid var(--border-fuerte);
+        box-shadow: none;
+    }
+
+    /* ---- Cabecera de las páginas de japonés (partials/_japones_nav.html) ---- */
+    .jp-wrap { max-width: 1100px; margin: 0 auto; }
+    .jp-wrap h1 { justify-content: space-between; flex-wrap: wrap; }
+    /* botón redondo de cabecera: casa y menú, mismo tamaño */
+    .hdr-btn { width: 48px; height: 48px; min-height: 48px; padding: 0; border-radius: 50%; }
+    /* menú de navegación (☰): <details> nativo, sin JS */
+    .navmenu { position: relative; }
+    .navmenu > summary {
+        list-style: none; cursor: pointer;
+        width: 48px; height: 48px;
+        display: flex; align-items: center; justify-content: center;
+        border: 1px solid var(--border-fuerte); border-radius: 50%;
+        background: var(--surface-2); color: var(--rosa-tinta);
+        font-size: 20px; line-height: 1;
+    }
+    .navmenu > summary::-webkit-details-marker { display: none; }
+    .navmenu[open] > summary { border-color: var(--rosa-accion); }
+    .navmenu-panel {
+        position: absolute; right: 0; top: calc(100% + 6px); z-index: 40;
+        display: flex; flex-direction: column;
+        min-width: 200px; overflow: hidden;
+        background: var(--surface);
+        border: 1px solid var(--border-fuerte); border-radius: var(--radio-sm);
+        box-shadow: var(--sombra);
+    }
+    .navmenu[open] > .navmenu-panel {
+        transform-origin: top;
+        animation: navmenu-in .28s cubic-bezier(.22, 1, .36, 1);
+    }
+    /* misma sensación que el acordeón de los paneles: abre con un barrido de
+       arriba a abajo (navmenu-in) y cierra al revés (navmenu-out, lo pilota el
+       JS de _japones_nav.html con la clase .cerrando). */
+    .navmenu.cerrando > .navmenu-panel {
+        transform-origin: top;
+        animation: navmenu-out .18s cubic-bezier(.4, 0, 1, 1) forwards;
+    }
+    @keyframes navmenu-in {
+        from { opacity: 0; transform: translateY(-8px); clip-path: inset(0 0 100% 0); }
+        to   { opacity: 1; transform: translateY(0);    clip-path: inset(0 0 0 0); }
+    }
+    @keyframes navmenu-out {
+        from { opacity: 1; transform: translateY(0);    clip-path: inset(0 0 0 0); }
+        to   { opacity: 0; transform: translateY(-8px); clip-path: inset(0 0 100% 0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .navmenu[open] > .navmenu-panel,
+        .navmenu.cerrando > .navmenu-panel { animation: none; }
+    }
+    .navmenu-panel a {
+        display: block; padding: 12px 14px;
+        color: var(--text); text-decoration: none;
+        font-size: 14px; font-weight: 600; white-space: nowrap;
+    }
+    .navmenu-panel a + a { border-top: 1px solid var(--border); }
+    .navmenu-panel a:hover { background: var(--surface-2); }
+
+    /* ---- Pop-ups (<dialog>) ---- */
+    /* Con un pop-up abierto, la página de detrás no hace scroll (lo pilota el
+       JS de _iconos.html con la clase .modal-abierto). */
+    html.modal-abierto, html.modal-abierto body { overflow: hidden; }
+
+    /* Al deslizar de ficha a ficha en móvil se empezaba a seleccionar el
+       relleno/esquina del <dialog> junto al botón X. La zona "chrome" no
+       selecciona; el texto de la ficha (.ficha-body) sí. */
+    dialog.ficha-pop, #voc-pop { -webkit-user-select: none; user-select: none; }
+    .pop-x { -webkit-tap-highlight-color: transparent; }
+    .ficha-body { -webkit-user-select: text; user-select: text; }
+
+    /* "Pasar página" al deslizar de lado entre fichas: el cuerpo sale por un
+       lado y el nuevo entra por el otro. El wrapper es .ficha-body. */
+    @keyframes ficha-out-next { to   { opacity: 0; transform: translateX(-26px); } }
+    @keyframes ficha-in-next  { from { opacity: 0; transform: translateX( 26px); } }
+    @keyframes ficha-out-prev { to   { opacity: 0; transform: translateX( 26px); } }
+    @keyframes ficha-in-prev  { from { opacity: 0; transform: translateX(-26px); } }
+    .ficha-body.slide-out-next { animation: ficha-out-next .16s ease-in forwards; }
+    .ficha-body.slide-in-next  { animation: ficha-in-next  .2s  ease-out; }
+    .ficha-body.slide-out-prev { animation: ficha-out-prev .16s ease-in forwards; }
+    .ficha-body.slide-in-prev  { animation: ficha-in-prev  .2s  ease-out; }
+    @media (prefers-reduced-motion: reduce) {
+        .ficha-body[class*="slide-"] { animation: none !important; }
+    }
 
     /* ---- Controles nativos (§13.3.A): time, number, range, select, color… ---- */
     input, select, textarea, button { font-family: inherit; }
