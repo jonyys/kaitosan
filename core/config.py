@@ -13,10 +13,25 @@ MAX_TOKENS_EXPLICACION = 3072  # profesor, turno de desglose gramatical
 TEMPERATURE = 0.7
 TEMPERATURE_SENSEI = 0.3  # respuestas del profesor — más deterministas para seguir las reglas
 
-# Modelo y esfuerzo de razonamiento del modo sensei (configurable por si gpt-oss
-# se enrolla: p.ej. MODEL_SENSEI=qwen/qwen3.8-27b).
+# Modelo del modo sensei. `MODEL_SENSEI` (env) solo se usa como semilla al
+# arrancar; en caliente, al activar el modo, se resuelve contra la lista viva de
+# api.groq.com/v1/models con MODELOS_SENSEI_PREFERENCIA (ver
+# system_settings.modelo_sensei_efectivo). Así el equipo de Laura no depende de
+# tocar el .env cuando Groq retira o renombra un modelo.
 MODEL_SENSEI = os.getenv("MODEL_SENSEI", "openai/gpt-oss-120b")
 REASONING_EFFORT_SENSEI = os.getenv("REASONING_EFFORT_SENSEI", "low")
+
+# Orden de preferencia para el modo sensei: se coge el PRIMERO que esté vivo en
+# la API. Si ninguno lo está, el primer modelo de chat con contexto suficiente
+# que devuelva la lista. gpt-oss va primero porque los qwen del tier gratis dan
+# rate limit (429) en casi todos los turnos del sensei (contexto grande); si se
+# sube el plan de Groq, subir aquí los qwen.
+MODELOS_SENSEI_PREFERENCIA = [
+    "openai/gpt-oss-120b",
+    "openai/gpt-oss-20b",
+    "qwen/qwen3.8-27b",
+    "qwen/qwen3.6-27b",
+]
 
 # Modelos de reserva (si el principal da rate limit / cae) y modelos aptos para
 # tool calls. Son la **semilla de fábrica**: la selección guardada en
@@ -92,6 +107,12 @@ THROTTLE_DUE = 12
 # Fase 09: chequeo de óxido — cada cuántas sesiones el FOCO incluye una muestra
 # de vocabulario ya 'sabido' de unidades pasadas. Knob, se afina con datos.
 CHEQUEO_OXIDO_CADA = 5
+
+# Segundos de espera antes de lanzar la extracción al cerrar la sesión. La
+# llamada del extractor es grande y, si va pegada al turno de despedida, las dos
+# caen en la misma ventana de tokens/min de Groq y salta el rate limit (se
+# perdía la calificación de can-dos). Esperar deja que la ventana se vacíe.
+EXTRACCION_RETRASO_SEG = int(os.getenv("EXTRACCION_RETRASO_SEG", "45"))
 
 # Nivel de inmersión (1→4): cuánto japonés habla Kaito. Se calcula solo a partir
 # del vocabulario dominado (learned + mastered); estos son los umbrales de salto.

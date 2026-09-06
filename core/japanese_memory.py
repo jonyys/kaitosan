@@ -575,6 +575,8 @@ class JapaneseMemory:
         resultado: 'conseguido' | 'parcial' | 'error' | 'no_intentado'
         - 'conseguido' en 2 sesiones distintas (session_id distinto) → 'dominado'
         - un solo 'conseguido' → 'en_progreso', veces_ok = 1
+        - 'parcial' sobre un can-do 'no_intentado' → 'en_progreso' (lo intentó
+          con ayuda: ya está empezado, aunque no lo lograra sola).
         - 'error' / 'parcial' estando ya 'dominado' → baja a 'en_progreso'
         - 'no_intentado' no cambia el estado.
         `nota` — evidencia textual de la sesión (cita del extractor). Si se pasa
@@ -594,6 +596,8 @@ class JapaneseMemory:
                 if session_id != ultima:
                     veces_ok += 1
                 estado = "dominado" if veces_ok >= 2 else "en_progreso"
+            elif resultado == "parcial" and estado == "no_intentado":
+                estado = "en_progreso"
             elif resultado in ("error", "parcial") and estado == "dominado":
                 estado = "en_progreso"
 

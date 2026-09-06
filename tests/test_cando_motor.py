@@ -82,6 +82,12 @@ def test_set_can_do():
     p = jm2.can_dos_progreso()["y"]
     assert p["estado"] == "en_progreso" and p["veces_ok"] == 1
 
+    # 'parcial' sobre un can-do nunca intentado lo da por empezado
+    jm3 = _jm()
+    jm3.set_can_do("z", "parcial", 1)
+    p = jm3.can_dos_progreso()["z"]
+    assert p["estado"] == "en_progreso" and p["veces_ok"] == 0
+
 
 # Oráculo: transcripción textual de las clausuras `estado()` originales de
 # `app.py:_temario_unidades()` (commit ae32cc8), con el renombrado 1:1 de la

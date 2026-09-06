@@ -19,12 +19,19 @@ Reglas:
   (cada uno con su `id` y su texto "Puedo…"). Solo puedes calificar can-dos de esa lista;
   usa su `id` EXACTO. No inventes ids.
   * resultado:
-      - "conseguido": Laura cumplió la función EN JAPONÉS por sí misma, sin que el profesor
-        le diera la frase justo antes.
-      - "parcial": lo intentó pero con ayuda, con errores que lo dejaron a medias, o solo
-        una parte.
+      - "conseguido": Laura produjo la función EN JAPONÉS ella sola, respondiendo a una
+        petición funcional del profesor ("¿cómo pides que te lo repitan?", "¿cómo se dice
+        eso?", "es de noche, ¿cómo te despides?"), SIN que el profesor dijera esa misma
+        frase en su turno inmediatamente anterior. Cuenta como conseguido aunque el profesor
+        se lo enseñara antes en la sesión o en sesiones pasadas: recordarlo y decirlo solo
+        ES el logro.
+      - "parcial": el profesor le dictó la frase en el turno justo antes y Laura solo la
+        repitió; o necesitó pistas fuertes; o le salió a medias / con un error que rompía
+        la función; o solo hizo una parte del can-do.
       - "no_intentado": ese can-do no llegó a surgir en la sesión. No cambia nada; inclúyelo
         solo si aporta, o simplemente omítelo.
+    Regla de oro: ¿dijo el profesor la frase japonesa en el turno anterior al de Laura?
+      sí → como mucho "parcial".   no, y Laura la produjo bien → "conseguido".
   * evidencia: OBLIGATORIA. Una CITA TEXTUAL de algo que se dijo en la conversación
     (lo que dijo Laura o el profesor), no una valoración vaga. Mal: "lo hizo bien".
     Bien: "Laura dijo 「コーヒーをください」 sin que Kaito se lo diera".

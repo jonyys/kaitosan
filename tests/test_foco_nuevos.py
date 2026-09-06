@@ -33,7 +33,7 @@ def test_diez_turnos_dejan_dos_items():
     # el cierre persiste exactamente los ítems de la sesión
     prof.mensajes = [{"role": "user", "content": "hola"}]
     prof._extraer_resumen_basico = lambda t: ""
-    prof._llamar_extractor = lambda h: (_ for _ in ()).throw(RuntimeError("sin API"))
+    prof._llamar_extractor = lambda h, **k: (_ for _ in ()).throw(RuntimeError("sin API"))
     prof._ejecutar_extraccion(prof.session_id)
 
     total = sum(

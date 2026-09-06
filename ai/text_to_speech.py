@@ -109,6 +109,15 @@ class TextToSpeech:
         - Los bloques 【japonés】 se envían a la voz japonesa.
         - El resto se envía a la voz española.
         """
+        # Normaliza el marcado antes de segmentar: aplana 【】 anidados y envuelve
+        # el japonés que el modelo haya dejado suelto fuera de 【】. Sin esto la
+        # regex de bloques no casa y el japonés se cuela como "segmento suelto".
+        try:
+            from ai.sensei.kana import normalizar_bloques_jp
+            texto = normalizar_bloques_jp(texto)
+        except Exception:
+            pass
+
         # Separar por bloques 【...】
         partes = re.split('(' + BLOQUE_JP + ')', texto)
         segmentos = []

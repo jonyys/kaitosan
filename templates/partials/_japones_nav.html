@@ -6,7 +6,7 @@
 {%- if request.path == '/japones' %}
 <a href="/admin"><button type="button" class="btn btn-yellow hdr-btn" style="font-size: 13px" title="Salir" aria-label="Salir"><svg class="ico"><use href="#i-home" /></svg></button></a>
 {%- else %}
-<a href="/japones"><button type="button" class="btn btn-yellow hdr-btn" style="font-size: 13px" title="Panel de japonés" aria-label="Panel de japonés"><svg class="ico"><use href="#i-lang" /></svg></button></a>
+<a href="/japones"><button type="button" class="btn btn-blue hdr-btn" style="font-size: 13px" title="Panel de japonés" aria-label="Panel de japonés"><svg class="ico"><use href="#i-lang" /></svg></button></a>
 {%- endif %}
 {# botones específicos de la página van entre el botón izquierdo y el menú (define nav_extra antes del include) #}
 {{ nav_extra | default('', true) }}

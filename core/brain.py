@@ -12,7 +12,7 @@ from ai.tools import TOOLS, ToolDispatcher
 from core.config import groq_seleccion
 from core.japanese_memory import JapaneseMemory
 from core.memory import DB_PATH, Memory
-from ai.sensei.profesor import ProfesorJapones, SALUDOS, DESPEDIDAS
+from ai.sensei.profesor import ProfesorJapones, DESPEDIDAS
 from ai.sensei.curriculum import CURRICULUM
 import re as regex
 
@@ -94,7 +94,7 @@ class Brain:
                             "practicar japones"]
         if any(f in _msg for f in _triggers_entrar) and not self.profesor.esta_activo():
             self.profesor.entrar()
-            return random.choice(SALUDOS), False
+            return self.profesor.saludo_inicial(), False
 
         if self.profesor.esta_activo():
             lento_extra = any(p in mensaje.lower() for p in ["más lento", "despacio", "lentamente", "despacito"])
@@ -116,7 +116,7 @@ class Brain:
         if tool_calls:
             if any(tc.function.name == "activar_modo_sensei" for tc in tool_calls):
                 self.profesor.entrar()
-                saludo = random.choice(SALUDOS)
+                saludo = self.profesor.saludo_inicial()
                 self.historial.append({"role": "assistant", "content": saludo})
                 self.memory.guardar_mensaje(self.session_id, "user", mensaje)
                 self.memory.guardar_mensaje(self.session_id, "assistant", saludo)

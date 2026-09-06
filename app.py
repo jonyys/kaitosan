@@ -683,8 +683,10 @@ def ajustes_audio_probar():
 @login_requerido
 def ajustes_modelos():
     # Fase 9: lista en vivo desde api.groq.com + selección guardada (§7.2).
+    # forzar=True: cada visita a Ajustes → Modelos refresca la lista (los modelos
+    # de Groq cambian a menudo); ante fallo de red groq_modelos cae a su caché.
     return jsonify({
-        "disponibles": system_settings.groq_modelos(),
+        "disponibles": system_settings.groq_modelos(forzar=True),
         "seleccion": system_settings.groq_seleccion_get(),
     })
 

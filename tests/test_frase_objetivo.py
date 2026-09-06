@@ -16,6 +16,10 @@ CASOS = [
     ("¿Cómo se dice 'agua'? " + B % MIZU, MIZU),     # ya funcionaba
     ("¿Entiendes qué significa " + B % NEKO + "?", None),  # sin producción
     ("Repite conmigo, ¿vale?: " + B % NEKO, NEKO),        # antes daba None
+    # Con kanji NO es objetivo de pronunciación (nombre de unidad colado).
+    ("Hoy practicamos 「挨拶と基本表現」. Repite: " + B % NEKO, NEKO),
+    ("Repite: 【今日は挨拶の練習】", None),
+    ("Repite: 「はれた」", "はれた"),                      # kana entrecomillado sí
 ]
 
 

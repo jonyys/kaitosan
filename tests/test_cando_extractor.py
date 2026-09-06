@@ -77,7 +77,7 @@ def test_can_do_conseguido_queda_en_progreso_con_evidencia():
 def test_extractor_caido_no_toca_ningun_can_do():
     jap = JapaneseMemory(os.path.join(tempfile.mkdtemp(), "t.db"))
 
-    def _cae(historial):
+    def _cae(historial, **k):
         raise RuntimeError("sin API")
 
     prof = _preparar(jap, _cae)

@@ -162,17 +162,16 @@ def test_arco():
     if prof.timer:
         prof.timer.cancel()
 
-    # Turnos 1 y 2 → calentamiento, con la nota de "aún no metas ejercicio".
-    for pares in (0, 1):
-        prof.mensajes = _par("hola") * pares
-        foco = prof._montar_estado()[1]
-        assert "FASE DE LA SESIÓN: calentamiento" in foco
-        assert "aún no metas ejercicio de temario" in foco
-
-    # Turno 4 (primero del cuerpo) → foco.
-    prof.mensajes = _par("sigo") * 3
+    # Turno 1 (sin pares cerrados) → entrada: saluda pero engancha ya el can-do.
+    prof.mensajes = []
     foco = prof._montar_estado()[1]
-    assert "FASE DE LA SESIÓN: foco" in foco
+    assert "FASE DE LA SESIÓN: entrada" in foco
+
+    # Turno 2 en adelante → foco.
+    for pares in (1, 2, 3):
+        prof.mensajes = _par("sigo") * pares
+        foco = prof._montar_estado()[1]
+        assert "FASE DE LA SESIÓN: foco" in foco
 
     # Laura se despide → cierre (gana a la cuenta de turno).
     prof.mensajes = _par("vale, lo dejamos por hoy, hasta la semana")

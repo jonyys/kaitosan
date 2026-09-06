@@ -5,8 +5,10 @@ de SRS (Fase 1) y currículo (Fase 2).
 """
 
 import json
+import random
 import re
 import threading
+import time
 from datetime import datetime
 
 from ai.prompts import cargar_prompt
@@ -18,6 +20,7 @@ from ai.sensei.curriculum import (
 )
 from core.config import (
     CHEQUEO_OXIDO_CADA,
+    EXTRACCION_RETRASO_SEG,
     MAX_ITEMS_NUEVOS,
     NIVEL_INMERSION_FORZADO,
     NIVEL_INMERSION_UMBRALES,
@@ -38,20 +41,23 @@ MUESTRA_OXIDO = 3      # ítems 'sabido' de unidades pasadas en el chequeo de ó
 
 _MARCA_ESTADO = {"sabido": "[sabida]", "en_progreso": "[en progreso]", "nuevo": "[nueva]"}
 
+# Saludo/despedida de apertura: expresión japonesa CORTA + el resto en español,
+# para que se entienda sea cual sea el nivel (una frase japonesa entera aquí es
+# justo lo que el alumno principiante no pilla).
 SALUDOS = [
-    "Modo Sensei activado! 【こんにちは、ラウラさん。おげんきですか。】",
-    "Modo Sensei activado! 【おはようございます、ラウラさん。きょうはなにをしたいですか。】",
-    "Modo Sensei activado! 【こんばんは、ラウラさん。げんきですか。】",
-    "Modo Sensei activado! 【やあ、ラウラさん。ちょうしはどうですか。】",
-    "Modo Sensei activado! 【ラウラさん、こんにちは。にほんごをべんきょうしましょう。】",
+    "Modo Sensei activado! 【こんにちは】, Laura. ¿Qué tal estás?",
+    "Modo Sensei activado! 【おはよう】, Laura. ¿Lista para practicar japonés?",
+    "Modo Sensei activado! 【こんばんは】, Laura. ¿Cómo va el día?",
+    "Modo Sensei activado! 【やあ】, Laura. ¿Empezamos?",
+    "Modo Sensei activado! 【こんにちは】, Laura. Vamos a repasar un poco de japonés.",
 ]
 
 DESPEDIDAS = [
-    "【またね、ラウラさん】",
-    "【じゃあね、ラウラさん。また会いましょう】",
-    "【おつかれさまでした。またね】",
-    "【さようなら、ラウラさん。また今度】",
-    "【バイバイ、ラウラさん。気をつけてね】",
+    "【またね】, Laura.",
+    "【じゃあね】, Laura. Nos vemos pronto.",
+    "【おつかれさま】. Hasta la próxima.",
+    "【さようなら】, Laura. Hasta otro día.",
+    "【バイバイ】, Laura. Cuídate.",
 ]
 
 # Resultados que el extractor puede devolver por can-do (Fase 08).
@@ -61,6 +67,12 @@ _RESULTADOS_CAN_DO = {"conseguido", "parcial", "no_intentado", "error"}
 _RE_BLOQUE_JP = re.compile(r'【([^【】]*[぀-ゟ゠-ヿ一-鿿][^【】]*)】')
 # Cualquier carácter japonés.
 _RE_JP_CHAR = re.compile(r'[぀-ゟ゠-ヿ一-鿿]')
+# Kanji (incl. extensión A). Una frase objetivo con kanji casi nunca es algo que
+# Laura deba pronunciar: suele ser el nombre de la unidad o vocabulario mostrado
+# por significado que se ha colado. Se descarta como objetivo de pronunciación.
+# ponytail: filtro por presencia de kanji. Si algún día se enseña producción de
+# frases con kanji, pasar el candidato por kana.a_kana() en vez de descartarlo.
+_RE_KANJI = re.compile(r'[㐀-䶿一-鿿]')
 # Texto entre comillas japonesas 「…」 / 『…』.
 _RE_ENTRECOMILLADO = re.compile(r'[「『]([^「」『』]*)[」『』]')
 
@@ -95,16 +107,19 @@ _DESPEDIDAS_LAURA = (
 def _fase_sesion(turno: int, ultimo_de_laura: str) -> str:
     """Pista de arco de sesión para la cabecera del FOCO (Fase 17).
 
-    turnos 1-2 → calentamiento (charla, deberes, cómo está Laura; temario aún no).
-    Laura se despide → cierre (el prompt ya trae el ritual). Resto → foco."""
+    turno 1 → entrada (saluda de vuelta, pregunta qué tal, y engancha ya con el
+    can-do; el saludo de apertura ya cuenta como calentamiento). Laura se
+    despide → cierre (el prompt ya trae el ritual). Resto → foco."""
     if ultimo_de_laura and any(
         p in ultimo_de_laura.lower() for p in _DESPEDIDAS_LAURA
     ):
         return "FASE DE LA SESIÓN: cierre"
-    if turno <= 2:
+    if turno <= 1:
         return (
-            "FASE DE LA SESIÓN: calentamiento — (turnos 1-2: charla, deberes, "
-            "cómo está Laura; aún no metas ejercicio de temario)"
+            "FASE DE LA SESIÓN: entrada — salúdala de vuelta y pregúntale qué tal "
+            "(deberes, cómo está). En cuanto haya un hueco natural, engancha YA "
+            "con el can-do de hoy: no te quedes en saludos ni alargues la charla, "
+            "y no montes un drill de pronunciación del saludo."
         )
     return "FASE DE LA SESIÓN: foco"
 
@@ -142,12 +157,18 @@ def _extraer_frase_objetivo(texto: str):
     entrecomillados = [
         _limpiar_objetivo(m) for m in _RE_ENTRECOMILLADO.findall(texto)
     ]
-    entrecomillados = [e for e in entrecomillados if _RE_JP_CHAR.search(e) and len(e) >= 3]
+    entrecomillados = [
+        e for e in entrecomillados
+        if _RE_JP_CHAR.search(e) and len(e) >= 3 and not _RE_KANJI.search(e)
+    ]
     if entrecomillados:
         return entrecomillados[-1]
 
     bloques = [_limpiar_objetivo(b) for b in _RE_BLOQUE_JP.findall(texto)]
-    bloques = [b for b in bloques if b and b not in _FRASES_ANIMO]
+    bloques = [
+        b for b in bloques
+        if b and b not in _FRASES_ANIMO and not _RE_KANJI.search(b)
+    ]
     if not bloques:
         return None
 
@@ -155,6 +176,77 @@ def _extraer_frase_objetivo(texto: str):
     # 【】 ("Repite: 【…】"). Así que el objetivo es el ÚLTIMO bloque, no el más
     # largo (antes cogía 【お元気ですか】 en vez de 【晴れた】 por tener más letras).
     return bloques[-1]
+
+
+_RE_BLOQUE_LLANO = re.compile(r'【([^【】]+)】')
+_RE_FIN_FRASE_JP = re.compile(r'[。！？]')
+# Marcas de que un 【】 es una FRASE, no una palabra/expresión suelta: colas de
+# cortesía o verbales pegadas a más texto. Solo se aplica a bloques que NO estén
+# en la lista blanca de expresiones fijas de abajo.
+_RE_JP_FRASE = re.compile(r'(でした|ました|でしょう|ましょう|ですか|ますか|んです|してくださ|といます|に入り)')
+_LARGO_MAX_NIVEL_BAJO = 12  # caracteres dentro de 【】 tolerados en nivel 1-2
+# Expresiones fijas N5 (saludos, cortesía y las frases-función de la unidad 0:
+# pedir que repitan, decir que no entiendes). En nivel bajo se dejan enteras
+# aunque lleven ます/ください/una coma: son justo lo que Laura tiene que aprender.
+_EXPR_OK_NIVEL_BAJO = {
+    "おはよう", "おはようございます", "こんにちは", "こんばんは",
+    "おやすみ", "おやすみなさい", "さようなら", "じゃあね", "またね",
+    "ありがとう", "ありがとうございます", "どうもありがとうございます",
+    "すみません", "ごめんなさい", "はじめまして", "おげんきですか",
+    "げんきです", "はい", "いいえ", "ください", "おつかれさま",
+    "おつかれさまでした", "いただきます", "ごちそうさま", "ごちそうさまでした",
+    "いってきます", "いってらっしゃい", "ただいま", "おかえり", "おかえりなさい",
+    "どうぞ", "どういたしまして", "おねがいします", "よろしくおねがいします",
+    "よくできました", "そうです", "ちがいます", "だいじょうぶ", "だいじょうぶです",
+    "どうも", "けっこうです",
+    # Unidad 0 — can-do "no he entendido / que lo repitan"
+    "もういちど", "もう一度", "わかりません", "わかりました",
+    "もういちどおねがいします", "もう一度おねがいします", "もう一度お願いします",
+    "ゆっくりおねがいします", "ゆっくりお願いします",
+    "ちょっとまってください", "ちょっと待ってください",
+}
+
+
+def _acotar_japones(respuesta: str, nivel: int) -> str:
+    """Aplana el marcado 【】 y, en nivel 1-2, recorta las frases japonesas.
+
+    En nivel 1-2 el profesor debe hablar español con palabras/expresiones
+    japonesas SUELTAS. Si aun así suelta frases enteras en 【】 (tema + comentario,
+    てください, formas de cortesía largas…), aquí se recortan a la primera
+    expresión corta, o se quitan si no queda nada útil. Las expresiones fijas de
+    saludo (lista blanca) se dejan enteras. Determinista: no depende de que el
+    modelo obedezca el prompt."""
+    from ai.sensei.kana import normalizar_bloques_jp
+    respuesta = normalizar_bloques_jp(respuesta or "")
+    if nivel > 2:
+        return respuesta
+
+    def _recorta(m):
+        cont = m.group(1).strip("　 ・…「」『』（）()〜~。！？、").strip()
+        if cont in _EXPR_OK_NIVEL_BAJO:
+            return f"【{cont}】"
+        # Combo de expresiones fijas separadas por 、 (「すみません、わかりません」,
+        # 「すみません、もういちどおねがいします」): se deja entero.
+        partes = [p.strip() for p in cont.split("、") if p.strip()]
+        if len(partes) >= 2 and all(p in _EXPR_OK_NIVEL_BAJO for p in partes):
+            return f"【{cont}】"
+        cabeza = _RE_FIN_FRASE_JP.split(cont)[0].split("、")[0]
+        cabeza = cabeza.strip("　 ・…「」『』（）()〜~").strip()
+        if not cabeza:
+            return ""
+        if cabeza in _EXPR_OK_NIVEL_BAJO:
+            return f"【{cabeza}】"
+        # Sigue pareciendo una frase (larga, o con cola verbal/cortés) → fuera:
+        # un fragmento a medias confunde más que quitarlo.
+        if len(cabeza) > _LARGO_MAX_NIVEL_BAJO or _RE_JP_FRASE.search(cabeza):
+            return ""
+        return f"【{cabeza}】"
+
+    fuera = _RE_BLOQUE_LLANO.sub(_recorta, respuesta)
+    # Limpia dobles espacios / signos huérfanos que deja el recorte.
+    fuera = re.sub(r'\s{2,}', ' ', fuera)
+    fuera = re.sub(r'[ \t]+([.,;:)])', r'\1', fuera)
+    return fuera.strip()
 
 
 def _lineas_foco(jp, meaning, sufijo=""):
@@ -215,6 +307,11 @@ class ProfesorJapones:
         self.mensajes = []
         self.ultima_frase_objetivo = None
 
+        # Modelo del sensei: se resuelve contra la lista viva de Groq en cada
+        # activación. Los modelos de Groq cambian a menudo y el equipo de Laura
+        # no se reconfigura a mano, así que no dependemos del valor del .env.
+        self._resolver_modelo()
+
         # La unidad abierta y los ítems nuevos del can-do activo se resuelven UNA
         # vez por sesión (no una por turno). Los nuevos se persisten al cerrar
         # (_ejecutar_extraccion), no aquí. MAX_ITEMS_NUEVOS limita cuántos.
@@ -233,6 +330,34 @@ class ProfesorJapones:
         self._renovar_timer()
         self.socketio.emit("modo_sensei", {"activo": True})
         print("🎌 Modo Sensei activado")
+
+    def _resolver_modelo(self):
+        """Apunta el proveedor del sensei al primer modelo vivo de la lista de
+        Groq (ver system_settings.modelo_sensei_efectivo). Silencioso ante
+        fallos: si no se puede consultar, se queda con el modelo que tuviera."""
+        groq = getattr(self.provider, "groq", None)
+        if groq is None:
+            return
+        try:
+            from core.system_settings import modelo_sensei_efectivo
+            modelo = modelo_sensei_efectivo()
+        except Exception as e:
+            print(f"⚠️ No se pudo resolver el modelo del sensei: {e}")
+            return
+        if modelo and modelo != groq.model:
+            print(f"🎌 Modelo del sensei: {groq.model} → {modelo}")
+            groq.model = modelo
+
+    def saludo_inicial(self) -> str:
+        """Saludo de apertura y lo registra en el historial de la sesión.
+
+        Sin esto el modelo no sabe que ya ha saludado: vuelve a saludar en su
+        primer turno y se queda en un bucle de saludos / repetir el saludo en
+        vez de entrar en materia. En el historial va sin el prefijo de UI."""
+        saludo = random.choice(SALUDOS)
+        limpio = saludo.split("! ", 1)[-1] if "! " in saludo else saludo
+        self.mensajes.append({"role": "assistant", "content": limpio})
+        return saludo
 
     def salir(self):
         """Desactiva el modo sensei, cancela el timer y cierra la sesión.
@@ -343,6 +468,14 @@ class ProfesorJapones:
         if not respuesta or not respuesta.strip():
             print("⚠️ Respuesta vacía del LLM en modo sensei")
             return "Perdona, se me ha cruzado un cable. ¿Me lo repites? 【もういちど おねがいします】"
+
+        # Aplana el marcado 【】 y, en nivel bajo, recorta las frases japonesas
+        # que el modelo suelta pese al prompt (Laura no las entiende). Se guarda
+        # la versión ya acotada: así el modelo imita su propio estilo corto.
+        acotada = _acotar_japones(respuesta, self.nivel_inmersion)
+        if acotada != respuesta:
+            print(f"✂️  Japonés acotado a nivel {self.nivel_inmersion}")
+            respuesta = acotada
 
         # Guardar turno limpio en el historial propio
         self.mensajes.append({"role": "user", "content": mensaje})
@@ -557,13 +690,29 @@ class ProfesorJapones:
     # ── Cierre de sesión y extracción (Fase 5) ───────────────────────────────
 
     def cerrar_sesion_y_extraer(self):
-        """Extrae el aprendizaje de la sesión con LLM ligero y actualiza el SRS."""
+        """Extrae el aprendizaje de la sesión con LLM ligero y actualiza el SRS.
+
+        Corre en segundo plano. Espera EXTRACCION_RETRASO_SEG antes de llamar al
+        extractor para no compartir ventana de tokens/min con la despedida.
+        Se lleva una copia de mensajes/foco: una sesión nueva puede empezar
+        durante la espera y pisar self.*."""
         if not self.session_id:
             return
         session_id = self.session_id
-        self.session_id = None  # liberar antes; la extracción puede tardar varios segundos
+        mensajes = list(self.mensajes)
+        foco_nuevos = list(self._foco_nuevos)
+        foco_unidad = self._foco_unidad
+        self.session_id = None  # liberar ya: la sesión siguiente puede abrir mientras esperamos
+
+        if EXTRACCION_RETRASO_SEG > 0:
+            dormir = getattr(self.socketio, "sleep", None) or time.sleep
+            try:
+                dormir(EXTRACCION_RETRASO_SEG)
+            except Exception:
+                pass
+
         try:
-            self._ejecutar_extraccion(session_id)
+            self._ejecutar_extraccion(session_id, mensajes, foco_nuevos, foco_unidad)
         except Exception as e:
             print(f"⚠️ Error inesperado en extracción de sesión {session_id}: {e}")
             try:
@@ -571,15 +720,18 @@ class ProfesorJapones:
             except Exception:
                 pass
 
-    def _ejecutar_extraccion(self, session_id: int):
-        if not self.mensajes:
+    def _ejecutar_extraccion(self, session_id: int, mensajes=None,
+                             foco_nuevos=None, foco_unidad=None):
+        # Sin argumentos → usa el estado vivo (call sites de tests). Con ellos →
+        # la instantánea que tomó cerrar_sesion_y_extraer antes de esperar.
+        mensajes = self.mensajes if mensajes is None else mensajes
+        if not any(m["role"] == "user" for m in mensajes):
+            # Solo el saludo de apertura: no hay nada que extraer.
             self.jap_memory.guardar_resumen_sesion(session_id, summary=None)
             return
 
-        # Copia local: una sesión nueva puede pisar self._foco_* mientras
-        # esta extracción corre en segundo plano (igual que session_id).
-        foco_nuevos = list(self._foco_nuevos)
-        unidad = self._foco_unidad or {}
+        foco_nuevos = list(self._foco_nuevos if foco_nuevos is None else foco_nuevos)
+        unidad = (self._foco_unidad if foco_unidad is None else foco_unidad) or {}
         can_dos_activos = unidad.get("can_dos", []) if isinstance(unidad, dict) else []
 
         # Persistir aquí los ítems nuevos de la sesión.
@@ -595,7 +747,7 @@ class ProfesorJapones:
             except Exception as e:
                 print(f"⚠️ Error persistiendo ítem nuevo '{nuevo['jp']}': {e}")
 
-        transcript = self._construir_transcript()
+        transcript = self._construir_transcript(mensajes)
 
         # Nivel 1: resumen en texto libre con cualquier modelo disponible.
         # Se guarda siempre para que la próxima sesión tenga continuidad aunque
@@ -634,6 +786,17 @@ class ProfesorJapones:
                 data = self._parsear_json_sesion(texto)
             except Exception as e:
                 print(f"⚠️ Error en extractor (intento 2): {e}")
+
+        if data is None:
+            # El modelo del sensei sigue caído: último intento con la cadena de
+            # reserva (strict=False). Peor japonés en new_items, pero se salvan
+            # las calificaciones de can-dos.
+            print("⚠️ Extractor sin el modelo del sensei. Intento con modelos de reserva…")
+            try:
+                texto = self._llamar_extractor(historial, strict=False)
+                data = self._parsear_json_sesion(texto)
+            except Exception as e:
+                print(f"⚠️ Error en extractor (reserva): {e}")
 
         if data is None:
             # Extractor caído: no se toca ningún can-do, solo se guarda el
@@ -692,9 +855,9 @@ class ProfesorJapones:
         self.jap_memory.guardar_episodios(session_id, data.get("episodios", []))
         self.jap_memory.guardar_anecdotas_kaito(session_id, data.get("kaito_dijo", []))
 
-    def _construir_transcript(self) -> str:
+    def _construir_transcript(self, mensajes=None) -> str:
         lines = []
-        for m in self.mensajes:
+        for m in (self.mensajes if mensajes is None else mensajes):
             rol = "Profesor" if m["role"] == "assistant" else "Laura"
             lines.append(f"{rol}: {m['content']}")
         return "\n".join(lines)
@@ -719,14 +882,16 @@ class ProfesorJapones:
             print(f"⚠️ No se pudo generar resumen básico: {e}")
             return None
 
-    def _llamar_extractor(self, historial: list) -> str:
-        # strict=True: si el modelo principal está en rate limit no usamos fallback —
-        # un modelo alternativo produce JSON corrupto que contamina la BD.
+    def _llamar_extractor(self, historial: list, strict: bool = True) -> str:
+        # strict=True: solo el modelo del sensei — es el que da japonés limpio en
+        # el JSON. Si está en rate limit se reintenta con strict=False (cadena de
+        # reserva): un new_item con japonés algo sucio se puede corregir; perder
+        # la calificación de can-dos de toda la sesión, no.
         return self.provider.completar(
             historial,
             max_tokens=1000,
             response_format={"type": "json_object"},
-            strict=True,
+            strict=strict,
             reasoning_effort="low",
         )
 

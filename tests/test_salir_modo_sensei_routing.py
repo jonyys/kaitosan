@@ -4,6 +4,7 @@ Regresión: «salir del modo sensei» se despide; no lo caza el disparador de
 entrada por contener «sensei».
 """
 import os
+import random
 import sys
 from unittest.mock import MagicMock
 
@@ -17,6 +18,7 @@ def _brain(activo):
     b = object.__new__(Brain)
     b.profesor = MagicMock()
     b.profesor.esta_activo.return_value = activo
+    b.profesor.saludo_inicial.return_value = random.choice(SALUDOS)
     b._emitir_desactivar_sensei = False
     return b
 
@@ -34,6 +36,7 @@ def test_entrar_al_modo_sensei_saluda():
     resp, _ = b._responder("ponme en modo sensei")
     assert resp in SALUDOS
     b.profesor.entrar.assert_called_once()
+    b.profesor.saludo_inicial.assert_called_once()
 
 
 def test_modo_estudio_tambien_entra():

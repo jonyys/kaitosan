@@ -1187,7 +1187,7 @@ _GROQ_CACHE_SEG = 3600
 
 # Subcadenas que descartan un modelo del desplegable de chat: audio (whisper/tts)
 # y clasificadores de seguridad (guard). El resto de modelos `active` entran.
-_GROQ_EXCLUIR = ("whisper", "tts", "guard", "playai")
+_GROQ_EXCLUIR = ("whisper", "tts", "guard", "playai", "orpheus")
 
 
 def groq_modelos(forzar: bool = False) -> list:
@@ -1245,6 +1245,31 @@ def groq_modelos(forzar: bool = False) -> list:
 
     _GROQ_CACHE.update(ts=ahora, datos=modelos)
     return modelos
+
+
+def modelo_sensei_efectivo() -> str:
+    """Modelo a usar en el modo sensei, resuelto contra la lista viva de Groq.
+
+    Devuelve el PRIMERO de `MODELOS_SENSEI_PREFERENCIA` que esté disponible; si
+    ninguno lo está, el primer modelo de chat que devuelva la API; si no hay
+    lista (sin red / sin API key), el primero de la preferencia como último
+    recurso. No toca `.env` ni la selección guardada: es en caliente.
+    """
+    from core.config import MODELOS_SENSEI_PREFERENCIA
+    modelos = groq_modelos()
+    ids = [m["id"] for m in modelos]
+    for modelo in MODELOS_SENSEI_PREFERENCIA:
+        if modelo in ids:
+            return modelo
+    # Ninguno de los preferidos: primer modelo de chat con contexto de sobra
+    # para el prompt del sensei (~8k tokens). Descarta audio y los diminutos.
+    _NO_SENSEI = ("orpheus", "tts", "whisper", "guard", "allam")
+    for m in modelos:
+        if (m.get("context_window") or 0) >= 32000 and not any(
+            x in m["id"].lower() for x in _NO_SENSEI
+        ):
+            return m["id"]
+    return ids[0] if ids else MODELOS_SENSEI_PREFERENCIA[0]
 
 
 def groq_seleccion_get() -> dict:

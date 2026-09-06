@@ -77,6 +77,9 @@ class MockSocketIO:
     def start_background_task(self, fn, *args, **kwargs):
         fn(*args, **kwargs)
 
+    def sleep(self, _s):  # no esperamos el retraso de extracción en la simulación
+        pass
+
 
 # ── Turnos predefinidos (simulan a Laura) ─────────────────────────────────────
 # 5 turnos: un error (duda), una corrección (bien), un error grave (mal),
