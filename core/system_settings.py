@@ -1804,8 +1804,10 @@ def actualizar() -> dict:
     commit_anterior = (_git(["rev-parse", "HEAD"], raiz) or "").strip() or None
     if commit_anterior:
         settings_set("update_commit_anterior", commit_anterior)
-    # Solo la descripción de cada commit, sin el hash (se ve en el panel).
-    log_entrante = (_git(["log", "--format=%s", "-n", "8"], raiz) or "").strip()
+    # Commits que trae esta actualización: descripción (sin hash), sin merges,
+    # solo lo que está en el remoto y aún no aquí (HEAD..upstream tras un fetch).
+    _git(["fetch", "--quiet"], raiz)
+    log_entrante = (_git(["log", "--no-merges", "--format=%s", "HEAD..@{u}"], raiz) or "").strip()
 
     _ACTUALIZAR_ESTADO.update(en_curso=True, pasos=None)
     threading.Thread(

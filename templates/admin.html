@@ -214,7 +214,8 @@
               var txt =
                 (d.ok ? ico("check-circle") + " " : ico("x-circle") + " ") +
                 esc(d.mensaje || d.error || "");
-              if (d.log) txt += "\n\nÚltimos commits:\n" + esc(d.log);
+              if (d.log) txt += "\n\nCambios de esta actualización:\n" + esc(d.log);
+              else if (d.ok && accion === "actualizar") txt += "\n\nNo hay actualizaciones pendientes.";
               m.innerHTML = txt;
             })
             .catch(function () {
