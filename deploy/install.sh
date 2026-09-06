@@ -183,6 +183,18 @@ if [ "$DO_KIOSK" -eq 1 ]; then
   install -d -m 0755 /etc/xdg/autostart
   install -m 0644 "$SCRIPT_DIR/kaito-kiosk.desktop" /etc/xdg/autostart/kaito-kiosk.desktop
   echo "  (en Wayland/wayfire quizá haya que añadir kaito-kiosk.sh a ~/.config/wayfire.ini)"
+
+  # Lanzador para volver al kiosco tras "Salir al escritorio" (§ botón del cajón).
+  if [ -e "$SCRIPT_DIR/kaito-lanzador.desktop" ]; then
+    log "lanzador: kaito-lanzador.desktop -> menú y escritorio de $KAITO_USER"
+    install -d -m 0755 /usr/share/applications
+    install -m 0644 "$SCRIPT_DIR/kaito-lanzador.desktop" \
+      /usr/share/applications/kaito-lanzador.desktop
+    DESK="$(getent passwd "$KAITO_USER" | cut -d: -f6)/Desktop"
+    install -d -m 0755 -o "$KAITO_USER" -g "$KAITO_USER" "$DESK"
+    install -m 0755 -o "$KAITO_USER" -g "$KAITO_USER" \
+      "$SCRIPT_DIR/kaito-lanzador.desktop" "$DESK/kaito-lanzador.desktop"
+  fi
 fi
 
 # --- 11. Arrancar ---------------------------------------------------------------

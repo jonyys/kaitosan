@@ -33,7 +33,7 @@
     </h1>
 
     <div class="acc-list">
-        <details class="acc"><summary><svg class="ico"><use href="#i-wifi"/></svg> WiFi</summary>
+        <details class="acc" id="wifi"><summary><svg class="ico"><use href="#i-wifi"/></svg> WiFi</summary>
             {% include 'partials/ajustes/_wifi.html' %}
         </details>
         <details class="acc"><summary><svg class="ico"><use href="#i-bluetooth"/></svg> Bluetooth</summary>
@@ -65,6 +65,15 @@
 </div>
 
 {% include 'partials/_panel_scripts.html' %}
+
+<script>
+  // Llegar con #seccion (p. ej. desde el botón WiFi del cajón del kiosko)
+  // abre y desplaza ese acordeón.
+  (function () {
+    var d = location.hash && document.querySelector(location.hash);
+    if (d && d.tagName === "DETAILS") { d.open = true; d.scrollIntoView(); }
+  })();
+</script>
 
 </body>
 </html>

@@ -248,6 +248,16 @@ def kiosko_noche():
     r = system_settings.noche_set(request.form.get("enabled", ""), n["start"], n["end"])
     return jsonify(r), (200 if r.get("ok") else 400)
 
+
+@app.route("/kiosko/salir", methods=["POST"])
+def kiosko_salir():
+    """Cierra el navegador en kiosco y para el servicio: deja el escritorio del
+    robot libre para tocar la bandeja de red sin teclado. Se vuelve con el
+    lanzador «Kaito» del escritorio."""
+    if not _solo_local():
+        abort(403)
+    return jsonify(system_settings.salir_al_escritorio())
+
 @app.route("/reloj/alarmas", methods=["GET"])
 def reloj_alarmas_listar():
     return jsonify(brain.alarm._estado_serializable())

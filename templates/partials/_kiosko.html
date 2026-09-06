@@ -43,9 +43,9 @@
   #kioskoDrawer input[type="checkbox"] {
     width: 26px; height: 26px; accent-color: #d9568c; margin-left: auto;
   }
-  #kioskoDrawer .btns { display: flex; gap: 8px; margin-top: 16px; }
+  #kioskoDrawer .btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
   #kioskoDrawer .btns button {
-    flex: 1; min-height: 46px; padding: 10px; border: 0; border-radius: 11px;
+    flex: 1 1 28%; min-height: 46px; padding: 10px; border: 0; border-radius: 11px;
     background: #2c2c33; color: #ececec; font: inherit; font-weight: 700;
     cursor: pointer;
   }
@@ -128,6 +128,8 @@
         '<button data-go="/">Cara</button>' +
         '<button data-go="/reloj">Reloj</button>' +
         '<button data-go="/admin/ajustes">Ajustes</button>' +
+        '<button data-go="/admin/ajustes#wifi">WiFi</button>' +
+        '<button data-salir>Salir</button>' +
         "</div>";
 
       document.body.appendChild(bd);
@@ -155,6 +157,13 @@
 
       dw.querySelectorAll(".btns button").forEach(function (b) {
         b.addEventListener("click", function () {
+          if (b.hasAttribute("data-salir")) {
+            if (confirm("¿Salir a la pantalla del sistema? Kaito se cerrará; " +
+                        "vuelve a abrirlo con el icono «Kaito» del escritorio.")) {
+              fetch("/kiosko/salir", { method: "POST" });
+            }
+            return;
+          }
           var go = b.getAttribute("data-go");
           if (go === ruta) { cerrar(); return; }
           location.replace(go);

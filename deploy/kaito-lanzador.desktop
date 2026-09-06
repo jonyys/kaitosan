@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Kaito
+Comment=Arranca Kaito y vuelve a pantalla completa (tras «Salir al escritorio»)
+Exec=bash -c 'sudo -n systemctl start kaito; exec /usr/local/bin/kaito-kiosk.sh'
+Icon=start-here
+Terminal=false

@@ -1804,7 +1804,8 @@ def actualizar() -> dict:
     commit_anterior = (_git(["rev-parse", "HEAD"], raiz) or "").strip() or None
     if commit_anterior:
         settings_set("update_commit_anterior", commit_anterior)
-    log_entrante = (_git(["log", "--oneline", "-n", "8"], raiz) or "").strip()
+    # Solo la descripción de cada commit, sin el hash (se ve en el panel).
+    log_entrante = (_git(["log", "--format=%s", "-n", "8"], raiz) or "").strip()
 
     _ACTUALIZAR_ESTADO.update(en_curso=True, pasos=None)
     threading.Thread(
@@ -1841,6 +1842,26 @@ def reiniciar_servicio() -> dict:
     return {"ok": True,
             "mensaje": ("Reiniciando el servicio. Esta página se desconectará "
                         "unos segundos; recárgala enseguida.")}
+
+
+def salir_al_escritorio() -> dict:
+    """Mata el navegador en kiosco y para `kaito.service` para dejar libre el
+    escritorio del robot (tocar la bandeja de red sin teclado, p. ej.). Se
+    vuelve con el lanzador «Kaito» del escritorio, que arranca el servicio y
+    reabre el navegador. Responde antes de cerrar nada.
+    """
+    if _simulado():
+        return {"ok": True, "simulado": True,
+                "mensaje": "En la Pi saldría al escritorio ahora."}
+
+    def _worker():
+        time.sleep(0.5)                       # deja que responda el fetch
+        # ponytail: pkill por nombre; en esta Pi solo hay un Chromium
+        _cmd(["/usr/bin/pkill", "-f", "chromium"], timeout=10)
+        _cmd(["sudo", "-n", "systemctl", "stop", "kaito"], timeout=30)
+
+    threading.Thread(target=_worker, daemon=True).start()
+    return {"ok": True, "mensaje": "Saliendo al escritorio…"}
 
 
 def reset_fabrica() -> dict:
