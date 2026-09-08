@@ -18,6 +18,7 @@ class _Rate(Exception):
 def _provider(*gemini_returns):
     """gemini_returns: por cada modelo, un str a devolver o una Exception a lanzar."""
     sp = SenseiProvider()
+    sp.openrouter = None  # los tests de abajo prueban la cadena Gemini/Groq
     sp.gemini = []
     for i, val in enumerate(gemini_returns):
         gp = MagicMock()
@@ -73,6 +74,34 @@ def test_extractor_strict_solo_groq():
     assert sp.reserva.completar.call_args.kwargs.get("strict") is True
 
 
+def test_openrouter_primero_y_no_toca_gemini_ni_groq():
+    sp = _provider("no debería usarse")
+    sp.openrouter = MagicMock()
+    sp.openrouter.completar.return_value = "【はい】 openrouter"
+    assert sp.completar([{"role": "user", "content": "hola"}]) == "【はい】 openrouter"
+    sp.gemini[0].completar.assert_not_called()
+    sp.reserva.completar.assert_not_called()
+
+
+def test_openrouter_falla_cae_a_la_cadena_anterior():
+    sp = _provider("【はい】 g0")
+    sp.openrouter = MagicMock()
+    sp.openrouter.completar.side_effect = Exception("todos los modelos OpenRouter fallaron")
+    assert sp.completar([{"role": "user", "content": "hola"}]) == "【はい】 g0"
+
+
+def test_openrouter_no_se_usa_para_el_extractor_strict():
+    sp = _provider()
+    sp.openrouter = MagicMock()
+    out = sp.completar(
+        [{"role": "user", "content": "conv"}],
+        response_format={"type": "json_object"}, strict=True,
+    )
+    assert out == "{} (groq)"
+    sp.openrouter.completar.assert_not_called()
+    assert sp.reserva.completar.call_args.kwargs.get("strict") is True
+
+
 def test_es_rate_limit():
     assert _es_rate_limit(Exception("429 RESOURCE_EXHAUSTED"))
     assert _es_rate_limit(Exception("You exceeded your quota"))
@@ -85,5 +114,8 @@ if __name__ == "__main__":
     test_todos_gemini_en_rate_limit_cae_a_groq()
     test_error_no_429_de_gemini_va_directo_a_groq()
     test_extractor_strict_solo_groq()
+    test_openrouter_primero_y_no_toca_gemini_ni_groq()
+    test_openrouter_falla_cae_a_la_cadena_anterior()
+    test_openrouter_no_se_usa_para_el_extractor_strict()
     test_es_rate_limit()
     print("OK")

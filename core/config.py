@@ -28,6 +28,21 @@ SENSEI_TURNOS_GEMINI = os.getenv("SENSEI_TURNOS_GEMINI", "0").strip().lower() in
     "1", "true", "yes", "on",
 )
 
+# OpenRouter — proveedor de los TURNOS del sensei (no del extractor). El prompt
+# del profesor es grande y ahogaba el tier gratis de Groq/Gemini por límite de
+# tokens/min; OpenRouter es pago-por-uso y da acceso a modelos fuertes en seguir
+# instrucciones (Qwen, GLM) que es lo que más importa aquí. Con
+# OPENROUTER_API_KEY vacía se usa el camino anterior (Gemini/Groq) sin cambios.
+# La lista se recorre en orden hasta el primero que responda (rate limit / caído
+# → siguiente). El extractor de cierre (strict) NUNCA pasa por aquí.
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "").strip()
+OPENROUTER_MODELOS_SENSEI = [
+    m.strip() for m in os.getenv(
+        "OPENROUTER_MODELOS_SENSEI",
+        "qwen/qwen3.8-flash,z-ai/glm-5.3-flash,openai/gpt-oss-120b",
+    ).split(",") if m.strip()
+]
+
 # Orden de preferencia para el modo sensei: se coge el PRIMERO que esté vivo en
 # la API. Si ninguno lo está, el primer modelo de chat con contexto suficiente
 # que devuelva la lista. gpt-oss va primero porque los qwen del tier gratis dan
