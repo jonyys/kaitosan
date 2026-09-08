@@ -3,7 +3,7 @@ import time
 import threading
 from audio.wakeword import WakeWordDetector
 from ai.speech_to_text import transcribir_para_turno
-from ai.sensei.kana import bloques_japones
+from ai.sensei.kana import frases_para_card
 
 TIMEOUT_CONVERSACION_SEG = 3
 
@@ -69,8 +69,13 @@ class VoiceListener:
         respuesta, lento_extra = self.brain.responder(texto, pron_contexto=pron_ctx)
         self.socketio.emit("mensaje", {"texto": respuesta})
         if self.brain.profesor.esta_activo():
-            # En modo sensei, muestra en la cara los 【…】 en solo kana (nunca kanji).
-            self.socketio.emit("sensei_japones", {"frases": bloques_japones(respuesta)})
+            # En modo sensei, muestra en la cara la frase objetivo (o los 【…】
+            # sueltos si no hay), siempre en solo kana (nunca kanji).
+            objetivo = getattr(self.brain.profesor, "ultima_frase_objetivo", None)
+            self.socketio.emit(
+                "sensei_japones",
+                {"frases": frases_para_card(respuesta, objetivo)},
+            )
 
         def al_iniciar_audio():
             self.state.cambiar("speaking")

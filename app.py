@@ -35,7 +35,7 @@ from datetime import timedelta, date
 from audio.recorder import Recorder
 from ai.speech_to_text import SpeechToText, transcribir_para_turno
 from ai.text_to_speech import TextToSpeech
-from ai.sensei.kana import bloques_japones, romaji
+from ai.sensei.kana import frases_para_card, romaji
 from ai.sensei.kanji_n5 import KANJI_N5
 from ai.sensei.curriculum import CURRICULUM
 from core.token_tracker import TokenTracker
@@ -65,11 +65,16 @@ voice_listener = VoiceListener(recorder, stt, brain, tts, state, socketio)
 
 
 def emitir_japones_sensei(respuesta: str):
-    """En modo sensei, manda a la cara los trozos 【…】 en solo kana (hiragana/
-    katakana, nunca kanji) para mostrarlos en una card. Fuera de sensei, nada."""
+    """En modo sensei, manda a la cara el japonés en solo kana (hiragana/
+    katakana, nunca kanji) para mostrarlo en una card. Fuera de sensei, nada.
+
+    Si el turno fijó una frase objetivo (línea @@OBJETIVO@@ o heurística), se
+    muestra ESA, entera: es lo que Laura tiene que decir y contra lo que se
+    puntúa la pronunciación. Si no hay objetivo, los trozos 【…】 del turno."""
     if not brain.profesor.esta_activo():
         return
-    socketio.emit("sensei_japones", {"frases": bloques_japones(respuesta)})
+    objetivo = getattr(brain.profesor, "ultima_frase_objetivo", None)
+    socketio.emit("sensei_japones", {"frases": frases_para_card(respuesta, objetivo)})
 
 
 @app.route("/")
@@ -206,6 +211,19 @@ def _solo_local():
     Vale porque la app escucha directa en :5000 sin proxy inverso: el móvil
     entra por la IP LAN y `remote_addr` es la suya."""
     return request.remote_addr in ("127.0.0.1", "::1")
+
+
+@app.context_processor
+def _inyectar_es_kiosko():
+    """`es_kiosko` disponible en todas las plantillas: True solo si la petición
+    viene de la propia Raspberry (localhost). partials/_kiosko.html lo usa para
+    que el salto automático a la cara cuando Kaito despierta pase SOLO en la
+    pantalla del aparato; un móvil/PC en kaitosan.local no se mueve de donde
+    esté."""
+    try:
+        return {"es_kiosko": _solo_local()}
+    except Exception:
+        return {"es_kiosko": False}
 
 
 def _kiosko_config():

@@ -65,8 +65,11 @@
     } catch (e) {}
 
     // ── Fase 1: volver a la cara cuando Kaito se despierta ──────────────────
+    // Solo en la pantalla del propio robot (localhost). Un móvil o PC en la LAN
+    // que esté en /reloj, /admin/ajustes, etc. NO debe saltar a la cara.
+    var ES_KIOSKO = {{ 'true' if es_kiosko else 'false' }};
     function irACara(d) {
-      if (d && d.estado === "listening" && location.pathname !== "/") {
+      if (ES_KIOSKO && d && d.estado === "listening" && location.pathname !== "/") {
         location.replace("/");
       }
     }
@@ -95,7 +98,9 @@
         .then(function (cfg) {
           var d = construirDrawer(cfg, ruta);
           wireGestos(ruta, d);
-          if (ruta === "/") wireInactividad(cfg);
+          // El salvapantallas (cara -> reloj tras N min) solo en la Pi: un
+          // móvil/PC que esté mirando la cara no debe saltar al reloj solo.
+          if (ES_KIOSKO && ruta === "/") wireInactividad(cfg);
         })
         .catch(function () {});
     }

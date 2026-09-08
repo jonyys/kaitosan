@@ -81,6 +81,15 @@ def bloques_japones(texto: str) -> list[str]:
     return out
 
 
+def frases_para_card(respuesta: str, objetivo: str | None = None) -> list[str]:
+    """Lo que se muestra en la card del sensei, siempre en solo kana.
+
+    Si el turno fijó una frase objetivo (línea @@OBJETIVO@@ o heurística sobre
+    【】), se muestra ESA entera: es lo que Laura tiene que decir y contra lo que
+    se puntúa. Si no hay objetivo, los trozos 【…】 sueltos del turno."""
+    return [a_kana(objetivo)] if objetivo else bloques_japones(respuesta)
+
+
 if __name__ == "__main__":
     assert a_kana("東京") == "とうきょう", a_kana("東京")
     assert a_kana("わたし") == "わたし"
@@ -90,6 +99,8 @@ if __name__ == "__main__":
     assert bloques_japones("Repite: 【水をのむ】 ¿vale?") == ["みずをのむ"]
     assert bloques_japones("dos 【食べる】 y 【コーヒー】 aquí") == ["たべる", "コーヒー"]
     assert bloques_japones("Repite: 【おはよう】 … 【おはよう】") == ["おはよう"]
+    assert frases_para_card("di 【ねこ】", "ちょっと、もう一度お願いします") == ["ちょっと、もういちどおねがいします"]
+    assert frases_para_card("di 【ねこ】", None) == ["ねこ"]
     assert bloques_japones("sin japonés 【hola】") == []
     # 【】 anidados → un bloque limpio y continuo, sin "suelto" (contenido tal cual)
     assert bloques_japones("【いいね、【こんにちは】は午後です。】") == ["いいね、こんにちははごごです。"], \

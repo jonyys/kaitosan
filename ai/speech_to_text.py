@@ -35,9 +35,6 @@ def _norm_jp(s: str) -> str:
     return "".join(c for c in (s or "") if c not in _PUNT_JP)
 
 
-_RE_JP_CHARS = re.compile(r'[぀-ヿ㐀-䶿一-鿿ｦ-ﾝ]')
-_RE_LATIN = re.compile(r'[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]')
-
 # Whisper "rellena" el silencio con un agradecimiento: si el micro se activa
 # sin querer y nadie habla, la transcripción suele salir como un simple
 # "Gracias" / "Thank you". Si eso llega y no ha habido ningún turno en los
@@ -58,17 +55,6 @@ def _es_agradecimiento_corto(texto: str) -> bool:
     alucinación típica de Whisper al activarse sin que nadie hable."""
     t = " ".join(re.sub(r"[^\w\s]", "", (texto or "").lower()).split())
     return bool(t) and t in _AGRADECIMIENTOS
-
-
-def _es_mayormente_japones(texto: str) -> bool:
-    """True si la transcripción es japonés (kana/kanji) con, como mucho, alguna
-    letra latina suelta. Sirve para decidir si merece la pena llamar a Azure:
-    si Laura contestó en español, nos quedamos con Whisper."""
-    jp = len(_RE_JP_CHARS.findall(texto or ""))
-    lat = len(_RE_LATIN.findall(texto or ""))
-    if jp == 0:
-        return False
-    return lat <= max(2, jp * 0.25)
 
 
 class SpeechToText:
@@ -323,10 +309,13 @@ def _ruta_transcripcion(stt: SpeechToText, archivo: str, *, sensei_activo: bool,
     """Enruta la transcripción de un turno.
 
     - Sensei estructurado + hay `referencia` (el profesor pidió repetir una frase):
-      primero Groq Whisper (autodetección). Si lo que dijo Laura es japonés, se
-      llama a Azure para la evaluación de pronunciación contra `referencia`; si
-      contestó en español (o mezcla), nos quedamos con la transcripción de Whisper
-      y no se evalúa nada.
+      va DIRECTO a Azure Speech (ja-JP), que hace transcripción y evaluación de
+      pronunciación en una sola llamada. Antes se pasaba primero por Groq Whisper
+      y solo se llamaba a Azure si Whisper ya devolvía kana — pero Whisper con
+      japonés corto de una principiante hispanohablante casi nunca acierta el
+      kana, así que la evaluación no se disparaba nunca. Si Azure no está
+      disponible (sin clave, cuota agotada, error), se cae a Groq Whisper
+      forzando japonés.
     - Sensei sin `referencia` (respuesta libre, sí/no, comprensión…): Groq Whisper
       con autodetección.
     - Sensei charla: solo evalúa si AZURE_PRON_EN_CHARLA está activo.
@@ -337,14 +326,11 @@ def _ruta_transcripcion(stt: SpeechToText, archivo: str, *, sensei_activo: bool,
     """
     quiere_pron = sensei_activo and referencia and (not modo_conv or AZURE_PRON_EN_CHARLA)
     if quiere_pron:
-        texto_w = stt.transcribir(archivo, idioma=None)
-        if texto_w and _es_mayormente_japones(texto_w):
-            res = stt.transcribir_con_pronunciacion(archivo, referencia=referencia)
-            if res is not None:
-                return res["texto"], res.get("pron")
-        elif texto_w:
-            print("🈳 Respuesta en español/mixta → sin evaluación de pronunciación")
-        return texto_w, None
+        res = stt.transcribir_con_pronunciacion(archivo, referencia=referencia)
+        if res is not None:
+            return res["texto"], res.get("pron")
+        print("↩️  Azure no disponible → Groq Whisper (ja) de reserva, sin evaluación")
+        return stt.transcribir(archivo, idioma="ja"), None
 
     if sensei_activo:
         return stt.transcribir(archivo, idioma=None), None
@@ -361,3 +347,35 @@ if __name__ == "__main__":
               "", "gracias kaito"]:
         assert not _es_agradecimiento_corto(s), s
     print("✅ _es_agradecimiento_corto OK")
+
+    # Enrutado: con referencia en sensei estructurado va DIRECTO a Azure; si
+    # Azure devuelve None, cae a Whisper(ja) sin evaluación.
+    class _FakeSTT:
+        def __init__(self, azure):
+            self._azure = azure
+            self.llamadas = []
+
+        def transcribir_con_pronunciacion(self, archivo, referencia=None):
+            self.llamadas.append(("azure", referencia))
+            return self._azure
+
+        def transcribir(self, archivo, idioma=None):
+            self.llamadas.append(("whisper", idioma))
+            return "texto whisper"
+
+    ok = _FakeSTT({"texto": "ちょっと", "pron": "Veredicto: BIEN"})
+    t, p = _ruta_transcripcion(ok, "a.wav", sensei_activo=True, modo_conv=False,
+                               referencia="ちょっと")
+    assert (t, p) == ("ちょっと", "Veredicto: BIEN"), (t, p)
+    assert ok.llamadas == [("azure", "ちょっと")], ok.llamadas
+
+    sin_azure = _FakeSTT(None)
+    t, p = _ruta_transcripcion(sin_azure, "a.wav", sensei_activo=True, modo_conv=False,
+                               referencia="ちょっと")
+    assert (t, p) == ("texto whisper", None), (t, p)
+    assert sin_azure.llamadas == [("azure", "ちょっと"), ("whisper", "ja")], sin_azure.llamadas
+
+    libre = _FakeSTT(None)
+    _ruta_transcripcion(libre, "a.wav", sensei_activo=True, modo_conv=False, referencia=None)
+    assert libre.llamadas == [("whisper", None)], libre.llamadas
+    print("✅ _ruta_transcripcion OK")

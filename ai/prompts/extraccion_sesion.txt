@@ -35,7 +35,10 @@ Reglas:
     (lo que dijo Laura o el profesor), no una valoración vaga. Mal: "lo hizo bien".
     Bien: "Laura dijo 「コーヒーをください」 sin que Kaito se lo diera".
   * Si ninguno de los can-dos activos surgió, can_dos = [].
-- new_items: vocabulario, expresiones o puntos gramaticales introducidos por primera vez.
+- new_items: vocabulario, expresiones o puntos gramaticales que se TRABAJARON de verdad por
+  primera vez: el profesor los explicó Y Laura llegó a usarlos o al menos a intentarlos en un
+  turno suyo. NO incluyas algo que el profesor solo nombró de pasada, puso como ejemplo o
+  soltó en una lista sin que Laura lo practicara. Ante la duda, fuera.
   Para gramática usa el jp canónico del patrón (〜て, 〜た, る動詞…).
 - sin_corregir: errores que Laura cometió y el profesor dejó pasar sin comentarlos
   (los que sí corrigió NO van aquí). Descríbelos en español y corto: "usó は donde va が",

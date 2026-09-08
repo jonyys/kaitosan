@@ -68,12 +68,26 @@ _RESULTADOS_CAN_DO = {"conseguido", "parcial", "no_intentado", "error"}
 _RE_BLOQUE_JP = re.compile(r'【([^【】]*[぀-ゟ゠-ヿ一-鿿][^【】]*)】')
 # Cualquier carácter japonés.
 _RE_JP_CHAR = re.compile(r'[぀-ゟ゠-ヿ一-鿿]')
-# Kanji (incl. extensión A). Una frase objetivo con kanji casi nunca es algo que
-# Laura deba pronunciar: suele ser el nombre de la unidad o vocabulario mostrado
-# por significado que se ha colado. Se descarta como objetivo de pronunciación.
-# ponytail: filtro por presencia de kanji. Si algún día se enseña producción de
-# frases con kanji, pasar el candidato por kana.a_kana() en vez de descartarlo.
+# Kanji (incl. extensión A). Un candidato a frase objetivo DENSO en kanji suele
+# ser el nombre de la unidad ("挨拶と基本表現") o una descripción ("今日は挨拶の練習")
+# colada, no algo que Laura deba pronunciar. Pero las frases-función N5 llevan
+# 1-3 kanji sobre kana ("もう一度お願いします") y SÍ son objetivo: por eso se permite
+# lo que esté en _EXPR_OK_NIVEL_BAJO o tenga poca proporción de kanji.
+# ponytail: heurística por proporción de kanji + lista blanca. Si algún día se
+# enseña producción de frases con kanji denso, pasar el candidato por kana.
 _RE_KANJI = re.compile(r'[㐀-䶿一-鿿]')
+_KANJI_RATIO_MAX_OBJETIVO = 0.4  # más kanji que esto → descripción, no objetivo
+
+
+def _kanji_bloquea_objetivo(b: str) -> bool:
+    """True si el bloque tiene demasiado kanji para ser una frase objetivo real
+    (y no está en la lista blanca de expresiones fijas N5)."""
+    if not _RE_KANJI.search(b):
+        return False
+    if b in _EXPR_OK_NIVEL_BAJO:
+        return False
+    kanji = len(_RE_KANJI.findall(b))
+    return kanji / max(len(b), 1) > _KANJI_RATIO_MAX_OBJETIVO
 # Texto entre comillas japonesas 「…」 / 『…』.
 _RE_ENTRECOMILLADO = re.compile(r'[「『]([^「」『』]*)[」『』]')
 
@@ -160,23 +174,56 @@ def _extraer_frase_objetivo(texto: str):
     ]
     entrecomillados = [
         e for e in entrecomillados
-        if _RE_JP_CHAR.search(e) and len(e) >= 3 and not _RE_KANJI.search(e)
+        if _RE_JP_CHAR.search(e) and len(e) >= 3 and not _kanji_bloquea_objetivo(e)
     ]
     if entrecomillados:
         return entrecomillados[-1]
 
-    bloques = [_limpiar_objetivo(b) for b in _RE_BLOQUE_JP.findall(texto)]
-    bloques = [
-        b for b in bloques
-        if b and b not in _FRASES_ANIMO and not _RE_KANJI.search(b)
-    ]
-    if not bloques:
+    # Bloques 【…】 con japonés, con su posición para poder juntar los adyacentes.
+    marcados = []
+    for m in _RE_BLOQUE_LLANO.finditer(texto):
+        b = _limpiar_objetivo(m.group(1))
+        if (b and _RE_JP_CHAR.search(b) and b not in _FRASES_ANIMO
+                and not _kanji_bloquea_objetivo(b)):
+            marcados.append((m.start(), m.end(), b))
+    if not marcados:
         return None
 
-    # El prompt pide terminar el turno con la frase objetivo como último bloque
-    # 【】 ("Repite: 【…】"). Así que el objetivo es el ÚLTIMO bloque, no el más
-    # largo (antes cogía 【お元気ですか】 en vez de 【晴れた】 por tener más letras).
-    return bloques[-1]
+    # El prompt pone la frase objetivo al final del turno, a veces partida en
+    # varios bloques seguidos ("Repite: 【ちょっと】…【もう一度お願いします】"). Se junta
+    # la ÚLTIMA tanda de bloques separados solo por puntos suspensivos, espacios
+    # o comas; así el objetivo es la frase entera, no su último trozo.
+    grupo = [marcados[-1][2]]
+    for i in range(len(marcados) - 1, 0, -1):
+        hueco = texto[marcados[i - 1][1]:marcados[i][0]]
+        if re.fullmatch(r'[\s…。、・.,\-–—]*', hueco or ""):
+            grupo.insert(0, marcados[i - 1][2])
+        else:
+            break
+    return " ".join(grupo) if len(grupo) > 1 else grupo[0]
+
+
+# Línea centinela con la que el modelo declara la frase objetivo de forma
+# inequívoca: "@@OBJETIVO: ちょっと、もう一度お願いします@@". No se habla ni se guarda.
+_RE_OBJETIVO_CENTINELA = re.compile(
+    r'@@\s*OBJETIVO\s*:\s*(.+?)\s*@@', re.IGNORECASE | re.DOTALL
+)
+
+
+def _partir_objetivo_centinela(respuesta: str):
+    """Separa la línea centinela del resto de la respuesta.
+
+    Devuelve `(respuesta_sin_centinela, objetivo|None)`. Sin centinela devuelve
+    `(respuesta, None)` y el llamante cae a `_extraer_frase_objetivo`.
+    """
+    if not respuesta:
+        return respuesta, None
+    m = _RE_OBJETIVO_CENTINELA.search(respuesta)
+    if not m:
+        return respuesta, None
+    objetivo = _limpiar_objetivo(m.group(1).strip())
+    limpia = (respuesta[:m.start()] + respuesta[m.end():]).strip()
+    return limpia, (objetivo or None)
 
 
 _RE_BLOQUE_LLANO = re.compile(r'【([^【】]+)】')
@@ -465,6 +512,12 @@ class ProfesorJapones:
             print(f"❌ Error LLM en modo sensei: {e}")
             return "【ちょっとまってください。】 Un momento, hubo un problema técnico."
 
+        # Separa la línea centinela "@@OBJETIVO: …@@" antes de tocar nada: no se
+        # habla, no se guarda; solo fija contra qué frase puntúa Azure el turno
+        # siguiente (en forma canónica, aunque la parte hablada vaya en romaji o
+        # partida en trozos). Sin centinela se cae a la heurística sobre 【】.
+        respuesta, objetivo_centinela = _partir_objetivo_centinela(respuesta)
+
         # El modelo a veces devuelve vacío (todo el presupuesto se fue en
         # razonamiento). No guardamos el turno y pedimos que repita.
         if not respuesta or not respuesta.strip():
@@ -483,10 +536,14 @@ class ProfesorJapones:
         self.mensajes.append({"role": "user", "content": mensaje})
         self.mensajes.append({"role": "assistant", "content": respuesta})
 
-        # Frase objetivo para la evaluación de pronunciación del PRÓXIMO turno.
-        self.ultima_frase_objetivo = _extraer_frase_objetivo(respuesta)
+        # Frase objetivo para la evaluación de pronunciación del PRÓXIMO turno:
+        # manda el centinela; si el modelo no lo puso, heurística sobre 【】.
+        self.ultima_frase_objetivo = (
+            objetivo_centinela or _extraer_frase_objetivo(respuesta)
+        )
         if self.ultima_frase_objetivo:
-            print(f"🎯 Frase objetivo: {self.ultima_frase_objetivo}")
+            origen = "centinela" if objetivo_centinela else "heurística"
+            print(f"🎯 Frase objetivo ({origen}): {self.ultima_frase_objetivo}")
 
         return respuesta
 
