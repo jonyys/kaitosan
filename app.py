@@ -700,14 +700,16 @@ def ajustes_audio_probar():
 @app.route("/admin/ajustes/modelos")
 @login_requerido
 def ajustes_modelos():
-    # Fase 9: lista en vivo desde api.groq.com + selección guardada (§7.2).
-    # forzar=True: cada visita a Ajustes → Modelos refresca la lista (los modelos
-    # de Groq cambian a menudo); ante fallo de red groq_modelos cae a su caché.
+    # Groq: lista en vivo + selección guardada (para charla/tareas/reserva).
+    # OpenRouter: lista libre del sensei + gasto real por modelo + saldo de cuenta.
     return jsonify({
         "disponibles": system_settings.groq_modelos(forzar=True),
         "seleccion": system_settings.groq_seleccion_get(),
-        "gemini_disponibles": system_settings.gemini_modelos(forzar=True),
-        "gemini_seleccion": system_settings.gemini_seleccion_get(),
+        "openrouter": {
+            "modelos": system_settings.openrouter_seleccion_get()["modelos"],
+            "uso": system_settings.openrouter_uso(),
+            "saldo": system_settings.openrouter_saldo(forzar=True),
+        },
     })
 
 
@@ -715,25 +717,24 @@ def ajustes_modelos():
 @login_requerido
 def ajustes_modelos_guardar():
     datos = request.get_json(silent=True) or {}
+    # El sensei ya no se elige aquí (va por OpenRouter). Se conserva el valor
+    # guardado del campo `sensei` de Groq (solo lo usa la reserva) o se cae al
+    # principal si nunca se guardó.
+    sensei_guardado = system_settings.groq_seleccion_get().get("sensei", "")
     sel = {
         "principal": datos.get("principal", ""),
-        "sensei": datos.get("sensei", ""),
+        "sensei": sensei_guardado or datos.get("principal", ""),
         "alternativos": datos.get("alternativos", []),
         "tools": datos.get("tools", []),
     }
     return jsonify(system_settings.groq_seleccion_set(sel))
 
 
-@app.route("/admin/ajustes/modelos/gemini", methods=["POST"])
+@app.route("/admin/ajustes/modelos/openrouter", methods=["POST"])
 @login_requerido
-def ajustes_modelos_gemini_guardar():
+def ajustes_modelos_openrouter_guardar():
     datos = request.get_json(silent=True) or {}
-    sel = {
-        "sensei": datos.get("sensei", ""),
-        "reservas": datos.get("reservas", []),
-        "extractor": datos.get("extractor", ""),
-    }
-    return jsonify(system_settings.gemini_seleccion_set(sel))
+    return jsonify(system_settings.openrouter_seleccion_set(datos.get("modelos", [])))
 
 
 # --- WiFi (Fase 13): API JSON + fetch. Cambiar de red tumba la sesión, así que

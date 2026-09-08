@@ -45,12 +45,36 @@ SENSEI_TURNOS_GEMINI = os.getenv("SENSEI_TURNOS_GEMINI", "0").strip().lower() in
 # La lista se recorre en orden hasta el primero que responda (rate limit / caído
 # → siguiente). El extractor de cierre (strict) NUNCA pasa por aquí.
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "").strip()
+# Semilla de fábrica. La lista efectiva la da `openrouter_modelos_sensei()`:
+# lo que se guarde en Ajustes → Modelos (clave `openrouter_models`) manda.
 OPENROUTER_MODELOS_SENSEI = [
     m.strip() for m in os.getenv(
         "OPENROUTER_MODELOS_SENSEI",
-        "qwen/qwen3.8-flash,z-ai/glm-5.3-flash,openai/gpt-oss-120b",
+        "qwen/qwen3.7-flash,z-ai/glm-5.3-flash,openai/gpt-oss-120b",
     ).split(",") if m.strip()
 ]
+
+
+def openrouter_modelos_sensei() -> list:
+    """Lista efectiva de modelos del sensei por OpenRouter, en orden de reserva.
+
+    Lee `openrouter_models` de `app_settings` (lo que guarda Ajustes → Modelos);
+    si no hay nada guardado o está vacío, usa `OPENROUTER_MODELOS_SENSEI`. Nunca
+    lanza.
+    """
+    try:
+        from core.settings_store import settings_get
+        crudo = settings_get("openrouter_models")
+        guardado = json.loads(crudo) if crudo else None
+    except Exception:  # noqa: BLE001 — config nunca rompe por esto
+        guardado = None
+    if isinstance(guardado, list):
+        limpia = list(dict.fromkeys(
+            m.strip() for m in guardado if isinstance(m, str) and m.strip()
+        ))
+        if limpia:
+            return limpia
+    return list(OPENROUTER_MODELOS_SENSEI)
 
 # Orden de preferencia para el modo sensei: se coge el PRIMERO que esté vivo en
 # la API. Si ninguno lo está, el primer modelo de chat con contexto suficiente

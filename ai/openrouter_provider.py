@@ -16,7 +16,7 @@ rate limit / modelo caído / respuesta vacía → siguiente.
 import requests
 
 from core.config import (
-    OPENROUTER_API_KEY, OPENROUTER_MODELOS_SENSEI, MAX_TOKENS, TEMPERATURE,
+    OPENROUTER_API_KEY, MAX_TOKENS, TEMPERATURE, openrouter_modelos_sensei,
 )
 from core.token_tracker import TokenTracker
 
@@ -26,7 +26,9 @@ _TIMEOUT = 60
 
 class OpenRouterProvider:
     def __init__(self, modelos=None):
-        self.modelos = list(modelos or OPENROUTER_MODELOS_SENSEI)
+        # `modelos` explícito manda; si no, la lista guardada en Ajustes →
+        # Modelos (o la de fábrica del .env si no se ha tocado).
+        self.modelos = list(modelos or openrouter_modelos_sensei())
         self.tracker = TokenTracker()
 
     @staticmethod
@@ -110,12 +112,18 @@ class OpenRouterProvider:
             data = r.json()
             clave = f"openrouter/{modelo}"
             try:
-                tokens = int(data.get("usage", {}).get("total_tokens", 0) or 0)
+                uso = data.get("usage", {}) or {}
+                tokens = int(uso.get("total_tokens", 0) or 0)
+                # `cost` = importe REAL cobrado a la cuenta por esta llamada
+                # (OpenRouter lo incluye siempre). No es un cálculo local.
+                coste = float(uso.get("cost", 0) or 0)
                 if tokens:
                     d = self.tracker.añadir_tokens(clave, tokens)
                     print(f"📊 Tokens {clave}: {tokens} "
                           f"(hoy: {d['tokens'][clave]} este modelo, "
                           f"{sum(d['tokens'].values())} total)")
+                if coste:
+                    self.tracker.añadir_coste(clave, coste)
             except Exception as e:  # noqa: BLE001 — el tracking nunca debe romper el turno
                 print(f"⚠️ Error guardando tokens: {e}")
 

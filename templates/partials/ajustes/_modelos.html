@@ -1,8 +1,9 @@
 <div class="card full">
-    <h2><svg class="ico"><use href="#i-chip"/></svg> Modelos de IA</h2>
+    <h2><svg class="ico"><use href="#i-chip"/></svg> Modelos de Groq</h2>
     <p class="et" style="color:var(--text-soft); margin:0 0 12px">
-        Modelos de Groq que usa Kaito. La lista sale de tu API key en vivo; lo que
-        guardes aquí manda sobre los valores por defecto del código.
+        Groq lo usa Kaito para la charla normal, las tareas (tool calls) y como
+        reserva. El sensei ya no va por aquí — mira la tarjeta de OpenRouter.
+        La lista sale de tu API key en vivo.
     </p>
 
     <p id="modelos-msg" class="et" style="min-height:1.4em"></p>
@@ -10,11 +11,6 @@
     <form id="modelos-form" style="display:none">
         <label class="et" for="mod-principal">Modelo principal (charla)</label>
         <select id="mod-principal" name="principal"></select>
-
-        <label class="et" for="mod-sensei" style="display:block; margin-top:14px">
-            Modelo del sensei (japonés)
-        </label>
-        <select id="mod-sensei" name="sensei"></select>
 
         <fieldset style="border:1px solid var(--border); border-radius:var(--radio-sm); padding:12px; margin-top:16px">
             <legend class="et" style="padding:0 6px">Alternativos (reserva ante rate limit)</legend>
@@ -31,30 +27,36 @@
 </div>
 
 <div class="card full">
-    <h2><svg class="ico"><use href="#i-chip"/></svg> Modelos de Gemini</h2>
+    <h2><svg class="ico"><use href="#i-chip"/></svg> Sensei — modelos de OpenRouter</h2>
     <p class="et" style="color:var(--text-soft); margin:0 0 12px">
-        Gemini se usa como reserva de Groq (y opcionalmente como proveedor del
-        sensei). La lista sale de tu <code>GEMINI_API_KEY</code> en vivo.
+        Los turnos del sensei van a OpenRouter. La lista se prueba <b>en orden</b>:
+        el primero que responda gana; si da rate limit o falla, se pasa al
+        siguiente. Escribe el slug exacto de OpenRouter
+        (p. ej. <code>qwen/qwen3.7-flash</code>) para añadir uno que no esté.
     </p>
 
-    <p id="gemini-msg" class="et" style="min-height:1.4em"></p>
+    <p id="or-msg" class="et" style="min-height:1.4em"></p>
 
-    <form id="gemini-form" style="display:none">
-        <label class="et" for="gem-sensei">Modelo del sensei (turnos)</label>
-        <select id="gem-sensei" name="sensei"></select>
+    <div id="or-box" style="display:none">
+        <div id="or-lista" class="mod-lista"></div>
 
-        <fieldset style="border:1px solid var(--border); border-radius:var(--radio-sm); padding:12px; margin-top:16px">
-            <legend class="et" style="padding:0 6px">Reservas del sensei (rota a estas ante rate limit, antes de caer a Groq)</legend>
-            <div id="gem-reservas" class="mod-lista"></div>
-        </fieldset>
+        <div style="display:flex; gap:8px; margin-top:10px">
+            <input id="or-nuevo" type="text" placeholder="proveedor/modelo"
+                   autocomplete="off" spellcheck="false"
+                   style="flex:1; min-height:44px; padding:0 12px;
+                          border:1px solid var(--border); border-radius:var(--radio-sm);
+                          background:var(--bg); color:var(--text)">
+            <button id="or-add" type="button" class="btn">Añadir</button>
+        </div>
 
-        <label class="et" for="gem-extractor" style="display:block; margin-top:14px">
-            Modelo del extractor (cierre de sesión, JSON)
-        </label>
-        <select id="gem-extractor" name="extractor"></select>
+        <button id="or-guardar" type="button" class="btn btn-green" style="margin-top:16px">
+            Guardar lista
+        </button>
 
-        <button class="btn btn-green" type="submit" style="margin-top:16px">Guardar Gemini</button>
-    </form>
+        <h3 class="et" style="margin:22px 0 6px">Gasto por modelo</h3>
+        <div id="or-uso" style="overflow-x:auto"></div>
+        <p id="or-saldo" class="et" style="color:var(--text-soft); margin:10px 0 0"></p>
+    </div>
 </div>
 
 <style>
@@ -65,18 +67,38 @@
     }
     .mod-lista input[type="checkbox"] { flex:0 0 auto; }
     .mod-tok { color:var(--text-soft); font-weight:700; font-size:12px; margin-left:auto; }
+    .or-row {
+        display:flex; align-items:center; gap:8px;
+        min-height:44px; font-weight:500;
+    }
+    .or-row .or-slug { flex:1; font-family:monospace; word-break:break-all; }
+    .or-row .or-pos { color:var(--text-soft); font-size:12px; width:1.4em; text-align:right; }
+    .or-row button {
+        flex:0 0 auto; min-width:38px; min-height:38px;
+        border:1px solid var(--border); border-radius:var(--radio-sm);
+        background:var(--bg); color:var(--text); font-size:15px; cursor:pointer;
+    }
+    .or-tabla { width:100%; border-collapse:collapse; font-size:13px; }
+    .or-tabla th, .or-tabla td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--border); }
+    .or-tabla td.num { text-align:right; font-variant-numeric:tabular-nums; }
 </style>
 
 <script>
 (function () {
     var msg = document.getElementById('modelos-msg');
     var form = document.getElementById('modelos-form');
-    var gmsg = document.getElementById('gemini-msg');
-    var gform = document.getElementById('gemini-form');
+    var orMsg = document.getElementById('or-msg');
+    var orBox = document.getElementById('or-box');
+    var orLista = document.getElementById('or-lista');
+    var orModelos = [];
 
     function fmtTok(n) {
         if (!n) return '';
-        return n >= 1000 ? (n / 1000).toFixed(1) + 'k hoy' : n + ' hoy';
+        return n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(n);
+    }
+    function fmtUsd(n) {
+        if (!n) return '$0';
+        return n < 0.01 ? '$' + n.toFixed(4) : '$' + n.toFixed(2);
     }
 
     function opciones(sel, modelos, elegido) {
@@ -85,7 +107,7 @@
             var o = document.createElement('option');
             o.value = m.id;
             var t = fmtTok(m.tokens_hoy);
-            o.textContent = t ? (m.id + ' — ' + t) : m.id;
+            o.textContent = t ? (m.id + ' — ' + t + ' hoy') : m.id;
             if (m.id === elegido) o.selected = true;
             sel.appendChild(o);
         });
@@ -107,7 +129,7 @@
             if (t) {
                 var s = document.createElement('span');
                 s.className = 'mod-tok';
-                s.textContent = t;
+                s.textContent = t + ' hoy';
                 lab.appendChild(s);
             }
             cont.appendChild(lab);
@@ -120,40 +142,142 @@
             .map(function (cb) { return cb.value; });
     }
 
+    // ---- OpenRouter: lista editable ----
+    function pintarLista() {
+        orLista.innerHTML = '';
+        orModelos.forEach(function (slug, i) {
+            var row = document.createElement('div');
+            row.className = 'or-row';
+
+            var pos = document.createElement('span');
+            pos.className = 'or-pos';
+            pos.textContent = (i + 1) + '.';
+
+            var name = document.createElement('span');
+            name.className = 'or-slug';
+            name.textContent = slug;
+
+            var up = document.createElement('button');
+            up.type = 'button'; up.textContent = '▲'; up.title = 'subir';
+            up.disabled = i === 0;
+            up.addEventListener('click', function () {
+                orModelos.splice(i - 1, 0, orModelos.splice(i, 1)[0]);
+                pintarLista();
+            });
+
+            var down = document.createElement('button');
+            down.type = 'button'; down.textContent = '▼'; down.title = 'bajar';
+            down.disabled = i === orModelos.length - 1;
+            down.addEventListener('click', function () {
+                orModelos.splice(i + 1, 0, orModelos.splice(i, 1)[0]);
+                pintarLista();
+            });
+
+            var del = document.createElement('button');
+            del.type = 'button'; del.textContent = '×'; del.title = 'quitar';
+            del.addEventListener('click', function () {
+                orModelos.splice(i, 1);
+                pintarLista();
+            });
+
+            row.appendChild(pos);
+            row.appendChild(name);
+            row.appendChild(up);
+            row.appendChild(down);
+            row.appendChild(del);
+            orLista.appendChild(row);
+        });
+    }
+
+    function pintarUso(uso, saldo) {
+        var cont = document.getElementById('or-uso');
+        if (!uso || !uso.length) {
+            cont.innerHTML = '<p class="et" style="color:var(--text-soft)">Sin gasto registrado todavía.</p>';
+        } else {
+            var filas = uso.map(function (u) {
+                return '<tr><td>' + esc(u.id) + '</td>'
+                    + '<td class="num">' + fmtTok(u.tokens) + '</td>'
+                    + '<td class="num">' + fmtTok(u.tokens_hoy) + '</td>'
+                    + '<td class="num">' + fmtUsd(u.coste_usd) + '</td></tr>';
+            }).join('');
+            cont.innerHTML =
+                '<table class="or-tabla"><thead><tr>'
+                + '<th>Modelo</th><th style="text-align:right">Tokens</th>'
+                + '<th style="text-align:right">Hoy</th>'
+                + '<th style="text-align:right">Gasto real</th>'
+                + '</tr></thead><tbody>' + filas + '</tbody></table>';
+        }
+
+        var s = document.getElementById('or-saldo');
+        if (saldo && saldo.error) {
+            s.textContent = 'Saldo: no disponible (' + saldo.error + ')';
+        } else if (saldo) {
+            s.innerHTML = 'Saldo OpenRouter: <b>' + fmtUsd(saldo.disponible) + '</b> disponibles · '
+                + fmtUsd(saldo.gastado) + ' gastados de ' + fmtUsd(saldo.comprado) + ' comprados.';
+        } else {
+            s.textContent = '';
+        }
+    }
+
     fetch('/admin/ajustes/modelos')
         .then(function (r) { return r.json(); })
         .then(function (d) {
             var modelos = d.disponibles || [];
             if (!modelos.length) {
-                msg.innerHTML = ico('warn') + ' No se pudo leer la lista de modelos '
+                msg.innerHTML = ico('warn') + ' No se pudo leer la lista de Groq '
                     + '(¿falta GROQ_API_KEY o no hay red?).';
             } else {
                 var s = d.seleccion || {};
                 opciones(document.getElementById('mod-principal'), modelos, s.principal);
-                opciones(document.getElementById('mod-sensei'), modelos, s.sensei);
                 checklist(document.getElementById('mod-alternativos'), modelos, s.alternativos || []);
                 checklist(document.getElementById('mod-tools'), modelos, s.tools || []);
-                msg.textContent = modelos.length + ' modelos disponibles.';
+                msg.textContent = modelos.length + ' modelos de Groq disponibles.';
                 form.style.display = '';
             }
 
-            var gmodelos = d.gemini_disponibles || [];
-            if (!gmodelos.length) {
-                gmsg.innerHTML = ico('warn') + ' No se pudo leer la lista de Gemini '
-                    + '(¿falta GEMINI_API_KEY o no hay red?).';
-            } else {
-                var g = d.gemini_seleccion || {};
-                opciones(document.getElementById('gem-sensei'), gmodelos, g.sensei);
-                checklist(document.getElementById('gem-reservas'), gmodelos, g.reservas || []);
-                opciones(document.getElementById('gem-extractor'), gmodelos, g.extractor);
-                gmsg.textContent = gmodelos.length + ' modelos de Gemini disponibles.';
-                gform.style.display = '';
-            }
+            var or = d.openrouter || {};
+            orModelos = (or.modelos || []).slice();
+            pintarLista();
+            pintarUso(or.uso, or.saldo);
+            orMsg.textContent = orModelos.length + ' modelos en la lista del sensei.';
+            orBox.style.display = '';
         })
         .catch(function () {
             msg.innerHTML = ico('x-circle') + ' error de red al cargar los modelos';
-            gmsg.textContent = '';
+            orMsg.textContent = '';
         });
+
+    document.getElementById('or-add').addEventListener('click', function () {
+        var inp = document.getElementById('or-nuevo');
+        var v = (inp.value || '').trim();
+        if (!v) return;
+        if (orModelos.indexOf(v) === -1) orModelos.push(v);
+        inp.value = '';
+        pintarLista();
+    });
+    document.getElementById('or-nuevo').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); document.getElementById('or-add').click(); }
+    });
+
+    document.getElementById('or-guardar').addEventListener('click', function () {
+        var btn = this;
+        btn.disabled = true;
+        orMsg.textContent = 'Guardando…';
+        fetch('/admin/ajustes/modelos/openrouter', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ modelos: orModelos })
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+            orMsg.innerHTML = d.ok
+                ? ico('check-circle') + ' Lista guardada. Se aplica al reiniciar el servicio.'
+                : ico('x-circle') + ' ' + esc(d.error || 'no se pudo guardar');
+            if (d.ok && d.modelos) { orModelos = d.modelos.slice(); pintarLista(); }
+        })
+        .catch(function () { orMsg.innerHTML = ico('x-circle') + ' error de red'; })
+        .finally(function () { btn.disabled = false; });
+    });
 
     form.addEventListener('submit', function (e) {
         e.preventDefault();
@@ -165,7 +289,6 @@
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
                 principal: document.getElementById('mod-principal').value,
-                sensei: document.getElementById('mod-sensei').value,
                 alternativos: marcados('mod-alternativos'),
                 tools: marcados('mod-tools')
             })
@@ -177,30 +300,6 @@
                 : ico('x-circle') + ' ' + esc(d.error || 'no se pudo guardar');
         })
         .catch(function () { msg.innerHTML = ico('x-circle') + ' error de red'; })
-        .finally(function () { btn.disabled = false; });
-    });
-
-    gform.addEventListener('submit', function (e) {
-        e.preventDefault();
-        var btn = gform.querySelector('button[type="submit"]');
-        btn.disabled = true;
-        gmsg.textContent = 'Guardando…';
-        fetch('/admin/ajustes/modelos/gemini', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                sensei: document.getElementById('gem-sensei').value,
-                reservas: marcados('gem-reservas'),
-                extractor: document.getElementById('gem-extractor').value
-            })
-        })
-        .then(function (r) { return r.json(); })
-        .then(function (d) {
-            gmsg.innerHTML = d.ok
-                ? ico('check-circle') + ' Gemini guardado. Se aplica al reiniciar el servicio.'
-                : ico('x-circle') + ' ' + esc(d.error || 'no se pudo guardar');
-        })
-        .catch(function () { gmsg.innerHTML = ico('x-circle') + ' error de red'; })
         .finally(function () { btn.disabled = false; });
     });
 })();

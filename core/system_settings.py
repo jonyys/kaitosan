@@ -1424,6 +1424,98 @@ def gemini_seleccion_set(sel: dict) -> dict:
 
 
 # --------------------------------------------------------------------------- #
+# OpenRouter — modelos del sensei (lista libre) + gasto real + saldo
+# --------------------------------------------------------------------------- #
+_OR_SALDO_CACHE: dict = {"ts": 0.0, "datos": None}
+
+
+def openrouter_seleccion_get() -> dict:
+    """`{"modelos": [ids en orden]}` — lo guardado en Ajustes o la semilla del .env."""
+    from core.config import openrouter_modelos_sensei
+    return {"modelos": openrouter_modelos_sensei()}
+
+
+def openrouter_seleccion_set(modelos) -> dict:
+    """Guarda la lista de modelos del sensei por OpenRouter (orden = reserva).
+
+    No se valida contra ninguna API: el usuario puede escribir cualquier slug de
+    OpenRouter. Solo se limpian espacios y duplicados y se exige ≥1 entrada.
+    """
+    if not isinstance(modelos, list):
+        return {"ok": False, "error": "lista no válida"}
+    limpia = list(dict.fromkeys(
+        str(m).strip() for m in modelos if str(m).strip()
+    ))
+    if not limpia:
+        return {"ok": False, "error": "deja al menos un modelo"}
+    settings_set("openrouter_models", json.dumps(limpia))
+    return {"ok": True, "modelos": limpia}
+
+
+def openrouter_saldo(forzar: bool = False) -> dict:
+    """Saldo real de la cuenta OpenRouter: `GET /api/v1/credits`.
+
+    Devuelve `{comprado, gastado, disponible}` en USD, o `{error: ...}`. HTTP
+    puro, cacheado ~60 s. `comprado - gastado = disponible` (OpenRouter no expone
+    un campo "restante" directo).
+    """
+    ahora = time.time()
+    if (not forzar and _OR_SALDO_CACHE["datos"] is not None
+            and ahora - _OR_SALDO_CACHE["ts"] < 60):
+        return _OR_SALDO_CACHE["datos"]
+
+    from core.config import OPENROUTER_API_KEY
+    if not OPENROUTER_API_KEY:
+        return {"error": "sin OPENROUTER_API_KEY"}
+    try:
+        import requests
+        r = requests.get(
+            "https://openrouter.ai/api/v1/credits",
+            headers={"Authorization": f"Bearer {OPENROUTER_API_KEY}"},
+            timeout=10,
+        )
+        r.raise_for_status()
+        d = r.json().get("data", {}) or {}
+        comprado = float(d.get("total_credits", 0) or 0)
+        gastado = float(d.get("total_usage", 0) or 0)
+        datos = {
+            "comprado": round(comprado, 4),
+            "gastado": round(gastado, 4),
+            "disponible": round(comprado - gastado, 4),
+        }
+    except Exception as e:  # noqa: BLE001 — la capa de sistema nunca propaga
+        return _OR_SALDO_CACHE["datos"] or {"error": str(e)[:120]}
+
+    _OR_SALDO_CACHE.update(ts=ahora, datos=datos)
+    return datos
+
+
+def openrouter_uso() -> list:
+    """Gasto real por modelo, del token_tracker (acumulado, no cálculo).
+
+        [{id, tokens, tokens_hoy, coste_usd}]  — solo claves `openrouter/…`.
+    """
+    try:
+        from core.token_tracker import TokenTracker
+        d = TokenTracker().consultar()
+    except Exception:  # noqa: BLE001
+        return []
+    acum = d.get("tokens_acum", {}) or {}
+    hoy = d.get("tokens", {}) or {}
+    coste = d.get("coste", {}) or {}
+    ids = sorted(k for k in set(acum) | set(coste) if k.startswith("openrouter/"))
+    filas = []
+    for k in ids:
+        filas.append({
+            "id": k.replace("openrouter/", "", 1),
+            "tokens": acum.get(k, 0),
+            "tokens_hoy": hoy.get(k, 0),
+            "coste_usd": round(coste.get(k, 0.0), 6),
+        })
+    return filas
+
+
+# --------------------------------------------------------------------------- #
 # Pantalla
 # --------------------------------------------------------------------------- #
 def brillo_get() -> dict:

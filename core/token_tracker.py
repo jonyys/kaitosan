@@ -15,16 +15,24 @@ class TokenTracker:
             with open(TRACKER_FILE, "r") as f:
                 data = json.load(f)
         else:
-            data = {"date": "", "tokens": {}, "total_audio_seconds": 0, "monthly": {}}
+            data = {"date": "", "tokens": {}, "total_audio_seconds": 0, "monthly": {},
+                    "tokens_acum": {}, "coste": {}}
 
         hoy = datetime.now().strftime("%Y-%m-%d")
         mes = hoy[:7]
         monthly = data.get("monthly", {})
+        # Acumulados que NO se resetean: tokens totales por modelo desde siempre y
+        # el gasto real por modelo en USD (`usage.cost` que devuelve OpenRouter).
+        tokens_acum = data.get("tokens_acum", {})
+        coste = data.get("coste", {})
 
         # Reset diario: tokens y audio de Groq se ponen a cero cada día,
-        # pero el acumulado MENSUAL (Azure) sobrevive al cambio de día.
+        # pero el acumulado MENSUAL (Azure) y los acumulados de siempre sobreviven.
         if data.get("date") != hoy:
-            data = {"date": hoy, "tokens": {}, "total_audio_seconds": 0, "monthly": monthly}
+            data = {"date": hoy, "tokens": {}, "total_audio_seconds": 0,
+                    "monthly": monthly, "tokens_acum": tokens_acum, "coste": coste}
+        data.setdefault("tokens_acum", tokens_acum)
+        data.setdefault("coste", coste)
 
         # Solo conservamos el mes en curso: al cambiar de mes el contador
         # de Azure arranca de nuevo en 0.
@@ -40,6 +48,19 @@ class TokenTracker:
         if "tokens" not in self.data:
             self.data["tokens"] = {}
         self.data["tokens"][modelo] = self.data["tokens"].get(modelo, 0) + tokens
+        self.data["tokens_acum"][modelo] = self.data["tokens_acum"].get(modelo, 0) + tokens
+        self._guardar()
+        return self.data
+
+    def añadir_coste(self, modelo: str, coste: float) -> dict:
+        """Suma el gasto REAL (USD) de una llamada — `usage.cost` de OpenRouter,
+        no un cálculo. Acumulado por modelo, no se resetea."""
+        if not coste:
+            return self.data
+        self._cargar()
+        self.data["coste"][modelo] = round(
+            self.data["coste"].get(modelo, 0.0) + float(coste), 6
+        )
         self._guardar()
         return self.data
 
