@@ -542,6 +542,8 @@ def admin():
     azure_mes = tracker.azure_stt_segundos_mes()
 
     return render_template("admin.html",
+                            openrouter_uso=system_settings.openrouter_uso(),
+                            openrouter_saldo=system_settings.openrouter_saldo(),
                             sistema=system_settings.sistema_info(),
                             perfil=perfil,
                             sesiones=sesiones,

@@ -40,3 +40,72 @@
         </tbody>
     </table>
 </div>
+
+<div class="card">
+    <h2><svg class="ico"><use href="#i-chip"/></svg> Gasto de OpenRouter</h2>
+
+    {% if openrouter_saldo and not openrouter_saldo.error %}
+    <table>
+        <tbody>
+            <tr>
+                <td>Saldo disponible</td>
+                <td style="text-align:right; font-weight:700; color:var(--rosa-tinta)">
+                    ${{ '%.2f'|format(openrouter_saldo.disponible) }}
+                </td>
+            </tr>
+            <tr>
+                <td>Gastado</td>
+                <td style="text-align:right">${{ '%.2f'|format(openrouter_saldo.gastado) }}</td>
+            </tr>
+            <tr>
+                <td>Comprado</td>
+                <td style="text-align:right">${{ '%.2f'|format(openrouter_saldo.comprado) }}</td>
+            </tr>
+        </tbody>
+    </table>
+    {% else %}
+    <p class="empty">
+        Saldo no disponible{% if openrouter_saldo and openrouter_saldo.error %}
+        ({{ openrouter_saldo.error }}){% endif %}
+    </p>
+    {% endif %}
+
+    {% if openrouter_uso %}
+    <table style="margin-top:14px">
+        <thead>
+            <tr>
+                <th>Modelo</th>
+                <th style="text-align:right">Tokens</th>
+                <th style="text-align:right">Gasto real</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for u in openrouter_uso %}
+            <tr>
+                <td>{{ u.id }}</td>
+                <td style="text-align:right">{{ '{:,}'.format(u.tokens) }}</td>
+                <td style="text-align:right; font-weight:700; color:var(--rosa-tinta)">
+                    {% if u.coste_usd and u.coste_usd < 0.01 %}${{ '%.4f'|format(u.coste_usd) }}
+                    {%- else %}${{ '%.2f'|format(u.coste_usd) }}{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        {% if openrouter_uso|length > 1 %}
+        <tfoot>
+            <tr>
+                <td style="font-weight:700; border-top:2px solid var(--border-fuerte)">Total</td>
+                <td style="text-align:right; font-weight:700; border-top:2px solid var(--border-fuerte)">
+                    {{ '{:,}'.format(openrouter_uso|sum(attribute='tokens')) }}
+                </td>
+                <td style="text-align:right; font-weight:700; border-top:2px solid var(--border-fuerte)">
+                    ${{ '%.2f'|format(openrouter_uso|sum(attribute='coste_usd')) }}
+                </td>
+            </tr>
+        </tfoot>
+        {% endif %}
+    </table>
+    {% else %}
+    <p class="empty" style="margin-top:14px">Aún no hay gasto registrado por modelo</p>
+    {% endif %}
+</div>
