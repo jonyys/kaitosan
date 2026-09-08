@@ -6,8 +6,8 @@ devuelve `dict`s ya parseados. Reglas del plan:
 
   - `subprocess.run([...], capture_output=True, text=True, timeout=15)`, nunca `shell=True`.
   - Cada función devuelve datos parseados o un valor seguro; nunca lanza.
-  - Fuera de Linux (o con `AJUSTES_FAKE=1`) se usa un modo simulado con datos de
-    ejemplo, para poder maquetar la UI en el portátil.
+  - Fuera de Linux se usa un modo simulado con datos de ejemplo, para poder
+    maquetar la UI en el portátil.
 
 Fase 3: solo las funciones de **lectura**.
     wifi_estado()   -> {conectado, ssid, senal, ip}
@@ -100,10 +100,9 @@ _BOOL_TRUE = ("1", "true", "yes", "si", "sí", "on")
 # Modo simulado
 # --------------------------------------------------------------------------- #
 def _simulado() -> bool:
-    """True fuera de Linux o si `AJUSTES_FAKE` está activado."""
-    if platform.system() != "Linux":
-        return True
-    return os.getenv("AJUSTES_FAKE", "").strip().lower() in _BOOL_TRUE
+    """True fuera de Linux (dev en portátil): usa datos de ejemplo en vez de
+    tocar NetworkManager / BlueZ / ALSA / sysfs reales."""
+    return platform.system() != "Linux"
 
 
 # --------------------------------------------------------------------------- #

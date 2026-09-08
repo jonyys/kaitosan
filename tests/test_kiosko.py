@@ -1,14 +1,11 @@
 """Rutas /kiosko/* (Fase 3): ajustes rápidos de la pantalla del robot, sin
 login pero con escritura solo desde localhost. `import app` no arranca aquí
 (deps de la Pi): se monta una app Flask mínima con el MISMO cuerpo que app.py
-sobre `system_settings` real en modo simulado (AJUSTES_FAKE)."""
+sobre `system_settings` real, forzado a modo simulado en la fixture."""
 import os
 import sys
-import tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-os.environ["AJUSTES_FAKE"] = "1"
 
 import pytest
 from flask import Flask, abort, jsonify, request
@@ -21,6 +18,7 @@ def cli(tmp_path, monkeypatch):
     monkeypatch.setattr(settings_store, "DB_PATH", str(tmp_path / "t.db"))
     monkeypatch.setattr(settings_store, "_inicializada", False)
     from core import system_settings
+    monkeypatch.setattr(system_settings, "_simulado", lambda: True)
 
     app = Flask("kiosko_test")
 
