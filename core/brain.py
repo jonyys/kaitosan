@@ -47,9 +47,9 @@ class Brain:
         # Acceso directo para compatibilidad con app.py
         self.reminder = self.dispatcher.reminder
         self.alarm = self.dispatcher.alarm
-        # El profesor usa su propio proveedor: Gemini para los turnos (ver
-        # "sensei" en Ajustes → Modelos), Groq gpt-oss-120b de reserva y para el
-        # extractor de cierre. Ver ai/sensei_provider.py.
+        # El profesor usa su propio proveedor: OpenRouter para los turnos (ver
+        # Ajustes → Modelos), Groq gpt-oss-120b de reserva y para el extractor
+        # de cierre. Ver ai/sensei_provider.py.
         self.profesor = ProfesorJapones(
             self.jap_memory, SenseiProvider(), self.memory, self.socketio
         )

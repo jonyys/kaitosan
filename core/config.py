@@ -13,12 +13,10 @@ MAX_TOKENS_EXPLICACION = 3072  # profesor, turno de desglose gramatical
 TEMPERATURE = 0.7
 TEMPERATURE_SENSEI = 0.3  # respuestas del profesor — más deterministas para seguir las reglas
 
-# Modelo del modo sensei. `MODEL_SENSEI` (env) solo se usa como semilla al
-# arrancar; en caliente, al activar el modo, se resuelve contra la lista viva de
-# api.groq.com/v1/models con MODELOS_SENSEI_PREFERENCIA (ver
-# system_settings.modelo_sensei_efectivo). Así el equipo de Laura no depende de
-# tocar el .env cuando Groq retira o renombra un modelo.
-MODEL_SENSEI = os.getenv("MODEL_SENSEI", "openai/gpt-oss-120b")
+# Modelo Groq de RESERVA del sensei (los turnos van por OpenRouter; esto es el
+# último recurso si OpenRouter cae del todo). Fijo: si Groq lo retira, el
+# `_saltar_modelo` de groq_provider ya rota a los alternativos.
+MODEL_SENSEI = "openai/gpt-oss-120b"
 REASONING_EFFORT_SENSEI = os.getenv("REASONING_EFFORT_SENSEI", "low")
 
 # Frases que sacan del modo sensei. Se comprueban por subcadena sobre el texto
@@ -30,18 +28,11 @@ TRIGGERS_SALIR_SENSEI = [
     "salir del modo", "sal del modo", "desactivar modo", "desctivar", "desactiva",
 ]
 
-# Turnos del sensei: por defecto van a Groq (gpt-oss-120b) — más rápido. Pon
-# SENSEI_TURNOS_GEMINI=1 para que vayan primero a Gemini (con rotación de
-# modelos ante rate limit) y Groq quede solo de reserva.
-SENSEI_TURNOS_GEMINI = os.getenv("SENSEI_TURNOS_GEMINI", "0").strip().lower() in (
-    "1", "true", "yes", "on",
-)
-
 # OpenRouter — proveedor de los TURNOS del sensei (no del extractor). El prompt
-# del profesor es grande y ahogaba el tier gratis de Groq/Gemini por límite de
+# del profesor es grande y ahogaba el tier gratis de Groq por límite de
 # tokens/min; OpenRouter es pago-por-uso y da acceso a modelos fuertes en seguir
 # instrucciones (Qwen, GLM) que es lo que más importa aquí. Con
-# OPENROUTER_API_KEY vacía se usa el camino anterior (Gemini/Groq) sin cambios.
+# OPENROUTER_API_KEY vacía, los turnos del sensei caen directos a Groq.
 # La lista se recorre en orden hasta el primero que responda (rate limit / caído
 # → siguiente). El extractor de cierre (strict) NUNCA pasa por aquí.
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "").strip()
@@ -75,18 +66,6 @@ def openrouter_modelos_sensei() -> list:
         if limpia:
             return limpia
     return list(OPENROUTER_MODELOS_SENSEI)
-
-# Orden de preferencia para el modo sensei: se coge el PRIMERO que esté vivo en
-# la API. Si ninguno lo está, el primer modelo de chat con contexto suficiente
-# que devuelva la lista. gpt-oss va primero porque los qwen del tier gratis dan
-# rate limit (429) en casi todos los turnos del sensei (contexto grande); si se
-# sube el plan de Groq, subir aquí los qwen.
-MODELOS_SENSEI_PREFERENCIA = [
-    "openai/gpt-oss-120b",
-    "openai/gpt-oss-20b",
-    "qwen/qwen3.8-27b",
-    "qwen/qwen3.6-27b",
-]
 
 # Modelos de reserva (si el principal da rate limit / cae) y modelos aptos para
 # tool calls. Son la **semilla de fábrica**: la selección guardada en
@@ -139,53 +118,6 @@ def groq_seleccion() -> dict:
             ))
             if limpio:
                 sel[campo] = limpio
-    return sel
-
-# Gemini
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-
-# Modelos de Gemini: semilla de fábrica. La selección guardada en
-# Ajustes → Modelos (clave `gemini_models` de app_settings) la sobrescribe.
-#  - sensei    → modelo primario de los turnos del modo sensei.
-#  - reservas  → modelos Gemini a los que rotar (en orden) si el primario da
-#                rate limit, ANTES de caer a Groq. El free tier limita a ~20
-#                req/día POR MODELO, así que rotar entre varios flash multiplica
-#                el aforo diario.
-#  - extractor → extracción de cierre de sesión (JSON).
-GEMINI_MODEL_SENSEI = os.getenv("GEMINI_MODEL_SENSEI", "gemini-3.6-flash")
-GEMINI_MODELOS_RESERVA = ["gemini-3.7-flash", "gemini-3.5-flash"]
-GEMINI_MODEL_EXTRACTOR = os.getenv("GEMINI_MODEL_EXTRACTOR", "gemini-3.6-flash")
-
-
-def gemini_seleccion() -> dict:
-    """Selección efectiva de modelos de Gemini: `{sensei, reservas, extractor}`.
-
-    Lee `gemini_models` de `app_settings`; cada campo que falte usa el valor de
-    fábrica de este módulo. `reservas` puede quedar en `[]` a propósito. Nunca lanza.
-    """
-    fabrica = {
-        "sensei": GEMINI_MODEL_SENSEI,
-        "reservas": list(GEMINI_MODELOS_RESERVA),
-        "extractor": GEMINI_MODEL_EXTRACTOR,
-    }
-    try:
-        from core.settings_store import settings_get
-        crudo = settings_get("gemini_models")
-        guardado = json.loads(crudo) if crudo else {}
-    except Exception:  # noqa: BLE001 — config nunca debe romper por esto
-        return fabrica
-    if not isinstance(guardado, dict):
-        return fabrica
-    sel = dict(fabrica)
-    for campo in ("sensei", "extractor"):
-        v = guardado.get(campo)
-        if isinstance(v, str) and v.strip():
-            sel[campo] = v.strip()
-    r = guardado.get("reservas")
-    if isinstance(r, list):
-        sel["reservas"] = list(dict.fromkeys(
-            m.strip() for m in r if isinstance(m, str) and m.strip()
-        ))
     return sel
 
 

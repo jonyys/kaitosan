@@ -355,11 +355,6 @@ class ProfesorJapones:
         self.mensajes = []
         self.ultima_frase_objetivo = None
 
-        # Modelo del sensei: se resuelve contra la lista viva de Groq en cada
-        # activación. Los modelos de Groq cambian a menudo y el equipo de Laura
-        # no se reconfigura a mano, así que no dependemos del valor del .env.
-        self._resolver_modelo()
-
         # La unidad abierta y los ítems nuevos del can-do activo se resuelven UNA
         # vez por sesión (no una por turno). Los nuevos se persisten al cerrar
         # (_ejecutar_extraccion), no aquí. MAX_ITEMS_NUEVOS limita cuántos.
@@ -378,24 +373,6 @@ class ProfesorJapones:
         self._renovar_timer()
         self.socketio.emit("modo_sensei", {"activo": True})
         print("🎌 Modo Sensei activado")
-
-    def _resolver_modelo(self):
-        """Apunta la RESERVA Groq del sensei al primer modelo vivo de la lista
-        (ver system_settings.modelo_sensei_efectivo). Los turnos van por Gemini;
-        esto solo fija a qué modelo Groq se cae si Gemini falla. Silencioso ante
-        fallos: si no se puede consultar, se queda con el modelo que tuviera."""
-        groq = getattr(self.provider, "groq", None)
-        if groq is None:
-            return
-        try:
-            from core.system_settings import modelo_sensei_efectivo
-            modelo = modelo_sensei_efectivo()
-        except Exception as e:
-            print(f"⚠️ No se pudo resolver el modelo de reserva del sensei: {e}")
-            return
-        if modelo and modelo != groq.model:
-            print(f"🎌 Reserva Groq del sensei: {groq.model} → {modelo}")
-            groq.model = modelo
 
     def saludo_inicial(self) -> str:
         """Saludo de apertura y lo registra en el historial de la sesión.

@@ -1247,31 +1247,6 @@ def groq_modelos(forzar: bool = False) -> list:
     return modelos
 
 
-def modelo_sensei_efectivo() -> str:
-    """Modelo a usar en el modo sensei, resuelto contra la lista viva de Groq.
-
-    Devuelve el PRIMERO de `MODELOS_SENSEI_PREFERENCIA` que esté disponible; si
-    ninguno lo está, el primer modelo de chat que devuelva la API; si no hay
-    lista (sin red / sin API key), el primero de la preferencia como último
-    recurso. No toca `.env` ni la selección guardada: es en caliente.
-    """
-    from core.config import MODELOS_SENSEI_PREFERENCIA
-    modelos = groq_modelos()
-    ids = [m["id"] for m in modelos]
-    for modelo in MODELOS_SENSEI_PREFERENCIA:
-        if modelo in ids:
-            return modelo
-    # Ninguno de los preferidos: primer modelo de chat con contexto de sobra
-    # para el prompt del sensei (~8k tokens). Descarta audio y los diminutos.
-    _NO_SENSEI = ("orpheus", "tts", "whisper", "guard", "allam")
-    for m in modelos:
-        if (m.get("context_window") or 0) >= 32000 and not any(
-            x in m["id"].lower() for x in _NO_SENSEI
-        ):
-            return m["id"]
-    return ids[0] if ids else MODELOS_SENSEI_PREFERENCIA[0]
-
-
 def groq_seleccion_get() -> dict:
     """Selección efectiva actual: {principal, sensei, alternativos:[...], tools:[...]}.
 
@@ -1321,105 +1296,6 @@ def groq_seleccion_set(sel: dict) -> dict:
         "tools": tools,
     }
     settings_set("groq_models", json.dumps(payload))
-    return {"ok": True, "seleccion": payload}
-
-
-# --------------------------------------------------------------------------- #
-# Modelos de Gemini (mismo patrón que Groq: lista viva + selección guardada)
-# --------------------------------------------------------------------------- #
-_GEMINI_CACHE: dict = {"ts": 0.0, "datos": None}
-
-# Subcadenas que descartan un modelo del desplegable de chat de texto: imagen,
-# audio/tts, embeddings, transcripción y modelos especiales (robótica, etc.).
-_GEMINI_EXCLUIR = (
-    "embedding", "aqa", "image", "tts", "-transcribe", "vision",
-    "robotics", "computer-use", "lyria", "nano-banana", "deep-research",
-    "antigravity",
-)
-
-
-def gemini_modelos(forzar: bool = False) -> list:
-    """Modelos de Gemini que aceptan `generateContent` para la API key.
-
-    `GET https://generativelanguage.googleapis.com/v1beta/models`. Cachea ~1 h
-    por proceso. HTTP puro, no se simula. `[]` si no hay API key o la red falla.
-
-        [{id, context_window, owned_by, tokens_hoy}]
-    """
-    ahora = time.time()
-    if (not forzar and _GEMINI_CACHE["datos"] is not None
-            and ahora - _GEMINI_CACHE["ts"] < _GROQ_CACHE_SEG):
-        return _GEMINI_CACHE["datos"]
-
-    from core.config import GEMINI_API_KEY
-    if not GEMINI_API_KEY:
-        return []
-
-    try:
-        import requests
-        r = requests.get(
-            "https://generativelanguage.googleapis.com/v1beta/models",
-            params={"key": GEMINI_API_KEY, "pageSize": 200},
-            timeout=10,
-        )
-        r.raise_for_status()
-        data = r.json().get("models", [])
-    except Exception:  # noqa: BLE001 — la capa de sistema nunca propaga
-        return _GEMINI_CACHE["datos"] or []
-
-    modelos = []
-    for m in data:
-        if "generateContent" not in (m.get("supportedGenerationMethods") or []):
-            continue
-        mid = (m.get("name") or "").split("/")[-1].strip()
-        if not mid or any(x in mid.lower() for x in _GEMINI_EXCLUIR):
-            continue
-        modelos.append({
-            "id": mid,
-            "context_window": m.get("inputTokenLimit"),
-            "owned_by": "google",
-            "tokens_hoy": 0,  # Gemini no reporta uso por modelo aquí
-        })
-    modelos.sort(key=lambda x: x["id"])
-
-    _GEMINI_CACHE.update(ts=ahora, datos=modelos)
-    return modelos
-
-
-def gemini_seleccion_get() -> dict:
-    """Selección efectiva actual: `{sensei, extractor}` (guardada + fábrica)."""
-    from core.config import gemini_seleccion
-    return gemini_seleccion()
-
-
-def gemini_seleccion_set(sel: dict) -> dict:
-    """Valida `sel` contra `gemini_modelos()` y lo guarda en
-    `app_settings['gemini_models']`. `sensei` y `extractor` son obligatorios y
-    deben existir en la lista real (si se pudo consultar). `reservas` es una
-    lista ordenada de modelos Gemini a los que rotar antes de caer a Groq; puede
-    ir vacía."""
-    if not isinstance(sel, dict):
-        return {"ok": False, "error": "selección no válida"}
-
-    sensei = (sel.get("sensei") or "").strip()
-    extractor = (sel.get("extractor") or "").strip()
-    reservas = list(dict.fromkeys(
-        str(m).strip() for m in (sel.get("reservas") or []) if str(m).strip()
-    ))
-    if not sensei or not extractor:
-        return {"ok": False,
-                "error": "elige un modelo para el sensei y otro para el extractor"}
-
-    ids = {m["id"] for m in gemini_modelos()}
-    if ids:
-        desconocidos = [x for x in (sensei, extractor, *reservas) if x not in ids]
-        if desconocidos:
-            return {"ok": False,
-                    "error": "modelo no disponible: " + ", ".join(desconocidos)}
-
-    reservas = [m for m in reservas if m != sensei]  # el primario no se repite
-    payload = {"sensei": sensei, "reservas": reservas, "extractor": extractor}
-    settings_set("gemini_models", json.dumps(payload))
     return {"ok": True, "seleccion": payload}
 
 

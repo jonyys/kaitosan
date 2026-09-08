@@ -98,10 +98,6 @@ def _restore(prof, st):
     prof._foco_unidad = next(
         (u for u in CURRICULUM if u["id"] == st["foco_unidad_id"]), None
     )
-    try:
-        prof._resolver_modelo()  # mantiene el sensei en gpt-oss-120b
-    except Exception as e:  # noqa: BLE001
-        print(f"  (no se pudo resolver modelo: {e})")
 
 
 def _run_capturing(fn):
