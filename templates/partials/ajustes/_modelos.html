@@ -1,9 +1,10 @@
 <div class="card full">
-    <h2><svg class="ico"><use href="#i-chip"/></svg> Modelos de Groq</h2>
+    <h2><svg class="ico"><use href="#i-chip"/></svg> Modelos de IA</h2>
+
+    <h3 class="mod-sec">Groq · charla, tareas y reserva</h3>
     <p class="et" style="color:var(--text-soft); margin:0 0 12px">
         Groq lo usa Kaito para la charla normal, las tareas (tool calls) y como
-        reserva. El sensei ya no va por aquí — mira la tarjeta de OpenRouter.
-        La lista sale de tu API key en vivo.
+        reserva. El sensei ya no va por aquí. La lista sale de tu API key en vivo.
     </p>
 
     <p id="modelos-msg" class="et" style="min-height:1.4em"></p>
@@ -22,12 +23,12 @@
             <div id="mod-tools" class="mod-lista"></div>
         </fieldset>
 
-        <button class="btn btn-green" type="submit" style="margin-top:16px">Guardar modelos</button>
+        <button class="btn btn-green" type="submit" style="margin-top:16px">Guardar modelos de Groq</button>
     </form>
-</div>
 
-<div class="card full">
-    <h2><svg class="ico"><use href="#i-chip"/></svg> Sensei — modelos de OpenRouter</h2>
+    <hr class="mod-sep">
+
+    <h3 class="mod-sec">Sensei · modelos de OpenRouter</h3>
     <p class="et" style="color:var(--text-soft); margin:0 0 12px">
         Los turnos del sensei van a OpenRouter. La lista se prueba <b>en orden</b>:
         el primero que responda gana; si da rate limit o falla, se pasa al
@@ -45,7 +46,7 @@
                    autocomplete="off" spellcheck="false"
                    style="flex:1; min-height:44px; padding:0 12px;
                           border:1px solid var(--border); border-radius:var(--radio-sm);
-                          background:var(--bg); color:var(--text)">
+                          background:var(--bg); color:var(--text); font-family:inherit; font-size:inherit">
             <button id="or-add" type="button" class="btn">Añadir</button>
         </div>
 
@@ -53,13 +54,17 @@
             Guardar lista
         </button>
 
-        <h3 class="et" style="margin:22px 0 6px">Gasto por modelo</h3>
+        <h3 class="mod-sec" style="margin-top:22px">Gasto por modelo</h3>
         <div id="or-uso" style="overflow-x:auto"></div>
         <p id="or-saldo" class="et" style="color:var(--text-soft); margin:10px 0 0"></p>
     </div>
 </div>
 
 <style>
+    .mod-sec {
+        margin:0 0 8px; font-weight:700; font-size:15px; color:var(--rosa-tinta);
+    }
+    .mod-sep { border:0; border-top:1px solid var(--border); margin:26px 0; }
     .mod-lista { display:flex; flex-direction:column; gap:2px; }
     .mod-lista label {
         display:flex; align-items:center; gap:10px;
@@ -71,16 +76,19 @@
         display:flex; align-items:center; gap:8px;
         min-height:44px; font-weight:500;
     }
-    .or-row .or-slug { flex:1; font-family:monospace; word-break:break-all; }
-    .or-row .or-pos { color:var(--text-soft); font-size:12px; width:1.4em; text-align:right; }
+    .or-row .or-slug { flex:1; word-break:break-all; }
+    .or-row .or-pos { color:var(--text-soft); font-size:13px; width:1.6em; text-align:right; }
     .or-row button {
         flex:0 0 auto; min-width:38px; min-height:38px;
         border:1px solid var(--border); border-radius:var(--radio-sm);
         background:var(--bg); color:var(--text); font-size:15px; cursor:pointer;
     }
-    .or-tabla { width:100%; border-collapse:collapse; font-size:13px; }
-    .or-tabla th, .or-tabla td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--border); }
-    .or-tabla td.num { text-align:right; font-variant-numeric:tabular-nums; }
+    .or-row button:disabled { opacity:.35; cursor:default; }
+    .or-tabla { width:100%; border-collapse:collapse; }
+    .or-tabla th, .or-tabla td {
+        text-align:left; padding:8px; border-bottom:1px solid var(--border);
+    }
+    .or-tabla td.num, .or-tabla th.num { text-align:right; font-variant-numeric:tabular-nums; }
 </style>
 
 <script>

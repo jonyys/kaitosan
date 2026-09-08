@@ -1,6 +1,7 @@
 <div class="card">
-    <h2><svg class="ico"><use href="#i-chart"/></svg> Consumo de tokens</h2>
+    <h2><svg class="ico"><use href="#i-chart"/></svg> Consumo</h2>
 
+    <h3 class="tok-sec">Groq · tokens de hoy</h3>
     {% if uso_tokens %}
     <table>
         <thead>
@@ -39,11 +40,10 @@
             </tr>
         </tbody>
     </table>
-</div>
 
-<div class="card">
-    <h2><svg class="ico"><use href="#i-chip"/></svg> Gasto de OpenRouter</h2>
+    <hr class="tok-sep">
 
+    <h3 class="tok-sec">OpenRouter · saldo y gasto</h3>
     {% if openrouter_saldo and not openrouter_saldo.error %}
     <table>
         <tbody>
@@ -109,3 +109,10 @@
     <p class="empty" style="margin-top:14px">Aún no hay gasto registrado por modelo</p>
     {% endif %}
 </div>
+
+<style>
+    .tok-sec {
+        margin:0 0 8px; font-weight:700; font-size:15px; color:var(--rosa-tinta);
+    }
+    .tok-sep { border:0; border-top:1px solid var(--border); margin:26px 0; }
+</style>
