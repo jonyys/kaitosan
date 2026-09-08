@@ -36,7 +36,9 @@ class OpenRouterProvider:
         return (
             status in (402, 404, 429, 502, 503) or
             "rate limit" in s or "rate_limit" in s or "quota" in s or
-            "not found" in s or "no endpoints" in s or "no allowed providers" in s
+            "not found" in s or "no endpoints" in s or "no allowed providers" in s or
+            # algún endpoint obliga a razonar y rechaza reasoning.enabled=false
+            "reasoning is mandatory" in s or "cannot be disabled" in s
         )
 
     def completar(self, mensajes, max_tokens=None, response_format=None,
@@ -60,10 +62,17 @@ class OpenRouterProvider:
             }
             if response_format:
                 payload["response_format"] = response_format
-            # reasoning_effort solo tiene sentido en los gpt-oss; en Qwen/GLM
-            # flash no aplica. Formato OpenRouter: reasoning.effort.
-            if reasoning_effort and "gpt-oss" in modelo:
-                payload["reasoning"] = {"effort": reasoning_effort}
+            # Razonamiento:
+            #  - gpt-oss: se le pasa el `effort` (es lo que espera).
+            #  - Qwen/GLM flash: traen "thinking" ACTIVADO por defecto. En un
+            #    turno de clase eso son 10-15 s generando una traza oculta antes
+            #    de hablar y, si topa con max_tokens, la respuesta visible vuelve
+            #    VACÍA (visto en producción: 8000 tokens y content=""). Se apaga.
+            if "gpt-oss" in modelo:
+                if reasoning_effort:
+                    payload["reasoning"] = {"effort": reasoning_effort}
+            else:
+                payload["reasoning"] = {"enabled": False}
 
             try:
                 r = requests.post(_URL, headers=headers, json=payload, timeout=_TIMEOUT)

@@ -82,13 +82,16 @@ def test_error_no_recuperable_lanza_sin_rotar():
     assert post.call_count == 1
 
 
-def test_reasoning_effort_solo_en_gpt_oss():
-    p = OpenRouterProvider(modelos=["qwen/qwen3.8-flash"])
+def test_reasoning_apagado_en_qwen_glm_y_effort_en_gpt_oss():
+    # Qwen/GLM flash: thinking desactivado explícitamente (si no, turnos lentos
+    # y respuestas vacías al topar con max_tokens).
+    p = OpenRouterProvider(modelos=["qwen/qwen3.7-flash"])
     p.tracker = type("T", (), {"añadir_tokens": lambda self, k, n: {"tokens": {k: n}}})()
     with patch.object(orp.requests, "post", return_value=_ok("x")) as post:
         p.completar([{"role": "user", "content": "h"}], reasoning_effort="low")
-    assert "reasoning" not in post.call_args.kwargs["json"]
+    assert post.call_args.kwargs["json"]["reasoning"] == {"enabled": False}
 
+    # gpt-oss: se le pasa el effort tal cual.
     p2 = OpenRouterProvider(modelos=["openai/gpt-oss-120b"])
     p2.tracker = p.tracker
     with patch.object(orp.requests, "post", return_value=_ok("x")) as post:
@@ -102,5 +105,5 @@ if __name__ == "__main__":
     test_respuesta_vacia_rota()
     test_todos_fallan_lanza()
     test_error_no_recuperable_lanza_sin_rotar()
-    test_reasoning_effort_solo_en_gpt_oss()
+    test_reasoning_apagado_en_qwen_glm_y_effort_en_gpt_oss()
     print("OK")
