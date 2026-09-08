@@ -118,7 +118,7 @@ def _fase_sesion(turno: int, ultimo_de_laura: str) -> str:
     if turno <= 1:
         return (
             "FASE DE LA SESIÓN: entrada — salúdala de vuelta y pregúntale qué tal "
-            "(deberes, cómo está). En cuanto haya un hueco natural, engancha YA "
+            "le va. En cuanto haya un hueco natural, engancha YA "
             "con el can-do de hoy: no te quedes en saludos ni alargues la charla, "
             "y no montes un drill de pronunciación del saludo."
         )
@@ -576,17 +576,6 @@ class ProfesorJapones:
 
         lineas_f = []
 
-        # Fase 16: los deberes de la última sesión entran PRIMEROS en el FOCO,
-        # con marca para que Kaito pregunte qué tal fueron antes de nada. El
-        # getter solo devuelve los de la última sesión cerrada, así que esto
-        # sale una única sesión (la inmediatamente posterior) y luego se apaga.
-        deberes = perfil_jap.get("deberes_ultima_sesion")
-        if deberes:
-            lineas_f.append(
-                "DEBERES DE LA SEMANA PASADA (pregúntale qué tal le fueron antes "
-                f"de entrar en materia): {deberes}"
-            )
-
         # Fase 17: arco de sesión. Nº de turno = pares user/assistant ya cerrados
         # + 1 (el actual aún no está en self.mensajes). La despedida se mira sobre
         # el último mensaje de Laura ya registrado, así que en el flujo real va un
@@ -625,6 +614,13 @@ class ProfesorJapones:
              if prog.get(cd["id"], {}).get("estado") != "dominado"),
             None,
         )
+        # Ítems a introducir hoy (elegidos en entrar()): casi siempre ya salen en
+        # la lista del can-do de abajo, así que se marcan ahí en vez de repetir
+        # el bloque entero. `nuevos_restantes` recoge los que no aparezcan.
+        nuevos = self._foco_nuevos
+        nuevos_jp = {n["jp"] for n in nuevos}
+        nuevos_vistos = set()
+
         if activo:
             lineas_f.append(f"Can-do de hoy: {activo['texto']}")
             items = unidad.get("items", [])[:ITEMS_CANDO_FOCO]
@@ -648,6 +644,9 @@ class ProfesorJapones:
                     estado = estados_it.get((it["jp"], kind), "nuevo")
                     if estado == "nuevo" and f"【{it['jp']}】" in dicho_por_kaito:
                         marca = "[trabajándose hoy]"
+                    elif it["jp"] in nuevos_jp:
+                        marca = "[introdúcelo hoy]"
+                        nuevos_vistos.add(it["jp"])
                     else:
                         marca = _MARCA_ESTADO.get(estado, "[nueva]")
                     lineas_f += _lineas_foco(
@@ -659,10 +658,12 @@ class ProfesorJapones:
                 "o conversa libremente en japonés."
             )
 
-        nuevos = self._foco_nuevos      # elegidos en entrar(), solo lectura aquí
-        if nuevos:
-            lineas_f.append(f"Ítems nuevos a introducir ({len(nuevos)}):")
-            for nuevo in nuevos:
+        # Fallback: nuevos que no salieron en la lista del can-do (raro con
+        # ITEMS_CANDO_FOCO=12). Se listan aparte para no perderlos.
+        nuevos_restantes = [n for n in nuevos if n["jp"] not in nuevos_vistos]
+        if nuevos_restantes:
+            lineas_f.append(f"Ítems nuevos a introducir ({len(nuevos_restantes)}):")
+            for nuevo in nuevos_restantes:
                 lineas_f += _lineas_foco(
                     nuevo["jp"], nuevo["meaning"],
                     sufijo=f" (unidad: {nuevo['unidad']})",
@@ -678,10 +679,9 @@ class ProfesorJapones:
                 for jp, meaning in oxido:
                     lineas_f += _lineas_foco(jp, meaning, sufijo="  [sabida]")
 
-        # (la línea de deberes de Fase 16, si está, no cuenta como contenido)
+        # (la línea de FASE DE LA SESIÓN no cuenta como contenido)
         if not [ln for ln in lineas_f
-                if not ln.startswith("DEBERES DE LA SEMANA")
-                and not ln.startswith("FASE DE LA SESIÓN")]:
+                if not ln.startswith("FASE DE LA SESIÓN")]:
             lineas_f.append(
                 "Sin unidad abierta. Conversa libremente en japonés sobre cualquier tema."
             )
@@ -854,8 +854,6 @@ class ProfesorJapones:
             ),
             # Fase 15: cómo va Laura como alumna. Si no viene, se guarda vacía.
             nota_profe=(data.get("nota_profe") or "").strip(),
-            # Fase 16: la tarea que Kaito propuso al despedirse. Si no viene, ''.
-            deberes=(data.get("deberes") or "").strip(),
         )
         # Memoria episódica: lo que Laura contó de su vida, y lo que Kaito
         # afirmó de sí mismo (para que no se contradiga entre sesiones).

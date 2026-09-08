@@ -21,6 +21,13 @@ TEMPERATURE_SENSEI = 0.3  # respuestas del profesor — más deterministas para 
 MODEL_SENSEI = os.getenv("MODEL_SENSEI", "openai/gpt-oss-120b")
 REASONING_EFFORT_SENSEI = os.getenv("REASONING_EFFORT_SENSEI", "low")
 
+# Turnos del sensei: por defecto van a Groq (gpt-oss-120b) — más rápido. Pon
+# SENSEI_TURNOS_GEMINI=1 para que vayan primero a Gemini (con rotación de
+# modelos ante rate limit) y Groq quede solo de reserva.
+SENSEI_TURNOS_GEMINI = os.getenv("SENSEI_TURNOS_GEMINI", "0").strip().lower() in (
+    "1", "true", "yes", "on",
+)
+
 # Orden de preferencia para el modo sensei: se coge el PRIMERO que esté vivo en
 # la API. Si ninguno lo está, el primer modelo de chat con contexto suficiente
 # que devuelva la lista. gpt-oss va primero porque los qwen del tier gratis dan

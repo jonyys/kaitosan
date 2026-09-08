@@ -41,8 +41,10 @@ def test_el_foco_abre_con_la_funcion_de_la_unidad():
     assert lineas[1] == f"Unidad actual: {unidad['nombre']}"
     assert unidad["funcion"] in lineas[2]
     assert "【おつかれさま】" in foco
-    # y los ítems del temario siguen ahí, detrás de la cabecera
-    assert "Ítems nuevos a introducir" in foco
+    # y los ítems del temario siguen ahí, detrás de la cabecera, con los que
+    # tocan hoy marcados [introdúcelo hoy] dentro de la lista del can-do
+    assert "lo que necesita" in foco
+    assert "[introdúcelo hoy]" in foco
 
 
 if __name__ == "__main__":

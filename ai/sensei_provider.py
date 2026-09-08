@@ -1,10 +1,11 @@
-"""Proveedor del modo sensei: Gemini (con rotación) primero, Groq de reserva.
+"""Proveedor del modo sensei.
 
-- Turnos (y resumen básico de cierre): van a Gemini. Se prueba el modelo
-  primario y, si da rate limit (429), se rota a las `reservas` en orden. El free
-  tier de Gemini limita a ~20 req/día POR MODELO, así que rotar entre varios
-  flash multiplica el aforo diario. Si TODOS los Gemini fallan, cae a Groq
-  gpt-oss-120b.
+- Turnos (y resumen básico de cierre): por defecto van a Groq gpt-oss-120b
+  (más rápido). Con `SENSEI_TURNOS_GEMINI=1` van primero a Gemini: se prueba el
+  modelo primario y, si da rate limit (429), se rota a las `reservas` en orden.
+  El free tier de Gemini limita a ~20 req/día POR MODELO, así que rotar entre
+  varios flash multiplica el aforo diario. Si TODOS los Gemini fallan, cae a
+  Groq gpt-oss-120b.
 - Extractor de cierre (`strict=True`): SIEMPRE Groq gpt-oss-120b. Es donde la
   calidad del JSON y del japonés no es negociable; si Groq no está, el guardrail
   de `profesor.py` guarda solo el resumen y no toca `can_do_progreso`.
@@ -16,7 +17,7 @@ _resolver_modelo()` lo reajusta en cada sesión vía `self.provider.groq`.
 
 from ai.fallback_provider import FallbackProvider
 from ai.gemini_provider import GeminiProvider
-from core.config import gemini_seleccion, groq_seleccion
+from core.config import SENSEI_TURNOS_GEMINI, gemini_seleccion, groq_seleccion
 
 
 def _es_rate_limit(e: Exception) -> bool:
@@ -33,11 +34,14 @@ def _es_rate_limit(e: Exception) -> bool:
 class SenseiProvider:
 
     def __init__(self):
-        sel = gemini_seleccion()
-        modelos = [sel["sensei"]] + [
-            m for m in sel.get("reservas", []) if m and m != sel["sensei"]
-        ]
-        self.gemini = [GeminiProvider(model=m) for m in modelos]
+        if SENSEI_TURNOS_GEMINI:
+            sel = gemini_seleccion()
+            modelos = [sel["sensei"]] + [
+                m for m in sel.get("reservas", []) if m and m != sel["sensei"]
+            ]
+            self.gemini = [GeminiProvider(model=m) for m in modelos]
+        else:
+            self.gemini = []  # turnos directos a Groq
         self.reserva = FallbackProvider(model=groq_seleccion()["sensei"])
         # ProfesorJapones._resolver_modelo() hace self.provider.groq.model = ...
         self.groq = self.reserva.groq
@@ -53,6 +57,7 @@ class SenseiProvider:
             )
 
         # Turnos y resumen básico: Gemini primario → reservas Gemini → Groq.
+        # Sin Gemini configurado (SENSEI_TURNOS_GEMINI=0) van directos a Groq.
         for gp in self.gemini:
             try:
                 return gp.completar(
@@ -68,7 +73,8 @@ class SenseiProvider:
                 print(f"⚠️ Gemini {gp.model_id} falló ({type(e).__name__}) → Groq")
                 break
         else:
-            print("⚠️ Todos los modelos Gemini en rate limit → Groq")
+            if self.gemini:
+                print("⚠️ Todos los modelos Gemini en rate limit → Groq")
 
         return self.reserva.completar(
             mensajes, max_tokens=max_tokens, response_format=response_format,

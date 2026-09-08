@@ -239,6 +239,7 @@ def test_marcador_estado():
     prof.entrar()
     if prof.timer:
         prof.timer.cancel()
+    prof._foco_nuevos = []  # este test mira el marcador de estado, no el "de hoy"
     _, foco = prof._montar_estado()
 
     def _linea_foco_de(jp):
