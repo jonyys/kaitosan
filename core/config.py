@@ -21,6 +21,15 @@ TEMPERATURE_SENSEI = 0.3  # respuestas del profesor — más deterministas para 
 MODEL_SENSEI = os.getenv("MODEL_SENSEI", "openai/gpt-oss-120b")
 REASONING_EFFORT_SENSEI = os.getenv("REASONING_EFFORT_SENSEI", "low")
 
+# Frases que sacan del modo sensei. Se comprueban por subcadena sobre el texto
+# en minúsculas. Las usa brain._responder y también speech_to_text para dejar
+# salir a Laura aunque el turno esté en modo "repite conmigo" (si no, su español
+# iría a Azure ja-JP, saldría como katakana sin sentido y el trigger no saltaría).
+TRIGGERS_SALIR_SENSEI = [
+    "salir del modo sensei", "sal del modo sensei", "modo sensei off",
+    "salir del modo", "sal del modo", "desactivar modo", "desctivar", "desactiva",
+]
+
 # Turnos del sensei: por defecto van a Groq (gpt-oss-120b) — más rápido. Pon
 # SENSEI_TURNOS_GEMINI=1 para que vayan primero a Gemini (con rotación de
 # modelos ante rate limit) y Groq quede solo de reserva.

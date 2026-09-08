@@ -59,6 +59,11 @@ class OpenRouterProvider:
                 "messages": mensajes,
                 "max_tokens": max_tokens or MAX_TOKENS,
                 "temperature": temperature if temperature is not None else TEMPERATURE,
+                # Enruta al endpoint más rápido de los que sirven el modelo (no al
+                # más barato, que es lo que hace por defecto). Sin esto, gpt-oss y
+                # glm caían a proveedores lentos: turnos de 10-30 s. En modelos de
+                # un solo proveedor (qwen flash) no cambia nada.
+                "provider": {"sort": "throughput"},
             }
             if response_format:
                 payload["response_format"] = response_format
@@ -80,6 +85,20 @@ class OpenRouterProvider:
                 print(f"⚠️ OpenRouter {modelo} error de red ({type(e).__name__}), probando otro...")
                 ultimo = e
                 continue
+
+            # Algún endpoint (glm-5.3-flash) rechaza con 400 que se toque el
+            # razonamiento. En vez de descartar el modelo, se reintenta una vez
+            # dejándole su comportamiento por defecto.
+            if (r.status_code == 400 and "reasoning" in payload
+                    and "reasoning" in r.text.lower()):
+                print(f"⚠️ OpenRouter {modelo}: no acepta tocar reasoning, reintento sin el param")
+                payload.pop("reasoning", None)
+                try:
+                    r = requests.post(_URL, headers=headers, json=payload, timeout=_TIMEOUT)
+                except requests.RequestException as e:
+                    print(f"⚠️ OpenRouter {modelo} error de red ({type(e).__name__}), probando otro...")
+                    ultimo = e
+                    continue
 
             if r.status_code != 200:
                 if self._saltar_modelo(r.status_code, r.text):

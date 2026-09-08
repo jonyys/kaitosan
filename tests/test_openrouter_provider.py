@@ -71,6 +71,23 @@ def test_todos_fallan_lanza():
             assert "OpenRouter" in str(e)
 
 
+def test_enruta_por_throughput():
+    p = _provider()
+    with patch.object(orp.requests, "post", return_value=_ok("x")) as post:
+        p.completar([{"role": "user", "content": "h"}])
+    assert post.call_args.kwargs["json"]["provider"] == {"sort": "throughput"}
+
+
+def test_400_por_reasoning_reintenta_sin_el_param():
+    p = OpenRouterProvider(modelos=["z-ai/glm-5.3-flash"])
+    p.tracker = type("T", (), {"añadir_tokens": lambda self, k, n: {"tokens": {k: n}}})()
+    respuestas = [_Resp(400, text="reasoning.enabled is not supported"), _ok("ok glm")]
+    with patch.object(orp.requests, "post", side_effect=respuestas) as post:
+        assert p.completar([{"role": "user", "content": "h"}]) == "ok glm"
+    assert post.call_count == 2
+    assert "reasoning" not in post.call_args.kwargs["json"]  # el reintento va sin él
+
+
 def test_error_no_recuperable_lanza_sin_rotar():
     p = _provider()
     with patch.object(orp.requests, "post", return_value=_Resp(400, text="bad request")) as post:
@@ -104,6 +121,8 @@ if __name__ == "__main__":
     test_429_rota_al_siguiente()
     test_respuesta_vacia_rota()
     test_todos_fallan_lanza()
+    test_enruta_por_throughput()
+    test_400_por_reasoning_reintenta_sin_el_param()
     test_error_no_recuperable_lanza_sin_rotar()
     test_reasoning_apagado_en_qwen_glm_y_effort_en_gpt_oss()
     print("OK")

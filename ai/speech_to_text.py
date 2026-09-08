@@ -16,6 +16,7 @@ from core.config import (
     AZURE_SPEECH_REGION,
     AZURE_STT_LIMITE_SEG_MES,
     GROQ_API_KEY,
+    TRIGGERS_SALIR_SENSEI,
 )
 from core.token_tracker import TokenTracker
 
@@ -304,6 +305,25 @@ def transcribir_para_turno(stt: SpeechToText, archivo: str, *, sensei_activo: bo
     return texto, pron
 
 
+# Un intento de repetir una palabra japonesa dura ~1-2 s; "quiero salir del modo
+# sensei" dura bastante más. Solo por encima de este umbral gastamos una pasada
+# extra de Whisper para detectar la salida antes de mandar el audio a Azure.
+SALIDA_PRECHECK_MIN_SEG = 2.0
+
+
+def _es_salida_sensei(texto: str) -> bool:
+    t = (texto or "").lower()
+    return any(f in t for f in TRIGGERS_SALIR_SENSEI)
+
+
+def _duracion_seg(archivo: str):
+    try:
+        info = sf.info(archivo)
+        return info.frames / info.samplerate
+    except Exception:  # noqa: BLE001 — si no se puede medir, se hace el precheck igual
+        return None
+
+
 def _ruta_transcripcion(stt: SpeechToText, archivo: str, *, sensei_activo: bool,
                         modo_conv: bool, referencia: str = None):
     """Enruta la transcripción de un turno.
@@ -326,6 +346,17 @@ def _ruta_transcripcion(stt: SpeechToText, archivo: str, *, sensei_activo: bool,
     """
     quiere_pron = sensei_activo and referencia and (not modo_conv or AZURE_PRON_EN_CHARLA)
     if quiere_pron:
+        # Si Laura pide salir del modo sensei DURANTE un turno de "repite
+        # conmigo", su español se mandaría a Azure ja-JP, volvería como katakana
+        # sin sentido y el trigger de salida no saltaría: se quedaría atrapada.
+        # Una pasada de Whisper antes de Azure ataja ese caso (solo en audios
+        # largos, para no ralentizar la repetición de una palabra suelta).
+        dur = _duracion_seg(archivo)
+        if dur is None or dur >= SALIDA_PRECHECK_MIN_SEG:
+            crudo = stt.transcribir(archivo, idioma=None)
+            if _es_salida_sensei(crudo):
+                print(f"🚪 Salida de sensei detectada en turno de pronunciación: «{crudo}»")
+                return crudo, None
         res = stt.transcribir_con_pronunciacion(archivo, referencia=referencia)
         if res is not None:
             return res["texto"], res.get("pron")
@@ -348,11 +379,18 @@ if __name__ == "__main__":
         assert not _es_agradecimiento_corto(s), s
     print("✅ _es_agradecimiento_corto OK")
 
-    # Enrutado: con referencia en sensei estructurado va DIRECTO a Azure; si
-    # Azure devuelve None, cae a Whisper(ja) sin evaluación.
+    for s in ["Quiero salir del modo sensei", "sal del modo", "DESACTIVA sensei ya"]:
+        assert _es_salida_sensei(s), s
+    for s in ["ちょっと", "más lento por favor", "", "otra palabra"]:
+        assert not _es_salida_sensei(s), s
+    print("✅ _es_salida_sensei OK")
+
+    # Enrutado: con referencia va a Azure, pero antes una pasada de Whisper por si
+    # Laura pide salir (archivo inexistente → _duracion_seg None → precheck sí).
     class _FakeSTT:
-        def __init__(self, azure):
+        def __init__(self, azure, whisper="texto whisper"):
             self._azure = azure
+            self._whisper = whisper
             self.llamadas = []
 
         def transcribir_con_pronunciacion(self, archivo, referencia=None):
@@ -361,19 +399,27 @@ if __name__ == "__main__":
 
         def transcribir(self, archivo, idioma=None):
             self.llamadas.append(("whisper", idioma))
-            return "texto whisper"
+            return self._whisper
 
     ok = _FakeSTT({"texto": "ちょっと", "pron": "Veredicto: BIEN"})
     t, p = _ruta_transcripcion(ok, "a.wav", sensei_activo=True, modo_conv=False,
                                referencia="ちょっと")
     assert (t, p) == ("ちょっと", "Veredicto: BIEN"), (t, p)
-    assert ok.llamadas == [("azure", "ちょっと")], ok.llamadas
+    assert ok.llamadas == [("whisper", None), ("azure", "ちょっと")], ok.llamadas
+
+    # Laura pide salir en pleno turno de pronunciación → no llega a Azure.
+    salida = _FakeSTT({"texto": "x"}, whisper="quiero salir del modo sensei")
+    t, p = _ruta_transcripcion(salida, "a.wav", sensei_activo=True, modo_conv=False,
+                               referencia="ちょっと")
+    assert (t, p) == ("quiero salir del modo sensei", None), (t, p)
+    assert salida.llamadas == [("whisper", None)], salida.llamadas
 
     sin_azure = _FakeSTT(None)
     t, p = _ruta_transcripcion(sin_azure, "a.wav", sensei_activo=True, modo_conv=False,
                                referencia="ちょっと")
     assert (t, p) == ("texto whisper", None), (t, p)
-    assert sin_azure.llamadas == [("azure", "ちょっと"), ("whisper", "ja")], sin_azure.llamadas
+    assert sin_azure.llamadas == [
+        ("whisper", None), ("azure", "ちょっと"), ("whisper", "ja")], sin_azure.llamadas
 
     libre = _FakeSTT(None)
     _ruta_transcripcion(libre, "a.wav", sensei_activo=True, modo_conv=False, referencia=None)

@@ -10,6 +10,7 @@ from ai.skills.alarm import AlarmSkill
 from ai.skills.reminder import ReminderSkill
 from ai.tools import TOOLS, ToolDispatcher
 
+from core.config import TRIGGERS_SALIR_SENSEI
 from core.japanese_memory import JapaneseMemory
 from core.memory import DB_PATH, Memory
 from ai.sensei.profesor import ProfesorJapones, DESPEDIDAS
@@ -82,7 +83,7 @@ class Brain:
         # ── Comandos de modo sensei (un solo modo: profe particular medio colega) ──
         _msg = mensaje.lower()
 
-        if any(f in _msg for f in ["salir del modo sensei", "sal del modo sensei", "modo sensei off", "salir del modo", "sal del modo", "desactivar modo", "desctivar", "desactiva"]):
+        if any(f in _msg for f in TRIGGERS_SALIR_SENSEI):
             if self.profesor.esta_activo():
                 self.profesor.salir()
                 self._emitir_desactivar_sensei = True
