@@ -41,7 +41,7 @@ OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "").strip()
 OPENROUTER_MODELOS_SENSEI = [
     m.strip() for m in os.getenv(
         "OPENROUTER_MODELOS_SENSEI",
-        "qwen/qwen3.7-flash,openai/gpt-oss-120b",
+        "qwen/qwen3.7-flash,openai/gpt-oss-120b,z-ai/glm-5.3-flash",
     ).split(",") if m.strip()
 ]
 
