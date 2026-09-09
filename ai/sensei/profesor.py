@@ -647,11 +647,27 @@ class ProfesorJapones:
             lineas_f.append(f"  pendientes: {', '.join(grupos['pendiente']) or '—'}")
 
         # Can-do activo = primer can-do de la unidad que no está dominado.
-        activo = next(
-            (cd for cd in can_dos
+        idx_activo = next(
+            (i for i, cd in enumerate(can_dos)
              if prog.get(cd["id"], {}).get("estado") != "dominado"),
             None,
         )
+        activo = can_dos[idx_activo] if idx_activo is not None else None
+        siguiente = (
+            can_dos[idx_activo + 1]
+            if idx_activo is not None and idx_activo + 1 < len(can_dos)
+            and prog.get(can_dos[idx_activo + 1]["id"], {}).get("estado") != "dominado"
+            else None
+        )
+        # ¿El can-do ANTERIOR al activo se dominó hace nada (esta sesión o un par
+        # atrás)? Entonces Kaito lo reconoce en la entrada y presenta el nuevo.
+        # ponytail: ventana de 5 ids para tragarnos sesiones abandonadas en medio.
+        recien_dominado = None
+        if idx_activo:
+            prev = can_dos[idx_activo - 1]
+            u = prog.get(prev["id"], {}).get("ultima_sesion")
+            if u is not None and u >= (self.session_id or 0) - 5:
+                recien_dominado = prev
         # Ítems a introducir hoy (elegidos en entrar()): casi siempre ya salen en
         # la lista del can-do de abajo, así que se marcan ahí en vez de repetir
         # el bloque entero. `nuevos_restantes` recoge los que no aparezcan.
@@ -660,7 +676,22 @@ class ProfesorJapones:
         nuevos_vistos = set()
 
         if activo:
+            if recien_dominado and turno <= 1:
+                lineas_f.append(
+                    f"ACABA DE DOMINAR (última sesión): «{recien_dominado['texto']}». "
+                    "SOLO en este primer turno: reconóceselo de pasada a Laura "
+                    "(«lo de … ya lo tienes») y engancha con el can-do de hoy. "
+                    "Luego no lo vuelvas a mencionar ni a trabajar."
+                )
             lineas_f.append(f"Can-do de hoy: {activo['texto']}")
+            if siguiente:
+                lineas_f.append(
+                    f"Siguiente can-do (para encadenar): «{siguiente['texto']}». "
+                    "Si HOY Laura ya ha producido el can-do de hoy ELLA SOLA (sin "
+                    "que se lo dictes) dos veces o más, no sigas machacándolo: "
+                    "empieza a colar el siguiente en la conversación. Puedes "
+                    "trabajar los dos en la misma sesión."
+                )
             items = unidad.get("items", [])[:ITEMS_CANDO_FOCO]
             if items:
                 lineas_f.append(
