@@ -10,6 +10,9 @@ DEFAULT_PATH = os.path.join(BASE_DIR, "audio", "input.wav")
 SAMPLE_RATE_DEVICE = 48000
 # Sample rate para Whisper STT
 SAMPLE_RATE_STT = 16000
+# Segundos de silencio sostenido que cierran la grabación tras el wakeword.
+# Bájalo para que corte antes; súbelo si te corta a media frase.
+SILENCIO_SEG = float(os.getenv("RECORD_SILENCIO_SEG", "1.5"))
 
 def buscar_microfono():
     # Preferencia de Ajustes (app_settings) antes que AUDIO_INPUT_HINT del .env.
@@ -141,7 +144,7 @@ class Recorder:
         return convertido.reshape(-1, 1)
 
     def record_vad(self, filename=DEFAULT_PATH,
-                   silencio_seg=1.5, max_seg=10,
+                   silencio_seg=SILENCIO_SEG, max_seg=10,
                    umbral_rms=0.02, timeout_inicio_seg=0) -> str:
         """
         Graba hasta detectar silencio sostenido.
