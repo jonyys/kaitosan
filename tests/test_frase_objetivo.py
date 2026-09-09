@@ -57,6 +57,18 @@ def test_centinela_objetivo():
     _, obj = _partir_objetivo_centinela("Hola @@OBJETIVO: @@")
     assert obj is None
 
+    # El modelo se deja el "@@" de cierre: aun así se separa y no se habla.
+    limpia, obj = _partir_objetivo_centinela(
+        "¿Me lo dices todo junto ahora?\n@@OBJETIVO: 【ちょっと】"
+    )
+    assert limpia == "¿Me lo dices todo junto ahora?", repr(limpia)
+    assert obj == "ちょっと", repr(obj)
+
+    # Centinela sin cierre y vacío: se recorta igual, objetivo None.
+    limpia, obj = _partir_objetivo_centinela("Dime la frase entera. @@OBJETIVO:")
+    assert limpia == "Dime la frase entera.", repr(limpia)
+    assert obj is None
+
 
 if __name__ == "__main__":
     test_pistas_de_produccion_y_comprension()

@@ -37,16 +37,16 @@ TRIGGERS_SALIR_SENSEI = [
 # → siguiente). El extractor de cierre (strict) NUNCA pasa por aquí.
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "").strip()
 # Razonamiento de los modelos NO gpt-oss (Qwen/GLM) en los turnos del sensei:
-#   off    → sin thinking. Rapidísimo (~2 s) pero qwen pierde el hilo y repite.
-#   low    → piensa lo justo para saber qué ha logrado ya Laura (~4-6 s). Por defecto.
-#   medium/high → más contexto, más lento.
-OPENROUTER_REASONING = os.getenv("OPENROUTER_REASONING", "low").strip().lower()
+#   off    → sin thinking, rápido. `low`+ en qwen3.7-flash (Alibaba) se dispara
+#            a 15-30 s/turno y rompe el formato → mejor `off` y que el primario
+#            sea gpt-oss (que sí respeta `effort` y va por Groq/Cerebras).
+OPENROUTER_REASONING = os.getenv("OPENROUTER_REASONING", "off").strip().lower()
 # Semilla de fábrica. La lista efectiva la da `openrouter_modelos_sensei()`:
 # lo que se guarde en Ajustes → Modelos (clave `openrouter_models`) manda.
 OPENROUTER_MODELOS_SENSEI = [
     m.strip() for m in os.getenv(
         "OPENROUTER_MODELOS_SENSEI",
-        "qwen/qwen3.7-flash,openai/gpt-oss-120b,z-ai/glm-5.3-flash",
+        "openai/gpt-oss-120b,qwen/qwen3.7-flash,z-ai/glm-5.3-flash",
     ).split(",") if m.strip()
 ]
 

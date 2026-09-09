@@ -203,10 +203,14 @@ def _extraer_frase_objetivo(texto: str):
     return " ".join(grupo) if len(grupo) > 1 else grupo[0]
 
 
-# Línea centinela con la que el modelo declara la frase objetivo de forma
-# inequívoca: "@@OBJETIVO: ちょっと、もう一度お願いします@@". No se habla ni se guarda.
+# Línea centinela con la que el modelo declara la frase objetivo:
+# "@@OBJETIVO: ちょっと、もう一度お願いします@@". No se habla ni se guarda.
+# Tolerante: el modelo a veces se deja el "@@" de cierre o lo manda vacío; se
+# captura hasta el "@@" de cierre, el fin de línea o el fin del texto, y SIEMPRE
+# se recorta del mensaje hablado (aunque el objetivo salga vacío).
 _RE_OBJETIVO_CENTINELA = re.compile(
-    r'@@\s*OBJETIVO\s*:\s*(.+?)\s*@@', re.IGNORECASE | re.DOTALL
+    r'@@\s*OBJETIVO\s*:[ \t]*(.*?)[ \t]*(?:@@|$)',
+    re.IGNORECASE | re.MULTILINE,
 )
 
 

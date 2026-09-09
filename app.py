@@ -857,6 +857,9 @@ def ajustes_cuenta():
 # --- Mantenimiento (Fase 10): salud, logs y copia de seguridad (§7.2) --- #
 
 def _resp_logs(texto: str, descargar: bool, nombre: str) -> Response:
+    # En pantalla: lo más reciente primero. En la descarga: orden cronológico.
+    if not descargar:
+        texto = "\n".join(reversed(texto.splitlines()))
     cab = {"Content-Disposition": f"attachment; filename={nombre}"} if descargar else {}
     return Response(texto, mimetype="text/plain; charset=utf-8", headers=cab)
 
