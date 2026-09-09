@@ -144,6 +144,13 @@ class _WakeWordListener:
         self._rate_device = _RATE_MODEL
         self._frame_device = _FRAME_MODEL
         self._frames_desde_infer = 0
+        # Hilo dedicado SOLO a drenar el micro. Antes read() y predict()
+        # compartían un único executor y, con la Pi cargada, la captura se
+        # quedaba sin CPU → ALSA desbordaba → audio troceado → score ~0 aunque
+        # el modelo oyera "kaito" de sobra (en el test standalone, con la Pi
+        # ociosa, el mismo "kaito" puntúa 0.6-0.8).
+        self._reader_thread = None
+        self._reader_stop = threading.Event()
 
     def _abrir_stream(self):
         """Abre el stream de captura probando el sample rate del dispositivo y,
@@ -188,12 +195,19 @@ class _WakeWordListener:
         self._frame_buffer.clear()
         self._detection_queue = asyncio.Queue()
         self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        self._reader_stop.clear()
+        self._reader_thread = threading.Thread(target=self._reader, daemon=True)
+        self._reader_thread.start()
         self._task = asyncio.create_task(self._audio_loop())
         return self
 
     async def __aexit__(self, *_):
         self._running = False
+        self._reader_stop.set()
         self._listening.set()
+        if self._reader_thread:
+            self._reader_thread.join(timeout=2.0)
+            self._reader_thread = None
         if self._task:
             try:
                 await asyncio.wait_for(self._task, timeout=2.0)
@@ -212,6 +226,22 @@ class _WakeWordListener:
         if self._pa:
             self._pa.terminate()
 
+    def _reader(self):
+        """Hilo dedicado: lee del micro sin parar y va llenando el buffer, para
+        que ALSA no desborde aunque la inferencia esté ocupando la CPU."""
+        while not self._reader_stop.is_set():
+            try:
+                data = self._stream.read(
+                    self._frame_device, exception_on_overflow=False
+                )
+            except Exception as exc:  # noqa: BLE001
+                if not self._reader_stop.is_set():
+                    self._error = exc
+                return
+            frame = _resample(np.frombuffer(data, dtype=np.int16))
+            self._frame_buffer.append(frame)
+            self._frames_desde_infer += 1
+
     async def _audio_loop(self):
         loop = asyncio.get_event_loop()
         try:
@@ -220,16 +250,7 @@ class _WakeWordListener:
                 if not self._running:
                     break
 
-                data = await loop.run_in_executor(
-                    self._executor,
-                    lambda: self._stream.read(self._frame_device, exception_on_overflow=False),
-                )
-                if not self._running:
-                    break
-
-                frame = _resample(np.frombuffer(data, dtype=np.int16))
-                self._frame_buffer.append(frame)
-                self._frames_desde_infer += 1
+                await asyncio.sleep(_FRAME_MS)
 
                 if len(self._frame_buffer) < _CHUNK_FRAMES:
                     continue
