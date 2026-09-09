@@ -16,7 +16,8 @@ rate limit / modelo caído / respuesta vacía → siguiente.
 import requests
 
 from core.config import (
-    OPENROUTER_API_KEY, MAX_TOKENS, TEMPERATURE, openrouter_modelos_sensei,
+    OPENROUTER_API_KEY, OPENROUTER_REASONING, MAX_TOKENS, TEMPERATURE,
+    openrouter_modelos_sensei,
 )
 from core.token_tracker import TokenTracker
 
@@ -70,16 +71,19 @@ class OpenRouterProvider:
             if response_format:
                 payload["response_format"] = response_format
             # Razonamiento:
-            #  - gpt-oss: se le pasa el `effort` (es lo que espera).
-            #  - Qwen/GLM flash: traen "thinking" ACTIVADO por defecto. En un
-            #    turno de clase eso son 10-15 s generando una traza oculta antes
-            #    de hablar y, si topa con max_tokens, la respuesta visible vuelve
-            #    VACÍA (visto en producción: 8000 tokens y content=""). Se apaga.
+            #  - gpt-oss: se le pasa el `effort` del turno (es lo que espera).
+            #  - Qwen/GLM flash: traen "thinking" ACTIVADO por defecto y con la
+            #    traza entera son 10-15 s/turno. Pero apagarlo del todo hace que
+            #    qwen pierda el hilo (repite el mismo turno, no registra que
+            #    Laura ya lo ha dicho). OPENROUTER_REASONING (off|low|medium|high)
+            #    controla el término medio: low ≈ piensa lo justo, ~4-6 s.
             if "gpt-oss" in modelo:
                 if reasoning_effort:
                     payload["reasoning"] = {"effort": reasoning_effort}
-            else:
+            elif OPENROUTER_REASONING == "off":
                 payload["reasoning"] = {"enabled": False}
+            else:
+                payload["reasoning"] = {"effort": OPENROUTER_REASONING}
 
             try:
                 r = requests.post(_URL, headers=headers, json=payload, timeout=_TIMEOUT)

@@ -36,6 +36,11 @@ TRIGGERS_SALIR_SENSEI = [
 # La lista se recorre en orden hasta el primero que responda (rate limit / caído
 # → siguiente). El extractor de cierre (strict) NUNCA pasa por aquí.
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "").strip()
+# Razonamiento de los modelos NO gpt-oss (Qwen/GLM) en los turnos del sensei:
+#   off    → sin thinking. Rapidísimo (~2 s) pero qwen pierde el hilo y repite.
+#   low    → piensa lo justo para saber qué ha logrado ya Laura (~4-6 s). Por defecto.
+#   medium/high → más contexto, más lento.
+OPENROUTER_REASONING = os.getenv("OPENROUTER_REASONING", "low").strip().lower()
 # Semilla de fábrica. La lista efectiva la da `openrouter_modelos_sensei()`:
 # lo que se guarde en Ajustes → Modelos (clave `openrouter_models`) manda.
 OPENROUTER_MODELOS_SENSEI = [
