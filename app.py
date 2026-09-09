@@ -24,7 +24,7 @@ from core.brain import Brain
 from core.detection import PersonDetector
 from core.listener import VoiceListener
 from core.button import PowerButton
-from core.config import FLASK_SECRET_KEY
+from core.config import FLASK_SECRET_KEY, CAMARA_ACTIVA
 from werkzeug.security import check_password_hash, generate_password_hash
 from core.settings_store import settings_get, settings_set
 from core import system_settings
@@ -83,6 +83,8 @@ def index():
 
 @app.route("/video")
 def video():
+    if not camera.disponible():
+        return ("cámara desactivada (CAMARA_ACTIVA=false)", 503)
     return Response(
         camera.generar_frames(),
         mimetype='multipart/x-mixed-replace; boundary=frame'
@@ -1913,8 +1915,11 @@ signal.signal(signal.SIGTERM, _on_sigterm)
 
 if __name__ == "__main__":
     print("🤖 Kaitosan arrancando...")
-    camera.iniciar()
-    detector.iniciar()
+    if CAMARA_ACTIVA:
+        camera.iniciar()
+        detector.iniciar()
+    else:
+        print("📷 Cámara desactivada (CAMARA_ACTIVA=false)")
     voice_listener.iniciar()
     PowerButton(on_short_press=voice_listener._on_wakeword)
     state.cambiar("idle")

@@ -125,6 +125,13 @@ def groq_seleccion() -> dict:
     return sel
 
 
+# Cámara (Picamera2). CAMARA_ACTIVA=false no arranca el sensor ni la detección
+# de personas — quita una carga de fondo constante. La detección de personas ya
+# está desactivada aparte (detection.py).
+CAMARA_ACTIVA = os.getenv("CAMARA_ACTIVA", "true").strip().lower() not in (
+    "0", "false", "no", "off",
+)
+
 # Flask
 FLASK_SECRET_KEY = os.getenv("FLASK_SECRET_KEY", "fallback_key")
 # Usuario/contraseña del panel: solo semilla inicial. En el primer arranque se
