@@ -23,6 +23,15 @@ from core.token_tracker import TokenTracker
 # Signos que no cuentan al comparar lo pedido con lo dicho.
 _PUNT_JP = "。、，．・…！？「」『』（）()【】　 \t\n"
 
+# Kanji → lectura hiragana para comparar "lo pedido" con "lo oído": Azure
+# siempre devuelve kanji (私, 学生), pero el objetivo del modelo suele venir en
+# kana. pykakasi ya es dependencia; si fallara, se compara sin convertir.
+try:
+    import pykakasi as _pk
+    _KKS = _pk.kakasi()
+except Exception:  # noqa: BLE001
+    _KKS = None
+
 
 def _num(d: dict, clave: str):
     """Lee una puntuación esté plana en el dict o anidada en PronunciationAssessment."""
@@ -33,7 +42,20 @@ def _num(d: dict, clave: str):
 
 
 def _norm_jp(s: str) -> str:
-    return "".join(c for c in (s or "") if c not in _PUNT_JP)
+    """Normaliza para comparar: fuera puntuación/espacios, kanji y katakana a
+    lectura hiragana, y では→じゃ (contracción coloquial, misma frase)."""
+    base = "".join(c for c in (s or "") if c not in _PUNT_JP)
+    if not base:
+        return base
+    if _KKS is not None:
+        try:
+            base = "".join(
+                it.get("hira") or it.get("kana") or it.get("orig", "")
+                for it in _KKS.convert(base)
+            )
+        except Exception:  # noqa: BLE001 — si pykakasi falla, se compara tal cual
+            pass
+    return base.replace("では", "じゃ")
 
 
 # Whisper "rellena" el silencio con un agradecimiento: si el micro se activa
@@ -241,9 +263,23 @@ class SpeechToText:
             elif wscore is not None and wscore < AZURE_PRON_UMBRAL_PALABRA:
                 malas.append(f"【{palabra}】 ({wscore:.0f}/100)")
 
-        # ¿Dijo algo distinto a lo pedido?
+        # ¿Dijo algo distinto a lo pedido? Primero por texto normalizado; pero
+        # Azure ya puntúa la pronunciación CONTRA la referencia, así que si
+        # cubrió toda la frase (completitud alta) sin omisiones/inserciones y con
+        # precisión decente, dijo lo pedido aunque el texto ASR se renderice
+        # distinto (私/わたし, 学生/がくせい, 疲れ様/おつかれさま…).
         ref_n, oido_n = _norm_jp(referencia), _norm_jp(oido)
         dijo_otra_cosa = bool(ref_n) and bool(oido_n) and ref_n != oido_n
+        if dijo_otra_cosa:
+            sin_omision = not any(
+                (w.get("ErrorType")
+                 or (w.get("PronunciationAssessment") or {}).get("ErrorType")
+                 or "None") in ("Omission", "Insertion")
+                for w in palabras
+            )
+            if (sin_omision and comp is not None and comp >= 80
+                    and (acc is None or acc >= AZURE_PRON_UMBRAL_PALABRA)):
+                dijo_otra_cosa = False
 
         # Veredicto (para que el LLM no tenga que interpretar los números).
         if dijo_otra_cosa:
@@ -384,6 +420,15 @@ if __name__ == "__main__":
     for s in ["ちょっと", "más lento por favor", "", "otra palabra"]:
         assert not _es_salida_sensei(s), s
     print("✅ _es_salida_sensei OK")
+
+    # _norm_jp: では→じゃ siempre; kanji↔kana solo con pykakasi.
+    assert _norm_jp("がくせいではありません") == _norm_jp("がくせいじゃありません。")
+    assert _norm_jp("ちょっと") != _norm_jp("もういちど")
+    if _KKS:
+        assert _norm_jp("私はプログラマーです。") == _norm_jp("わたしは プログラマーです"), \
+            (_norm_jp("私はプログラマーです。"), _norm_jp("わたしは プログラマーです"))
+        assert _norm_jp("私は 学生ではありません") == _norm_jp("わたしはがくせいじゃありません。")
+    print("✅ _norm_jp OK" + ("" if _KKS else " (sin pykakasi: parcial)"))
 
     # Enrutado: con referencia va a Azure, pero antes una pasada de Whisper por si
     # Laura pide salir (archivo inexistente → _duracion_seg None → precheck sí).
