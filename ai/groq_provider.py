@@ -85,9 +85,10 @@ class GroqProvider:
                 }
                 if response_format:
                     kwargs["response_format"] = response_format
-                # reasoning_effort solo lo aceptan los modelos gpt-oss; en otros
-                # daría 400, así que lo filtramos por nombre.
-                if reasoning_effort and "gpt-oss" in modelo:
+                # reasoning_effort solo lo aceptan los gpt-oss (en otros da 400) y
+                # solo con valor low|medium|high ("off" es nuestro, no de Groq).
+                if (reasoning_effort and reasoning_effort != "off"
+                        and "gpt-oss" in modelo):
                     kwargs["reasoning_effort"] = reasoning_effort
                 response = self.client.chat.completions.create(
                     model=modelo,

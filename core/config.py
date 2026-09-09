@@ -17,7 +17,11 @@ TEMPERATURE_SENSEI = 0.3  # respuestas del profesor — más deterministas para 
 # último recurso si OpenRouter cae del todo). Fijo: si Groq lo retira, el
 # `_saltar_modelo` de groq_provider ya rota a los alternativos.
 MODEL_SENSEI = "openai/gpt-oss-120b"
-REASONING_EFFORT_SENSEI = os.getenv("REASONING_EFFORT_SENSEI", "low")
+# Razonamiento de los turnos del sensei — vale para TODOS los modelos por igual
+# (gpt-oss, qwen, glm, la reserva Groq): off = sin thinking (rápido); low |
+# medium | high lo fija. Con gpt-oss de primario, `low` funciona bien. OJO: si
+# qwen3.7-flash entra de reserva, cualquier valor ≠ off le mete 15-30 s/turno.
+REASONING_EFFORT_SENSEI = os.getenv("REASONING_EFFORT_SENSEI", "low").strip().lower()
 
 # Frases que sacan del modo sensei. Se comprueban por subcadena sobre el texto
 # en minúsculas. Las usa brain._responder y también speech_to_text para dejar
@@ -36,11 +40,6 @@ TRIGGERS_SALIR_SENSEI = [
 # La lista se recorre en orden hasta el primero que responda (rate limit / caído
 # → siguiente). El extractor de cierre (strict) NUNCA pasa por aquí.
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "").strip()
-# Razonamiento de los modelos NO gpt-oss (Qwen/GLM) en los turnos del sensei:
-#   off    → sin thinking, rápido. `low`+ en qwen3.7-flash (Alibaba) se dispara
-#            a 15-30 s/turno y rompe el formato → mejor `off` y que el primario
-#            sea gpt-oss (que sí respeta `effort` y va por Groq/Cerebras).
-OPENROUTER_REASONING = os.getenv("OPENROUTER_REASONING", "off").strip().lower()
 # Semilla de fábrica. La lista efectiva la da `openrouter_modelos_sensei()`:
 # lo que se guarde en Ajustes → Modelos (clave `openrouter_models`) manda.
 OPENROUTER_MODELOS_SENSEI = [

@@ -104,29 +104,24 @@ def _tracker():
                           "añadir_coste": lambda self, k, n: None})()
 
 
-def test_reasoning_qwen_glm_segun_OPENROUTER_REASONING():
-    p = OpenRouterProvider(modelos=["qwen/qwen3.7-flash"])
-    p.tracker = _tracker()
+def test_reasoning_effort_igual_para_todos_los_modelos():
+    # El mismo `reasoning_effort` del turno vale para cualquier modelo.
+    for modelo in ("qwen/qwen3.7-flash", "openai/gpt-oss-120b", "z-ai/glm-5.3-flash"):
+        p = OpenRouterProvider(modelos=[modelo])
+        p.tracker = _tracker()
 
-    # low (por defecto) → effort:low
-    with patch.object(orp, "OPENROUTER_REASONING", "low"), \
-         patch.object(orp.requests, "post", return_value=_ok("x")) as post:
-        p.completar([{"role": "user", "content": "h"}])
-    assert post.call_args.kwargs["json"]["reasoning"] == {"effort": "low"}
+        with patch.object(orp.requests, "post", return_value=_ok("x")) as post:
+            p.completar([{"role": "user", "content": "h"}], reasoning_effort="low")
+        assert post.call_args.kwargs["json"]["reasoning"] == {"effort": "low"}, modelo
 
-    # off → thinking desactivado
-    with patch.object(orp, "OPENROUTER_REASONING", "off"), \
-         patch.object(orp.requests, "post", return_value=_ok("x")) as post:
-        p.completar([{"role": "user", "content": "h"}])
-    assert post.call_args.kwargs["json"]["reasoning"] == {"enabled": False}
+        with patch.object(orp.requests, "post", return_value=_ok("x")) as post:
+            p.completar([{"role": "user", "content": "h"}], reasoning_effort="off")
+        assert post.call_args.kwargs["json"]["reasoning"] == {"enabled": False}, modelo
 
-
-def test_reasoning_gpt_oss_usa_el_effort_del_turno():
-    p = OpenRouterProvider(modelos=["openai/gpt-oss-120b"])
-    p.tracker = _tracker()
-    with patch.object(orp.requests, "post", return_value=_ok("x")) as post:
-        p.completar([{"role": "user", "content": "h"}], reasoning_effort="low")
-    assert post.call_args.kwargs["json"]["reasoning"] == {"effort": "low"}
+        # sin valor → se trata como "off"
+        with patch.object(orp.requests, "post", return_value=_ok("x")) as post:
+            p.completar([{"role": "user", "content": "h"}])
+        assert post.call_args.kwargs["json"]["reasoning"] == {"enabled": False}, modelo
 
 
 if __name__ == "__main__":
@@ -137,6 +132,5 @@ if __name__ == "__main__":
     test_enruta_por_throughput()
     test_400_por_reasoning_reintenta_sin_el_param()
     test_error_no_recuperable_lanza_sin_rotar()
-    test_reasoning_qwen_glm_segun_OPENROUTER_REASONING()
-    test_reasoning_gpt_oss_usa_el_effort_del_turno()
+    test_reasoning_effort_igual_para_todos_los_modelos()
     print("OK")
