@@ -42,6 +42,12 @@ MUESTRA_OXIDO = 3      # ítems 'sabido' de unidades pasadas en el chequeo de ó
 
 _MARCA_ESTADO = {"sabido": "[sabida]", "en_progreso": "[en progreso]", "nuevo": "[nueva]"}
 
+# can_do_id → texto legible, plano sobre todas las unidades del temario.
+_CANDO_TEXTO = {
+    cd["id"]: cd["texto"]
+    for u in CURRICULUM for cd in (u.get("can_dos") or [])
+}
+
 # Saludo/despedida de apertura: expresión japonesa CORTA + el resto en español,
 # para que se entienda sea cual sea el nivel (una frase japonesa entera aquí es
 # justo lo que el alumno principiante no pilla).
@@ -659,15 +665,20 @@ class ProfesorJapones:
             and prog.get(can_dos[idx_activo + 1]["id"], {}).get("estado") != "dominado"
             else None
         )
-        # ¿El can-do ANTERIOR al activo se dominó hace nada (esta sesión o un par
-        # atrás)? Entonces Kaito lo reconoce en la entrada y presenta el nuevo.
-        # ponytail: ventana de 5 ids para tragarnos sesiones abandonadas en medio.
+        # ¿Se dominó algún can-do hace nada (esta sesión o un par atrás), aunque
+        # fuera de otra unidad? El más reciente se lo reconoce Kaito en la
+        # entrada y presenta el nuevo. ponytail: ventana de 5 ids de sesión para
+        # tragarnos sesiones abandonadas en medio.
         recien_dominado = None
-        if idx_activo:
-            prev = can_dos[idx_activo - 1]
-            u = prog.get(prev["id"], {}).get("ultima_sesion")
-            if u is not None and u >= (self.session_id or 0) - 5:
-                recien_dominado = prev
+        if turno <= 1:
+            cand = [
+                (v["ultima_sesion"], cid) for cid, v in prog.items()
+                if v.get("estado") == "dominado" and v.get("ultima_sesion")
+                and v["ultima_sesion"] >= (self.session_id or 0) - 5
+                and cid != (activo["id"] if activo else None)
+            ]
+            if cand:
+                recien_dominado = _CANDO_TEXTO.get(max(cand)[1])
         # Ítems a introducir hoy (elegidos en entrar()): casi siempre ya salen en
         # la lista del can-do de abajo, así que se marcan ahí en vez de repetir
         # el bloque entero. `nuevos_restantes` recoge los que no aparezcan.
@@ -676,9 +687,9 @@ class ProfesorJapones:
         nuevos_vistos = set()
 
         if activo:
-            if recien_dominado and turno <= 1:
+            if recien_dominado:
                 lineas_f.append(
-                    f"ACABA DE DOMINAR (última sesión): «{recien_dominado['texto']}». "
+                    f"ACABA DE DOMINAR (última sesión): «{recien_dominado}». "
                     "SOLO en este primer turno: reconóceselo de pasada a Laura "
                     "(«lo de … ya lo tienes») y engancha con el can-do de hoy. "
                     "Luego no lo vuelvas a mencionar ni a trabajar."
