@@ -39,6 +39,11 @@ MAX_TURNOS = 10  # pares user/assistant conservados en el contexto del LLM
 # mapa can-do→ítem para N5. Sube esto o mete el mapa si el FOCO se queda corto.
 ITEMS_CANDO_FOCO = 12  # ítems del can-do activo que se listan en el FOCO
 MUESTRA_OXIDO = 3      # ítems 'sabido' de unidades pasadas en el chequeo de óxido
+# "Introduce como máximo UNA cosa nueva por turno" del prompt no frena una
+# racha: en cuanto Laura encadena varios BIEN seguidos, el modelo se envalentona
+# y mete verbo tras verbo (visto en sesión real: 15+ palabras nuevas en 14 min).
+# Por encima de esto, el FOCO manda parar en vez de confiar solo en el prompt.
+UMBRAL_FRENO_NUEVOS = 6
 
 _MARCA_ESTADO = {"sabido": "[sabida]", "en_progreso": "[en progreso]", "nuevo": "[nueva]"}
 
@@ -669,6 +674,26 @@ class ProfesorJapones:
         )
         lineas_f.append(_fase_sesion(turno, ultimo_de_laura))
 
+        # Freno de ritmo (ver UMBRAL_FRENO_NUEVOS): cuenta bloques 【】 DISTINTOS
+        # que Kaito ya ha soltado esta sesión, sin filtrar por si ya eran
+        # sabidos — es a propósito grosero, solo mide ritmo de introducción,
+        # no verifica cada uno contra la BD.
+        dicho_por_kaito = "\n".join(
+            m["content"] for m in self.mensajes if m["role"] == "assistant"
+        )
+        bloques_dichos = {
+            b for b in _RE_BLOQUE_LLANO.findall(dicho_por_kaito)
+            if _RE_JP_CHAR.search(b) and b not in _EXPR_OK_NIVEL_BAJO and b not in _FRASES_ANIMO
+        }
+        if len(bloques_dichos) >= UMBRAL_FRENO_NUEVOS:
+            lineas_f.append(
+                f"⚠️ RITMO: ya has soltado {len(bloques_dichos)} palabras/expresiones "
+                "distintas en 【】 esta sesión. PARA de introducir nada nuevo — ni "
+                "aunque Laura pregunte por otra palabra o vaya encadenando aciertos — "
+                "y dedica el resto de la sesión a que combine y repita SOLO lo que ya "
+                "ha salido hoy."
+            )
+
         if unidad:
             lineas_f.append(f"Unidad actual: {unidad['nombre']}")
             if unidad.get("funcion"):
@@ -750,13 +775,11 @@ class ProfesorJapones:
                     (it["jp"], it["kind"]) for it in items
                 )
                 # Marca intra-sesión: si Kaito ya citó 【jp】 en un turno suyo de
-                # esta sesión, un ítem que aún sería [nueva] pasa a
-                # [trabajándose hoy] (no repitas la glosa, pero sigue en el FOCO).
-                # Se busca el bloque 【jp】 con corchetes, no el jp suelto, para no
-                # dar falsos positivos con ítems de una sola kana (「て」, 「に」).
-                dicho_por_kaito = "\n".join(
-                    m["content"] for m in self.mensajes if m["role"] == "assistant"
-                )
+                # esta sesión (dicho_por_kaito, calculado arriba para el freno de
+                # ritmo), un ítem que aún sería [nueva] pasa a [trabajándose hoy]
+                # (no repitas la glosa, pero sigue en el FOCO). Se busca el bloque
+                # 【jp】 con corchetes, no el jp suelto, para no dar falsos
+                # positivos con ítems de una sola kana (「て」, 「に」).
                 for it in items:
                     kind = "gramatica" if it["kind"] == "gramatica" else "vocabulario"
                     estado = estados_it.get((it["jp"], kind), "nuevo")
