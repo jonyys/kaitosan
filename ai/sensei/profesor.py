@@ -73,10 +73,13 @@ _JUEZ_SISTEMA = (
     "palabras que NO aparecen en ningún sitio del MENSAJE.\n"
     '  "mas_de_una_correccion": true si el MENSAJE señala o corrige más de '
     "un fallo de Laura a la vez.\n"
-    '  "frase_incompleta": true si el MENSAJE, en español, se queda a '
-    "medias — anuncia algo con 'se dice', 'es', 'sería' o similar y no hay "
-    "nada después (o quedan comillas/paréntesis vacíos), o el texto no tiene "
-    "sentido gramatical leído en voz alta tal cual está.\n"
+    '  "frase_incompleta": true si el MENSAJE tiene un hueco donde debería '
+    "haber una palabra o frase y no la hay — asteriscos sueltos ('****'), "
+    "comillas o paréntesis vacíos, o una frase que anuncia algo ('se dice', "
+    "'es', 'sería', 'significa') y no queda nada legible después. Ejemplo "
+    "que SÍ es true: \"'Yo estudié' se dice ****. Ahora repite.\" (el hueco "
+    "después de 'se dice' está vacío). Ejemplo que es false: \"'Yo estudié' "
+    "se dice 【べんきょうしました】.\" (hay contenido real después).\n"
     "Si el mensaje no pide producir nada ni corrige nada, todas deben ser "
     "false. Responde SOLO el JSON, sin texto adicional ni markdown."
 )
