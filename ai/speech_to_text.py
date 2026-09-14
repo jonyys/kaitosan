@@ -16,6 +16,8 @@ from core.config import (
     AZURE_SPEECH_REGION,
     AZURE_STT_LIMITE_SEG_MES,
     GROQ_API_KEY,
+    PREGUNTA_LIBRE_PALABRAS_MIN,
+    TRIGGERS_PREGUNTA_LIBRE_SENSEI,
     TRIGGERS_SALIR_SENSEI,
 )
 from core.token_tracker import TokenTracker
@@ -316,36 +318,15 @@ def _es_salida_sensei(texto: str) -> bool:
     return any(f in t for f in TRIGGERS_SALIR_SENSEI)
 
 
-# Frases que delatan una PREGUNTA/comentario libre en español ("¿cómo se dice
-# descanso?", "no entiendo") en vez de un intento de repetir la frase objetivo.
-# Sin esto, ese turno se manda igual a Azure ja-JP: la pregunta en español sale
-# transcrita como gaznápiro fonético japonés, se puntúa como pronunciación y el
-# profesor nunca llega a ver lo que Laura realmente preguntó (ver _ruta_transcripcion).
-_PISTAS_PREGUNTA_LIBRE = (
-    "qué significa", "que significa", "qué quiere decir", "que quiere decir",
-    "cómo se dice", "como se dice", "cómo se escribe", "como se escribe",
-    "no sé cómo", "no se como", "no sé decir", "no se decir",
-    "no entiendo", "no lo entiendo", "no he entendido",
-    "puedes explicar", "puedes decirme", "explícame", "explicame",
-    "por qué", "porque", "dime", "quiero que me digas",
-)
-
-# Un intento de repetir la frase objetivo es corto — como mucho el puñado de
-# palabras sueltas del turno ("Watashiwa, lordes.", "Maya kóhí o"), incluso
-# cuando Whisper lo transcribe mal. Una pregunta o comentario real en español
-# se explaya. Por encima de esto, aunque no haya "?" ni ninguna pista de la
-# lista, se trata como pregunta libre — cubre frases tipo "Antes de decir
-# esto, quiero que me digas por qué..." que no llevan ninguna marca fija.
-_PALABRAS_PREGUNTA_LIBRE_MIN = 12
-
-
 def _es_pregunta_libre(texto: str) -> bool:
+    """True si el turno es una pregunta/comentario libre en español, no un
+    intento de repetir la frase objetivo (listas y umbral en core.config)."""
     t = (texto or "").lower()
     if "?" in t or "¿" in t:
         return True
-    if any(p in t for p in _PISTAS_PREGUNTA_LIBRE):
+    if any(p in t for p in TRIGGERS_PREGUNTA_LIBRE_SENSEI):
         return True
-    return len(t.split()) > _PALABRAS_PREGUNTA_LIBRE_MIN
+    return len(t.split()) > PREGUNTA_LIBRE_PALABRAS_MIN
 
 
 def _duracion_seg(archivo: str):

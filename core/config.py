@@ -32,6 +32,29 @@ TRIGGERS_SALIR_SENSEI = [
     "salir del modo", "sal del modo", "desactivar modo", "desctivar", "desactiva",
 ]
 
+# Frases que delatan una PREGUNTA/comentario libre en español ("¿cómo se dice
+# descanso?", "no entiendo") en vez de un intento de repetir la frase objetivo.
+# Se comprueban por subcadena sobre el texto en minúsculas. Sin esto, ese turno
+# se manda igual a Azure ja-JP: la pregunta sale transcrita como gaznápiro
+# fonético japonés, se puntúa como pronunciación y el profesor nunca llega a
+# ver lo que Laura preguntó de verdad. Las usa speech_to_text._es_pregunta_libre.
+TRIGGERS_PREGUNTA_LIBRE_SENSEI = [
+    "qué significa", "que significa", "qué quiere decir", "que quiere decir",
+    "cómo se dice", "como se dice", "cómo se escribe", "como se escribe",
+    "no sé cómo", "no se como", "no sé decir", "no se decir",
+    "no entiendo", "no lo entiendo", "no he entendido",
+    "puedes explicar", "puedes decirme", "explícame", "explicame",
+    "por qué", "porque", "dime", "quiero que me digas",
+]
+
+# Un intento de repetir la frase objetivo es corto — como mucho el puñado de
+# palabras sueltas del turno, incluso cuando Whisper lo transcribe mal. Una
+# pregunta o comentario real en español se explaya. Por encima de esto,
+# aunque no haya "?" ni ninguna pista de la lista de arriba, se trata como
+# pregunta libre — cubre frases sin ninguna marca fija ("Antes de decir esto,
+# quiero que me digas por qué...").
+PREGUNTA_LIBRE_PALABRAS_MIN = int(os.getenv("PREGUNTA_LIBRE_PALABRAS_MIN", "12"))
+
 # Órdenes de silencio: cortan el ciclo de voz sin responder ni seguir
 # escuchando. Se comparan por IGUALDAD contra el texto normalizado (sin
 # tildes/puntuación) — no por subcadena, porque "para" como preposición
