@@ -600,7 +600,15 @@ class JapaneseMemory:
         No toca reps/ease_factor/next_review: eso lo mueve solo el juego SRS
         (ver `review`). Es la señal de "esto ya se ha dado hablando", para
         que `estado_item` dé el ítem por sabido sin esperar a que se juegue
-        como tarjeta. Devuelve cuántas filas se actualizaron."""
+        como tarjeta.
+
+        En vocabulario, al cruzar UMBRAL_SENSEI_USOS_SABIDO también sube
+        `status` de 'learning' a 'learned' (aprendida) — nunca a 'mastered'
+        (dominada, reservado a lo que de verdad ha pasado por el SRS), y
+        nunca hacia atrás si ya estaba en 'learned'/'mastered'. Gramática no
+        tiene un `status` categórico (solo `mastery`, el % que mueve el SRS)
+        así que ahí `marcar_usos_en_sensei` no toca nada más que el contador.
+        Devuelve cuántas filas se actualizaron."""
         if not transcript:
             return 0
         actualizadas = 0
@@ -608,8 +616,14 @@ class JapaneseMemory:
             for (word,) in conn.execute("SELECT word FROM japanese_vocabulary").fetchall():
                 if word and word in transcript:
                     conn.execute(
-                        "UPDATE japanese_vocabulary SET sensei_usos = COALESCE(sensei_usos, 0) + 1 "
-                        "WHERE word = ?", (word,),
+                        """UPDATE japanese_vocabulary
+                           SET sensei_usos = COALESCE(sensei_usos, 0) + 1,
+                               status = CASE
+                                   WHEN COALESCE(sensei_usos, 0) + 1 >= ? AND status = 'learning'
+                                   THEN 'learned' ELSE status
+                               END
+                           WHERE word = ?""",
+                        (UMBRAL_SENSEI_USOS_SABIDO, word),
                     )
                     actualizadas += 1
             for (gp,) in conn.execute("SELECT grammar_point FROM japanese_grammar").fetchall():
@@ -996,6 +1010,16 @@ if __name__ == "__main__":
         assert jm.estado_item("です") == "en_progreso"  # 1 sesión, aún no llega al umbral
         assert jm.marcar_usos_en_sensei("Profesor: repite 【です】 otra vez.") == 1
         assert jm.estado_item("です") == "sabido"  # 2 sesiones distintas
+        assert jm.vocab_rows()["です"]["status"] == "learned"  # aprendida, no dominada
+
+        # Una palabra ya 'mastered' por el SRS de verdad no baja ni cambia
+        # aunque también se marque como usada en sensei.
+        jm.add_item("vocabulario", "ねこ", meaning="gato")
+        with jm._conectar() as conn:
+            conn.execute("UPDATE japanese_vocabulary SET status = 'mastered' WHERE word = 'ねこ'")
+        jm.marcar_usos_en_sensei("Laura: ねこ")
+        jm.marcar_usos_en_sensei("Laura: ねこ otra vez")
+        assert jm.vocab_rows()["ねこ"]["status"] == "mastered"
 
         # Nunca apareció en ningún transcript: se queda en_progreso.
         assert jm.estado_item("ました", kind="gramatica") == "en_progreso"
