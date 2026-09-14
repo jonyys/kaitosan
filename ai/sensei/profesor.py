@@ -875,6 +875,13 @@ class ProfesorJapones:
 
         transcript = self._construir_transcript(mensajes)
 
+        # Determinista, no depende de ningún LLM: cuenta como "usado en sensei"
+        # cualquier palabra/gramática de la BD que aparezca en el transcript.
+        try:
+            self.jap_memory.marcar_usos_en_sensei(transcript)
+        except Exception as e:
+            print(f"⚠️ Error marcando usos en sensei: {e}")
+
         # Nivel 1: resumen en texto libre con cualquier modelo disponible.
         # Se guarda siempre para que la próxima sesión tenga continuidad aunque
         # la extracción completa no sea posible.

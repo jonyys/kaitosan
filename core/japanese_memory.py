@@ -2,6 +2,11 @@ import sqlite3
 from datetime import datetime
 from ai.sensei.srs import sm2
 
+# Sesiones DISTINTAS en las que un ítem debe haber salido hablando con el
+# profesor para darlo por "sabido" sin haber pasado por el juego SRS (mismo
+# "2" que ya usan reps>=2 y can_do veces_ok>=2 en este archivo).
+UMBRAL_SENSEI_USOS_SABIDO = 2
+
 
 class JapaneseMemory:
     def __init__(self, db_path):
@@ -108,6 +113,11 @@ class JapaneseMemory:
             "next_review": "TEXT",
             "times_correct": "INTEGER DEFAULT 0",
             "first_taught_session_id": "INTEGER",
+            # Veces que ha salido en una conversación de sensei (no en el
+            # juego SRS): no mueve reps/ease_factor/next_review, solo hace
+            # que estado_item() la dé por "sabida" sin esperar a que se
+            # juegue como tarjeta. Ver marcar_usos_en_sensei.
+            "sensei_usos": "INTEGER DEFAULT 0",
         }
         grammar_cols = {
             "reps": "INTEGER DEFAULT 0",
@@ -119,6 +129,7 @@ class JapaneseMemory:
             # espejo de vocab/kanji: lo que Laura pidió en sesión no se purga
             # (Fase 04) y lo poblará el extractor en la Fase 08.
             "first_taught_session_id": "INTEGER",
+            "sensei_usos": "INTEGER DEFAULT 0",
         }
         kanji_cols = {
             "reps": "INTEGER DEFAULT 0",
@@ -512,25 +523,33 @@ class JapaneseMemory:
         Fuente única de la lógica que vivía en `app.py:_temario_unidades()`
         ('aprendida'/'en_curso'/'nueva' desde `status`+`reps`). Renombrada 1:1:
         aprendida→sabido, en_curso→en_progreso, sin fila/nueva→nuevo.
+
+        `sensei_usos >= UMBRAL_SENSEI_USOS_SABIDO` también cuenta como sabido:
+        sin esto, un ítem que solo se ha trabajado hablando con el profesor
+        (nunca como tarjeta del juego SRS, que es lo único que mueve `reps`)
+        se queda en 'en_progreso' para siempre y el profesor lo re-explica
+        desde cero cada sesión, por muchas veces que Laura lo haya usado bien.
         """
         with self._conectar() as conn:
             if kind == "gramatica":
                 row = conn.execute(
-                    "SELECT COALESCE(reps, 0), COALESCE(mastery, 0) "
+                    "SELECT COALESCE(reps, 0), COALESCE(mastery, 0), COALESCE(sensei_usos, 0) "
                     "FROM japanese_grammar WHERE grammar_point = ?", (jp,),
                 ).fetchone()
                 if not row:
                     return "nuevo"
-                reps, mastery = row
-                return "sabido" if reps >= 2 or mastery >= 100 else "en_progreso"
+                reps, mastery, sensei_usos = row
+                return ("sabido" if reps >= 2 or mastery >= 100
+                        or sensei_usos >= UMBRAL_SENSEI_USOS_SABIDO else "en_progreso")
             row = conn.execute(
-                "SELECT COALESCE(reps, 0), status "
+                "SELECT COALESCE(reps, 0), status, COALESCE(sensei_usos, 0) "
                 "FROM japanese_vocabulary WHERE word = ?", (jp,),
             ).fetchone()
             if not row:
                 return "nuevo"
-            reps, status = row
-            if reps >= 2 or status in ("learned", "mastered"):
+            reps, status, sensei_usos = row
+            if (reps >= 2 or status in ("learned", "mastered")
+                    or sensei_usos >= UMBRAL_SENSEI_USOS_SABIDO):
                 return "sabido"
             return "en_progreso"
 
@@ -548,26 +567,59 @@ class JapaneseMemory:
         with self._conectar() as conn:
             if vocab:
                 ph = ",".join("?" * len(vocab))
-                for word, reps, status in conn.execute(
-                    f"SELECT word, COALESCE(reps, 0), status FROM japanese_vocabulary "
-                    f"WHERE word IN ({ph})", tuple(vocab),
+                for word, reps, status, sensei_usos in conn.execute(
+                    f"SELECT word, COALESCE(reps, 0), status, COALESCE(sensei_usos, 0) "
+                    f"FROM japanese_vocabulary WHERE word IN ({ph})", tuple(vocab),
                 ):
                     out[(word, "vocabulario")] = (
                         "sabido" if reps >= 2 or status in ("learned", "mastered")
+                        or sensei_usos >= UMBRAL_SENSEI_USOS_SABIDO
                         else "en_progreso"
                     )
             if gram:
                 ph = ",".join("?" * len(gram))
-                for gp, reps, mastery in conn.execute(
-                    f"SELECT grammar_point, COALESCE(reps, 0), COALESCE(mastery, 0) "
-                    f"FROM japanese_grammar WHERE grammar_point IN ({ph})", tuple(gram),
+                for gp, reps, mastery, sensei_usos in conn.execute(
+                    f"SELECT grammar_point, COALESCE(reps, 0), COALESCE(mastery, 0), "
+                    f"COALESCE(sensei_usos, 0) FROM japanese_grammar "
+                    f"WHERE grammar_point IN ({ph})", tuple(gram),
                 ):
                     out[(gp, "gramatica")] = (
-                        "sabido" if reps >= 2 or mastery >= 100 else "en_progreso"
+                        "sabido" if reps >= 2 or mastery >= 100
+                        or sensei_usos >= UMBRAL_SENSEI_USOS_SABIDO
+                        else "en_progreso"
                     )
         for par in pares:
             out.setdefault(par, "nuevo")
         return out
+
+    def marcar_usos_en_sensei(self, transcript: str) -> int:
+        """Suma 1 a `sensei_usos` de cada palabra/gramática de la BD cuyo
+        texto aparece en el transcript de la sesión (dicho por el profesor o
+        por Laura) — una vez por sesión, no por aparición dentro de ella.
+
+        No toca reps/ease_factor/next_review: eso lo mueve solo el juego SRS
+        (ver `review`). Es la señal de "esto ya se ha dado hablando", para
+        que `estado_item` dé el ítem por sabido sin esperar a que se juegue
+        como tarjeta. Devuelve cuántas filas se actualizaron."""
+        if not transcript:
+            return 0
+        actualizadas = 0
+        with self._conectar() as conn:
+            for (word,) in conn.execute("SELECT word FROM japanese_vocabulary").fetchall():
+                if word and word in transcript:
+                    conn.execute(
+                        "UPDATE japanese_vocabulary SET sensei_usos = COALESCE(sensei_usos, 0) + 1 "
+                        "WHERE word = ?", (word,),
+                    )
+                    actualizadas += 1
+            for (gp,) in conn.execute("SELECT grammar_point FROM japanese_grammar").fetchall():
+                if gp and gp in transcript:
+                    conn.execute(
+                        "UPDATE japanese_grammar SET sensei_usos = COALESCE(sensei_usos, 0) + 1 "
+                        "WHERE grammar_point = ?", (gp,),
+                    )
+                    actualizadas += 1
+        return actualizadas
 
     def set_can_do(self, can_do_id: str, resultado: str, session_id, nota: str = None):
         """Registra el resultado de un can-do en una sesión y recalcula su estado.
@@ -922,3 +974,39 @@ class JapaneseMemory:
         perfil += "- No enseñes vocabulario ya dominado.\n"
         perfil += "- Refuerza las estructuras con errores frecuentes.\n"
         return perfil
+
+
+if __name__ == "__main__":
+    # marcar_usos_en_sensei / estado_item: un ítem que solo se ha hablado
+    # (nunca jugado como tarjeta SRS, reps=0) pasa a "sabido" a la SEGUNDA
+    # sesión en la que aparece en el transcript — no antes, y no si nunca
+    # aparece.
+    import os
+    import tempfile
+
+    fd, path = tempfile.mkstemp(suffix=".db")
+    os.close(fd)
+    try:
+        jm = JapaneseMemory(path)
+        jm.add_item("vocabulario", "です", meaning="cópula")
+        jm.add_item("gramatica", "ました", meaning="pasado cortés")
+
+        assert jm.estado_item("です") == "en_progreso"
+        assert jm.marcar_usos_en_sensei("Profesor: 【です】 significa es. Laura: です") == 1
+        assert jm.estado_item("です") == "en_progreso"  # 1 sesión, aún no llega al umbral
+        assert jm.marcar_usos_en_sensei("Profesor: repite 【です】 otra vez.") == 1
+        assert jm.estado_item("です") == "sabido"  # 2 sesiones distintas
+
+        # Nunca apareció en ningún transcript: se queda en_progreso.
+        assert jm.estado_item("ました", kind="gramatica") == "en_progreso"
+
+        # nuevo (sin fila) no se confunde con en_progreso.
+        assert jm.estado_item("食べる") == "nuevo"
+        print("✅ marcar_usos_en_sensei / estado_item OK")
+    finally:
+        import gc
+        gc.collect()  # cierra las conexiones sqlite pendientes (Windows bloquea el fichero si no)
+        try:
+            os.unlink(path)
+        except OSError:
+            pass
