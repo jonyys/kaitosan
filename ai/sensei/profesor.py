@@ -54,24 +54,29 @@ MODELO_JUEZ = "openai/gpt-oss-120b"
 EFFORT_JUEZ = "low"
 _JUEZ_SISTEMA = (
     "Eres un revisor automático de un profesor de japonés. Te paso el FOCO "
-    "(lo que la alumna ya sabe o ya se le ha explicado hoy) y un mensaje que "
-    "el profesor está a punto de decirle. Responde SOLO con un JSON de estas "
-    "cinco claves, cada una true o false:\n"
-    '  "vocab_no_enseñado": true si el mensaje le PIDE decir, repetir o '
+    "(lo que la alumna ya sabe o ya se le ha explicado hoy), el MENSAJE que "
+    "se le va a HABLAR de verdad, y la FRASE OBJETIVO interna (Laura no la "
+    "oye — solo puntúa su pronunciación del turno siguiente; puede venir "
+    "vacía si el turno no pide repetir nada). Responde SOLO con un JSON de "
+    "estas seis claves, cada una true o false:\n"
+    '  "vocab_no_enseñado": true si el MENSAJE le PIDE decir, repetir o '
     "traducir una palabra o frase japonesa que NO esté marcada "
     "[sabida]/[en progreso]/[trabajándose hoy] en el FOCO, NI en la lista de "
-    "'ya has dicho esto', NI se explique dentro del propio mensaje antes de "
+    "'ya has dicho esto', NI se explique dentro del propio MENSAJE antes de "
     "pedírsela.\n"
-    '  "dicta_y_pide_repetir": true si el mensaje ENSEÑA una palabra o '
+    '  "dicta_y_pide_repetir": true si el MENSAJE ENSEÑA una palabra o '
     "frase nueva Y en el MISMO mensaje le pide que la repita o produzca — "
     "tiene que ser una cosa u otra, nunca las dos en el mismo turno.\n"
-    '  "mas_de_una_cosa_nueva": true si el mensaje introduce 2 o más '
+    '  "mas_de_una_cosa_nueva": true si el MENSAJE introduce 2 o más '
     "palabras o expresiones japonesas distintas que no estaban ya sabidas.\n"
-    '  "objetivo_no_coincide": true si el mensaje trae una línea '
-    '"@@OBJETIVO: ...@@" y esa frase usa palabras que NO aparecen en ningún '
-    "otro sitio del propio mensaje.\n"
-    '  "mas_de_una_correccion": true si el mensaje señala o corrige más de '
+    '  "objetivo_no_coincide": true si la FRASE OBJETIVO no está vacía Y usa '
+    "palabras que NO aparecen en ningún sitio del MENSAJE.\n"
+    '  "mas_de_una_correccion": true si el MENSAJE señala o corrige más de '
     "un fallo de Laura a la vez.\n"
+    '  "frase_incompleta": true si el MENSAJE, en español, se queda a '
+    "medias — anuncia algo con 'se dice', 'es', 'sería' o similar y no hay "
+    "nada después (o quedan comillas/paréntesis vacíos), o el texto no tiene "
+    "sentido gramatical leído en voz alta tal cual está.\n"
     "Si el mensaje no pide producir nada ni corrige nada, todas deben ser "
     "false. Responde SOLO el JSON, sin texto adicional ni markdown."
 )
@@ -86,6 +91,9 @@ _EXPLICACION_FALLO_JUEZ = {
         "en el mensaje visible",
     "mas_de_una_correccion": "corregías más de un fallo a la vez — como "
         "mucho uno por turno",
+    "frase_incompleta": "la frase se quedaba a medias o sin sentido al "
+        "leerla en voz alta — probablemente porque el recorte de japonés se "
+        "comió un bloque entero del que dependía el resto de la frase",
 }
 
 _MARCA_ESTADO = {"sabido": "[sabida]", "en_progreso": "[en progreso]", "nuevo": "[nueva]"}
@@ -512,20 +520,21 @@ class ProfesorJapones:
         self.timer.daemon = True
         self.timer.start()
 
-    def _revisar_turno(self, respuesta_candidata: str, foco: str) -> dict:
+    def _revisar_turno(self, respuesta_final: str, objetivo: str, foco: str) -> dict:
         """Juez rápido (mismo modelo del profesor, esfuerzo bajo) antes de
-        hablar: repasa la respuesta candidata contra las 5 reglas de
-        _JUEZ_SISTEMA (vocabulario no enseñado, dictar+pedir repetir en el
-        mismo turno, más de una cosa nueva, objetivo que no coincide con lo
-        dicho, más de una corrección). Ataja el problema en el origen — antes
-        de que llegue a hablarse — en vez de corregirlo después.
+        hablar: repasa la respuesta YA RECORTADA (lo que de verdad se va a
+        decir, ver _procesar en responder_turno) contra las 6 reglas de
+        _JUEZ_SISTEMA. Ataja el problema en el origen — antes de que llegue
+        a hablarse — en vez de corregirlo después. `objetivo` va aparte (no
+        va dentro de `respuesta_final`: _partir_objetivo_centinela ya lo
+        separó) para poder revisar "objetivo_no_coincide".
 
         Devuelve {} (nada marcado) si el juez no está disponible o falla:
         nunca bloquea el turno por su cuenta. reasoning_effort="low" es
         obligatorio: gpt-oss-120b sin él (ni con "off") razona igual por
         dentro y se come el presupuesto de tokens sin dejar nada para la
-        respuesta. Y con 5 claves en JSON necesita bastante más margen que
-        un SI/NO suelto: con 150 salía vacío, con 400 iba justo (~3s la
+        respuesta. Y con varias claves en JSON necesita bastante más margen
+        que un SI/NO suelto: con 150 salía vacío, con 400 iba justo (~3s la
         primera vez), con 800 iba fino — 600 de margen — comprobado en vivo."""
         if not self._provider_juez:
             return {}
@@ -533,7 +542,11 @@ class ProfesorJapones:
             crudo = self._provider_juez.completar(
                 [
                     {"role": "system", "content": _JUEZ_SISTEMA},
-                    {"role": "user", "content": f"FOCO:\n{foco}\n\nMensaje del profesor:\n{respuesta_candidata}"},
+                    {"role": "user", "content": (
+                        f"FOCO:\n{foco}\n\n"
+                        f"MENSAJE que se le va a hablar:\n{respuesta_final}\n\n"
+                        f"FRASE OBJETIVO interna: {objetivo or '(ninguna)'}"
+                    )},
                 ],
                 max_tokens=600,
                 temperature=0,
@@ -605,9 +618,26 @@ class ProfesorJapones:
             )
         historial_sensei.append({"role": "user", "content": contenido_usuario})
 
+        def _procesar(cruda: str):
+            """Centinela + recorte de japonés en un solo paso, para poder
+            aplicarlo igual a la respuesta original y a la del reintento.
+            Devuelve (respuesta_final, objetivo_centinela); respuesta_final
+            es None si queda vacía en cualquiera de los dos pasos (el modelo
+            no dejó nada, o el recorte de nivel bajo se comió un bloque
+            entero sin dejar apoyo alrededor)."""
+            limpia, objetivo = _partir_objetivo_centinela(cruda)
+            if not limpia or not limpia.strip():
+                return None, None
+            acotada = _acotar_japones(limpia, self.nivel_inmersion)
+            if acotada != limpia:
+                print(f"✂️  Japonés acotado a nivel {self.nivel_inmersion}")
+            if not acotada or not acotada.strip():
+                return None, None
+            return acotada, objetivo
+
         # Llamar al LLM
         try:
-            respuesta = self.provider.completar(
+            respuesta_cruda = self.provider.completar(
                 historial_sensei,
                 # Techo alto para todos los turnos: el desglose gramatical es
                 # justo lo que se quedaba a medias. No se afina el límite por
@@ -620,15 +650,25 @@ class ProfesorJapones:
             print(f"❌ Error LLM en modo sensei: {e}")
             return "【ちょっとまってください。】 Un momento, hubo un problema técnico."
 
-        # Juez de turno: si viola alguna de las 5 reglas, un reintento con el
-        # aviso puesto — antes de que llegue a hablarse, no después.
-        veredicto_juez = self._revisar_turno(respuesta, foco)
+        respuesta, objetivo_centinela = _procesar(respuesta_cruda)
+        if respuesta is None:
+            # Vacía del modelo, o el recorte de nivel bajo se comió el único
+            # bloque que había (turno que era UN SOLO 【frase larga】 sin apoyo
+            # alrededor) — sin este chequeo Kaito se queda mudo o suelta una
+            # frase a medias ("se dice ...") con TTS con texto vacío.
+            print("⚠️ Respuesta vacía (del modelo o tras el recorte) en modo sensei")
+            return "Perdona, se me ha cruzado un cable. ¿Me lo repites? 【もういちど おねがいします】"
+
+        # Juez de turno: revisa el texto YA RECORTADO — el que de verdad se va
+        # a hablar — no el crudo. Si viola alguna de las 6 reglas, un
+        # reintento con el aviso puesto, antes de que llegue a hablarse.
+        veredicto_juez = self._revisar_turno(respuesta, objetivo_centinela, foco)
         fallos = [k for k, v in veredicto_juez.items() if v and k in _EXPLICACION_FALLO_JUEZ]
         if fallos:
             explicacion = "; ".join(_EXPLICACION_FALLO_JUEZ[k] for k in fallos)
             print(f"⚠️ Juez: {', '.join(fallos)} — reintentando…")
             historial_reintento = historial_sensei + [
-                {"role": "assistant", "content": respuesta},
+                {"role": "assistant", "content": respuesta_cruda},
                 {"role": "user", "content": (
                     f"[SISTEMA] Esa respuesta no vale: {explicacion}. Respóndele de nuevo "
                     "evitando eso — usa solo lo que ya sabe (ver FOCO) y sigue las reglas "
@@ -636,41 +676,20 @@ class ProfesorJapones:
                 )},
             ]
             try:
-                respuesta = self.provider.completar(
+                reintento_cruda = self.provider.completar(
                     historial_reintento,
                     max_tokens=MAX_TOKENS_EXPLICACION,
                     temperature=TEMPERATURE_SENSEI,
                     reasoning_effort=REASONING_EFFORT_SENSEI,
-                ) or respuesta
+                )
+                reintento, objetivo_reintento = _procesar(reintento_cruda)
+                if reintento is not None:
+                    respuesta, objetivo_centinela = reintento, objetivo_reintento
+                # Si el reintento sale vacío, nos quedamos con la respuesta
+                # original ya validada — el juez la marcó, pero es mejor eso
+                # que arriesgarse a un turno mudo.
             except Exception as e:
                 print(f"⚠️ Reintento del juez falló, sigo con la respuesta original: {e}")
-
-        # Separa la línea centinela "@@OBJETIVO: …@@" antes de tocar nada: no se
-        # habla, no se guarda; solo fija contra qué frase puntúa Azure el turno
-        # siguiente (en forma canónica, aunque la parte hablada vaya en romaji o
-        # partida en trozos). Sin centinela se cae a la heurística sobre 【】.
-        respuesta, objetivo_centinela = _partir_objetivo_centinela(respuesta)
-
-        # El modelo a veces devuelve vacío (todo el presupuesto se fue en
-        # razonamiento). No guardamos el turno y pedimos que repita.
-        if not respuesta or not respuesta.strip():
-            print("⚠️ Respuesta vacía del LLM en modo sensei")
-            return "Perdona, se me ha cruzado un cable. ¿Me lo repites? 【もういちど おねがいします】"
-
-        # Aplana el marcado 【】 y, en nivel bajo, recorta las frases japonesas
-        # que el modelo suelta pese al prompt (Laura no las entiende). Se guarda
-        # la versión ya acotada: así el modelo imita su propio estilo corto.
-        acotada = _acotar_japones(respuesta, self.nivel_inmersion)
-        if acotada != respuesta:
-            print(f"✂️  Japonés acotado a nivel {self.nivel_inmersion}")
-            respuesta = acotada
-
-        # El recorte de arriba puede dejar la respuesta en nada (turno que era
-        # UN SOLO bloque 【frase larga】 sin apoyo en español) — sin este chequeo
-        # Kaito se queda mudo (TTS con texto vacío) en vez de pedir que repita.
-        if not respuesta or not respuesta.strip():
-            print("⚠️ Recorte de japonés dejó la respuesta vacía en modo sensei")
-            return "Perdona, se me ha cruzado un cable. ¿Me lo repites? 【もういちど おねがいします】"
 
         # Guardar turno limpio en el historial propio
         self.mensajes.append({"role": "user", "content": mensaje})
