@@ -85,12 +85,24 @@ _RE_KANJI = re.compile(r'[㐀-䶿一-鿿]')
 _KANJI_RATIO_MAX_OBJETIVO = 0.4  # más kanji que esto → descripción, no objetivo
 
 
+_LARGO_MIN_RATIO_KANJI = 3  # a esta longitud o menos, la proporción no dice nada
+# (un verbo diccionario como 【飲む】/【見る】 es kanji+kana 1:1 y NO es descripción)
+
+
 def _kanji_bloquea_objetivo(b: str) -> bool:
     """True si el bloque tiene demasiado kanji para ser una frase objetivo real
-    (y no está en la lista blanca de expresiones fijas N5)."""
+    (y no está en la lista blanca de expresiones fijas N5).
+
+    Bloqueaba también verbos en diccionario de un solo kanji ('飲む', '見る':
+    1 kanji en 2 caracteres = 50%, por encima del umbral) y entonces
+    _extraer_frase_objetivo se quedaba sin ese bloque como candidato y caía a
+    uno anterior de la MISMA respuesta — Azure puntuaba el siguiente turno
+    contra una frase objetivo distinta a la que el profesor acababa de pedir."""
     if not _RE_KANJI.search(b):
         return False
     if b in _EXPR_OK_NIVEL_BAJO:
+        return False
+    if len(b) <= _LARGO_MIN_RATIO_KANJI:
         return False
     kanji = len(_RE_KANJI.findall(b))
     return kanji / max(len(b), 1) > _KANJI_RATIO_MAX_OBJETIVO
@@ -528,6 +540,13 @@ class ProfesorJapones:
         if acotada != respuesta:
             print(f"✂️  Japonés acotado a nivel {self.nivel_inmersion}")
             respuesta = acotada
+
+        # El recorte de arriba puede dejar la respuesta en nada (turno que era
+        # UN SOLO bloque 【frase larga】 sin apoyo en español) — sin este chequeo
+        # Kaito se queda mudo (TTS con texto vacío) en vez de pedir que repita.
+        if not respuesta or not respuesta.strip():
+            print("⚠️ Recorte de japonés dejó la respuesta vacía en modo sensei")
+            return "Perdona, se me ha cruzado un cable. ¿Me lo repites? 【もういちど おねがいします】"
 
         # Guardar turno limpio en el historial propio
         self.mensajes.append({"role": "user", "content": mensaje})
@@ -1038,3 +1057,16 @@ if __name__ == "__main__":
     # Expresión fija de la lista blanca: se deja aunque lleve ます/ください.
     assert _acotar_japones("【もう一度お願いします】", 1) == "【もう一度お願いします】"
     print("✅ _acotar_japones OK")
+
+    # _extraer_frase_objetivo: un verbo diccionario corto y kanji-denso por
+    # proporción (【飲む】 = 1 kanji en 2 caracteres) es un candidato válido a
+    # objetivo, no "descripción colada" — si se descarta, el heurístico cae a
+    # una frase objetivo ANTERIOR de la misma respuesta y Azure puntúa el
+    # turno siguiente contra la frase equivocada.
+    texto = (
+        "Así que cuando decimos 【きのうは】 【やすみでした】 estamos diciendo eso. "
+        "Ahora, combina lo que ya sabes y di \"ayer bebí café\" usando la forma "
+        "pasada del verbo 【飲む】. Repite la frase completa, por favor."
+    )
+    assert _extraer_frase_objetivo(texto) == "飲む", _extraer_frase_objetivo(texto)
+    print("✅ _extraer_frase_objetivo OK")
