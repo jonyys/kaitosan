@@ -316,6 +316,27 @@ def _es_salida_sensei(texto: str) -> bool:
     return any(f in t for f in TRIGGERS_SALIR_SENSEI)
 
 
+# Frases que delatan una PREGUNTA/comentario libre en español ("¿cómo se dice
+# descanso?", "no entiendo") en vez de un intento de repetir la frase objetivo.
+# Sin esto, ese turno se manda igual a Azure ja-JP: la pregunta en español sale
+# transcrita como gaznápiro fonético japonés, se puntúa como pronunciación y el
+# profesor nunca llega a ver lo que Laura realmente preguntó (ver _ruta_transcripcion).
+_PISTAS_PREGUNTA_LIBRE = (
+    "qué significa", "que significa", "qué quiere decir", "que quiere decir",
+    "cómo se dice", "como se dice", "cómo se escribe", "como se escribe",
+    "no sé cómo", "no se como", "no sé decir", "no se decir",
+    "no entiendo", "no lo entiendo", "no he entendido",
+    "puedes explicar", "puedes decirme", "explícame", "explicame",
+)
+
+
+def _es_pregunta_libre(texto: str) -> bool:
+    t = (texto or "").lower()
+    if "?" in t or "¿" in t:
+        return True
+    return any(p in t for p in _PISTAS_PREGUNTA_LIBRE)
+
+
 def _duracion_seg(archivo: str):
     try:
         info = sf.info(archivo)
@@ -335,7 +356,10 @@ def _ruta_transcripcion(stt: SpeechToText, archivo: str, *, sensei_activo: bool,
       japonés corto de una principiante hispanohablante casi nunca acierta el
       kana, así que la evaluación no se disparaba nunca. Si Azure no está
       disponible (sin clave, cuota agotada, error), se cae a Groq Whisper
-      forzando japonés.
+      forzando japonés. Antes de ir a Azure, el precheck de Whisper también
+      descarta el turno si Laura pregunta algo en español en vez de repetir
+      (ver `_es_pregunta_libre`): si no, la pregunta se transcribiría como
+      japonés sin sentido y se puntuaría como pronunciación en vez de responderse.
     - Sensei sin `referencia` (respuesta libre, sí/no, comprensión…): Groq Whisper
       con autodetección.
     - Sensei charla: solo evalúa si AZURE_PRON_EN_CHARLA está activo.
@@ -356,6 +380,9 @@ def _ruta_transcripcion(stt: SpeechToText, archivo: str, *, sensei_activo: bool,
             crudo = stt.transcribir(archivo, idioma=None)
             if _es_salida_sensei(crudo):
                 print(f"🚪 Salida de sensei detectada en turno de pronunciación: «{crudo}»")
+                return crudo, None
+            if _es_pregunta_libre(crudo):
+                print(f"💬 Pregunta libre detectada en turno de pronunciación: «{crudo}»")
                 return crudo, None
         res = stt.transcribir_con_pronunciacion(archivo, referencia=referencia)
         if res is not None:
@@ -384,6 +411,13 @@ if __name__ == "__main__":
     for s in ["ちょっと", "más lento por favor", "", "otra palabra"]:
         assert not _es_salida_sensei(s), s
     print("✅ _es_salida_sensei OK")
+
+    for s in ["¿cómo se dice descanso?", "no entiendo", "qué significa eso",
+              "Pero no sé cómo se dice descanso."]:
+        assert _es_pregunta_libre(s), s
+    for s in ["ちょっと", "わたしは がくせいです", "", "Kaito desu"]:
+        assert not _es_pregunta_libre(s), s
+    print("✅ _es_pregunta_libre OK")
 
     # _resumir_pronunciacion: el veredicto sale de los números de Azure, no de
     # comparar texto (kanji/kana daba falsos "dijo otra cosa").
@@ -428,6 +462,13 @@ if __name__ == "__main__":
                                referencia="ちょっと")
     assert (t, p) == ("quiero salir del modo sensei", None), (t, p)
     assert salida.llamadas == [("whisper", None)], salida.llamadas
+
+    # Laura pregunta algo en español en vez de repetir → tampoco llega a Azure.
+    pregunta = _FakeSTT({"texto": "x"}, whisper="no sé cómo se dice descanso")
+    t, p = _ruta_transcripcion(pregunta, "a.wav", sensei_activo=True, modo_conv=False,
+                               referencia="きのうは 休みでした")
+    assert (t, p) == ("no sé cómo se dice descanso", None), (t, p)
+    assert pregunta.llamadas == [("whisper", None)], pregunta.llamadas
 
     sin_azure = _FakeSTT(None)
     t, p = _ruta_transcripcion(sin_azure, "a.wav", sensei_activo=True, modo_conv=False,
