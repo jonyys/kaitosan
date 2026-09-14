@@ -32,6 +32,15 @@ TRIGGERS_SALIR_SENSEI = [
     "salir del modo", "sal del modo", "desactivar modo", "desctivar", "desactiva",
 ]
 
+# Órdenes de silencio: cortan el ciclo de voz sin responder ni seguir
+# escuchando. Se comparan por IGUALDAD contra el texto normalizado (sin
+# tildes/puntuación) — no por subcadena, porque "para" como preposición
+# aparece en cualquier frase. Las usa core.listener.
+TRIGGERS_DESPEDIDA = {
+    "calla", "callate", "para", "para ya", "silencio",
+    "adios", "chau", "nos vemos", "hasta luego",
+}
+
 # OpenRouter — proveedor de los TURNOS del sensei (no del extractor). El prompt
 # del profesor es grande y ahogaba el tier gratis de Groq por límite de
 # tokens/min; OpenRouter es pago-por-uso y da acceso a modelos fuertes en seguir

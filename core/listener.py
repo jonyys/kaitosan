@@ -1,11 +1,22 @@
 import re
 import time
 import threading
+import unicodedata
 from audio.wakeword import WakeWordDetector
 from ai.speech_to_text import transcribir_para_turno
 from ai.sensei.kana import frases_para_card
+from core.config import TRIGGERS_DESPEDIDA
 
 TIMEOUT_CONVERSACION_SEG = 3
+
+
+def _normalizar(texto: str) -> str:
+    """minúsculas, sin tildes, sin puntuación — para comparar por igualdad."""
+    sin_tildes = ''.join(
+        c for c in unicodedata.normalize('NFD', texto.strip().lower())
+        if unicodedata.category(c) != 'Mn'
+    )
+    return re.sub(r'[^\w\s]', '', sin_tildes).strip()
 
 
 class VoiceListener:
@@ -62,6 +73,11 @@ class VoiceListener:
             segundos_desde_turno=time.monotonic() - self.brain.ultimo_turno_ts,
         )
         if not texto:
+            self.state.cambiar("idle")
+            return False
+
+        if _normalizar(texto) in TRIGGERS_DESPEDIDA:
+            print(f"🤫 Despedida detectada ({texto!r}) — silencio")
             self.state.cambiar("idle")
             return False
 
