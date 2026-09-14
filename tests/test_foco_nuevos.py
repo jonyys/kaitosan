@@ -60,9 +60,9 @@ def test_kanjis_tienen_srs_propio_y_duele_en_due_count():
 
 
 def test_juez_vocab_reintenta_si_el_turno_pide_algo_no_enseñado():
-    """_pide_vocab_no_enseñado corta ANTES de hablar, no después: si el juez
-    dice SI, responder_turno reintenta con el proveedor principal en vez de
-    dejar pasar una pregunta sin respuesta posible."""
+    """_revisar_turno corta ANTES de hablar, no después: si el juez marca
+    algún fallo, responder_turno reintenta con el proveedor principal en vez
+    de dejar pasar una pregunta sin respuesta posible."""
     db = os.path.join(tempfile.mkdtemp(), "test.db")
     jap = JapaneseMemory(db)
     memoria = MagicMock()
@@ -78,7 +78,11 @@ def test_juez_vocab_reintenta_si_el_turno_pide_algo_no_enseñado():
     if prof.timer:
         prof.timer.cancel()
     prof._provider_juez = MagicMock()
-    prof._provider_juez.completar.return_value = "SI"
+    prof._provider_juez.completar.return_value = (
+        '{"vocab_no_enseñado": true, "dicta_y_pide_repetir": false, '
+        '"mas_de_una_cosa_nueva": false, "objetivo_no_coincide": false, '
+        '"mas_de_una_correccion": false}'
+    )
 
     respuesta = prof.responder_turno("vamos a practicar")
 
@@ -100,7 +104,11 @@ def test_juez_vocab_no_reintenta_si_dice_que_esta_bien():
     if prof.timer:
         prof.timer.cancel()
     prof._provider_juez = MagicMock()
-    prof._provider_juez.completar.return_value = "NO"
+    prof._provider_juez.completar.return_value = (
+        '{"vocab_no_enseñado": false, "dicta_y_pide_repetir": false, '
+        '"mas_de_una_cosa_nueva": false, "objetivo_no_coincide": false, '
+        '"mas_de_una_correccion": false}'
+    )
 
     prof.responder_turno("vamos a practicar")
     assert provider.completar.call_count == 1, provider.completar.call_count

@@ -11,7 +11,7 @@ import threading
 import time
 from datetime import datetime
 
-from ai.groq_provider import GroqProvider
+from ai.openrouter_provider import OpenRouterProvider
 from ai.prompts import cargar_prompt
 from ai.sensei.curriculum import (
     CURRICULUM,
@@ -46,20 +46,47 @@ MUESTRA_OXIDO = 3      # ítems 'sabido' de unidades pasadas en el chequeo de ó
 # Por encima de esto, el FOCO manda parar en vez de confiar solo en el prompt.
 UMBRAL_FRENO_NUEVOS = 6
 
-# Juez de vocabulario (ver _pide_vocab_no_enseñado): modelo Groq más pequeño
-# configurado — solo clasifica SI/NO, no necesita el modelo grande del profesor
-# y así casi no añade latencia al turno.
-MODELO_JUEZ_VOCAB = "openai/gpt-oss-20b"
-_JUEZ_VOCAB_SISTEMA = (
+# Juez de turno (ver _revisar_turno): mismo modelo que el profesor, mismo
+# proveedor (OpenRouter), esfuerzo bajo — barato en tokens (5 booleanos, casi
+# nada de salida) y sin el riesgo de "high" (ver commit que lo bajó a medium:
+# gpt-oss-120b devolvía vacío y caía al modelo de reserva lento en cada turno).
+MODELO_JUEZ = "openai/gpt-oss-120b"
+EFFORT_JUEZ = "low"
+_JUEZ_SISTEMA = (
     "Eres un revisor automático de un profesor de japonés. Te paso el FOCO "
     "(lo que la alumna ya sabe o ya se le ha explicado hoy) y un mensaje que "
-    "el profesor está a punto de decirle. Responde con UNA sola palabra: "
-    "'SI' si el mensaje le PIDE que diga, repita o traduzca alguna palabra o "
-    "frase japonesa que NO esté marcada [sabida]/[en progreso]/[trabajándose "
-    "hoy] en el FOCO, NI en la lista de 'ya has dicho esto', NI se explique "
-    "dentro del propio mensaje antes de pedírsela. 'NO' en cualquier otro "
-    "caso, incluido si el mensaje no le pide producir nada."
+    "el profesor está a punto de decirle. Responde SOLO con un JSON de estas "
+    "cinco claves, cada una true o false:\n"
+    '  "vocab_no_enseñado": true si el mensaje le PIDE decir, repetir o '
+    "traducir una palabra o frase japonesa que NO esté marcada "
+    "[sabida]/[en progreso]/[trabajándose hoy] en el FOCO, NI en la lista de "
+    "'ya has dicho esto', NI se explique dentro del propio mensaje antes de "
+    "pedírsela.\n"
+    '  "dicta_y_pide_repetir": true si el mensaje ENSEÑA una palabra o '
+    "frase nueva Y en el MISMO mensaje le pide que la repita o produzca — "
+    "tiene que ser una cosa u otra, nunca las dos en el mismo turno.\n"
+    '  "mas_de_una_cosa_nueva": true si el mensaje introduce 2 o más '
+    "palabras o expresiones japonesas distintas que no estaban ya sabidas.\n"
+    '  "objetivo_no_coincide": true si el mensaje trae una línea '
+    '"@@OBJETIVO: ...@@" y esa frase usa palabras que NO aparecen en ningún '
+    "otro sitio del propio mensaje.\n"
+    '  "mas_de_una_correccion": true si el mensaje señala o corrige más de '
+    "un fallo de Laura a la vez.\n"
+    "Si el mensaje no pide producir nada ni corrige nada, todas deben ser "
+    "false. Responde SOLO el JSON, sin texto adicional ni markdown."
 )
+# Clave del JSON del juez → explicación en español para el aviso de reintento.
+_EXPLICACION_FALLO_JUEZ = {
+    "vocab_no_enseñado": "pedías algo que nunca le has enseñado",
+    "dicta_y_pide_repetir": "enseñabas una palabra y le pedías repetirla en "
+        "el mismo turno — o la enseñas, o se lo pides, nunca las dos cosas a la vez",
+    "mas_de_una_cosa_nueva": "metías más de una palabra/expresión nueva de "
+        "golpe — solo una por turno",
+    "objetivo_no_coincide": "el @@OBJETIVO@@ usaba palabras que no dijiste "
+        "en el mensaje visible",
+    "mas_de_una_correccion": "corregías más de un fallo a la vez — como "
+        "mucho uno por turno",
+}
 
 _MARCA_ESTADO = {"sabido": "[sabida]", "en_progreso": "[en progreso]", "nuevo": "[nueva]"}
 
@@ -390,14 +417,13 @@ class ProfesorJapones:
         self.provider = provider
         self.memory = memory
         self.socketio = socketio
-        # Juez rápido (modelo pequeño aparte del principal) que revisa cada
-        # respuesta ANTES de hablar — ver _pide_vocab_no_enseñado. Si Groq no
-        # está disponible (sin API key, sin red) se desactiva solo: el turno
-        # sigue igual, solo que sin ese chequeo.
+        # Juez rápido que revisa cada respuesta ANTES de hablar — ver
+        # _revisar_turno. Si OpenRouter no está disponible (sin API key, sin
+        # red) se desactiva solo: el turno sigue igual, solo que sin chequeo.
         try:
-            self._provider_juez = GroqProvider(model=MODELO_JUEZ_VOCAB)
+            self._provider_juez = OpenRouterProvider(modelos=[MODELO_JUEZ])
         except Exception as e:
-            print(f"⚠️ Juez de vocabulario no disponible: {e}")
+            print(f"⚠️ Juez de turno no disponible: {e}")
             self._provider_juez = None
 
         self.activo = False
@@ -486,35 +512,37 @@ class ProfesorJapones:
         self.timer.daemon = True
         self.timer.start()
 
-    def _pide_vocab_no_enseñado(self, respuesta_candidata: str, foco: str) -> bool:
-        """Juez rápido (modelo pequeño) antes de hablar: ¿este turno le pide
-        a Laura producir vocabulario que nunca se le ha dado? Ataja el
-        problema en el origen — la pregunta sin respuesta posible ("¿cómo
-        dirías 'programo'?" sin haberle enseñado esa palabra nunca) — en vez
-        de solo corregir la puntuación después. Nunca bloquea el turno si el
-        juez falla o no está disponible: deja pasar.
+    def _revisar_turno(self, respuesta_candidata: str, foco: str) -> dict:
+        """Juez rápido (mismo modelo del profesor, esfuerzo bajo) antes de
+        hablar: repasa la respuesta candidata contra las 5 reglas de
+        _JUEZ_SISTEMA (vocabulario no enseñado, dictar+pedir repetir en el
+        mismo turno, más de una cosa nueva, objetivo que no coincide con lo
+        dicho, más de una corrección). Ataja el problema en el origen — antes
+        de que llegue a hablarse — en vez de corregirlo después.
 
-        reasoning_effort="low" es OBLIGATORIO aquí, no "off" ni sin pasar:
-        gpt-oss-20b en Groq razona por defecto igualmente y sin ese valor se
-        come max_tokens entero pensando, sin dejar nada para la respuesta
-        (comprobado: sin él sale vacío; con "low" responde en ~0.3s)."""
+        Devuelve {} (nada marcado) si el juez no está disponible o falla:
+        nunca bloquea el turno por su cuenta. reasoning_effort="low" es
+        obligatorio: gpt-oss-120b sin él (ni con "off") razona igual por
+        dentro y se come el presupuesto de tokens sin dejar nada para la
+        respuesta — comprobado en vivo."""
         if not self._provider_juez:
-            return False
+            return {}
         try:
-            veredicto = self._provider_juez.completar(
+            crudo = self._provider_juez.completar(
                 [
-                    {"role": "system", "content": _JUEZ_VOCAB_SISTEMA},
+                    {"role": "system", "content": _JUEZ_SISTEMA},
                     {"role": "user", "content": f"FOCO:\n{foco}\n\nMensaje del profesor:\n{respuesta_candidata}"},
                 ],
                 max_tokens=150,
                 temperature=0,
-                strict=True,
-                reasoning_effort="low",
+                reasoning_effort=EFFORT_JUEZ,
+                response_format={"type": "json_object"},
             )
-            return (veredicto or "").strip().upper().startswith("SI")
+            data = json.loads(crudo)
+            return data if isinstance(data, dict) else {}
         except Exception as e:
-            print(f"⚠️ Juez de vocabulario falló, dejo pasar el turno: {e}")
-            return False
+            print(f"⚠️ Juez de turno falló, dejo pasar el turno: {e}")
+            return {}
 
     # ── Turno de conversación ─────────────────────────────────────────────────
 
@@ -590,18 +618,19 @@ class ProfesorJapones:
             print(f"❌ Error LLM en modo sensei: {e}")
             return "【ちょっとまってください。】 Un momento, hubo un problema técnico."
 
-        # Juez de vocabulario: si el turno le pide producir algo nunca
-        # enseñado, un reintento con el aviso puesto — antes de que la
-        # pregunta sin respuesta posible llegue a hablarse, no después.
-        if self._pide_vocab_no_enseñado(respuesta, foco):
-            print("⚠️ Juez: el turno pedía vocabulario no enseñado, reintentando…")
+        # Juez de turno: si viola alguna de las 5 reglas, un reintento con el
+        # aviso puesto — antes de que llegue a hablarse, no después.
+        veredicto_juez = self._revisar_turno(respuesta, foco)
+        fallos = [k for k, v in veredicto_juez.items() if v and k in _EXPLICACION_FALLO_JUEZ]
+        if fallos:
+            explicacion = "; ".join(_EXPLICACION_FALLO_JUEZ[k] for k in fallos)
+            print(f"⚠️ Juez: {', '.join(fallos)} — reintentando…")
             historial_reintento = historial_sensei + [
                 {"role": "assistant", "content": respuesta},
                 {"role": "user", "content": (
-                    "[SISTEMA] Esa respuesta le pedía a Laura decir algo que nunca le has "
-                    "enseñado. Respóndele de nuevo: o usa solo lo que ya sabe (ver FOCO), o "
-                    "presenta la palabra nueva primero y NO le pidas que la produzca en este "
-                    "mismo turno."
+                    f"[SISTEMA] Esa respuesta no vale: {explicacion}. Respóndele de nuevo "
+                    "evitando eso — usa solo lo que ya sabe (ver FOCO) y sigue las reglas "
+                    "del prompt."
                 )},
             ]
             try:
