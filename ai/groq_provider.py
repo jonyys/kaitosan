@@ -98,13 +98,18 @@ class GroqProvider:
 
                 try:
                     tokens_usados = response.usage.total_tokens
-                    datos = self.tracker.añadir_tokens(modelo, tokens_usados)
-                    total_modelo = datos["tokens"].get(modelo, 0)
+                    # Prefijo "groq/" — igual que openrouter_provider ya prefija
+                    # "openrouter/": sin distinguir, la vista de admin mezclaba
+                    # tokens de los dos proveedores bajo un único total por
+                    # modelo (mismo nombre de modelo en ambos, p.ej. gpt-oss).
+                    clave = f"groq/{modelo}"
+                    datos = self.tracker.añadir_tokens(clave, tokens_usados)
+                    total_modelo = datos["tokens"].get(clave, 0)
                     total_hoy = sum(datos["tokens"].values())
-                    print(f"📊 Tokens {modelo}: {tokens_usados} (hoy: {total_modelo} este modelo, {total_hoy} total)")
+                    print(f"📊 Tokens {clave}: {tokens_usados} (hoy: {total_modelo} este modelo, {total_hoy} total)")
                 except Exception as e:
                     print(f"⚠️ Error guardando tokens: {e}")
-                    
+
                 if modelo != self.model:
                     print(f"⚠️ Usando modelo alternativo: {modelo}")
                 return response.choices[0].message.content
@@ -155,10 +160,11 @@ class GroqProvider:
 
                 try:
                     tokens_usados = response.usage.total_tokens
-                    datos = self.tracker.añadir_tokens(modelo, tokens_usados)
-                    total_modelo = datos["tokens"].get(modelo, 0)
+                    clave = f"groq/{modelo}"
+                    datos = self.tracker.añadir_tokens(clave, tokens_usados)
+                    total_modelo = datos["tokens"].get(clave, 0)
                     total_hoy = sum(datos["tokens"].values())
-                    print(f"📊 Tokens {modelo}: {tokens_usados} (hoy: {total_modelo} este modelo, {total_hoy} total)")
+                    print(f"📊 Tokens {clave}: {tokens_usados} (hoy: {total_modelo} este modelo, {total_hoy} total)")
                 except Exception as e:
                     print(f"⚠️ Error guardando tokens: {e}")
 
