@@ -59,6 +59,53 @@ def test_kanjis_tienen_srs_propio_y_duele_en_due_count():
     assert jap.get_due_items(10, kind="kanji") == [] or jap.get_due_items(10, kind="kanji")[0]["status"] in {"learning", "learned", "mastered"}
 
 
+def test_juez_vocab_reintenta_si_el_turno_pide_algo_no_enseñado():
+    """_pide_vocab_no_enseñado corta ANTES de hablar, no después: si el juez
+    dice SI, responder_turno reintenta con el proveedor principal en vez de
+    dejar pasar una pregunta sin respuesta posible."""
+    db = os.path.join(tempfile.mkdtemp(), "test.db")
+    jap = JapaneseMemory(db)
+    memoria = MagicMock()
+    memoria.obtener_perfil.return_value = ""
+
+    provider = MagicMock()
+    provider.completar.side_effect = [
+        "¿Cómo dirías 'programo'? @@OBJETIVO: わたしはプログラミングをします@@",
+        "Vale, dime algo que ya sepas usando 【です】.",
+    ]
+    prof = ProfesorJapones(jap, provider, memoria, MagicMock())
+    prof.entrar()
+    if prof.timer:
+        prof.timer.cancel()
+    prof._provider_juez = MagicMock()
+    prof._provider_juez.completar.return_value = "SI"
+
+    respuesta = prof.responder_turno("vamos a practicar")
+
+    assert provider.completar.call_count == 2, provider.completar.call_count
+    assert "programo" not in respuesta.lower(), respuesta
+    assert "です" in respuesta, respuesta
+
+
+def test_juez_vocab_no_reintenta_si_dice_que_esta_bien():
+    db = os.path.join(tempfile.mkdtemp(), "test.db")
+    jap = JapaneseMemory(db)
+    memoria = MagicMock()
+    memoria.obtener_perfil.return_value = ""
+
+    provider = MagicMock()
+    provider.completar.return_value = "Repite conmigo: 【こんにちは】."
+    prof = ProfesorJapones(jap, provider, memoria, MagicMock())
+    prof.entrar()
+    if prof.timer:
+        prof.timer.cancel()
+    prof._provider_juez = MagicMock()
+    prof._provider_juez.completar.return_value = "NO"
+
+    prof.responder_turno("vamos a practicar")
+    assert provider.completar.call_count == 1, provider.completar.call_count
+
+
 def test_ya_dicho_esta_sesion_no_se_reintroduce_como_nuevo():
     """historial_sensei solo manda los últimos MAX_TURNOS pares al LLM — pasado
     ese punto, sin este listado el modelo "olvida" lo que enseñó al principio
@@ -108,6 +155,8 @@ def test_freno_de_ritmo_cuando_kaito_mete_muchas_palabras_seguidas():
 if __name__ == "__main__":
     test_diez_turnos_dejan_dos_items()
     test_kanjis_tienen_srs_propio_y_duele_en_due_count()
+    test_juez_vocab_reintenta_si_el_turno_pide_algo_no_enseñado()
+    test_juez_vocab_no_reintenta_si_dice_que_esta_bien()
     test_ya_dicho_esta_sesion_no_se_reintroduce_como_nuevo()
     test_freno_de_ritmo_cuando_kaito_mete_muchas_palabras_seguidas()
-    print("✅ Fase 01 OK: 10 turnos → 2 ítems, due_count = 2, no reintroduce, freno de ritmo activo")
+    print("✅ Fase 01 OK: 10 turnos → 2 ítems, due_count = 2, juez de vocab, no reintroduce, freno de ritmo activo")

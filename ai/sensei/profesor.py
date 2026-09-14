@@ -11,6 +11,7 @@ import threading
 import time
 from datetime import datetime
 
+from ai.groq_provider import GroqProvider
 from ai.prompts import cargar_prompt
 from ai.sensei.curriculum import (
     CURRICULUM,
@@ -44,6 +45,21 @@ MUESTRA_OXIDO = 3      # ítems 'sabido' de unidades pasadas en el chequeo de ó
 # y mete verbo tras verbo (visto en sesión real: 15+ palabras nuevas en 14 min).
 # Por encima de esto, el FOCO manda parar en vez de confiar solo en el prompt.
 UMBRAL_FRENO_NUEVOS = 6
+
+# Juez de vocabulario (ver _pide_vocab_no_enseñado): modelo Groq más pequeño
+# configurado — solo clasifica SI/NO, no necesita el modelo grande del profesor
+# y así casi no añade latencia al turno.
+MODELO_JUEZ_VOCAB = "openai/gpt-oss-20b"
+_JUEZ_VOCAB_SISTEMA = (
+    "Eres un revisor automático de un profesor de japonés. Te paso el FOCO "
+    "(lo que la alumna ya sabe o ya se le ha explicado hoy) y un mensaje que "
+    "el profesor está a punto de decirle. Responde con UNA sola palabra: "
+    "'SI' si el mensaje le PIDE que diga, repita o traduzca alguna palabra o "
+    "frase japonesa que NO esté marcada [sabida]/[en progreso]/[trabajándose "
+    "hoy] en el FOCO, NI en la lista de 'ya has dicho esto', NI se explique "
+    "dentro del propio mensaje antes de pedírsela. 'NO' en cualquier otro "
+    "caso, incluido si el mensaje no le pide producir nada."
+)
 
 _MARCA_ESTADO = {"sabido": "[sabida]", "en_progreso": "[en progreso]", "nuevo": "[nueva]"}
 
@@ -374,6 +390,15 @@ class ProfesorJapones:
         self.provider = provider
         self.memory = memory
         self.socketio = socketio
+        # Juez rápido (modelo pequeño aparte del principal) que revisa cada
+        # respuesta ANTES de hablar — ver _pide_vocab_no_enseñado. Si Groq no
+        # está disponible (sin API key, sin red) se desactiva solo: el turno
+        # sigue igual, solo que sin ese chequeo.
+        try:
+            self._provider_juez = GroqProvider(model=MODELO_JUEZ_VOCAB)
+        except Exception as e:
+            print(f"⚠️ Juez de vocabulario no disponible: {e}")
+            self._provider_juez = None
 
         self.activo = False
         self.nivel_inmersion = 1    # lo recalcula _montar_estado() cada turno
@@ -461,6 +486,30 @@ class ProfesorJapones:
         self.timer.daemon = True
         self.timer.start()
 
+    def _pide_vocab_no_enseñado(self, respuesta_candidata: str, foco: str) -> bool:
+        """Juez rápido (modelo pequeño, sin razonamiento) antes de hablar:
+        ¿este turno le pide a Laura producir vocabulario que nunca se le ha
+        dado? Ataja el problema en el origen — la pregunta sin respuesta
+        posible ("¿cómo dirías 'programo'?" sin haberle enseñado esa palabra
+        nunca) — en vez de solo corregir la puntuación después. Nunca bloquea
+        el turno si el juez falla o no está disponible: deja pasar."""
+        if not self._provider_juez:
+            return False
+        try:
+            veredicto = self._provider_juez.completar(
+                [
+                    {"role": "system", "content": _JUEZ_VOCAB_SISTEMA},
+                    {"role": "user", "content": f"FOCO:\n{foco}\n\nMensaje del profesor:\n{respuesta_candidata}"},
+                ],
+                max_tokens=5,
+                temperature=0,
+                strict=True,
+            )
+            return (veredicto or "").strip().upper().startswith("SI")
+        except Exception as e:
+            print(f"⚠️ Juez de vocabulario falló, dejo pasar el turno: {e}")
+            return False
+
     # ── Turno de conversación ─────────────────────────────────────────────────
 
     def responder_turno(self, mensaje: str, lento_extra: bool = False, pron_contexto: str = None) -> str:
@@ -534,6 +583,30 @@ class ProfesorJapones:
         except Exception as e:
             print(f"❌ Error LLM en modo sensei: {e}")
             return "【ちょっとまってください。】 Un momento, hubo un problema técnico."
+
+        # Juez de vocabulario: si el turno le pide producir algo nunca
+        # enseñado, un reintento con el aviso puesto — antes de que la
+        # pregunta sin respuesta posible llegue a hablarse, no después.
+        if self._pide_vocab_no_enseñado(respuesta, foco):
+            print("⚠️ Juez: el turno pedía vocabulario no enseñado, reintentando…")
+            historial_reintento = historial_sensei + [
+                {"role": "assistant", "content": respuesta},
+                {"role": "user", "content": (
+                    "[SISTEMA] Esa respuesta le pedía a Laura decir algo que nunca le has "
+                    "enseñado. Respóndele de nuevo: o usa solo lo que ya sabe (ver FOCO), o "
+                    "presenta la palabra nueva primero y NO le pidas que la produzca en este "
+                    "mismo turno."
+                )},
+            ]
+            try:
+                respuesta = self.provider.completar(
+                    historial_reintento,
+                    max_tokens=MAX_TOKENS_EXPLICACION,
+                    temperature=TEMPERATURE_SENSEI,
+                    reasoning_effort=REASONING_EFFORT_SENSEI,
+                ) or respuesta
+            except Exception as e:
+                print(f"⚠️ Reintento del juez falló, sigo con la respuesta original: {e}")
 
         # Separa la línea centinela "@@OBJETIVO: …@@" antes de tocar nada: no se
         # habla, no se guarda; solo fija contra qué frase puntúa Azure el turno
