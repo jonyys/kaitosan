@@ -327,14 +327,25 @@ _PISTAS_PREGUNTA_LIBRE = (
     "no sé cómo", "no se como", "no sé decir", "no se decir",
     "no entiendo", "no lo entiendo", "no he entendido",
     "puedes explicar", "puedes decirme", "explícame", "explicame",
+    "por qué", "porque", "dime", "quiero que me digas",
 )
+
+# Un intento de repetir la frase objetivo es corto — como mucho el puñado de
+# palabras sueltas del turno ("Watashiwa, lordes.", "Maya kóhí o"), incluso
+# cuando Whisper lo transcribe mal. Una pregunta o comentario real en español
+# se explaya. Por encima de esto, aunque no haya "?" ni ninguna pista de la
+# lista, se trata como pregunta libre — cubre frases tipo "Antes de decir
+# esto, quiero que me digas por qué..." que no llevan ninguna marca fija.
+_PALABRAS_PREGUNTA_LIBRE_MIN = 12
 
 
 def _es_pregunta_libre(texto: str) -> bool:
     t = (texto or "").lower()
     if "?" in t or "¿" in t:
         return True
-    return any(p in t for p in _PISTAS_PREGUNTA_LIBRE)
+    if any(p in t for p in _PISTAS_PREGUNTA_LIBRE):
+        return True
+    return len(t.split()) > _PALABRAS_PREGUNTA_LIBRE_MIN
 
 
 def _duracion_seg(archivo: str):
@@ -413,9 +424,16 @@ if __name__ == "__main__":
     print("✅ _es_salida_sensei OK")
 
     for s in ["¿cómo se dice descanso?", "no entiendo", "qué significa eso",
-              "Pero no sé cómo se dice descanso."]:
+              "Pero no sé cómo se dice descanso.",
+              "Pero dime por qué antes de decir una frase negativa en japonés, "
+              "por ejemplo la de yo no soy estudiante, tengo que poner el ya, "
+              "porque va el ya ahí.",
+              # Larga y sin ninguna pista fija — solo la cae por longitud.
+              "Antes de decir esto quiero saber una cosa sobre la gramática "
+              "que hemos visto antes y no me acuerdo bien de cómo iba"]:
         assert _es_pregunta_libre(s), s
-    for s in ["ちょっと", "わたしは がくせいです", "", "Kaito desu"]:
+    for s in ["ちょっと", "わたしは がくせいです", "", "Kaito desu",
+              "Watashiwa, lordes.", "Vatæði var gak sejar í masen."]:
         assert not _es_pregunta_libre(s), s
     print("✅ _es_pregunta_libre OK")
 
