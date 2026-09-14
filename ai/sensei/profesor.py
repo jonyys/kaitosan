@@ -921,6 +921,13 @@ class ProfesorJapones:
             self.jap_memory.guardar_resumen_sesion(session_id, summary=summary_basico)
             return
 
+        # Qué devolvió el extractor de verdad para cada can-do — sin esto, un
+        # can-do que se queda sin fila en can_do_progreso (omitido, o
+        # "no_intentado") es indistinguible en el log de uno que sí se calificó;
+        # hay que adivinarlo mirando la BD a mano.
+        print(f"🧾 Extractor (sesión {session_id}) can_dos: "
+              f"{[(cd.get('id'), cd.get('resultado')) for cd in data.get('can_dos', [])]}")
+
         # Ítems nuevos que introdujo la sesión: se registran en la BD de vocab/gram
         # (su progreso SRS ya no lo mueve el profesor — lo hará el juego web).
         for item in data.get("new_items", []):
