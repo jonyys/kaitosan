@@ -524,7 +524,9 @@ class ProfesorJapones:
         nunca bloquea el turno por su cuenta. reasoning_effort="low" es
         obligatorio: gpt-oss-120b sin él (ni con "off") razona igual por
         dentro y se come el presupuesto de tokens sin dejar nada para la
-        respuesta — comprobado en vivo."""
+        respuesta. Y con 5 claves en JSON necesita bastante más margen que
+        un SI/NO suelto: con 150 salía vacío, con 400 iba justo (~3s la
+        primera vez), con 800 iba fino — 600 de margen — comprobado en vivo."""
         if not self._provider_juez:
             return {}
         try:
@@ -533,7 +535,7 @@ class ProfesorJapones:
                     {"role": "system", "content": _JUEZ_SISTEMA},
                     {"role": "user", "content": f"FOCO:\n{foco}\n\nMensaje del profesor:\n{respuesta_candidata}"},
                 ],
-                max_tokens=150,
+                max_tokens=600,
                 temperature=0,
                 reasoning_effort=EFFORT_JUEZ,
                 response_format={"type": "json_object"},
