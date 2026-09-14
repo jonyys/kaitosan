@@ -487,12 +487,17 @@ class ProfesorJapones:
         self.timer.start()
 
     def _pide_vocab_no_enseñado(self, respuesta_candidata: str, foco: str) -> bool:
-        """Juez rápido (modelo pequeño, sin razonamiento) antes de hablar:
-        ¿este turno le pide a Laura producir vocabulario que nunca se le ha
-        dado? Ataja el problema en el origen — la pregunta sin respuesta
-        posible ("¿cómo dirías 'programo'?" sin haberle enseñado esa palabra
-        nunca) — en vez de solo corregir la puntuación después. Nunca bloquea
-        el turno si el juez falla o no está disponible: deja pasar."""
+        """Juez rápido (modelo pequeño) antes de hablar: ¿este turno le pide
+        a Laura producir vocabulario que nunca se le ha dado? Ataja el
+        problema en el origen — la pregunta sin respuesta posible ("¿cómo
+        dirías 'programo'?" sin haberle enseñado esa palabra nunca) — en vez
+        de solo corregir la puntuación después. Nunca bloquea el turno si el
+        juez falla o no está disponible: deja pasar.
+
+        reasoning_effort="low" es OBLIGATORIO aquí, no "off" ni sin pasar:
+        gpt-oss-20b en Groq razona por defecto igualmente y sin ese valor se
+        come max_tokens entero pensando, sin dejar nada para la respuesta
+        (comprobado: sin él sale vacío; con "low" responde en ~0.3s)."""
         if not self._provider_juez:
             return False
         try:
@@ -501,9 +506,10 @@ class ProfesorJapones:
                     {"role": "system", "content": _JUEZ_VOCAB_SISTEMA},
                     {"role": "user", "content": f"FOCO:\n{foco}\n\nMensaje del profesor:\n{respuesta_candidata}"},
                 ],
-                max_tokens=5,
+                max_tokens=150,
                 temperature=0,
                 strict=True,
+                reasoning_effort="low",
             )
             return (veredicto or "").strip().upper().startswith("SI")
         except Exception as e:
