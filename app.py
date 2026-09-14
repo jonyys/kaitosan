@@ -1090,13 +1090,14 @@ def japones():
 
     vocab_rows = db.execute("""
         SELECT id, word, meaning, status, reps, ease_factor, interval_days,
-               next_review, times_correct, errors, times_reviewed
+               next_review, times_correct, errors, times_reviewed,
+               COALESCE(sensei_usos, 0)
         FROM japanese_vocabulary ORDER BY next_review ASC, status
     """).fetchall()
     vocab = [{"id": r[0], "word": r[1], "meaning": r[2], "status": r[3],
               "reps": r[4], "ease_factor": r[5], "interval_days": r[6],
               "next_review": r[7], "times_correct": r[8], "errors": r[9],
-              "times_reviewed": r[10]} for r in vocab_rows]
+              "times_reviewed": r[10], "sensei_usos": r[11]} for r in vocab_rows]
 
     kanji_rows = db.execute("""
         SELECT id, kanji, meaning, status, reps, ease_factor, interval_days,
@@ -1110,12 +1111,14 @@ def japones():
 
     grammar_rows = db.execute("""
         SELECT id, grammar_point, description, mastery, reps, ease_factor,
-               interval_days, next_review, times_correct, errors
+               interval_days, next_review, times_correct, errors,
+               COALESCE(sensei_usos, 0)
         FROM japanese_grammar ORDER BY mastery DESC
     """).fetchall()
     grammar = [{"id": r[0], "point": r[1], "description": r[2], "mastery": r[3],
                 "reps": r[4], "ease_factor": r[5], "interval_days": r[6],
-                "next_review": r[7], "times_correct": r[8], "errors": r[9]} for r in grammar_rows]
+                "next_review": r[7], "times_correct": r[8], "errors": r[9],
+                "sensei_usos": r[10]} for r in grammar_rows]
 
     session_rows = db.execute("""
         SELECT id, started_at, ended_at, words_learned, grammar_practiced,

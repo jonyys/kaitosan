@@ -294,6 +294,7 @@
             <th>Significado</th>
             <th>Estado</th>
             <th>Reps</th>
+            <th title="Sesiones de sensei en las que ha salido — la da por sabida a partir de 2, sin tocar el SRS">Usos sensei</th>
             <th>EF</th>
             <th>Intervalo</th>
             <th>Próx. repaso</th>
@@ -306,6 +307,7 @@
             <td>{{ v.meaning or '—' }}</td>
             <td><span class="badge">{{ v.status }}</span></td>
             <td>{{ v.reps }}</td>
+            <td>{{ v.sensei_usos or 0 }}</td>
             <td>{{ "%.2f"|format(v.ease_factor or 2.5) }}</td>
             <td>{{ v.interval_days or 0 }}d</td>
             <td>
@@ -454,6 +456,7 @@
             <th>Descripción</th>
             <th>Dominio</th>
             <th>Reps</th>
+            <th title="Sesiones de sensei en las que ha salido — la da por sabida a partir de 2, sin tocar el SRS">Usos sensei</th>
             <th>EF</th>
             <th>Intervalo</th>
             <th>Próx. repaso</th>
@@ -473,6 +476,7 @@
                 </div>
             </td>
             <td>{{ g.reps }}</td>
+            <td>{{ g.sensei_usos or 0 }}</td>
             <td>{{ "%.2f"|format(g.ease_factor or 2.5) }}</td>
             <td>{{ g.interval_days or 0 }}d</td>
             <td>
