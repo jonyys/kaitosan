@@ -130,6 +130,13 @@ class JapaneseMemory:
             # (Fase 04) y lo poblará el extractor en la Fase 08.
             "first_taught_session_id": "INTEGER",
             "sensei_usos": "INTEGER DEFAULT 0",
+            # Unifica con vocab/kanji: antes solo tenían 'learning'/'learned'/
+            # 'mastered' esos dos, y gramática iba solo por `mastery` (0-100),
+            # una noción distinta (precisión de aciertos, no madurez del SRS)
+            # que además la tabla del panel mostraba como barra en vez de
+            # badge. `review()` la deriva de `interval_days` igual que en
+            # vocab/kanji; `mastery` se conserva como dato aparte.
+            "status": "TEXT DEFAULT 'learning'",
         }
         kanji_cols = {
             "reps": "INTEGER DEFAULT 0",
@@ -372,11 +379,21 @@ class JapaneseMemory:
                     datetime.now() + timedelta(days=max(interval, 1))
                 ).strftime("%Y-%m-%d")
 
+                # Igual que vocab/kanji: el estado sale del intervalo del SRS
+                # (madurez del repaso), no de `mastery` (que sigue siendo la
+                # proporción de aciertos, un dato aparte).
+                if interval >= 21:
+                    status = "mastered"
+                elif interval >= 7:
+                    status = "learned"
+                else:
+                    status = "learning"
+
                 correct_delta = 1 if quality >= 3 else 0
                 conn.execute(
                     """UPDATE japanese_grammar SET
                            reps = ?, ease_factor = ?, interval_days = ?,
-                           next_review = ?,
+                           next_review = ?, status = ?,
                            mastery = CAST(times_correct + ? AS REAL) / (times_seen + 1) * 100,
                            times_seen = times_seen + 1,
                            times_correct = times_correct + ?,
@@ -385,7 +402,7 @@ class JapaneseMemory:
                        WHERE id = ?""",
                     (
                         reps, round(ease, 4), interval,
-                        next_review,
+                        next_review, status,
                         correct_delta,
                         correct_delta,
                         1 if quality < 3 else 0,
@@ -403,11 +420,11 @@ class JapaneseMemory:
             )}
 
     def gram_rows(self) -> dict:
-        """{grammar_point: {description, mastery, reps}} de toda la gramática en BD."""
+        """{grammar_point: {description, status, mastery, reps}} de toda la gramática en BD."""
         with self._conectar() as conn:
             conn.row_factory = sqlite3.Row
             return {r["grammar_point"]: dict(r) for r in conn.execute(
-                "SELECT grammar_point, description, COALESCE(mastery, 0) AS mastery, "
+                "SELECT grammar_point, description, status, COALESCE(mastery, 0) AS mastery, "
                 "COALESCE(reps, 0) AS reps FROM japanese_grammar"
             )}
 
@@ -454,7 +471,7 @@ class JapaneseMemory:
                 if existe:
                     conn.execute(
                         """UPDATE japanese_grammar SET
-                               mastery=100, reps=MAX(COALESCE(reps, 0), 8),
+                               status='mastered', mastery=100, reps=MAX(COALESCE(reps, 0), 8),
                                ease_factor=2.5, interval_days=36500,
                                next_review=date('now', '+36500 days'), errors=0
                            WHERE grammar_point = ?""",
@@ -463,10 +480,10 @@ class JapaneseMemory:
                 else:
                     conn.execute(
                         """INSERT INTO japanese_grammar
-                               (grammar_point, description, mastery,
+                               (grammar_point, description, status, mastery,
                                 reps, ease_factor, interval_days, next_review,
                                 times_seen, times_correct)
-                           VALUES (?, ?, 100,
+                           VALUES (?, ?, 'mastered', 100,
                                    8, 2.5, 36500, date('now', '+36500 days'), 0, 8)""",
                         (jp, meaning),
                     )
@@ -505,7 +522,8 @@ class JapaneseMemory:
             with self._conectar() as conn:
                 return {r[0] for r in conn.execute(
                     "SELECT grammar_point FROM japanese_grammar "
-                    "WHERE COALESCE(mastery, 0) >= 100 OR COALESCE(reps, 0) >= 2"
+                    "WHERE status IN ('learned', 'mastered') "
+                    "OR COALESCE(mastery, 0) >= 100 OR COALESCE(reps, 0) >= 2"
                 )}
         tabla, col = (("japanese_kanji", "kanji") if kind == "kanji"
                       else ("japanese_vocabulary", "word"))
@@ -533,14 +551,15 @@ class JapaneseMemory:
         with self._conectar() as conn:
             if kind == "gramatica":
                 row = conn.execute(
-                    "SELECT COALESCE(reps, 0), COALESCE(mastery, 0), COALESCE(sensei_usos, 0) "
+                    "SELECT COALESCE(reps, 0), status, COALESCE(mastery, 0), COALESCE(sensei_usos, 0) "
                     "FROM japanese_grammar WHERE grammar_point = ?", (jp,),
                 ).fetchone()
                 if not row:
                     return "nuevo"
-                reps, mastery, sensei_usos = row
-                return ("sabido" if reps >= 2 or mastery >= 100
-                        or sensei_usos >= UMBRAL_SENSEI_USOS_SABIDO else "en_progreso")
+                reps, status, mastery, sensei_usos = row
+                return ("sabido" if reps >= 2 or status in ("learned", "mastered")
+                        or mastery >= 100 or sensei_usos >= UMBRAL_SENSEI_USOS_SABIDO
+                        else "en_progreso")
             row = conn.execute(
                 "SELECT COALESCE(reps, 0), status, COALESCE(sensei_usos, 0) "
                 "FROM japanese_vocabulary WHERE word = ?", (jp,),
@@ -578,14 +597,14 @@ class JapaneseMemory:
                     )
             if gram:
                 ph = ",".join("?" * len(gram))
-                for gp, reps, mastery, sensei_usos in conn.execute(
-                    f"SELECT grammar_point, COALESCE(reps, 0), COALESCE(mastery, 0), "
+                for gp, reps, status, mastery, sensei_usos in conn.execute(
+                    f"SELECT grammar_point, COALESCE(reps, 0), status, COALESCE(mastery, 0), "
                     f"COALESCE(sensei_usos, 0) FROM japanese_grammar "
                     f"WHERE grammar_point IN ({ph})", tuple(gram),
                 ):
                     out[(gp, "gramatica")] = (
-                        "sabido" if reps >= 2 or mastery >= 100
-                        or sensei_usos >= UMBRAL_SENSEI_USOS_SABIDO
+                        "sabido" if reps >= 2 or status in ("learned", "mastered")
+                        or mastery >= 100 or sensei_usos >= UMBRAL_SENSEI_USOS_SABIDO
                         else "en_progreso"
                     )
         for par in pares:
@@ -602,35 +621,32 @@ class JapaneseMemory:
         que `estado_item` dé el ítem por sabido sin esperar a que se juegue
         como tarjeta.
 
-        En vocabulario, al cruzar UMBRAL_SENSEI_USOS_SABIDO también sube
-        `status` de 'learning' a 'learned' (aprendida) — nunca a 'mastered'
-        (dominada, reservado a lo que de verdad ha pasado por el SRS), y
-        nunca hacia atrás si ya estaba en 'learned'/'mastered'. Gramática no
-        tiene un `status` categórico (solo `mastery`, el % que mueve el SRS)
-        así que ahí `marcar_usos_en_sensei` no toca nada más que el contador.
-        Devuelve cuántas filas se actualizaron."""
+        Al cruzar UMBRAL_SENSEI_USOS_SABIDO también sube `status` de
+        'learning' a 'learned' (aprendida) — en vocab y en gramática por
+        igual — nunca a 'mastered' (dominada, reservado a lo que de verdad
+        ha pasado por el SRS), y nunca hacia atrás si ya estaba en
+        'learned'/'mastered'. Devuelve cuántas filas se actualizaron."""
         if not transcript:
             return 0
         actualizadas = 0
+        _bump = """SET sensei_usos = COALESCE(sensei_usos, 0) + 1,
+                       status = CASE
+                           WHEN COALESCE(sensei_usos, 0) + 1 >= ? AND status = 'learning'
+                           THEN 'learned' ELSE status
+                       END"""
         with self._conectar() as conn:
             for (word,) in conn.execute("SELECT word FROM japanese_vocabulary").fetchall():
                 if word and word in transcript:
                     conn.execute(
-                        """UPDATE japanese_vocabulary
-                           SET sensei_usos = COALESCE(sensei_usos, 0) + 1,
-                               status = CASE
-                                   WHEN COALESCE(sensei_usos, 0) + 1 >= ? AND status = 'learning'
-                                   THEN 'learned' ELSE status
-                               END
-                           WHERE word = ?""",
+                        f"UPDATE japanese_vocabulary {_bump} WHERE word = ?",
                         (UMBRAL_SENSEI_USOS_SABIDO, word),
                     )
                     actualizadas += 1
             for (gp,) in conn.execute("SELECT grammar_point FROM japanese_grammar").fetchall():
                 if gp and gp in transcript:
                     conn.execute(
-                        "UPDATE japanese_grammar SET sensei_usos = COALESCE(sensei_usos, 0) + 1 "
-                        "WHERE grammar_point = ?", (gp,),
+                        f"UPDATE japanese_grammar {_bump} WHERE grammar_point = ?",
+                        (UMBRAL_SENSEI_USOS_SABIDO, gp),
                     )
                     actualizadas += 1
         return actualizadas
@@ -1026,6 +1042,21 @@ if __name__ == "__main__":
 
         # nuevo (sin fila) no se confunde con en_progreso.
         assert jm.estado_item("食べる") == "nuevo"
+
+        # Gramática unificada con vocab: mismo status categórico, mismo umbral
+        # de sensei_usos, y review() lo deriva del intervalo igual que vocab.
+        assert jm.gram_rows()["ました"]["status"] == "learning"
+        assert jm.marcar_usos_en_sensei("Profesor: 【ました】 es el pasado.") == 1
+        assert jm.marcar_usos_en_sensei("Laura: たべました") == 1
+        assert jm.estado_item("ました", kind="gramatica") == "sabido"
+        assert jm.gram_rows()["ました"]["status"] == "learned"
+
+        jm.add_item("gramatica", "でした", meaning="cópula pasada")
+        gid = jm.get_item_id("でした", "gramatica")
+        for _ in range(6):  # intervalo sube hasta pasar de 21 días -> 'mastered'
+            jm.review(gid, 5, "gramatica")
+        assert jm.gram_rows()["でした"]["status"] == "mastered"
+
         print("✅ marcar_usos_en_sensei / estado_item OK")
     finally:
         import gc

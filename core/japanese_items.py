@@ -57,18 +57,18 @@ _CFG = {
         "col": "grammar_point",
         "insert": (
             "INSERT INTO japanese_grammar "
-            "(grammar_point, description, mastery, errors, "
+            "(grammar_point, description, status, mastery, errors, "
             " reps, ease_factor, interval_days, next_review, times_seen, times_correct) "
-            "VALUES (?, ?, 0, 0, 0, 2.5, 0, ?, 0, 0)"
+            "VALUES (?, ?, 'learning', 0, 0, 0, 2.5, 0, ?, 0, 0)"
         ),
         "reset": (
             "UPDATE japanese_grammar SET "
             "reps=0, ease_factor=2.5, interval_days=0, next_review=date('now'), "
-            "mastery=0, times_seen=0, times_correct=0, errors=0 WHERE id=?"
+            "status='learning', mastery=0, times_seen=0, times_correct=0, errors=0 WHERE id=?"
         ),
         "master": (
             "UPDATE japanese_grammar SET "
-            "mastery=100, reps=8, ease_factor=2.5, interval_days=36500, "
+            "status='mastered', mastery=100, reps=8, ease_factor=2.5, interval_days=36500, "
             "next_review=date('now','+36500 days'), errors=0 WHERE id=?"
         ),
     },
