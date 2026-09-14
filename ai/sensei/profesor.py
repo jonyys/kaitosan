@@ -328,6 +328,18 @@ _LARGO_MAX_NIVEL_BAJO = 12  # caracteres dentro de 【】 tolerados en nivel 1-2
 # solo se descarta por _RE_JP_FRASE si además es más largo que esto (p.ej.
 # "何か食べましたか" sí es una frase completa aunque quepa en pocos caracteres).
 _LARGO_MAX_COLA_VERBAL = 6
+# La longitud sola no distingue "verbo suelto con adverbio" (【早く起きました】,
+# 7) de "tema + comentario" (【きのうは休みでした】, 9) — pueden pesar casi igual.
+# Lo que de verdad los separa es si hay una partícula que engancha un
+# argumento (tema は/が, objeto を, lugar/hora に・で) o una marca de pregunta
+# か al final: sin eso, es un adverbio+verbo suelto (adjetivo con caso real:
+# 【早く起きました】, 【べんきょうしました】) y se deja aunque pase de
+# _LARGO_MAX_COLA_VERBAL — es justo la conjugación que tocaba enseñar. Con
+# eso, sigue siendo frase y se descarta. Comprobado con un bug real: sin este
+# distintivo, "la frase queda 【早く起きました】" se comía el bloque entero y
+# dejaba "la frase queda ****" — ni el reintento del juez lo arreglaba,
+# porque _acotar_japones se lo volvía a comer igual la segunda vez.
+_RE_ARGUMENTO_O_PREGUNTA = re.compile(r'[はがをにで]|か$')
 # Expresiones fijas N5 (saludos, cortesía y las frases-función de la unidad 0:
 # pedir que repitan, decir que no entiendes). En nivel bajo se dejan enteras
 # aunque lleven ます/ください/una coma: son justo lo que Laura tiene que aprender.
@@ -383,10 +395,14 @@ def _acotar_japones(respuesta: str, nivel: int) -> str:
         # MÁS TEXTO) → fuera: un fragmento a medias confunde más que quitarlo.
         # Pero si es corto Y la cola verbal/cortés es prácticamente todo el
         # bloque, es la conjugación suelta que tocaba enseñar (ver
-        # _LARGO_MAX_COLA_VERBAL) — esa SÍ se deja.
+        # _LARGO_MAX_COLA_VERBAL) — esa SÍ se deja. Y si es más largo pero NO
+        # tiene ninguna partícula que enganche un argumento (ver
+        # _RE_ARGUMENTO_O_PREGUNTA), sigue siendo solo un verbo con adverbio,
+        # no una frase tema+comentario — también se deja.
         if len(cabeza) > _LARGO_MAX_NIVEL_BAJO:
             return ""
-        if len(cabeza) > _LARGO_MAX_COLA_VERBAL and _RE_JP_FRASE.search(cabeza):
+        if (len(cabeza) > _LARGO_MAX_COLA_VERBAL and _RE_JP_FRASE.search(cabeza)
+                and _RE_ARGUMENTO_O_PREGUNTA.search(cabeza)):
             return ""
         return f"【{cabeza}】"
 
@@ -688,6 +704,15 @@ class ProfesorJapones:
                 reintento, objetivo_reintento = _procesar(reintento_cruda)
                 if reintento is not None:
                     respuesta, objetivo_centinela = reintento, objetivo_reintento
+                    # Solo aviso, sin volver a reintentar: un segundo fallo
+                    # casi siempre es la MISMA causa de fondo (p.ej. el
+                    # recorte comiéndose otra vez el mismo tipo de bloque),
+                    # así que un tercer intento no arreglaría nada — solo
+                    # gastaría otra llamada. Queda constancia para depurar.
+                    veredicto_2 = self._revisar_turno(respuesta, objetivo_centinela, foco)
+                    fallos_2 = [k for k, v in veredicto_2.items() if v and k in _EXPLICACION_FALLO_JUEZ]
+                    if fallos_2:
+                        print(f"⚠️ Juez: el reintento SIGUE con {', '.join(fallos_2)} — se deja pasar igual")
                 # Si el reintento sale vacío, nos quedamos con la respuesta
                 # original ya validada — el juez la marcó, pero es mejor eso
                 # que arriesgarse a un turno mudo.
@@ -1244,6 +1269,19 @@ if __name__ == "__main__":
     assert _acotar_japones("【きのうは休みでした】", 1) == ""
     # Expresión fija de la lista blanca: se deja aunque lleve ます/ください.
     assert _acotar_japones("【もう一度お願いします】", 1) == "【もう一度お願いします】"
+
+    # Bug real (sesión de prueba de 20 turnos): un verbo con adverbio, sin
+    # ninguna partícula que enganche un argumento, se comía entero por pasar
+    # de _LARGO_MAX_COLA_VERBAL aunque NO fuera tema+comentario — dejaba
+    # "la frase queda ****" hablado, y ni el reintento del juez lo arreglaba
+    # (_acotar_japones se lo volvía a comer igual). Ahora se deja: no hay
+    # は/が/を/に/で ni una か final, así que no es una frase, es solo el
+    # verbo que tocaba enseñar.
+    assert _acotar_japones("【早く起きました】", 1) == "【早く起きました】"
+    assert _acotar_japones("【べんきょうしました】", 1) == "【べんきょうしました】"
+    # En cambio, con partícula de argumento SÍ se sigue recortando aunque
+    # pese lo mismo que el caso de arriba.
+    assert _acotar_japones("【コーヒーを飲みました】", 1) == ""
     print("✅ _acotar_japones OK")
 
     # _extraer_frase_objetivo: un verbo diccionario corto y kanji-denso por

@@ -1,0 +1,10 @@
+✅ Base de datos lista
+✅ Perfil de Laura cargado
+📊 Tokens openrouter/openai/gpt-oss-120b: 6391 (hoy: 977865 este modelo, 1081977 total)
+📊 Tokens openrouter/openai/gpt-oss-120b: 2209 (hoy: 980074 este modelo, 1084186 total)
+⚠️ Juez: vocab_no_enseñado, dicta_y_pide_repetir — reintentando…
+📊 Tokens openrouter/openai/gpt-oss-120b: 5837 (hoy: 985911 este modelo, 1090023 total)
+Laura: Hayaku okimasu
+Kaito (3.8s): 【仕事】 significa “trabajo”. Es la palabra que usamos para hablar de lo que haces en la oficina o con la computadora. Entonces, para decir “Trabajo en la computadora”, dirías algo como “【コンピュータで仕事】”. ¿Te parece?
+
+--ERR--

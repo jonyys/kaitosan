@@ -1,0 +1,10 @@
+✅ Base de datos lista
+✅ Perfil de Laura cargado
+📊 Tokens openrouter/openai/gpt-oss-120b: 6727 (hoy: 1056056 este modelo, 1160168 total)
+✂️  Japonés acotado a nivel 1
+📊 Tokens openrouter/openai/gpt-oss-120b: 2380 (hoy: 1058436 este modelo, 1162548 total)
+🎯 Frase objetivo (centinela): 早く起きます。コーヒーが好きです。コンピュータで仕事
+Laura: Kaito esto ya me lo has hecho repetir cuatro veces seguidas. Por favor cambia de tema, ensename algo diferente, por ejemplo los numeros o los dias de la semana.
+Kaito (2.3s): Entiendo que te gustaría pasar a números o días, pero por hoy seguimos reforzando lo que ya practicamos. Intenta decir una pequeña historia con esas tres frases, como si estuvieras describiendo tu mañana.
+
+--ERR--

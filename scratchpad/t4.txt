@@ -1,0 +1,10 @@
+✅ Base de datos lista
+✅ Perfil de Laura cargado
+📊 Tokens openrouter/openai/gpt-oss-120b: 6785 (hoy: 992696 este modelo, 1096808 total)
+✂️  Japonés acotado a nivel 1
+📊 Tokens openrouter/openai/gpt-oss-120b: 2384 (hoy: 995080 este modelo, 1099192 total)
+🎯 Frase objetivo (centinela): 起きます
+Laura: Vale pero eso no le falta el verbo? no seria algo como computer de shigoto o shimasu?
+Kaito (2.7s): En el nivel que llevamos, cada bloque debe ser una sola palabra; frases como 【早く起きます】 o 【コンピュータで仕事】 son demasiado largas, así que las dejaremos para más adelante. Para decir “trabajo en la computadora” falta un verbo que aún no hemos practicado; lo veremos en la próxima lección. Ahora, repite la palabra que ya usamos: 【起きます】
+
+--ERR--

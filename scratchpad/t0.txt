@@ -1,0 +1,7 @@
+✅ Base de datos lista
+✅ Perfil de Laura cargado
+🎌 Modo Sensei activado
+[Sesion iniciada, id=72, juez=True]
+Kaito: Modo Sensei activado! 【こんにちは】, Laura. Vamos a repasar un poco de japonés.
+
+--ERR--

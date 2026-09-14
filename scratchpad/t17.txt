@@ -1,0 +1,12 @@
+✅ Base de datos lista
+✅ Perfil de Laura cargado
+📊 Tokens openrouter/openai/gpt-oss-120b: 7625 (hoy: 1119639 este modelo, 1223751 total)
+📊 Tokens openrouter/openai/gpt-oss-120b: 2467 (hoy: 1122106 este modelo, 1226218 total)
+⚠️ Juez: objetivo_no_coincide — reintentando…
+📊 Tokens openrouter/openai/gpt-oss-120b: 6783 (hoy: 1128889 este modelo, 1233001 total)
+✂️  Japonés acotado a nivel 1
+🎯 Frase objetivo (centinela): 早く起きました
+Laura: Se vuelve que? no he escuchado nada ahi, te has quedado a medias.
+Kaito (4.1s): Para decir que ya despertaste, simplemente cambias la terminación 【ます】 por 【ました】. Así, la frase queda ****, que significa “me desperté temprano”. Repite conmigo:
+
+--ERR--

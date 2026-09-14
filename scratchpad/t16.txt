@@ -1,0 +1,12 @@
+✅ Base de datos lista
+✅ Perfil de Laura cargado
+📊 Tokens openrouter/openai/gpt-oss-120b: 7233 (hoy: 1102179 este modelo, 1206291 total)
+✂️  Japonés acotado a nivel 1
+📊 Tokens openrouter/openai/gpt-oss-120b: 2539 (hoy: 1104718 este modelo, 1208830 total)
+⚠️ Juez: vocab_no_enseñado, dicta_y_pide_repetir, objetivo_no_coincide — reintentando…
+📊 Tokens openrouter/openai/gpt-oss-120b: 7296 (hoy: 1112014 este modelo, 1216126 total)
+✂️  Japonés acotado a nivel 1
+Laura: Si, dame un ejemplo con mashita.
+Kaito (5.9s): Para expresar que algo ya ocurrió, cambias la terminación 【ます】 por 【ました】. Así, el verbo que ya conoces 【早く起きます】 se vuelve , que significa “me desperté temprano”. Con esa forma puedes contar lo que hiciste en la mañana.
+
+--ERR--

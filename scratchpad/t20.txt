@@ -1,0 +1,8 @@
+✅ Base de datos lista
+✅ Perfil de Laura cargado
+📊 Tokens openrouter/openai/gpt-oss-120b: 6554 (hoy: 1167782 este modelo, 1271894 total)
+📊 Tokens openrouter/openai/gpt-oss-120b: 2326 (hoy: 1170108 este modelo, 1274220 total)
+Laura: Vale, dejalo, salir del modo sensei
+Kaito (2.1s): ¡Claro, Laura! Cambiamos el ritmo. Cuéntame, ¿qué te apetece hacer ahora? Podemos hablar de anime, de tus perros, o de cualquier cosa que te interese.
+
+--ERR--

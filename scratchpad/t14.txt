@@ -1,0 +1,10 @@
+✅ Base de datos lista
+✅ Perfil de Laura cargado
+📊 Tokens openrouter/openai/gpt-oss-120b: 6950 (hoy: 1083622 este modelo, 1187734 total)
+✂️  Japonés acotado a nivel 1
+📊 Tokens openrouter/openai/gpt-oss-120b: 2325 (hoy: 1085947 este modelo, 1190059 total)
+🎯 Frase objetivo (centinela): 早く起きます。コーヒーが好きです。コンピュータで仕事
+Laura: 早く起きます。コーヒーが好きです。コンピュータで仕事。Ya esta, lo he dicho ya como diez veces. Vamos a otra cosa por favor.
+Kaito (2.5s): Entiendo, Laura, ya has practicado mucho esas frases. Vamos a reforzarlas una vez más, diciendo cada bloque con claridad, como si estuvieras narrando tu mañana paso a paso. Repite conmigo: 【早く起きます】 【コーヒーが好きです】 【コンピュータで仕事】
+
+--ERR--

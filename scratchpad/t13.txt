@@ -1,0 +1,10 @@
+✅ Base de datos lista
+✅ Perfil de Laura cargado
+📊 Tokens openrouter/openai/gpt-oss-120b: 6647 (hoy: 1074321 este modelo, 1178433 total)
+✂️  Japonés acotado a nivel 1
+📊 Tokens openrouter/openai/gpt-oss-120b: 2351 (hoy: 1076672 este modelo, 1180784 total)
+🎯 Frase objetivo (centinela): 早く起きます、コーヒーが好きです、コンピュータで仕事
+Laura: Vale. Por la manana, hayaku okimasu, luego kohi ga suki desu, y despues konpyuta de shigoto. Eso es mi rutina.
+Kaito (5.5s): Repite la secuencia completa, diciendo cada parte una tras otra, como si estuvieras describiendo tu mañana: 【早く起きます】 【コーヒーが好きです】 【コンピュータで仕事】
+
+--ERR--

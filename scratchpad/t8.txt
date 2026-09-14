@@ -1,0 +1,9 @@
+✅ Base de datos lista
+✅ Perfil de Laura cargado
+📊 Tokens openrouter/openai/gpt-oss-120b: 6568 (hoy: 1028943 este modelo, 1133055 total)
+📊 Tokens openrouter/openai/gpt-oss-120b: 2319 (hoy: 1031262 este modelo, 1135374 total)
+🎯 Frase objetivo (centinela): コンピュータで仕事
+Laura: Vale ya te lo he dicho dos veces, podemos ver algo nuevo? Como digo que como pan por la manana?
+Kaito (2.4s): Vamos a reforzar lo que ya sabes. Repite conmigo: 【コンピュータで仕事】.
+
+--ERR--

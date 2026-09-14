@@ -1,0 +1,9 @@
+✅ Base de datos lista
+✅ Perfil de Laura cargado
+📊 Tokens openrouter/openai/gpt-oss-120b: 6069 (hoy: 954872 este modelo, 1058984 total)
+✂️  Japonés acotado a nivel 1
+📊 Tokens openrouter/openai/gpt-oss-120b: 2327 (hoy: 957199 este modelo, 1061311 total)
+Laura: Hola Kaito! Muy bien, un poco cansada pero con ganas. Que tal tu? Que vamos a ver hoy?
+Kaito (2.6s): 【コーヒーが好きです】¿Qué sueles hacer normalmente cada día?
+
+--ERR--

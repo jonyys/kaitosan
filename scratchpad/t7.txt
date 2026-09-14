@@ -1,0 +1,9 @@
+✅ Base de datos lista
+✅ Perfil de Laura cargado
+📊 Tokens openrouter/openai/gpt-oss-120b: 6968 (hoy: 1020011 este modelo, 1124123 total)
+📊 Tokens openrouter/openai/gpt-oss-120b: 2364 (hoy: 1022375 este modelo, 1126487 total)
+🎯 Frase objetivo (centinela): 早く起きます、コーヒーが好きです
+Laura: Hayaku okimasu. Kohi ga suki desu.
+Kaito (2.8s): Ahora combina esas dos frases para describir tu rutina. Repite: 【早く起きます】 y 【コーヒーが好きです】.
+
+--ERR--
