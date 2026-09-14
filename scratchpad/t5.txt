@@ -1,9 +1,0 @@
-✅ Base de datos lista
-✅ Perfil de Laura cargado
-📊 Tokens openrouter/openai/gpt-oss-120b: 6257 (hoy: 1001337 este modelo, 1105449 total)
-📊 Tokens openrouter/openai/gpt-oss-120b: 2347 (hoy: 1003684 este modelo, 1107796 total)
-🎯 Frase objetivo (centinela): コーヒーが好きです
-Laura: Okimasu
-Kaito (3.1s): Repite conmigo: 【コーヒーが好きです】
-
---ERR--

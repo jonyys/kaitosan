@@ -1,9 +1,0 @@
-✅ Base de datos lista
-✅ Perfil de Laura cargado
-📊 Tokens openrouter/openai/gpt-oss-120b: 6914 (hoy: 1065350 este modelo, 1169462 total)
-📊 Tokens openrouter/openai/gpt-oss-120b: 2324 (hoy: 1067674 este modelo, 1171786 total)
-🎯 Frase objetivo (heurística): コンピュータで仕事
-Laura: Hayaku okimasu, kohi ga suki desu, konpyuta de shigoto shimasu.
-Kaito (2.4s): ¡Perfecto, Laura! Ya los has dicho con claridad. Ahora, cuéntame en español cómo es tu mañana, pero inserta esas frases en japonés tal como las has pronunciado. Por ejemplo, podrías decir: “Me levanto temprano, 【早く起きます】, me gusta el café, 【コーヒーが好きです】, y trabajo en la computadora, 【コンピュータで仕事】”. Adelante, cuéntame tu rutina usando esas tres expresiones.
-
---ERR--

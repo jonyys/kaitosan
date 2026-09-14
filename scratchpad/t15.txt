@@ -1,8 +1,0 @@
-✅ Base de datos lista
-✅ Perfil de Laura cargado
-📊 Tokens openrouter/openai/gpt-oss-120b: 6633 (hoy: 1092580 este modelo, 1196692 total)
-📊 Tokens openrouter/openai/gpt-oss-120b: 2366 (hoy: 1094946 este modelo, 1199058 total)
-Laura: Kaito, en serio, dime cual es el siguiente can-do de la unidad. Quiero saber que toca ahora.
-Kaito (2.4s): El siguiente paso es usar la forma pasada. Con 【ました】 expresas que hiciste algo, y con 【でした】 dices que algo era. ¿Te gustaría probar una frase con esas formas?
-
---ERR--
