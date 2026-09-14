@@ -121,7 +121,10 @@ def test_arco():
 # ── Follow-up — marca intra-sesión [trabajándose hoy] ───────────────────────
 
 def _linea_de(foco, jp):
-    return next(l for l in foco.splitlines() if f"【{jp}】" in l)
+    """La línea del ítem en la lista del FOCO (prefijo '  - 【jp】...' de
+    _lineas_foco) — no cualquier línea que mencione 【jp】, que desde el
+    listado "ya has dicho esto" (ver UMBRAL_FRENO_NUEVOS) también lo cita."""
+    return next(l for l in foco.splitlines() if l.startswith(f"  - 【{jp}】"))
 
 
 def test_marca_trabajandose_hoy():

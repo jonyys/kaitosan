@@ -674,10 +674,14 @@ class ProfesorJapones:
         )
         lineas_f.append(_fase_sesion(turno, ultimo_de_laura))
 
-        # Freno de ritmo (ver UMBRAL_FRENO_NUEVOS): cuenta bloques 【】 DISTINTOS
-        # que Kaito ya ha soltado esta sesión, sin filtrar por si ya eran
-        # sabidos — es a propósito grosero, solo mide ritmo de introducción,
-        # no verifica cada uno contra la BD.
+        # Bloques 【】 DISTINTOS que Kaito ya ha soltado esta sesión, sin filtrar
+        # por si ya eran sabidos — a propósito grosero, solo mide qué se ha
+        # dicho ya. Se calcula sobre self.mensajes COMPLETO (nunca se recorta),
+        # a diferencia de historial_sensei que solo manda los últimos
+        # MAX_TURNOS pares al LLM: sin esto, pasados ~10 turnos el modelo deja
+        # de "ver" lo que enseñó al principio y lo reintroduce como si fuera
+        # nuevo (visto en sesión real: 【飲みます】 explicado como novedad 3
+        # veces, 【起きます】 2 veces, en la misma conversación sin cortes).
         dicho_por_kaito = "\n".join(
             m["content"] for m in self.mensajes if m["role"] == "assistant"
         )
@@ -685,6 +689,12 @@ class ProfesorJapones:
             b for b in _RE_BLOQUE_LLANO.findall(dicho_por_kaito)
             if _RE_JP_CHAR.search(b) and b not in _EXPR_OK_NIVEL_BAJO and b not in _FRASES_ANIMO
         }
+        if bloques_dichos:
+            lineas_f.append(
+                "Ya has dicho esto en 【】 esta sesión — NO lo vuelvas a presentar "
+                "como si fuera nuevo, aunque ya no lo veas en los últimos turnos: "
+                + ", ".join(f"【{b}】" for b in sorted(bloques_dichos))
+            )
         if len(bloques_dichos) >= UMBRAL_FRENO_NUEVOS:
             lineas_f.append(
                 f"⚠️ RITMO: ya has soltado {len(bloques_dichos)} palabras/expresiones "

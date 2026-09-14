@@ -59,6 +59,28 @@ def test_kanjis_tienen_srs_propio_y_duele_en_due_count():
     assert jap.get_due_items(10, kind="kanji") == [] or jap.get_due_items(10, kind="kanji")[0]["status"] in {"learning", "learned", "mastered"}
 
 
+def test_ya_dicho_esta_sesion_no_se_reintroduce_como_nuevo():
+    """historial_sensei solo manda los últimos MAX_TURNOS pares al LLM — pasado
+    ese punto, sin este listado el modelo "olvida" lo que enseñó al principio
+    y lo reintroduce como si fuera nuevo (visto en sesión real: 【飲みます】
+    explicado como novedad 3 veces en la misma conversación sin cortes). El
+    FOCO se calcula sobre self.mensajes COMPLETO, así que el aviso sobrevive
+    aunque el turno ya no esté en el contexto truncado."""
+    db = os.path.join(tempfile.mkdtemp(), "test.db")
+    jap = JapaneseMemory(db)
+    memoria = MagicMock()
+    memoria.obtener_perfil.return_value = ""
+    prof = ProfesorJapones(jap, MagicMock(), memoria, MagicMock())
+    prof.entrar()
+
+    _, foco = prof._montar_estado()
+    assert "Ya has dicho esto" not in foco, foco  # sesión recién empezada
+
+    prof.mensajes = [{"role": "assistant", "content": "【飲みます】 significa bebo."}]
+    _, foco = prof._montar_estado()
+    assert "Ya has dicho esto" in foco and "【飲みます】" in foco, foco
+
+
 def test_freno_de_ritmo_cuando_kaito_mete_muchas_palabras_seguidas():
     """El FOCO manda parar de introducir cosas nuevas si Kaito ya ha soltado
     UMBRAL_FRENO_NUEVOS bloques 【】 distintos esta sesión — no confía solo en
@@ -86,5 +108,6 @@ def test_freno_de_ritmo_cuando_kaito_mete_muchas_palabras_seguidas():
 if __name__ == "__main__":
     test_diez_turnos_dejan_dos_items()
     test_kanjis_tienen_srs_propio_y_duele_en_due_count()
+    test_ya_dicho_esta_sesion_no_se_reintroduce_como_nuevo()
     test_freno_de_ritmo_cuando_kaito_mete_muchas_palabras_seguidas()
-    print("✅ Fase 01 OK: 10 turnos → 2 ítems, due_count = 2, freno de ritmo activo")
+    print("✅ Fase 01 OK: 10 turnos → 2 ítems, due_count = 2, no reintroduce, freno de ritmo activo")
