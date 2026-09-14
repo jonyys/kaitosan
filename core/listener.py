@@ -54,7 +54,9 @@ class VoiceListener:
     def _ciclo_voz(self, timeout_inicio_seg=0) -> bool:
         """
         Un ciclo completo: graba → transcribe → responde → habla.
-        Retorna True si se procesó algo, False si no hubo voz o el sistema estaba ocupado.
+        Retorna True si se procesó algo y toca seguir escuchando; False si no
+        hubo voz, el sistema estaba ocupado, o el turno acaba de salir del
+        modo sensei (esa despedida cierra la conversación, no la alarga).
         """
         if self.state.get() != "idle":
             return False
@@ -82,7 +84,12 @@ class VoiceListener:
             return False
 
         self.state.cambiar("thinking")
+        sensei_estaba_activo = self.brain.profesor.esta_activo()
         respuesta, lento_extra = self.brain.responder(texto, pron_contexto=pron_ctx)
+        # Salir del modo sensei es una despedida: no sigas escuchando encadenado
+        # como en modo conversación normal — que se calle y quede en idle hasta
+        # el próximo "kaito".
+        salio_de_sensei = sensei_estaba_activo and not self.brain.profesor.esta_activo()
         self.socketio.emit("mensaje", {"texto": respuesta})
         if self.brain.profesor.esta_activo():
             # En modo sensei, muestra en la cara la frase objetivo (o los 【…】
@@ -111,4 +118,4 @@ class VoiceListener:
         while self.state.get() != "idle":
             time.sleep(0.2)
 
-        return True
+        return not salio_de_sensei

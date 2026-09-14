@@ -115,11 +115,20 @@ _FRASES_ANIMO = {
     "がんばろう", "もういちど", "もういちどおねがいします", "おねがいします",
     "そうです", "せいかい", "だいじょうぶ", "オーケー", "はい", "ええ",
 }
-# Señales de que el turno pide PRODUCIR una frase japonesa concreta.
+# Señales de que el turno pide PRODUCIR una frase japonesa concreta —
+# es decir, que hay un objetivo LITERAL que Laura debe repetir tal cual.
+# "cómo dirías" NO va aquí a propósito: es una pregunta ABIERTA ("¿cómo
+# dirías X usando 【ます】?") en la que Laura tiene que construir la frase
+# ella misma — 【ます】 ahí es una pista gramatical, no el objetivo a
+# repetir. Colarlo hacía que _extraer_frase_objetivo cogiera esa partícula
+# suelta como frase objetivo y Azure puntuara la pronunciación de Laura
+# contra "ます" en vez de contra lo que de verdad intentó decir. Una
+# dictado real siempre trae además "repite"/"di conmigo"/etc., así que
+# quitarlo no pierde ningún caso legítimo.
 _PISTAS_PRODUCCION = (
     "repit", "repít", "repet",  # repite, repítela, repíteme, repetir, repetirme…
     "di conmigo", "dilo", "dila", "di la frase",
-    "cómo dirías", "como dirias", "cómo se dice", "como se dice",
+    "cómo se dice", "como se dice",
     "inténtalo", "intentalo", "prueba a decir", "practica diciendo",
     "completa la frase", "puedes decir", "puedes decirla", "vuelve a decir",
     "pronuncia", "a ver cómo suena", "dímelo",
@@ -1076,4 +1085,15 @@ if __name__ == "__main__":
         "pasada del verbo 【飲む】. Repite la frase completa, por favor."
     )
     assert _extraer_frase_objetivo(texto) == "飲む", _extraer_frase_objetivo(texto)
+
+    # "¿Cómo dirías X usando 【partícula】?" es pregunta ABIERTA: Laura tiene
+    # que construir la frase, 【ます】 es solo la pista. No hay objetivo
+    # literal que puntuar — si lo hubiera, Azure evaluaría su intento contra
+    # la partícula suelta en vez de contra lo que ella dijo de verdad.
+    texto_abierto = (
+        "¡Genial, suena muy natural! Ahora, vamos a practicar una acción "
+        "cotidiana. ¿Cómo dirías \"Cada mañana bebo café\" usando la forma "
+        "【ます】? Intenta armar la frase en japonés."
+    )
+    assert _extraer_frase_objetivo(texto_abierto) is None, _extraer_frase_objetivo(texto_abierto)
     print("✅ _extraer_frase_objetivo OK")

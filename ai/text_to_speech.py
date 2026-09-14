@@ -58,14 +58,22 @@ class TextToSpeech:
         return False
 
     def _limpiar_markdown(self, texto: str) -> str:
-        """El TTS lee los símbolos literalmente ('asterisco asterisco...'), así que
-        quitamos negritas, cursivas, code y viñetas antes de sintetizar."""
-        texto = re.sub(r'\*\*([^*]+)\*\*', r'\1', texto)
-        texto = re.sub(r'(?<!\w)\*([^*\n]+)\*(?!\w)', r'\1', texto)
+        """El TTS lee los símbolos literalmente ('asterisco asterisco...' o
+        'tecla de 1' con los emoji de teclado 1️⃣2️⃣...), así que quitamos
+        negritas, cursivas, code, viñetas y esos emoji antes de sintetizar."""
         texto = re.sub(r'__([^_]+)__', r'\1', texto)
         texto = re.sub(r'`([^`]+)`', r'\1', texto)
-        texto = texto.replace('**', '').replace('`', '')
+        texto = texto.replace('`', '')
         texto = re.sub(r'(?m)^\s{0,3}[-*#>]+\s+', '', texto)   # viñetas / encabezados
+        # Emoji "tecla" (1️⃣ 2️⃣ #️⃣...): dígito/# + variation selector opcional
+        # (U+FE0F) + "combining enclosing keycap" (U+20E3). ANTES de tocar los
+        # asteriscos: si no, el de un eventual *️⃣ sobreviviría a medias.
+        texto = re.sub(r'[0-9#]️?⃣', '', texto)
+        # Asteriscos sueltos: el recorte de 【】 en modo sensei (_acotar_japones)
+        # a veces vacía un bloque y deja huérfano el "*" de un "*【frase】*" o
+        # "* 【frase】" sin su pareja. No hay ningún uso legítimo de "*" hablado,
+        # así que se quitan todos en vez de intentar emparejarlos.
+        texto = texto.replace('*', '')
         texto = re.sub(r'\s*\n\s*', ' ', texto)                # sin saltos de línea
         return texto.strip()
 
