@@ -74,6 +74,9 @@ class TextToSpeech:
         # "* 【frase】" sin su pareja. No hay ningún uso legítimo de "*" hablado,
         # así que se quitan todos en vez de intentar emparejarlos.
         texto = texto.replace('*', '')
+        # "no es / no soy" se lee "barra diagonal" — es el separador de
+        # alternativas por escrito, en voz se dice "o" (medio/ambos anchos).
+        texto = re.sub(r'\s*[/／]\s*', ' o ', texto)
         texto = re.sub(r'\s*\n\s*', ' ', texto)                # sin saltos de línea
         return texto.strip()
 
