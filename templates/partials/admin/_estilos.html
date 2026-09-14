@@ -462,5 +462,19 @@
         height: 100%;
         background: linear-gradient(90deg, var(--rosa), var(--rosa-medio));
     }
+
+    /* Paginación (de 35 en 35) de tablas largas — ver .pageable en _panel_scripts.html */
+    .pager {
+        display: flex; flex-wrap: wrap; gap: 6px;
+        margin: 10px 0 20px;
+    }
+    .pager button {
+        border: 1px solid var(--border-fuerte); background: var(--surface);
+        color: var(--text); border-radius: 6px; padding: 4px 10px;
+        font-size: 13px; cursor: pointer;
+    }
+    .pager button.activa {
+        background: var(--rosa-tinta); border-color: var(--rosa-tinta); color: #fff;
+    }
 </style>
 {% include 'partials/_kiosko.html' %}

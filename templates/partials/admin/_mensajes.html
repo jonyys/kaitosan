@@ -15,8 +15,11 @@
         </div>
     </form>
     {% if mensajes %}
-    <table>
+    <table class="pageable">
+        <thead>
         <tr><th>Sesión</th><th>Rol</th><th>Mensaje</th><th>Fecha</th><th></th></tr>
+        </thead>
+        <tbody>
         {% for m in mensajes %}
         <tr>
             <td><span class="badge">#{{ m.session_id }}</span></td>
@@ -31,6 +34,7 @@
             </td>
         </tr>
         {% endfor %}
+        </tbody>
     </table>
     {% else %}
     <p class="empty">No hay mensajes guardados</p>

@@ -7,8 +7,11 @@
         </form>
     </div>
     {% if sesiones %}
-    <table>
+    <table class="pageable">
+        <thead>
         <tr><th>ID</th><th>Inicio</th><th>Mensajes</th><th></th></tr>
+        </thead>
+        <tbody>
         {% for s in sesiones %}
         <tr>
             <td>#{{ s.id }}</td>
@@ -22,6 +25,7 @@
             </td>
         </tr>
         {% endfor %}
+        </tbody>
     </table>
     {% else %}
     <p class="empty">No hay sesiones guardadas</p>

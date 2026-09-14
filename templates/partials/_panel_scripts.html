@@ -78,3 +78,43 @@
     });
 })();
 </script>
+
+<script>
+// Paginación de 35 en 35 para cualquier tabla ".pageable" que se pase de
+// esa cifra (vocabulario, kanji, gramática, sesiones, conversaciones —
+// todas crecen con el tiempo). Solo cliente: no toca rutas ni consultas.
+document.addEventListener('DOMContentLoaded', function () {
+    var TAM_PAGINA = 35;
+    document.querySelectorAll('table.pageable').forEach(function (tabla) {
+        var tbody = tabla.tBodies[0];
+        if (!tbody) return;
+        var filas = Array.prototype.slice.call(tbody.rows);
+        if (filas.length <= TAM_PAGINA) return;
+
+        var totalPaginas = Math.ceil(filas.length / TAM_PAGINA);
+        var pager = document.createElement('div');
+        pager.className = 'pager';
+        tabla.insertAdjacentElement('afterend', pager);
+
+        function mostrarPagina(pagina) {
+            filas.forEach(function (fila, i) {
+                fila.style.display = (Math.floor(i / TAM_PAGINA) === pagina) ? '' : 'none';
+            });
+            Array.prototype.forEach.call(pager.children, function (boton, i) {
+                boton.classList.toggle('activa', i === pagina);
+            });
+        }
+
+        for (var p = 0; p < totalPaginas; p++) {
+            var boton = document.createElement('button');
+            boton.type = 'button';
+            boton.textContent = p + 1;
+            boton.addEventListener('click', (function (pagina) {
+                return function () { mostrarPagina(pagina); };
+            })(p));
+            pager.appendChild(boton);
+        }
+        mostrarPagina(0);
+    });
+});
+</script>
