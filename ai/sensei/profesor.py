@@ -243,6 +243,11 @@ _RE_FIN_FRASE_JP = re.compile(r'[。！？]')
 # en la lista blanca de expresiones fijas de abajo.
 _RE_JP_FRASE = re.compile(r'(でした|ました|でしょう|ましょう|ですか|ますか|んです|してくださ|といます|に入り)')
 _LARGO_MAX_NIVEL_BAJO = 12  # caracteres dentro de 【】 tolerados en nivel 1-2
+# Un bloque corto que termina en ました/でした SUELE ser justo la conjugación que
+# se está enseñando ("見ました", "でした"), no una frase tema+comentario a medias:
+# solo se descarta por _RE_JP_FRASE si además es más largo que esto (p.ej.
+# "何か食べましたか" sí es una frase completa aunque quepa en pocos caracteres).
+_LARGO_MAX_COLA_VERBAL = 6
 # Expresiones fijas N5 (saludos, cortesía y las frases-función de la unidad 0:
 # pedir que repitan, decir que no entiendes). En nivel bajo se dejan enteras
 # aunque lleven ます/ください/una coma: son justo lo que Laura tiene que aprender.
@@ -294,9 +299,14 @@ def _acotar_japones(respuesta: str, nivel: int) -> str:
             return ""
         if cabeza in _EXPR_OK_NIVEL_BAJO:
             return f"【{cabeza}】"
-        # Sigue pareciendo una frase (larga, o con cola verbal/cortés) → fuera:
-        # un fragmento a medias confunde más que quitarlo.
-        if len(cabeza) > _LARGO_MAX_NIVEL_BAJO or _RE_JP_FRASE.search(cabeza):
+        # Sigue pareciendo una frase (larga, o con cola verbal/cortés PEGADA A
+        # MÁS TEXTO) → fuera: un fragmento a medias confunde más que quitarlo.
+        # Pero si es corto Y la cola verbal/cortés es prácticamente todo el
+        # bloque, es la conjugación suelta que tocaba enseñar (ver
+        # _LARGO_MAX_COLA_VERBAL) — esa SÍ se deja.
+        if len(cabeza) > _LARGO_MAX_NIVEL_BAJO:
+            return ""
+        if len(cabeza) > _LARGO_MAX_COLA_VERBAL and _RE_JP_FRASE.search(cabeza):
             return ""
         return f"【{cabeza}】"
 
@@ -910,6 +920,7 @@ class ProfesorJapones:
         # 'no_intentado' no cambia estado (lo decide set_can_do). La evidencia
         # (cita textual) se guarda como nota del can-do.
         ids_validos = {cd["id"] for cd in can_dos_activos}
+        ids_calificados = set()
         for cd in data.get("can_dos", []):
             cid = (cd.get("id") or "").strip()
             resultado = (cd.get("resultado") or "").strip().lower()
@@ -918,11 +929,19 @@ class ProfesorJapones:
             if ids_validos and cid not in ids_validos:
                 print(f"⚠️ Can-do '{cid}' no está entre los activos de la sesión; ignorado.")
                 continue
+            ids_calificados.add(cid)
             evidencia = (cd.get("evidencia") or "").strip() or None
             try:
                 self.jap_memory.set_can_do(cid, resultado, session_id, nota=evidencia)
             except Exception as e:
                 print(f"⚠️ Error registrando can-do '{cid}': {e}")
+        # El extractor puede devolver JSON válido pero incompleto (se le acaban
+        # los tokens a media lista): esto deja constancia en vez de fallar en
+        # silencio, para no tener que adivinarlo mirando la BD a mano otra vez.
+        sin_calificar = ids_validos - ids_calificados
+        if sin_calificar:
+            print(f"⚠️ El extractor no calificó estos can-dos activos "
+                  f"(sesión {session_id}): {', '.join(sorted(sin_calificar))}")
 
         self.jap_memory.guardar_resumen_sesion(
             session_id,
@@ -972,9 +991,12 @@ class ProfesorJapones:
         # el JSON. Si está en rate limit se reintenta con strict=False (cadena de
         # reserva): un new_item con japonés algo sucio se puede corregir; perder
         # la calificación de can-dos de toda la sesión, no.
+        # max_tokens=2000: una unidad con 5 can-dos + ítems nuevos + episodios en
+        # el mismo JSON no cabía en 1000 y el modelo se dejaba can-dos sin
+        # calificar sin que saltara ningún error (JSON válido, solo incompleto).
         return self.provider.completar(
             historial,
-            max_tokens=1000,
+            max_tokens=2000,
             response_format={"type": "json_object"},
             strict=strict,
             reasoning_effort="low",
@@ -1001,3 +1023,18 @@ class ProfesorJapones:
         data.setdefault("episodios", [])
         data.setdefault("kaito_dijo", [])
         return data
+
+
+if __name__ == "__main__":
+    # _acotar_japones a nivel bajo: una cola de conjugación CORTA y SOLA
+    # (【見ました】, 【でした】) es la gramática que se está enseñando y se deja;
+    # una frase tema+comentario, aunque quepa en pocos caracteres
+    # (【何か食べましたか】), se sigue recortando.
+    assert _acotar_japones("【見ました】", 1) == "【見ました】"
+    assert _acotar_japones("【のみました】", 1) == "【のみました】"
+    assert _acotar_japones("【でした】", 1) == "【でした】"
+    assert _acotar_japones("【何か食べましたか】", 1) == ""
+    assert _acotar_japones("【きのうは休みでした】", 1) == ""
+    # Expresión fija de la lista blanca: se deja aunque lleve ます/ください.
+    assert _acotar_japones("【もう一度お願いします】", 1) == "【もう一度お願いします】"
+    print("✅ _acotar_japones OK")
