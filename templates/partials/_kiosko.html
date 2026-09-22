@@ -219,7 +219,7 @@
       var y0 = null, x0 = 0;
       document.addEventListener("touchstart", function (e) {
         var t = e.touches[0];
-        y0 = t.clientY <= 48 ? t.clientY : null;
+        y0 = t.clientY <= 100 ? t.clientY : null;
         x0 = t.clientX;
       }, { passive: true });
       document.addEventListener("touchmove", function (e) {
