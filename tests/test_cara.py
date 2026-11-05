@@ -8,7 +8,7 @@ MOTOR = Path("templates/partials/face/_scripts.html").read_text(encoding="utf-8"
 
 def test_cada_ojo_tiene_las_piezas_que_anima_el_motor():
     assert len(re.findall(r'class="eye[ "]', CARA)) == 4
-    for pieza in ('class="iris"', 'class="pupila"', "parpado-sup", "parpado-inf", "data-recorrido="):
+    for pieza in ('class="iris"', 'class="pupila"', 'class="parpado-sup"', 'class="parpado-inf"', "data-recorrido="):
         assert CARA.count(pieza) == 4, pieza
 
 

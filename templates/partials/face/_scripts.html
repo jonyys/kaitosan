@@ -30,10 +30,10 @@
 
   // Valores de reposo y ritmo de cada estado. Tiempos en ms; mirada en unidades del ojo.
   const MODOS = {
-    idle: { parpado: 0.04, inferior: 0, ceja: 0, dif: 0, rot: 0, abre: 1, pupila: 1, boca: 0, radio: [13, 8], cadaMirada: [1400, 4200], cadaParpadeo: [2600, 6000] },
+    idle: { parpado: 0, inferior: 0, ceja: 0, dif: 0, rot: 0, abre: 1, pupila: 1, boca: 0, radio: [13, 8], cadaMirada: [1400, 4200], cadaParpadeo: [2600, 6000] },
     listening: { parpado: 0, inferior: 0, ceja: -8, dif: 0, rot: -2, abre: 1.05, pupila: 1.14, boca: 0.1, radio: [3, 2], cadaMirada: [2500, 5000], cadaParpadeo: [4000, 7500], inclina: 2.5 },
-    thinking: { parpado: 0.12, inferior: 0, ceja: -3, dif: 3, rot: 0, abre: 1, pupila: 0.94, boca: 0, radio: [3, 2], centro: [9, -8], alterna: true, cadaMirada: [1000, 2200], cadaParpadeo: [3000, 6000] },
-    speaking: { parpado: 0.03, inferior: 0, ceja: -1, dif: 0, rot: 0, abre: 1, pupila: 1.03, boca: 0, radio: [5, 3], cadaMirada: [1200, 3000], cadaParpadeo: [2200, 5000] },
+    thinking: { parpado: 0, inferior: 0, ceja: -3, dif: 3, rot: 0, abre: 1, pupila: 0.94, boca: 0, radio: [3, 2], centro: [9, -8], alterna: true, cadaMirada: [1000, 2200], cadaParpadeo: [3000, 6000] },
+    speaking: { parpado: 0, inferior: 0, ceja: -1, dif: 0, rot: 0, abre: 1, pupila: 1.03, boca: 0, radio: [5, 3], cadaMirada: [1200, 3000], cadaParpadeo: [2200, 5000] },
     happy: { parpado: 0, inferior: 0.42, ceja: -7, dif: 0, rot: -3, abre: 1.02, pupila: 1.1, boca: 0.2, radio: [4, 2], cadaMirada: [1500, 3000], cadaParpadeo: [2500, 5000] },
     error: { parpado: 0.16, inferior: 0, ceja: 5, dif: 0, rot: 9, abre: 0.98, pupila: 0.9, boca: 0, radio: [3, 2], cadaMirada: [800, 1800], cadaParpadeo: [2000, 4000] },
   };
@@ -170,7 +170,6 @@
     },
     function suspiro() {
       m.cabezaY.v -= 16;
-      m.parpado.t = 0.28;
       m.ceja.t = -3;
       parpadear(1.8);
       return 1700;
@@ -190,9 +189,8 @@
       aplicarModo();
     }
     if (ahora < prox.gesto) return;
-    // Tras un rato sin nada le entra sueño: párpados caídos y parpadeos lentos
+    // Tras un rato sin nada le entra sueño: parpadeos lentos, nunca ojos a medio cerrar
     if (ahora - quietoDesde > 60000) {
-      m.parpado.t = 0.24;
       parpadear(2.4);
       prox.gesto = ahora + azar(5000, 9000);
       return;

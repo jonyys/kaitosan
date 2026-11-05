@@ -12,8 +12,10 @@
     --cara-boca-claro: #e0a44d;
     --cara-boca-oscuro: #8a5a1e;
     --cara-parpado: #4a3012;
-    --cara-parpado-piel: #2e1f0f;
-    --cara-parpado-borde: #0d0904;
+    --cara-parpado-luz: #a87c3e;
+    --cara-parpado-piel: #6e4d25;
+    --cara-parpado-sombra: #33220f;
+    --cara-parpado-borde: #120b04;
     --cara-brillo: 224, 162, 74; /* canales RGB: se usa con rgba(var(--cara-brillo), alfa) */
     /* Halo: pantalla redonda de 480x480, tiene que quedar dentro y apenas notarse */
     --cara-halo-color: 150, 98, 36;
@@ -110,10 +112,17 @@
     transform-box: fill-box;
     transform-origin: center;
   }
-  .parpado {
-    fill: var(--cara-parpado-piel);
-    stroke: var(--cara-parpado-borde);
-    stroke-width: 3px;
+  .parpado-borde {
+    fill: var(--cara-parpado-borde);
+  }
+  .parpado-borde-inf {
+    fill: var(--cara-parpado-sombra);
+  }
+  .parpado-pliegue {
+    fill: none;
+    stroke: var(--cara-parpado-sombra);
+    stroke-width: 2.5px;
+    stroke-linecap: round;
   }
 
   /* BOCA */
