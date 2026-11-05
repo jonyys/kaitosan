@@ -13,6 +13,17 @@ SAMPLE_RATE_STT = 16000
 # Segundos de silencio sostenido que cierran la grabación tras el wakeword.
 # Bájalo para que corte antes; súbelo si te corta a media frase.
 SILENCIO_SEG = float(os.getenv("RECORD_SILENCIO_SEG", "1.5"))
+# Refuerzo software del micro (la ganancia de captura ya está al máximo por
+# hardware en el AB17X, 0dB, sin margen). x5 saturaba y Whisper transcribía
+# basura ("¿Qué teipa leyes a?") — con la voz tan amortiguada por la carcasa
+# ya no hay margen para subir esto sin destrozar la forma de onda; 2.0 es el
+# tope sin saturar en las pruebas (pico sin reforzar ~12%, x2 no satura).
+GANANCIA_SW = float(os.getenv("MIC_GANANCIA_SW", "2.0"))
+# Con la carcasa impresa puesta, el ruido de fondo (ventilador, electrónica)
+# queda cerca en energía de la voz amortiguada — umbral entre el ruido y la
+# voz YA CON GANANCIA_SW aplicada (ruido ~0.47% RMS, voz ~0.7-0.8% RMS sin
+# reforzar; con x2.0 eso es ~0.94% y ~1.4-1.6%).
+UMBRAL_RMS = float(os.getenv("RECORD_UMBRAL_RMS", "0.012"))
 
 def buscar_microfono():
     # Preferencia de Ajustes (app_settings) antes que AUDIO_INPUT_HINT del .env.
@@ -145,7 +156,7 @@ class Recorder:
 
     def record_vad(self, filename=DEFAULT_PATH,
                    silencio_seg=SILENCIO_SEG, max_seg=10,
-                   umbral_rms=0.02, timeout_inicio_seg=0) -> str:
+                   umbral_rms=UMBRAL_RMS, timeout_inicio_seg=0) -> str:
         """
         Graba hasta detectar silencio sostenido.
         - silencio_seg: segundos de silencio para parar (default 1.5)
@@ -174,6 +185,7 @@ class Recorder:
             ) as stream:
                 for _ in range(max_chunks):
                     chunk, _ = stream.read(CHUNK)
+                    chunk = np.clip(chunk * GANANCIA_SW, -1.0, 1.0)
                     grabacion.append(chunk.copy())
 
                     rms = np.sqrt(np.mean(chunk ** 2))
@@ -195,8 +207,6 @@ class Recorder:
                 return None
 
             audio = np.concatenate(grabacion, axis=0)
-            audio = audio * 3.0
-            audio = np.clip(audio, -1.0, 1.0)
 
             audio_16k = self._convertir_sample_rate(
                 audio, orig_sr=self.sample_rate, target_sr=SAMPLE_RATE_STT

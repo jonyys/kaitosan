@@ -46,6 +46,9 @@ _CHUNK_FRAMES = 25  # 25 × 80ms = 2s
 # Sample rates a probar, en orden de preferencia: 16 kHz es el nativo del modelo
 # (sin resampleo). Los demás son fallback si el micro no acepta 16 kHz.
 _RATES_FALLBACK = (16000, 48000, 44100, 32000)
+# Refuerzo suave (no el x5 de recorder.py: ahí saturaba y el modelo
+# reconocía peor, probablemente porque se entrenó con niveles sin forzar).
+_GANANCIA_SW = float(os.getenv("WAKEWORD_GANANCIA_SW", "2.5"))
 
 
 def _cargar_modelo():
@@ -82,13 +85,13 @@ class Detection:
 def _resample(audio: np.ndarray) -> np.ndarray:
     """Resamplea un frame de captura (longitud variable) a _FRAME_MODEL samples."""
     src_len = len(audio)
-    if src_len == _FRAME_MODEL:
-        return audio.astype(np.int16)
-    return np.interp(
-        np.linspace(0, src_len, _FRAME_MODEL),
-        np.arange(src_len),
-        audio,
-    ).astype(np.int16)
+    if src_len != _FRAME_MODEL:
+        audio = np.interp(
+            np.linspace(0, src_len, _FRAME_MODEL),
+            np.arange(src_len),
+            audio,
+        )
+    return np.clip(audio * _GANANCIA_SW, -32768, 32767).astype(np.int16)
 
 
 def _resolver_entrada(pa: pyaudio.PyAudio):
