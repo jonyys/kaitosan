@@ -253,12 +253,13 @@
       function rearmar() {
         clearTimeout(tmr);
         if (window.kaitoCancelarDormirse) window.kaitoCancelarDormirse();
-        // En la cara, Kaito se duerme antes: 15 s quedándose dormido y, con los
-        // ojos cerrados, el reloj. Si se le habla o se toca, rearmar() lo cancela.
+        // En la cara, Kaito se duerme antes (window.kaitoDormirseMs: se queda
+        // dormido y duerme 15 s con zZz) y, con los ojos cerrados, el reloj.
+        // Si se le habla o se toca, rearmar() lo cancela.
         tmr = setTimeout(function () {
           if (window.kaitoDormirse) window.kaitoDormirse(irAlReloj);
           else irAlReloj();
-        }, min * 60000 - 15000);
+        }, Math.max(5000, min * 60000 - (window.kaitoDormirseMs || 0)));
       }
       ["pointerdown", "touchstart", "keydown"].forEach(function (ev) {
         document.addEventListener(ev, rearmar, { passive: true });

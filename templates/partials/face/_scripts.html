@@ -58,6 +58,9 @@
   const CADA_GESTO = [25000, 35000];
   // A partir de aquí sin que nadie le hable ni lo toque, le entra sueño
   const EMPIEZA_SUENO = 210000; // 3 min y medio
+  // Antes del reloj: se queda dormido a los 9,6 s y duerme 15 s con zZz
+  const DORMIRSE_MS = 9600 + 15000;
+  window.kaitoDormirseMs = DORMIRSE_MS; // el kiosko lo lanza con esta antelación
   const miradaBase = { x: 0, y: 0 };
   let ladoPensando = 1;
   let quietoDesde = 0;
@@ -369,9 +372,9 @@
     ] },
     // ── Reloj: se duerme antes de que salte y se despierta al volver (peso 0) ──
     // Lo lanza el kiosko (window.kaitoDormirse); al cerrar los ojos, al reloj.
-    // 15 s: le pesan los párpados, bosteza, cabecea, se resiste, vuelve a
-    // bostezar y al final se queda dormido del todo con sus zZz. Entonces, reloj.
-    dormirse: { dur: 18000, peso: 0, alTocar: despertar, pasos: [
+    // ~10 s quedándose dormido (le pesan los párpados, bosteza, cabecea, se
+    // resiste, otro bostezo) y 15 s ya dormido con sus zZz. Entonces, reloj.
+    dormirse: { dur: DORMIRSE_MS + 3000, peso: 0, alTocar: despertar, pasos: [
       [0, () => { m.parpado.t = 0.35; m.ceja.t = 3; mirarSuave(0, 3); }],
       [1200, () => { m.bocaO.t = 0.8; m.cabezaY.t = -2; }], // bostezo
       [2600, () => { m.bocaO.t = 0; m.cabezaY.t = 0; }],
@@ -382,8 +385,13 @@
       [7900, () => { m.bocaO.t = 0.55; }], // otro bostezo, más pequeño
       [8900, () => { m.bocaO.t = 0; m.parpado.t = 0.75; }],
       [9600, () => { m.parpado.t = 1; m.inferior.t = 0.15; m.cabezaR.t = -5; m.cabezaY.t = 7; m.bocaMini.t = 1; respiraExtra = 1.6; }], // dormido
-      [12400, () => { m.cabezaY.v += 16; }], // cabecea ya dormido
-      [15000, () => { const ir = alDormirse; alDormirse = null; if (ir) ir(); }],
+      // Dormido: cabeceos suaves de vez en cuando mientras salen las zZz
+      [12400, () => { m.cabezaY.v += 16; }],
+      [15800, () => { m.cabezaR.t = -3; }],
+      [17500, () => { m.cabezaY.v += 14; }],
+      [20200, () => { m.cabezaR.t = -6; }],
+      [22000, () => { m.cabezaY.v += 16; }],
+      [DORMIRSE_MS, () => { const ir = alDormirse; alDormirse = null; if (ir) ir(); }],
     ] },
     despertando: { dur: 2400, peso: 0, pasos: [
       [0, () => { m.parpado.x = m.parpado.t = 1; m.cabezaY.x = m.cabezaY.t = 6; m.bocaMini.t = 1; }],
