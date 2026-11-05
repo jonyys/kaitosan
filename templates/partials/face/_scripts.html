@@ -56,6 +56,8 @@
   const prox = { mirada: 0, micro: 0, parpadeo: 0, gesto: 0, finGesto: 0, finDedo: 0, sueno: 0 };
   // Un gesto cada 25-35 s en reposo: más a menudo distrae si trabajas al lado
   const CADA_GESTO = [25000, 35000];
+  // A partir de aquí sin que nadie le hable ni lo toque, le entra sueño
+  const EMPIEZA_SUENO = 210000; // 3 min y medio
   const miradaBase = { x: 0, y: 0 };
   let ladoPensando = 1;
   let quietoDesde = 0;
@@ -224,7 +226,7 @@
     const quieto = ahora - quietoDesde;
     // Tras un rato sin nada le entra sueño: parpadeos lentos entre gesto y gesto,
     // nunca ojos a medio cerrar
-    if (quieto > 60000 && ahora > prox.sueno && !prox.finGesto) {
+    if (quieto > EMPIEZA_SUENO && ahora > prox.sueno && !prox.finGesto) {
       parpadear(2.4);
       prox.sueno = ahora + azar(5000, 9000);
     }
@@ -367,12 +369,21 @@
     ] },
     // ── Reloj: se duerme antes de que salte y se despierta al volver (peso 0) ──
     // Lo lanza el kiosko (window.kaitoDormirse); al cerrar los ojos, al reloj.
-    dormirse: { dur: 8000, peso: 0, alTocar: despertar, pasos: [
-      [0, () => { m.parpado.t = 0.5; m.ceja.t = 3; mirarSuave(0, 3); }],
-      [500, () => { m.bocaO.t = 0.7; }], // bostezo
-      [900, () => { m.parpado.t = 0.2; }],
-      [1500, () => { m.bocaO.t = 0; m.parpado.t = 1; m.inferior.t = 0.15; m.cabezaR.t = -5; m.cabezaY.t = 7; m.bocaMini.t = 1; respiraExtra = 1.6; }],
-      [3800, () => { const ir = alDormirse; alDormirse = null; if (ir) ir(); }],
+    // 15 s: le pesan los párpados, bosteza, cabecea, se resiste, vuelve a
+    // bostezar y al final se queda dormido del todo con sus zZz. Entonces, reloj.
+    dormirse: { dur: 18000, peso: 0, alTocar: despertar, pasos: [
+      [0, () => { m.parpado.t = 0.35; m.ceja.t = 3; mirarSuave(0, 3); }],
+      [1200, () => { m.bocaO.t = 0.8; m.cabezaY.t = -2; }], // bostezo
+      [2600, () => { m.bocaO.t = 0; m.cabezaY.t = 0; }],
+      [3200, () => { m.parpado.t = 0.6; }],
+      [4300, () => { m.parpado.t = 0.88; m.cabezaY.v += 18; m.cabezaR.t = -3; }], // cabeceo
+      [5200, () => { m.parpado.t = 0.12; m.abre.v += 0.7; m.cabezaR.t = 0; m.cabezaY.v -= 20; }], // ¡se resiste!
+      [6700, () => { m.parpado.t = 0.5; }],
+      [7900, () => { m.bocaO.t = 0.55; }], // otro bostezo, más pequeño
+      [8900, () => { m.bocaO.t = 0; m.parpado.t = 0.75; }],
+      [9600, () => { m.parpado.t = 1; m.inferior.t = 0.15; m.cabezaR.t = -5; m.cabezaY.t = 7; m.bocaMini.t = 1; respiraExtra = 1.6; }], // dormido
+      [12400, () => { m.cabezaY.v += 16; }], // cabecea ya dormido
+      [15000, () => { const ir = alDormirse; alDormirse = null; if (ir) ir(); }],
     ] },
     despertando: { dur: 2400, peso: 0, pasos: [
       [0, () => { m.parpado.x = m.parpado.t = 1; m.cabezaY.x = m.cabezaY.t = 6; m.bocaMini.t = 1; }],
@@ -410,8 +421,9 @@
     const noche = h >= 22 || h < 7; // de noche le entra el sueño
     // Y cuanto más rato solo, más sueño: sube hasta +6 justo cuando va a saltar
     // el reloj (el kiosko pone ese tiempo; sin kiosko, 5 min)
-    const hastaReloj = Math.max(120000, window.kaitoInactividadMs || 300000);
-    const sueno = (noche ? 5 : 1) + 6 * acotar((quieto - 60000) / (hastaReloj - 60000), 0, 1);
+    const hastaReloj = window.kaitoInactividadMs || 300000;
+    const tramo = Math.max(30000, hastaReloj - EMPIEZA_SUENO);
+    const sueno = (noche ? 5 : 1) + 6 * acotar((quieto - EMPIEZA_SUENO) / tramo, 0, 1);
     const lista = Object.entries(KAWAII).map(([n, g]) => [n, n === "dormido" ? sueno : g.peso]);
     let r = Math.random() * lista.reduce((a, [, p]) => a + p, 0);
     for (const [n, p] of lista) if ((r -= p) < 0) return n;
