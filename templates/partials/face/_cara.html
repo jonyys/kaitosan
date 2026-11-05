@@ -115,7 +115,7 @@
   <div class="eyes">
     <!-- Ojos normales -->
     <svg
-      class="eye eye-left"
+      class="eye eye-left" data-recorrido="118" data-recorrido-inf="34" data-escala="1"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 99.5167 107.762"
       width="99.5167px"
@@ -133,6 +133,7 @@
           <stop offset="0" style="stop-color: var(--cara-iris-claro)" />
           <stop offset="1" style="stop-color: var(--cara-iris-oscuro)" />
         </linearGradient>
+      <clipPath id="clip-ojo-izq"><path d="M 99.4044 60.9612 C 97.3654 96.1972 99.9334 95.9602 56.8394 105.9012 C 13.7454 115.8422 -6.3046 84.4252 1.7444 47.9972 C 9.7934 11.5692 27.9594 1.1052 51.6544 0.0312 C 75.3494 -1.0428 101.4434 25.7252 99.4044 60.9612 Z"/></clipPath>
       </defs>
       <g>
         <path
@@ -143,6 +144,8 @@
             fill: var(--cara-esclera);
           "
         />
+        <g clip-path="url(#clip-ojo-izq)">
+        <g class="iris">
         <ellipse
           style="
             stroke: rgb(0, 0, 0);
@@ -154,7 +157,7 @@
           rx="30.249"
           ry="35.002"
         />
-        <ellipse
+        <ellipse class="pupila"
           style="stroke: var(--cara-pupila); stroke-width: 1; fill: var(--cara-pupila)"
           cx="60.3634"
           cy="51.5232"
@@ -174,10 +177,13 @@
           ry="8.847"
         />
       </g>
+        <path class="parpado parpado-sup" d="M -12 -130 H 112 V -16 Q 50 6 -12 -16 Z"/><path class="parpado parpado-inf" d="M -12 122 Q 50 100 112 122 V 170 H -12 Z"/>
+        </g>
+        </g>
     </svg>
 
     <svg
-      class="eye eye-right"
+      class="eye eye-right" data-recorrido="118" data-recorrido-inf="34" data-escala="1" data-espejo="1"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 99.5167 107.762"
       width="99.5167px"
@@ -195,6 +201,7 @@
           <stop offset="0" style="stop-color: var(--cara-iris-claro)" />
           <stop offset="1" style="stop-color: var(--cara-iris-oscuro)" />
         </linearGradient>
+      <clipPath id="clip-ojo-der"><path d="M 99.4044 60.9612 C 97.3654 96.1972 99.9334 95.9602 56.8394 105.9012 C 13.7454 115.8422 -6.3046 84.4252 1.7444 47.9972 C 9.7934 11.5692 27.9594 1.1052 51.6544 0.0312 C 75.3494 -1.0428 101.4434 25.7252 99.4044 60.9612 Z"/></clipPath>
       </defs>
       <g transform="translate(99.5167, 0) scale(-1, 1)">
         <path
@@ -205,6 +212,8 @@
             fill: var(--cara-esclera);
           "
         />
+        <g clip-path="url(#clip-ojo-der)">
+        <g class="iris">
         <ellipse
           style="
             stroke: rgb(0, 0, 0);
@@ -216,7 +225,7 @@
           rx="30.249"
           ry="35.002"
         />
-        <ellipse
+        <ellipse class="pupila"
           style="stroke: var(--cara-pupila); stroke-width: 1; fill: var(--cara-pupila)"
           cx="60.3634"
           cy="51.5232"
@@ -236,11 +245,14 @@
           ry="8.847"
         />
       </g>
+        <path class="parpado parpado-sup" d="M -12 -130 H 112 V -16 Q 50 6 -12 -16 Z"/><path class="parpado parpado-inf" d="M -12 122 Q 50 100 112 122 V 170 H -12 Z"/>
+        </g>
+        </g>
     </svg>
 
     <!-- Ojo sensei izquierdo -->
     <svg
-      class="eye eye-sensei eye-sensei-left"
+      class="eye eye-sensei eye-sensei-left" data-recorrido="80" data-recorrido-inf="26" data-escala="0.7"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="272.5676 182.118 110.1974 74.6069"
       width="110.197px"
@@ -252,12 +264,18 @@
           <stop offset="0" style="stop-color: var(--cara-iris-claro)"/>
           <stop offset="1" style="stop-color: var(--cara-iris-oscuro);"/>
         </linearGradient>
+      <clipPath id="clip-sensei-izq"><path d="M 284.188 195.789 C 292.4 190.981 368.159 198.327 374.653 206.983 C 377.326 207.65 372.757 248.701 365.743 255.87 C 365.743 256.479 309.317 256.251 309.317 255.642 C 297.158 255.052 280.333 203.333 284.188 195.789 Z"/></clipPath>
       </defs>
       <g transform="matrix(1, 0, 0, 1, 0, 0)">
         <path style="stroke: rgb(0, 0, 0); stroke-width: 0px; fill: var(--cara-esclera);" d="M 284.188 195.789 C 292.4 190.981 368.159 198.327 374.653 206.983 C 377.326 207.65 372.757 248.701 365.743 255.87 C 365.743 256.479 309.317 256.251 309.317 255.642 C 297.158 255.052 280.333 203.333 284.188 195.789 Z"/>
+        <g clip-path="url(#clip-sensei-izq)">
+        <g class="iris">
         <path d="M 364.327 220.338 C 363.48 230.361 362.151 238.649 357.2 244.873 C 352.248 251.096 344.52 254.723 336.965 254.723 C 329.409 254.723 322.568 250.874 317.617 244.651 C 312.666 238.429 310.112 228.035 309.371 218.857 C 308.629 209.678 306.891 197.221 311.843 190.998 C 316.794 184.776 329.409 185.951 336.965 185.951 C 344.52 185.951 356.461 190.464 361.411 196.687 C 366.364 202.911 365.175 210.313 364.327 220.338 Z" style="fill: url(#gradient-sensei-new-left); stroke: rgb(0, 0, 0); stroke-width: 0px;"/>
-        <ellipse style="stroke: rgb(0, 0, 0); stroke-width: 0px; fill: var(--cara-pupila);" cx="337.235" cy="221.819" rx="11.327" ry="11.587"/>
+        <ellipse class="pupila" style="stroke: rgb(0, 0, 0); stroke-width: 0px; fill: var(--cara-pupila);" cx="337.235" cy="221.819" rx="11.327" ry="11.587"/>
         <ellipse style="fill: var(--cara-esclera); stroke-linecap: round; stroke: rgb(0, 0, 0); stroke-width: 0px;" cx="325.622" cy="210.357" rx="10.92" ry="11.398"/>
+        </g>
+        <path class="parpado parpado-sup" d="M 260 100 H 400 V 178 Q 330 190 260 178 Z"/><path class="parpado parpado-inf" d="M 260 268 Q 330 250 400 268 V 300 H 260 Z"/>
+        </g>
         <path style="stroke: rgb(76, 76, 76); stroke-width: 0px; fill: var(--cara-parpado);" d="M 299.086 247.885 C 291.759 245.344 272.026 199.411 272.579 186.703 C 304.327 181.112 349.085 175.161 382.765 204.756 L 375.17 206.619 C 365.912 200.577 312.716 190.588 284.615 195.443 C 282.395 206.029 296.167 241.348 299.086 247.885 Z"/>
         <rect x="308.85" y="256.097" width="57.731" height="0.628" style="stroke: rgb(0, 0, 0); stroke-width: 0px; fill: var(--cara-parpado);"/>
       </g>
@@ -265,7 +283,7 @@
 
     <!-- Ojo sensei derecho (espejo horizontal del izquierdo) -->
     <svg
-      class="eye eye-sensei eye-sensei-right"
+      class="eye eye-sensei eye-sensei-right" data-recorrido="80" data-recorrido-inf="26" data-escala="0.7" data-espejo="1"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="272.5676 182.118 110.1974 74.6069"
       width="110.197px"
@@ -277,12 +295,18 @@
           <stop offset="0" style="stop-color: var(--cara-iris-claro)"/>
           <stop offset="1" style="stop-color: var(--cara-iris-oscuro);"/>
         </linearGradient>
+      <clipPath id="clip-sensei-der"><path d="M 284.188 195.789 C 292.4 190.981 368.159 198.327 374.653 206.983 C 377.326 207.65 372.757 248.701 365.743 255.87 C 365.743 256.479 309.317 256.251 309.317 255.642 C 297.158 255.052 280.333 203.333 284.188 195.789 Z"/></clipPath>
       </defs>
       <g transform="translate(655.3326, 0) scale(-1, 1)">
         <path style="stroke: rgb(0, 0, 0); stroke-width: 0px; fill: var(--cara-esclera);" d="M 284.188 195.789 C 292.4 190.981 368.159 198.327 374.653 206.983 C 377.326 207.65 372.757 248.701 365.743 255.87 C 365.743 256.479 309.317 256.251 309.317 255.642 C 297.158 255.052 280.333 203.333 284.188 195.789 Z"/>
+        <g clip-path="url(#clip-sensei-der)">
+        <g class="iris">
         <path d="M 364.327 220.338 C 363.48 230.361 362.151 238.649 357.2 244.873 C 352.248 251.096 344.52 254.723 336.965 254.723 C 329.409 254.723 322.568 250.874 317.617 244.651 C 312.666 238.429 310.112 228.035 309.371 218.857 C 308.629 209.678 306.891 197.221 311.843 190.998 C 316.794 184.776 329.409 185.951 336.965 185.951 C 344.52 185.951 356.461 190.464 361.411 196.687 C 366.364 202.911 365.175 210.313 364.327 220.338 Z" style="fill: url(#gradient-sensei-new-right); stroke: rgb(0, 0, 0); stroke-width: 0px;"/>
-        <ellipse style="stroke: rgb(0, 0, 0); stroke-width: 0px; fill: var(--cara-pupila);" cx="337.235" cy="221.819" rx="11.327" ry="11.587"/>
+        <ellipse class="pupila" style="stroke: rgb(0, 0, 0); stroke-width: 0px; fill: var(--cara-pupila);" cx="337.235" cy="221.819" rx="11.327" ry="11.587"/>
         <ellipse style="fill: var(--cara-esclera); stroke-linecap: round; stroke: rgb(0, 0, 0); stroke-width: 0px;" cx="325.622" cy="210.357" rx="10.92" ry="11.398"/>
+        </g>
+        <path class="parpado parpado-sup" d="M 260 100 H 400 V 178 Q 330 190 260 178 Z"/><path class="parpado parpado-inf" d="M 260 268 Q 330 250 400 268 V 300 H 260 Z"/>
+        </g>
         <path style="stroke: rgb(76, 76, 76); stroke-width: 0px; fill: var(--cara-parpado);" d="M 299.086 247.885 C 291.759 245.344 272.026 199.411 272.579 186.703 C 304.327 181.112 349.085 175.161 382.765 204.756 L 375.17 206.619 C 365.912 200.577 312.716 190.588 284.615 195.443 C 282.395 206.029 296.167 241.348 299.086 247.885 Z"/>
         <rect x="308.85" y="256.097" width="57.731" height="0.628" style="stroke: rgb(0, 0, 0); stroke-width: 0px; fill: var(--cara-parpado);"/>
       </g>
