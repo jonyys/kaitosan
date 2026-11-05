@@ -13,6 +13,9 @@
     --cara-boca-oscuro: #8a5a1e;
     --cara-parpado: #4a3012;
     --cara-brillo: 224, 162, 74; /* canales RGB: se usa con rgba(var(--cara-brillo), alfa) */
+    /* Halo: pantalla redonda de 480x480, tiene que quedar dentro y apenas notarse */
+    --cara-halo-color: 150, 98, 36;
+    --cara-halo-tamano: 360px;
   }
   .transition,
   .transition .eye,
@@ -60,22 +63,19 @@
     z-index: -1;
     pointer-events: none;
 
-    width: 1000px;
-    height: 1000px;
+    width: var(--cara-halo-tamano);
+    height: var(--cara-halo-tamano);
     border-radius: 50%;
 
     background: radial-gradient(
       circle,
-      rgba(var(--cara-brillo), 0.3) 0%,
-      rgba(var(--cara-brillo), 0.22) 20%,
-      rgba(var(--cara-brillo), 0.14) 40%,
-      rgba(var(--cara-brillo), 0.08) 60%,
-      rgba(var(--cara-brillo), 0.04) 75%,
-      rgba(var(--cara-brillo), 0.02) 88%,
+      rgba(var(--cara-halo-color), 0.2) 0%,
+      rgba(var(--cara-halo-color), 0.12) 40%,
+      rgba(var(--cara-halo-color), 0.05) 70%,
       transparent 100%
     );
 
-    filter: blur(65px);
+    filter: blur(30px);
 
     animation: faceGlow 5.5s ease-in-out infinite;
   }
@@ -85,13 +85,13 @@
     100% {
       transform: translate(-50%, -50%) scale(0.97);
       opacity: 0.85;
-      filter: blur(60px);
+      filter: blur(26px);
     }
 
     50% {
       transform: translate(-50%, -50%) scale(1.05);
       opacity: 1;
-      filter: blur(75px);
+      filter: blur(34px);
     }
   }
 
