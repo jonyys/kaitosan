@@ -43,3 +43,23 @@ def test_es_solo_gracias(texto):
 ])
 def test_no_es_solo_gracias(texto):
     assert not es_solo_gracias(texto)
+
+
+def test_gracias_elige_gestos_buenos_que_existen_y_no_repite():
+    from pathlib import Path
+    import re
+    from core.emociones import GESTOS_GRACIAS, gesto_para_gracias
+
+    motor = Path("templates/partials/face/_scripts.html").read_text(encoding="utf-8")
+    kawaii = motor[motor.index("const KAWAII = {"):motor.index("function sortearKawaii")]
+    for g in GESTOS_GRACIAS:
+        assert re.search(rf"^\s+{g}: \{{", kawaii, re.M), g
+    assert not {"dormido", "apuro", "sorpresa"} & set(GESTOS_GRACIAS)
+
+    vistos, anterior = set(), None
+    for _ in range(300):
+        g = gesto_para_gracias()
+        assert g != anterior
+        vistos.add(g)
+        anterior = g
+    assert vistos == set(GESTOS_GRACIAS)

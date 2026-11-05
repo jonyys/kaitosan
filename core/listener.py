@@ -6,7 +6,7 @@ from audio.wakeword import WakeWordDetector
 from ai.speech_to_text import transcribir_para_turno
 from ai.sensei.kana import frases_para_card
 from core.config import TRIGGERS_DESPEDIDA
-from core.emociones import es_solo_gracias
+from core.emociones import es_solo_gracias, gesto_para_gracias
 
 TIMEOUT_CONVERSACION_SEG = 3
 
@@ -87,9 +87,10 @@ class VoiceListener:
         # Un "gracias" suelto se contesta solo con la cara, sin voz ni LLM.
         # En sensei no: ahí "arigatou" puede ser la frase que está practicando.
         if not self.brain.profesor.esta_activo() and es_solo_gracias(texto):
-            print(f"🥰 Agradecimiento ({texto!r}) — solo cara")
+            gesto = gesto_para_gracias()
+            print(f"🥰 Agradecimiento ({texto!r}) — solo cara: {gesto}")
             self.state.cambiar("idle")
-            self.socketio.emit("gesto", {"gesto": "corazones"})
+            self.socketio.emit("gesto", {"gesto": gesto})
             return False
 
         self.state.cambiar("thinking")

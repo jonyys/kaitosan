@@ -7,6 +7,7 @@
   neutra. Nunca puede romper lo que se dice.
 - `es_solo_gracias`: un "gracias" suelto no se contesta con voz, solo con cara.
 """
+import random
 import re
 import unicodedata
 
@@ -93,6 +94,20 @@ def extraer_emocion(texto: str):
 
 
 # ── "Gracias" suelto ──────────────────────────────────────────────────────────
+# Gestos de la cara (KAWAII en _scripts.html) que dicen "de nada" sin hablar:
+# solo los que transmiten algo bueno.
+GESTOS_GRACIAS = ("feliz", "corazones", "saltito", "estrellitas", "rubor", "guino")
+_ultimo_gesto_gracias = None
+
+
+def gesto_para_gracias() -> str:
+    """Uno al azar de GESTOS_GRACIAS, sin repetir el de la última vez."""
+    global _ultimo_gesto_gracias
+    opciones = [g for g in GESTOS_GRACIAS if g != _ultimo_gesto_gracias]
+    _ultimo_gesto_gracias = random.choice(opciones)
+    return _ultimo_gesto_gracias
+
+
 _PALABRAS_GRACIAS = {"gracias", "arigato", "arigatou", "arigatoo", "thanks", "thank"}
 # Lo que puede acompañar a un gracias sin que haga falta contestar
 _RELLENO_GRACIAS = {
