@@ -32,3 +32,9 @@ def test_las_formas_de_los_gestos_se_pueden_mezclar_con_la_boca():
 
 def test_cada_ojo_tiene_pupila_de_corazon():
     assert CARA.count('class="pupila-corazon"') == 4
+
+
+def test_cada_ojo_tiene_sus_brillitos():
+    # Dos por ojo (uno grande y uno chiquito), dentro del iris para que sigan la mirada
+    assert CARA.count('class="brillo-ojo"') == 4
+    assert CARA.count('class="brillo-ojo brillo-ojo-2"') == 4

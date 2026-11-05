@@ -391,6 +391,26 @@
   .gesto-guino .slot-der .ov-brillo-1 { animation: kwBrillo 0.8s ease-in-out 0.3s 2 both; }
   .gesto-estrellitas .ov-brillo-1 { animation: kwBrillo 1.2s ease-in-out 0.15s 2 both; }
   .gesto-estrellitas .ov-brillo-2 { animation: kwBrillo 1.2s ease-in-out 0.65s 2 both; }
+  /* Brillitos dentro de la pupila (feliz y estrellitas): se mueven con la
+     mirada y los tapan los párpados, como los reflejos de los ojos de anime */
+  .brillo-ojo {
+    fill: #ffffff;
+    opacity: 0;
+    transform-box: fill-box;
+    transform-origin: center;
+    scale: 0.3;
+    transition: opacity 0.3s ease;
+  }
+  .emocion-feliz .brillo-ojo,
+  .gesto-feliz .brillo-ojo,
+  .gesto-estrellitas .brillo-ojo { animation: kwTitila 1.4s ease-in-out infinite; }
+  .emocion-feliz .brillo-ojo-2,
+  .gesto-feliz .brillo-ojo-2,
+  .gesto-estrellitas .brillo-ojo-2 { animation-delay: 0.7s; }
+  @keyframes kwTitila {
+    0%, 100% { opacity: 0.6; scale: 0.55; rotate: 0deg; }
+    50% { opacity: 1; scale: 1; rotate: 45deg; }
+  }
 
   .gesto-corazones .fx-corazon { animation: kwFlota 1.9s ease-out both; }
   .gesto-corazones .fx-c1 { animation-delay: 0.25s; }
