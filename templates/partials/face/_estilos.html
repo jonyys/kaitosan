@@ -1,4 +1,19 @@
 <style>
+  /* Paleta de la cara (ámbar, a juego con la carcasa #aa8d5f).
+     Ajustar aquí viéndolo en la pantalla del robot: no da el mismo color que el plástico. */
+  :root {
+    --cara-fondo: #15100a;
+    --cara-esclera: #fff3da;
+    --cara-iris-claro: #f6c063;
+    --cara-iris-oscuro: #8a5a1e;
+    --cara-pupila: #1a1006;
+    --cara-ceja-claro: #b98536;
+    --cara-ceja-oscuro: #7a5220;
+    --cara-boca-claro: #e0a44d;
+    --cara-boca-oscuro: #8a5a1e;
+    --cara-parpado: #4a3012;
+    --cara-brillo: 224, 162, 74; /* canales RGB: se usa con rgba(var(--cara-brillo), alfa) */
+  }
   .transition,
   .transition .eye,
   .transition .eyebrow,
@@ -16,7 +31,7 @@
   }
   body {
     margin: 0;
-    background: #000;
+    background: var(--cara-fondo);
     width: 100vw;
     height: 100vh;
     overflow: hidden;
@@ -35,7 +50,7 @@
     animation: breathing 5s ease-in-out infinite;
   }
 
-  /* Halo azul detrás de la cara */
+  /* Halo cálido detrás de la cara */
   .face::before {
     content: "";
     position: absolute;
@@ -51,12 +66,12 @@
 
     background: radial-gradient(
       circle,
-      rgba(120, 230, 255, 0.3) 0%,
-      rgba(80, 190, 255, 0.22) 20%,
-      rgba(50, 150, 255, 0.14) 40%,
-      rgba(40, 120, 255, 0.08) 60%,
-      rgba(80, 180, 255, 0.04) 75%,
-      rgba(120, 220, 255, 0.02) 88%,
+      rgba(var(--cara-brillo), 0.3) 0%,
+      rgba(var(--cara-brillo), 0.22) 20%,
+      rgba(var(--cara-brillo), 0.14) 40%,
+      rgba(var(--cara-brillo), 0.08) 60%,
+      rgba(var(--cara-brillo), 0.04) 75%,
+      rgba(var(--cara-brillo), 0.02) 88%,
       transparent 100%
     );
 
@@ -445,14 +460,14 @@
 
   .listening .eye-left {
     animation: listenEyeLeft 6s ease-in-out infinite;
-    filter: drop-shadow(0 0 10px rgba(115, 224, 202, 0.7));
+    filter: drop-shadow(0 0 10px rgba(var(--cara-brillo), 0.7));
     transition:
       transform 0.8s ease,
       filter 0.8s ease;
   }
   .listening .eye-right {
     animation: listenEyeRight 6s ease-in-out infinite;
-    filter: drop-shadow(0 0 10px rgba(115, 224, 202, 0.7));
+    filter: drop-shadow(0 0 10px rgba(var(--cara-brillo), 0.7));
     transition:
       transform 0.8s ease,
       filter 0.8s ease;
@@ -601,8 +616,8 @@
     width: 24px;
     height: 24px;
     border-radius: 50%;
-    background: radial-gradient(circle at 35% 30%, #b6f2e6, #2f7f8f 70%);
-    box-shadow: 0 0 18px rgba(120, 230, 255, 0.55);
+    background: radial-gradient(circle at 35% 30%, var(--cara-esclera), var(--cara-iris-oscuro) 70%);
+    box-shadow: 0 0 18px rgba(var(--cara-brillo), 0.55);
     opacity: 0.2;
   }
   .thinking .thinking-dots {
@@ -850,11 +865,11 @@
    ===================== */
   .listening .eye-sensei-left {
     animation: listenEyeLeft 6s ease-in-out infinite;
-    filter: drop-shadow(0 0 10px rgba(115, 224, 202, 0.7));
+    filter: drop-shadow(0 0 10px rgba(var(--cara-brillo), 0.7));
   }
   .listening .eye-sensei-right {
     animation: listenEyeRight 6s ease-in-out infinite;
-    filter: drop-shadow(0 0 10px rgba(115, 224, 202, 0.7));
+    filter: drop-shadow(0 0 10px rgba(var(--cara-brillo), 0.7));
   }
 
   .listening .eyebrow-sensei-left {
