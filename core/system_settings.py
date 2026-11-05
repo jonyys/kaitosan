@@ -1657,7 +1657,7 @@ def logs(n: int = 200) -> str:
         ejemplo = [
             "(modo simulado — líneas de ejemplo, no son logs reales)",
             "INFO  app escuchando en http://0.0.0.0:5000",
-            "INFO  cámara inicializada (640x480 @15fps)",
+            "INFO  cara conectada por socket.io",
             "INFO  listener de voz activo — wakeword 'kaito'",
             "INFO  turno de charla completado (groq: 412 tokens)",
             "WARN  rate limit de Groq; probando modelo alternativo",

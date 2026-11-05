@@ -12,23 +12,17 @@
     --cara-boca-claro: #e0a44d;
     --cara-boca-oscuro: #8a5a1e;
     --cara-parpado: #4a3012;
+    --cara-parpado-luz: #a87c3e;
+    --cara-parpado-piel: #6e4d25;
+    --cara-parpado-sombra: #33220f;
+    --cara-parpado-borde: #120b04;
     --cara-brillo: 224, 162, 74; /* canales RGB: se usa con rgba(var(--cara-brillo), alfa) */
     /* Halo: pantalla redonda de 480x480, tiene que quedar dentro y apenas notarse */
     --cara-halo-color: 150, 98, 36;
-    --cara-halo-tamano: 360px;
+    --cara-halo-tamano: 420px;
     /* En el robot Chromium no baja de 500 px de ventana y la pantalla mide 480:
        sin esto la cara queda 10 px a la derecha. Sirve también para ajustar el centrado. */
     --cara-ancho: {{ '480px' if es_kiosko else '100vw' }};
-  }
-  .transition,
-  .transition .eye,
-  .transition .eyebrow,
-  .transition .mouth,
-  .transition .face {
-    transition:
-      transform 0.45s cubic-bezier(0.22, 0.61, 0.36, 1),
-      filter 0.45s ease,
-      opacity 0.45s ease;
   }
   * {
     margin: 0;
@@ -46,56 +40,37 @@
     align-items: center;
     touch-action: manipulation;   /* sin zoom por doble toque: el doble toque navega */
   }
-  /* CARA (contenedor vertical) */
+
+  /* Todo el movimiento de la cara lo pone el motor de _scripts.html.
+     Aquí solo hay disposición, y lo que no depende del estado (halo y puntos). */
   .face {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 0;
-    transition: 0.35s;
-    animation: breathing 5s ease-in-out infinite;
+    will-change: transform;
   }
 
-  /* Halo cálido detrás de la cara */
+  /* Halo cálido detrás de la cara. Quieto y sin filter: blur: en la Pi animarlo
+     consume más que todo el motor de la cara. Ya se mueve con ella. */
   .face::before {
     content: "";
     position: absolute;
-    left: 50%; /* relativo a .face: su animación de transform la hace contenedor */
+    left: 50%; /* relativo a .face: su transform la hace contenedor */
     top: 48%;
     transform: translate(-50%, -50%);
     z-index: -1;
     pointer-events: none;
-
     width: var(--cara-halo-tamano);
     height: var(--cara-halo-tamano);
     border-radius: 50%;
-
     background: radial-gradient(
-      circle,
-      rgba(var(--cara-halo-color), 0.4) 0%,
-      rgba(var(--cara-halo-color), 0.24) 40%,
-      rgba(var(--cara-halo-color), 0.1) 70%,
+      circle closest-side,
+      rgba(var(--cara-halo-color), 0.34) 0%,
+      rgba(var(--cara-halo-color), 0.2) 45%,
+      rgba(var(--cara-halo-color), 0.07) 75%,
       transparent 100%
     );
-
-    filter: blur(30px);
-
-    animation: faceGlow 5.5s ease-in-out infinite;
-  }
-
-  @keyframes faceGlow {
-    0%,
-    100% {
-      transform: translate(-50%, -50%) scale(0.97);
-      opacity: 0.85;
-      filter: blur(26px);
-    }
-
-    50% {
-      transform: translate(-50%, -50%) scale(1.05);
-      opacity: 1;
-      filter: blur(34px);
-    }
   }
 
   /* CEJAS */
@@ -103,28 +78,28 @@
     position: relative;
     display: flex;
     justify-content: center;
-    gap: 170px; /* un poco más juntas */
-    margin-bottom: 15px; /* más arriba */
+    gap: 170px;
+    margin-bottom: 15px;
     z-index: 2;
   }
   .eyebrow {
-    width: 90px; /* un poco más pequeñas */
+    width: 90px;
     height: auto;
-    transition: 0.35s;
     transform-origin: center center;
+    will-change: transform;
   }
 
   /* OJOS */
   .eyes {
     display: flex;
     justify-content: center;
-    gap: 70px; /* ojos más juntos para acompañar la rotación hacia dentro */
+    gap: 70px;
   }
   .eye {
     width: 150px;
     height: auto;
-    transition: 0.35s;
     transform-origin: center center;
+    will-change: transform;
   }
   /* Rotación base: mirando hacia la nariz */
   .eye-left {
@@ -132,6 +107,22 @@
   }
   .eye-right {
     rotate: -12deg;
+  }
+  .pupila {
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  .parpado-borde {
+    fill: var(--cara-parpado-borde);
+  }
+  .parpado-borde-inf {
+    fill: var(--cara-parpado-sombra);
+  }
+  .parpado-pliegue {
+    fill: none;
+    stroke: var(--cara-parpado-sombra);
+    stroke-width: 2.5px;
+    stroke-linecap: round;
   }
 
   /* BOCA */
@@ -143,463 +134,8 @@
     overflow: visible;
     width: 90px;
     height: auto;
-    transition: 0.35s;
     transform-origin: center center;
-  }
-
-  @keyframes breathing {
-    0%,
-    100% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(-2px);
-    }
-  }
-
-  .eye,
-  .eyebrow,
-  .mouth,
-  .face {
-    transition:
-      transform 0.45s cubic-bezier(0.22, 0.61, 0.36, 1),
-      filter 0.45s ease,
-      opacity 0.45s ease;
     will-change: transform;
-  }
-
-  /* IDLE */
-  .idle .eye-left {
-    animation: idleLeft 7s infinite ease-in-out;
-  }
-  .idle .eye-right {
-    animation: idleRight 7s infinite ease-in-out;
-  }
-  @keyframes idleLeft {
-    0%,
-    100% {
-      transform: translate(0, 0);
-    }
-    20% {
-      transform: translate(-1px, -1px);
-    }
-    40% {
-      transform: translate(1px, 0px);
-    }
-    60% {
-      transform: translate(0px, 1px);
-    }
-    80% {
-      transform: translate(-1px, 0px);
-    }
-  }
-
-  @keyframes idleRight {
-    0%,
-    100% {
-      transform: translate(0, 0);
-    }
-    20% {
-      transform: translate(-1px, -1px);
-    }
-    40% {
-      transform: translate(1px, 0px);
-    }
-    60% {
-      transform: translate(0px, 1px);
-    }
-    80% {
-      transform: translate(-1px, 0px);
-    }
-  }
-
-  .eye.blink {
-    animation: blink 0.14s ease;
-  }
-
-  @keyframes blink {
-    0% {
-      transform: scaleY(1);
-    }
-    45% {
-      transform: scaleY(0.03);
-    }
-    100% {
-      transform: scaleY(1);
-    }
-  }
-
-  /* Keyframes de movimiento */
-  @keyframes lookRight {
-    0%,
-    12% {
-      transform: translateX(0);
-    }
-    22%,
-    55% {
-      transform: translateX(14px);
-    }
-    65%,
-    100% {
-      transform: translateX(0);
-    }
-  }
-  @keyframes lookLeft {
-    0%,
-    12% {
-      transform: translateX(0);
-    }
-    22%,
-    55% {
-      transform: translateX(-14px);
-    }
-    65%,
-    100% {
-      transform: translateX(0);
-    }
-  }
-  @keyframes lookUp {
-    0%,
-    12% {
-      transform: translateY(0);
-    }
-    22%,
-    55% {
-      transform: translateY(-10px);
-    }
-    65%,
-    100% {
-      transform: translateY(0);
-    }
-  }
-  @keyframes browFrownLeft {
-    0%,
-    12% {
-      transform: rotate(0deg);
-    }
-    22%,
-    55% {
-      transform: rotate(-9deg);
-    }
-    65%,
-    100% {
-      transform: rotate(0deg);
-    }
-  }
-  @keyframes browFrownRight {
-    0%,
-    12% {
-      transform: rotate(0deg);
-    }
-    22%,
-    55% {
-      transform: rotate(9deg);
-    }
-    65%,
-    100% {
-      transform: rotate(0deg);
-    }
-  }
-  @keyframes browShiftRight {
-    0%,
-    12% {
-      transform: translateX(0);
-    }
-    22%,
-    55% {
-      transform: translateX(10px);
-    }
-    65%,
-    100% {
-      transform: translateX(0);
-    }
-  }
-  @keyframes browShiftLeft {
-    0%,
-    12% {
-      transform: translateX(0);
-    }
-    22%,
-    55% {
-      transform: translateX(-10px);
-    }
-    65%,
-    100% {
-      transform: translateX(0);
-    }
-  }
-  @keyframes mouthSearch {
-    0%,
-    12% {
-      transform: translateX(0) translateY(0);
-    }
-    22%,
-    55% {
-      transform: translateX(var(--mouth-x, 0px)) translateY(var(--mouth-y, 0px));
-    }
-    65%,
-    100% {
-      transform: translateX(0) translateY(0);
-    }
-  }
-  /* Búsqueda de ojos */
-  @keyframes eyeLookRight {
-    0%,
-    12% {
-      transform: translateX(0);
-    }
-    22%,
-    55% {
-      transform: translateX(14px);
-    }
-    65%,
-    100% {
-      transform: translateX(0);
-    }
-  }
-  @keyframes eyeLookRightMirror {
-    0%,
-    12% {
-      transform: translateX(0);
-    }
-    22%,
-    55% {
-      transform: translateX(14px);
-    }
-    65%,
-    100% {
-      transform: translateX(0);
-    }
-  }
-  @keyframes eyeLookLeft {
-    0%,
-    12% {
-      transform: translateX(0);
-    }
-    22%,
-    55% {
-      transform: translateX(-14px);
-    }
-    65%,
-    100% {
-      transform: translateX(0);
-    }
-  }
-  @keyframes eyeLookLeftMirror {
-    0%,
-    12% {
-      transform: translateX(0);
-    }
-    22%,
-    55% {
-      transform: translateX(-14px);
-    }
-    65%,
-    100% {
-      transform: translateX(0);
-    }
-  }
-  @keyframes eyeLookUp {
-    0%,
-    12% {
-      transform: translateY(0);
-    }
-    22%,
-    55% {
-      transform: translateY(-10px);
-    }
-    65%,
-    100% {
-      transform: translateY(0);
-    }
-  }
-  @keyframes eyeLookUpMirror {
-    0%,
-    12% {
-      transform: translateY(0);
-    }
-    22%,
-    55% {
-      transform: translateY(-10px);
-    }
-    65%,
-    100% {
-      transform: translateY(0);
-    }
-  }
-
-  /* Parpadeo */
-  @keyframes idleBlink {
-    0%,
-    88%,
-    100% {
-      transform: scaleY(1);
-    }
-    91% {
-      transform: scaleY(0.04);
-    }
-  }
-
-  /* LISTENING */
-
-  /* Transición suave en todos los elementos de la cara */
-  .eye,
-  .eyebrow,
-  .mouth-single {
-    transition:
-      transform 0.6s ease,
-      filter 0.6s ease;
-  }
-
-  @keyframes breathingListen {
-    0%,
-    100% {
-      transform: translateY(0) rotate(-2deg);
-    }
-    50% {
-      transform: translateY(-2px) rotate(-2deg);
-    }
-  }
-
-  .listening .eye-left {
-    animation: listenEyeLeft 6s ease-in-out infinite;
-    filter: drop-shadow(0 0 10px rgba(var(--cara-brillo), 0.7));
-    transition:
-      transform 0.8s ease,
-      filter 0.8s ease;
-  }
-  .listening .eye-right {
-    animation: listenEyeRight 6s ease-in-out infinite;
-    filter: drop-shadow(0 0 10px rgba(var(--cara-brillo), 0.7));
-    transition:
-      transform 0.8s ease,
-      filter 0.8s ease;
-  }
-
-  @keyframes listenEyeLeft {
-    0%,
-    100% {
-      transform: scaleY(1.22) translate(0, 0);
-    }
-    30% {
-      transform: scaleY(1.22) translate(2px, -2px);
-    }
-    60% {
-      transform: scaleY(1.22) translate(-1px, 0px);
-    }
-  }
-  @keyframes listenEyeRight {
-    0%,
-    100% {
-      transform: scaleY(1.22) translate(0, 0);
-    }
-    30% {
-      transform: scaleY(1.22) translate(2px, -2px);
-    }
-    60% {
-      transform: scaleY(1.22) translate(-1px, 0px);
-    }
-  }
-
-  .listening .eyebrow-left {
-    animation: listenBrowLeft 6s ease-in-out infinite;
-    transition: transform 0.8s ease;
-  }
-  .listening .eyebrow-right {
-    animation: listenBrowRight 6s ease-in-out infinite;
-    transition: transform 0.8s ease;
-  }
-
-  @keyframes listenBrowLeft {
-    0%,
-    100% {
-      transform: translateY(0) rotate(0deg);
-    }
-    40% {
-      transform: translateY(-15px) rotate(-4deg);
-    }
-    70% {
-      transform: translateY(-12x) rotate(-3deg);
-    }
-  }
-  @keyframes listenBrowRight {
-    0%,
-    100% {
-      transform: translateY(0) rotate(0deg);
-    }
-    40% {
-      transform: translateY(-11px) rotate(0deg);
-    }
-    70% {
-      transform: translateY(-8px) rotate(0deg);
-    }
-  }
-  @keyframes listenMouth {
-    0%,
-    100% {
-      d: path(
-        "M 265.112 239.115 C 265.112 243.048 255.383 247.237 243.382 247.237 C 231.381 247.237 221.652 243.048 221.652 239.115 C 221.652 236.182 230.758 240.737 242.759 240.737 C 254.76 240.737 265.112 236.182 265.112 239.115 Z"
-      );
-    }
-    40% {
-      d: path(
-        "M 265.112 239.115 C 265.112 247.0 255.383 254.5 243.382 254.5 C 231.381 254.5 221.652 247.0 221.652 239.115 C 221.652 231.23 231.381 235.5 243.382 235.5 C 255.383 235.5 265.112 231.23 265.112 239.115 Z"
-      );
-    }
-  }
-
-  /* Sin listening-active, los elementos están en reposo — la transition CSS
-    interpola suavemente desde idle hasta aquí */
-  .listening:not(.listening-active) .eye-left {
-    transform: scaleY(1);
-  }
-  .listening:not(.listening-active) .eye-right {
-    transform: scaleY(1);
-  }
-  .listening:not(.listening-active) .eyebrow-left {
-    transform: translateY(0);
-  }
-  .listening:not(.listening-active) .eyebrow-right {
-    transform: translateY(0);
-  }
-
-  /* Con listening-active, arranca la animación desde una posición ya cercana */
-  .listening.listening-active .eye-left {
-    animation: listenEyeLeft 6s ease-in-out infinite;
-  }
-  .listening.listening-active .eye-right {
-    animation: listenEyeRight 6s ease-in-out infinite;
-  }
-  .listening.listening-active .eyebrow-left {
-    animation: listenBrowLeft 6s ease-in-out infinite;
-  }
-  .listening.listening-active .eyebrow-right {
-    animation: listenBrowRight 6s ease-in-out infinite;
-  }
-  .listening.listening-active .mouth-single {
-    animation: listenMouth 6s ease-in-out infinite;
-  }
-
-  /* THINKING — cara quieta: solo respiración sutil, parpadeo y los 3 puntos */
-  .thinking {
-    animation: breathing 5s ease-in-out infinite;
-  }
-  .thinking .eye-left,
-  .thinking .eye-right,
-  .thinking .eye-sensei-left,
-  .thinking .eye-sensei-right {
-    animation: idleBlink 5s ease-in-out infinite;
-  }
-  .thinking .eyebrow-left,
-  .thinking .eyebrow-right,
-  .thinking .eyebrow-sensei-left,
-  .thinking .eyebrow-sensei-right,
-  .thinking .mouth,
-  .thinking .mouth-single,
-  .thinking .mouth-sensei,
-  .thinking .mouth-sensei path,
-  .thinking path.mouth-sensei {
-    animation: none;
   }
 
   /* Puntos suspensivos encima de la cabeza mientras piensa */
@@ -649,317 +185,305 @@
     }
   }
 
-  /* SPEAKING */
-  .eye.blink {
-    animation: blink 0.14s ease;
-  }
-
-  @keyframes blink {
-    0% {
-      transform: scaleY(1);
-    }
-    45% {
-      transform: scaleY(0.03);
-    }
-    100% {
-      transform: scaleY(1);
-    }
-  }
-
-  .mouth-single {
-    /* sin animación por defecto */
-  }
-  .mouth-active {
-    animation: mouthSpeak 0.12s ease-in-out infinite alternate;
-    animation-delay: 0.05s; /* Pequeño retraso para coincidir con el ataque del audio */
-  }
-
-  @keyframes mouthSpeak {
-    0% {
-      d: path(
-        "M 265.112 239.115 C 265.112 243.048 255.383 247.237 243.382 247.237 C 231.381 247.237 221.652 243.048 221.652 239.115 C 221.652 236.182 230.758 240.737 242.759 240.737 C 254.76 240.737 265.112 236.182 265.112 239.115 Z"
-      );
-    }
-    100% {
-      d: path(
-        "M 265.112 239.115 C 265.112 248.5 255.383 255.0 243.382 255.0 C 231.381 255.0 221.652 248.5 221.652 239.115 C 221.652 229.73 231.381 233.23 243.382 233.23 C 255.383 233.23 265.112 229.73 265.112 239.115 Z"
-      );
-    }
-  }
-
-  /* HAPPY */
-  .happy .eye {
-    animation: happyAnim 0.45s infinite ease-in-out;
-    fill: #ffb347;
-  }
-  @keyframes happyAnim {
-    0%,
-    100% {
-      transform: scaleY(0.28) translateY(-6%);
-    }
-    50% {
-      transform: scaleY(0.18) translateY(-12%);
-    }
-  }
-
-  /* ERROR */
-  .error .eye {
-    fill: #ff3a3a;
-    animation: errorAnim 0.18s infinite;
-  }
-  @keyframes errorAnim {
-    0% {
-      transform: translateX(-1%);
-    }
-    50% {
-      transform: translateX(1%);
-    }
-    100% {
-      transform: translateX(-1%);
-    }
-  }
-
-  /* SENSEI */
-  /* Ocultar ojos sensei por defecto */
+  /* SENSEI: cambia las piezas; el motor las anima igual */
   .eye-sensei {
     display: none;
     width: 175px;
     height: auto;
   }
-
-  /* Al entrar en sensei: ocultar ojos normales, mostrar ojos sensei */
   .sensei .eye-left,
   .sensei .eye-right {
-    display: none !important;
-    animation: none !important;
+    display: none;
   }
-
   .sensei .eye-sensei {
     display: block;
   }
-
-  /* Transición de entrada suave */
-  .eye-sensei {
-    opacity: 0;
-    transition:
-      opacity 0.45s ease,
-      transform 0.45s cubic-bezier(0.22, 0.61, 0.36, 1);
-  }
-  .sensei .eye-sensei {
-    opacity: 1;
-  }
-
-  /* Ocultar cejas sensei por defecto */
   .eyebrow-sensei {
     display: none;
-    opacity: 0;
-    width: 120px;
-    height: auto;
-    transition:
-      opacity 0.45s ease,
-      transform 0.45s cubic-bezier(0.22, 0.61, 0.36, 1);
-  }
-
-  /* Al entrar en sensei: ocultar cejas normales, mostrar cejas sensei */
-  .sensei .eyebrow-left,
-  .sensei .eyebrow-right {
-    display: none !important;
-    animation: none !important;
-  }
-
-  .sensei .eyebrow-sensei {
-    display: block;
-    opacity: 1;
-    width: 170px;
-  }
-
-  .sensei .eyebrows {
-    gap: 40px;
-  }
-
-  /* =====================
-    CEJAS
-    ===================== */
-
-  .eyebrow-sensei {
-    display: none;
-    opacity: 0;
     width: 200px;
     height: auto;
-    transition:
-      opacity 0.45s ease,
-      transform 0.45s cubic-bezier(0.22, 0.61, 0.36, 1);
   }
-
   .sensei .eyebrow-left,
   .sensei .eyebrow-right {
-    display: none !important;
-    animation: none !important;
+    display: none;
   }
-
   .sensei .eyebrow-sensei {
     display: block;
-    opacity: 1;
     width: 180px;
-    transform: translateY(10px);
+    translate: 0 10px;
     margin-bottom: 20px;
   }
-
   .sensei .eyebrows {
     gap: 70px;
   }
-
-  /* =====================
-   BOCA
-   ===================== */
-
   .mouth-sensei {
     display: none;
-    opacity: 0;
-    transition:
-      opacity 0.45s ease,
-      transform 0.45s cubic-bezier(0.22, 0.61, 0.36, 1);
   }
-
   .sensei .mouth:not(.mouth-sensei) {
-    display: none !important;
-    animation: none !important;
+    display: none;
   }
-
   .sensei .mouth-sensei {
     display: block;
-    opacity: 1;
     margin-top: 45px;
   }
 
-  /* =====================
-   EXTENDER TRANSICIONES GLOBALES A ELEMENTOS SENSEI
-   ===================== */
-  .transition .eye-sensei,
-  .transition .eyebrow-sensei,
-  .transition .mouth-sensei {
-    transition:
-      transform 0.45s cubic-bezier(0.22, 0.61, 0.36, 1),
-      filter 0.45s ease,
-      opacity 0.45s ease;
+  /* =====================================================================
+     GESTOS KAWAII — solo las capas de adorno.
+     El movimiento (cabeza, párpados, cejas, boca) lo hace el motor de
+     _scripts.html con sus muelles; aquí no se anima nada de lo que mueve él.
+     El motor pone .gesto-<nombre> en #face y la duración en --gesto-dur.
+     ===================================================================== */
+  :root {
+    --cara-rubor: 255, 128, 128;          /* canales RGB de las mejillas */
+    --cara-corazon: #ff6f8e;
+  }
+  .face {
+    position: relative; /* ancla de .cara-fx */
+    --gesto-dur: 3s;
+  }
+  .eyes {
+    position: relative;
   }
 
-  /* =====================
-   IDLE
-   ===================== */
-  .idle .eye-sensei-left {
-    animation: idleLeft 7s infinite ease-in-out;
+  /* Pupila de corazón: vive dentro del iris, se mueve con la mirada y la tapan los párpados */
+  .pupila-corazon {
+    fill: var(--cara-corazon);
+    opacity: 0;
+    transform-box: fill-box;
+    transform-origin: center;
+    scale: 0.3;
+    transition: opacity 0.25s ease, scale 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
-  .idle .eye-sensei-right {
-    animation: idleRight 7s infinite ease-in-out;
-  }
-
-  /* En idle las cejas no tienen animación (solo transform base) -> sin cambios */
-
-  /* =====================
-   BLINK (para ambos ojos sensei)
-   ===================== */
-  .eye-sensei.blink {
-    animation: blink 0.14s ease;
+  .gesto-corazones .pupila-corazon {
+    opacity: 1;
+    scale: 1;
+    animation: kwLatido 0.6s ease-in-out 0.35s infinite;
   }
 
-  /* =====================
-   LISTENING
-   ===================== */
-  .listening .eye-sensei-left {
-    animation: listenEyeLeft 6s ease-in-out infinite;
-    filter: drop-shadow(0 0 10px rgba(var(--cara-brillo), 0.7));
+  /* ---- Capas sobre los ojos ---- */
+  .ojos-fx {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 3;
   }
-  .listening .eye-sensei-right {
-    animation: listenEyeRight 6s ease-in-out infinite;
-    filter: drop-shadow(0 0 10px rgba(var(--cara-brillo), 0.7));
+  .ojos-fx .slot {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    width: calc((100% - 70px) / 2); /* mismo gap que .eyes */
   }
-
-  .listening .eyebrow-sensei-left {
-    animation: listenBrowLeft 6s ease-in-out infinite;
+  .ojos-fx .slot-izq { left: 0; }
+  .ojos-fx .slot-der { right: 0; }
+  .ov {
+    position: absolute;
+    opacity: 0;
+    overflow: visible;
   }
-  .listening .eyebrow-sensei-right {
-    animation: listenBrowRight 6s ease-in-out infinite;
+  .ov-brillo {
+    fill: var(--cara-esclera);
+    filter: drop-shadow(0 0 6px rgba(var(--cara-brillo), 0.9));
   }
-
-  .listening.listening-active .mouth-sensei path,
-  .listening.listening-active .mouth-sensei.mouth-active path,
-  .listening.listening-active path.mouth-sensei {
-    animation: listenMouthSensei 6s ease-in-out infinite;
+  .ov-brillo-1 { width: 30%; top: 2%; right: -2%; }
+  .ov-brillo-2 { width: 17%; top: 64%; left: 2%; }
+  .slot-der .ov-brillo-1 { right: auto; left: -2%; }
+  .slot-der .ov-brillo-2 { left: auto; right: 2%; }
+  .ov-rubor {
+    width: 66px;
+    height: 30px;
+    bottom: -4%;
+    border-radius: 50%;
+    background: radial-gradient(
+      ellipse at center,
+      rgba(var(--cara-rubor), 0.8) 0%,
+      rgba(var(--cara-rubor), 0.38) 55%,
+      transparent 72%
+    );
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
-
-  /* Transiciones de entrada/salida en listening (sin active) */
-  .listening:not(.listening-active) .eye-sensei-left,
-  .listening:not(.listening-active) .eye-sensei-right {
-    transform: scaleY(1); /* respeta rotación base si la tuviera */
-  }
-  .listening:not(.listening-active) .eyebrow-sensei-left,
-  .listening:not(.listening-active) .eyebrow-sensei-right {
-    transform: translateY(0);
-  }
-
-  /* =====================
-   THINKING — sin movimiento; parpadeo y quietud se controlan en la sección THINKING de arriba
-   ===================== */
-
-  /* =====================
-   SPEAKING (boca)
-   ===================== */
-  .mouth-sensei.mouth-active path,
-  .mouth-sensei path.mouth-active,
-  .mouth-sensei.mouth-active {
-    animation: mouthSpeakSensei 0.1s ease-in-out infinite alternate;
-    animation-delay: 0.05s;
-  }
-
-  /* =====================
-   HAPPY
-   ===================== */
-  .happy .eye-sensei {
-    animation: happyAnim 0.45s infinite ease-in-out;
-    fill: #ffb347;
+  .slot-izq .ov-rubor { left: 0; }
+  .slot-der .ov-rubor { right: 0; }
+  .ov-rubor svg {
+    width: 58%;
+    fill: none;
+    stroke: rgba(var(--cara-rubor), 0.95);
+    stroke-width: 3.5;
+    stroke-linecap: round;
   }
 
-  /* =====================
-   ERROR
-   ===================== */
-  .error .eye-sensei {
-    fill: #ff3a3a;
-    animation: errorAnim 0.18s infinite;
+  /* ---- Partículas alrededor de la cara ---- */
+  .cara-fx {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: visible;
+    z-index: 4;
+  }
+  .fx {
+    position: absolute;
+    opacity: 0;
+    display: block;
+  }
+  .fx svg { display: block; width: 100%; overflow: visible; }
+  .fx-corazon { width: 30px; }
+  .fx-corazon path { fill: var(--cara-corazon); }
+  .fx-c1 { left: -2%;  top: 34%; }
+  .fx-c2 { right: -1%; top: 26%; width: 24px; }
+  .fx-c3 { left: 14%;  top: -6%; width: 22px; }
+  .fx-c4 { right: 15%; top: -2%; }
+  .fx-nota { width: 26px; fill: var(--cara-iris-claro); filter: drop-shadow(0 0 6px rgba(var(--cara-brillo), 0.6)); }
+  .fx-n1 { right: -2%; top: 24%; }
+  .fx-n2 { right: 12%; top: -8%; width: 34px; }
+  .fx-n3 { left: -3%;  top: 14%; }
+  .fx-zzz {
+    right: 6%;
+    top: 4%;
+    font: 800 24px/1 "Nunito", "Varela Round", "DejaVu Sans", sans-serif;
+    color: var(--cara-esclera);
+    text-shadow: 0 0 10px rgba(var(--cara-brillo), 0.7);
+  }
+  .fx-z2 { font-size: 32px; }
+  .fx-z3 { font-size: 42px; }
+  .fx-gota { width: 34px; left: 2%; top: 0; }
+  .fx-gota path { fill: #9fd8ff; }
+  .fx-gota ellipse { fill: #ffffff; opacity: 0.7; }
+
+  /* ---- Keyframes de las capas ---- */
+  @keyframes kwRubor {
+    0%, 100% { opacity: 0; transform: scale(0.6); }
+    18%, 80% { opacity: 1; transform: scale(1); }
+  }
+  @keyframes kwLatido {
+    0%, 100% { scale: 1; }
+    30% { scale: 1.18; }
+    55% { scale: 0.95; }
+  }
+  @keyframes kwBrillo {
+    0%, 100% { opacity: 0; transform: scale(0) rotate(0deg); }
+    45% { opacity: 1; transform: scale(1) rotate(45deg); }
+  }
+  @keyframes kwFlota {
+    0% { opacity: 0; transform: translate(0, 14px) scale(0.3) rotate(0deg); }
+    18% { opacity: 1; transform: translate(-4px, -6px) scale(1) rotate(-8deg); }
+    55% { opacity: 1; transform: translate(6px, -38px) scale(1) rotate(8deg); }
+    100% { opacity: 0; transform: translate(-2px, -76px) scale(0.8) rotate(-6deg); }
+  }
+  @keyframes kwZzz {
+    0% { opacity: 0; transform: translate(0, 10px) scale(0.4) rotate(-10deg); }
+    25% { opacity: 1; }
+    100% { opacity: 0; transform: translate(34px, -64px) scale(1.1) rotate(12deg); }
+  }
+  @keyframes kwGota {
+    0%, 100% { opacity: 0; transform: translateY(-6px) scale(0.6); }
+    15% { opacity: 1; transform: translateY(0) scale(1); }
+    80% { opacity: 1; transform: translateY(26px) scale(1); }
   }
 
-  /* =====================
-   KEYFRAMES PARA BOCA SENSEI
-   (ajusta los paths con las coordenadas reales de tu boca sensei)
-   ===================== */
-  @keyframes mouthSpeakSensei {
-    0% {
-      /* Estado cerrado (reposo real) */
-      d: path(
-        "M 368.537 453.327 C 368.537 455.896 348.03 459.979 322.733 459.979 C 297.436 459.979 276.929 455.896 276.929 453.327 C 276.929 450.758 297.436 457.692 322.733 457.692 C 348.03 457.692 368.537 450.758 368.537 453.327 Z"
-      );
-    }
-    100% {
-      /* Estado más abierto y más exagerado */
-      d: path(
-        "M 368.537 453.327 C 368.537 464.0 348.03 468.0 322.733 468.0 C 297.436 468.0 276.929 464.0 276.929 453.327 C 276.929 442.654 297.436 438.0 322.733 438.0 C 348.03 438.0 368.537 442.654 368.537 453.327 Z"
-      );
-    }
+  /* ---- Qué capas enciende cada gesto ---- */
+  .gesto-feliz .ov-rubor,
+  .gesto-corazones .ov-rubor,
+  .gesto-rubor .ov-rubor,
+  .gesto-musica .ov-rubor { animation: kwRubor var(--gesto-dur) ease both; }
+  .gesto-rubor .ov-rubor { width: 86px; height: 38px; }
+
+  .gesto-guino .slot-der .ov-brillo-1 { animation: kwBrillo 0.8s ease-in-out 0.3s 2 both; }
+  .gesto-estrellitas .ov-brillo-1 { animation: kwBrillo 1.2s ease-in-out 0.15s 2 both; }
+  .gesto-estrellitas .ov-brillo-2 { animation: kwBrillo 1.2s ease-in-out 0.65s 2 both; }
+  /* Brillitos dentro de la pupila (feliz y estrellitas): se mueven con la
+     mirada y los tapan los párpados, como los reflejos de los ojos de anime */
+  .brillo-ojo {
+    fill: #ffffff;
+    opacity: 0;
+    transform-box: fill-box;
+    transform-origin: center;
+    scale: 0.3;
+    transition: opacity 0.3s ease;
+  }
+  .emocion-feliz .brillo-ojo,
+  .gesto-feliz .brillo-ojo,
+  .gesto-estrellitas .brillo-ojo { animation: kwTitila 1.4s ease-in-out infinite; }
+  .emocion-feliz .brillo-ojo-2,
+  .gesto-feliz .brillo-ojo-2,
+  .gesto-estrellitas .brillo-ojo-2 { animation-delay: 0.7s; }
+  @keyframes kwTitila {
+    0%, 100% { opacity: 0.6; scale: 0.55; rotate: 0deg; }
+    50% { opacity: 1; scale: 1; rotate: 45deg; }
   }
 
-  @keyframes listenMouthSensei {
-    0%,
-    100% {
-      /* Reposo real */
-      d: path(
-        "M 368.537 453.327 C 368.537 455.896 348.03 459.979 322.733 459.979 C 297.436 459.979 276.929 455.896 276.929 453.327 C 276.929 450.758 297.436 457.692 322.733 457.692 C 348.03 457.692 368.537 450.758 368.537 453.327 Z"
-      );
-    }
-    40% {
-      /* Intermedio (boca ligeramente abierta más pronunciada) */
-      d: path(
-        "M 368.537 453.327 C 368.537 460.5 348.03 465.0 322.733 465.0 C 297.436 465.0 276.929 460.5 276.929 453.327 C 276.929 446.154 297.436 441.0 322.733 441.0 C 348.03 441.0 368.537 446.154 368.537 453.327 Z"
-      );
-    }
+  .gesto-corazones .fx-corazon { animation: kwFlota 1.9s ease-out both; }
+  .gesto-corazones .fx-c1 { animation-delay: 0.25s; }
+  .gesto-corazones .fx-c2 { animation-delay: 0.65s; }
+  .gesto-corazones .fx-c3 { animation-delay: 1.05s; }
+  .gesto-corazones .fx-c4 { animation-delay: 1.35s; }
+
+  .gesto-musica .fx-nota { animation: kwFlota 2s ease-out both; }
+  .gesto-musica .fx-n1 { animation-delay: 0.35s; }
+  .gesto-musica .fx-n2 { animation-delay: 1.25s; }
+  .gesto-musica .fx-n3 { animation-delay: 2.15s; }
+
+  /* zZz en bucle mientras duerme antes del reloj; las suelta si se despierta */
+  .gesto-dormirse .fx-zzz { animation: kwZzz 2.4s ease-out infinite; }
+  /* Antes del reloj las zZz salen cuando ya ha cerrado los ojos del todo
+     (a los 13,5 s) y siguen en bucle los 15 s que duerme */
+  .gesto-dormirse .fx-z1 { animation-delay: 13.8s; }
+  .gesto-dormirse .fx-z2 { animation-delay: 14.6s; }
+  .gesto-dormirse .fx-z3 { animation-delay: 15.4s; }
+  .gesto-dormirse.despierta .fx-zzz { animation: none; }
+
+  .gesto-apuro .fx-gota { animation: kwGota var(--gesto-dur) ease-in both; }
+
+  /* Caricia y cosquillas */
+  /* Sin keyframes: duran lo que dure el toque, así que se encienden y apagan con transición */
+  .gesto-caricia .ov-rubor,
+  .gesto-cosquillas .ov-rubor { opacity: 1; }
+  .gesto-caricia .fx-c2 { animation: kwFlota 1.8s ease-out 0.4s both; }
+  .gesto-caricia .fx-c3 { animation: kwFlota 1.8s ease-out 1.1s both; }
+  .fx-ja {
+    font: 800 22px/1 "Nunito", "Varela Round", "DejaVu Sans", sans-serif;
+    color: var(--cara-iris-claro);
+    text-shadow: 0 0 8px rgba(var(--cara-brillo), 0.7);
+  }
+  .fx-j1 { left: -4%; top: 30%; }
+  .fx-j2 { right: -4%; top: 22%; font-size: 26px; }
+  .fx-j3 { right: 14%; top: -6%; }
+  .gesto-cosquillas .fx-ja { animation: kwFlota 1.3s ease-out infinite; }
+  .gesto-cosquillas .fx-j2 { animation-delay: 0.45s; }
+  .gesto-cosquillas .fx-j3 { animation-delay: 0.9s; }
+
+  /* Emoción al hablar: el cariño se nota en las mejillas */
+  .ov-rubor { transition: opacity 0.5s ease; }
+  .emocion-carino .ov-rubor { opacity: 0.85; }
+
+  /* Signos sobre la cabeza: "!" de sorpresa y "?" de pensar */
+  .fx-signo {
+    font: 900 46px/1 "Nunito", "Varela Round", "DejaVu Sans", sans-serif;
+    color: var(--cara-esclera);
+    text-shadow: 0 0 14px rgba(var(--cara-brillo), 0.8);
+  }
+  .fx-exclama { right: 4%; top: -16%; }
+  .fx-pregunta { right: 2%; top: -14%; }
+  .emocion-sorpresa .fx-exclama { animation: kwSignoPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+  .emocion-pensativo .fx-pregunta { animation: kwSignoPop 0.5s ease both, kwSignoFlota 2.4s ease-in-out 0.5s infinite; }
+  @keyframes kwSignoPop {
+    from { opacity: 0; transform: translateY(12px) scale(0.3) rotate(-15deg); }
+    to { opacity: 1; transform: translateY(0) scale(1) rotate(8deg); }
+  }
+  @keyframes kwSignoFlota {
+    0%, 100% { opacity: 1; transform: translateY(0) rotate(8deg); }
+    50% { opacity: 1; transform: translateY(-7px) rotate(-6deg); }
+  }
+
+  /* Lagrimita: asoma bajo el ojo izquierdo y cae por la mejilla, una y otra vez */
+  .fx-lagrima { width: 18px; left: 25%; top: 64%; }
+  .fx-lagrima path { fill: #9fd8ff; }
+  .fx-lagrima ellipse { fill: #ffffff; opacity: 0.75; }
+  .emocion-triste .fx-lagrima { animation: kwLagrima 2.6s ease-in 0.5s infinite; }
+  @keyframes kwLagrima {
+    0% { opacity: 0; transform: translateY(0) scale(0.3); }
+    20% { opacity: 1; transform: translateY(0) scale(1); }
+    40% { opacity: 1; transform: translateY(4px) scale(1); }
+    100% { opacity: 0; transform: translateY(70px) scale(0.85); }
   }
 </style>

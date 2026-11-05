@@ -11,6 +11,7 @@ from ai.skills.reminder import ReminderSkill
 from ai.tools import TOOLS, ToolDispatcher
 
 from core.config import TRIGGERS_SALIR_SENSEI
+from core.emociones import extraer_emocion
 from core.japanese_memory import JapaneseMemory
 from core.memory import DB_PATH, Memory
 from ai.sensei.profesor import ProfesorJapones, DESPEDIDAS
@@ -129,11 +130,20 @@ class Brain:
             # Segunda llamada sin herramientas: fuerza respuesta de texto con los resultados
             content = self.provider.completar(self.historial)
 
-        respuesta = self._limpiar_json_de_respuesta(content or "")
-        self.historial.append({"role": "assistant", "content": respuesta})
+        # La respuesta empieza con una etiqueta de emoción ([feliz]...) para la
+        # cara. Se quita antes de decirla; si el modelo no la pone, cara neutra.
+        emocion, respuesta = extraer_emocion(self._limpiar_json_de_respuesta(content or ""))
+        # En el historial va con la etiqueta (normalizada): así el modelo ve que
+        # sus respuestas anteriores la llevaban y no deja de ponerla.
+        self.historial.append({
+            "role": "assistant",
+            "content": f"[{emocion or 'neutral'}] {respuesta}",
+        })
         self.memory.guardar_mensaje(self.session_id, "user", mensaje)
         self.memory.guardar_mensaje(self.session_id, "assistant", respuesta)
-        print(f"🤖 Kaito: {respuesta}")
+        print(f"🤖 Kaito [{emocion or 'neutral'}]: {respuesta}")
+        # La cara la guarda y la pone cuando empieza a hablar
+        self.socketio.emit("emocion", {"emocion": emocion})
         return respuesta, False
 
     def _aplicar_tool_calls(self, tool_calls):

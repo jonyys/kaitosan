@@ -18,13 +18,12 @@ from flask import Flask, render_template, request, jsonify, Response, send_file,
 from werkzeug.utils import secure_filename
 from flask_socketio import SocketIO
 from dotenv import load_dotenv
-from core.camera import Camera
 from core.state import StateManager
 from core.brain import Brain
-from core.detection import PersonDetector
 from core.listener import VoiceListener
 from core.button import PowerButton
-from core.config import FLASK_SECRET_KEY, CAMARA_ACTIVA
+from core.config import FLASK_SECRET_KEY
+from core.emociones import es_solo_gracias, gesto_para_gracias
 from werkzeug.security import check_password_hash, generate_password_hash
 from core.settings_store import settings_get, settings_set
 from core import system_settings
@@ -52,10 +51,8 @@ app.secret_key = FLASK_SECRET_KEY
 app.permanent_session_lifetime = timedelta(minutes=30)
 
 # Inicializar módulos
-camera = Camera()
 state = StateManager(socketio)
 brain = Brain(state, socketio)
-detector = PersonDetector(camera, state, brain)
 recorder = Recorder()
 stt = SpeechToText()
 tts = TextToSpeech()
@@ -80,15 +77,6 @@ def emitir_japones_sensei(respuesta: str):
 @app.route("/")
 def index():
     return render_template("face.html")
-
-@app.route("/video")
-def video():
-    if not camera.disponible():
-        return ("cámara desactivada (CAMARA_ACTIVA=false)", 503)
-    return Response(
-        camera.generar_frames(),
-        mimetype='multipart/x-mixed-replace; boundary=frame'
-    )
 
 @app.route("/chat", methods=["POST"])
 def chat():
@@ -161,6 +149,12 @@ def grabar():
         if not texto:
             state.cambiar("idle")
             return jsonify({"error": "No se entendió nada"}), 400
+
+        # Un "gracias" suelto se contesta solo con la cara (igual que por voz)
+        if not brain.profesor.esta_activo() and es_solo_gracias(texto):
+            state.cambiar("idle")
+            socketio.emit("gesto", {"gesto": gesto_para_gracias()})
+            return jsonify({"transcripcion": texto, "respuesta": "", "estado": "ok"})
 
         # Pensando
         state.cambiar("thinking")
@@ -1918,11 +1912,6 @@ signal.signal(signal.SIGTERM, _on_sigterm)
 
 if __name__ == "__main__":
     print("🤖 Kaitosan arrancando...")
-    if CAMARA_ACTIVA:
-        camera.iniciar()
-        detector.iniciar()
-    else:
-        print("📷 Cámara desactivada (CAMARA_ACTIVA=false)")
     voice_listener.iniciar()
     PowerButton(on_short_press=voice_listener._on_wakeword)
     state.cambiar("idle")

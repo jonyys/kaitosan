@@ -205,8 +205,19 @@
         "button,a,input,select,textarea,label,dialog,summary," +
         "#kioskoDrawer,[data-no-tap],.kanji-card,.voc-card,.item-actions";
       var ultimoTap = 0;
+      var bajada = { t: 0, x: 0, y: 0 };
+      document.addEventListener("pointerdown", function (e) {
+        bajada = { t: Date.now(), x: e.clientX, y: e.clientY };
+      }, { passive: true });
       document.addEventListener("pointerup", function (e) {
         if (e.target.closest(SEL_INTERACTIVO)) { ultimoTap = 0; return; }
+        // Solo cuenta un toque corto y sin arrastrar: una caricia o mantener
+        // pulsado en la cara no deben sumar para el doble toque
+        if (Date.now() - bajada.t > 350 ||
+            Math.hypot(e.clientX - bajada.x, e.clientY - bajada.y) > 25) {
+          ultimoTap = 0;
+          return;
+        }
         var t = Date.now();
         if (t - ultimoTap < 320) {
           ultimoTap = 0;
@@ -236,10 +247,19 @@
 
     function wireInactividad(cfg) {
       var min = Math.max(1, Math.min(120, parseInt(cfg.screensaver_min, 10) || 5));
+      window.kaitoInactividadMs = min * 60000; // la cara sube el sueño hasta aquí
+      function irAlReloj() { location.replace("/reloj"); }
       var tmr;
       function rearmar() {
         clearTimeout(tmr);
-        tmr = setTimeout(function () { location.replace("/reloj"); }, min * 60000);
+        if (window.kaitoCancelarDormirse) window.kaitoCancelarDormirse();
+        // En la cara, Kaito se duerme antes (window.kaitoDormirseMs: se queda
+        // dormido y duerme 15 s con zZz) y, con los ojos cerrados, el reloj.
+        // Si se le habla o se toca, rearmar() lo cancela.
+        tmr = setTimeout(function () {
+          if (window.kaitoDormirse) window.kaitoDormirse(irAlReloj);
+          else irAlReloj();
+        }, Math.max(5000, min * 60000 - (window.kaitoDormirseMs || 0)));
       }
       ["pointerdown", "touchstart", "keydown"].forEach(function (ev) {
         document.addEventListener(ev, rearmar, { passive: true });
