@@ -1,325 +1,524 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
 <script>
+  // Motor de la cara: un solo bucle con muelles. Cada estado solo cambia hacia dónde
+  // tienden los valores, así nada salta: todo llega con su inercia desde donde esté.
   const socket = io();
   const face = document.getElementById("face");
-  let blinkInterval;
-  const busquedas = [
+  const $$ = (s) => [...document.querySelectorAll(s)];
+  const azar = (a, b) => a + Math.random() * (b - a);
+  const entre = ([a, b]) => azar(a, b);
+  const acotar = (v, a, b) => Math.min(b, Math.max(a, v));
+
+  // k = rigidez, d = amortiguación. Poca d rebota; mucha llega sin pasarse.
+  const muelle = (k, d, x = 0) => ({ k, d, x, v: 0, t: x });
+  const m = {
+    miradaX: muelle(900, 56),
+    miradaY: muelle(900, 56),
+    cabezaX: muelle(30, 9),
+    cabezaY: muelle(30, 9),
+    cabezaR: muelle(26, 8),
+    ceja: muelle(110, 14),
+    cejaDif: muelle(110, 14),
+    cejaRot: muelle(90, 13),
+    abre: muelle(170, 14, 1),
+    parpado: muelle(80, 16),
+    inferior: muelle(80, 16),
+    pupila: muelle(50, 12, 1),
+    boca: muelle(420, 30),
+    // Gestos kawaii
+    sonrisa: muelle(170, 20),
+    bocaO: muelle(170, 20),
+    bocaMini: muelle(170, 20),
+    aplasta: muelle(260, 10), // poca amortiguación: rebota como gelatina
+    cierraIzq: muelle(260, 30), // párpado de un solo ojo (guiño)
+    cierraDer: muelle(260, 30),
+  };
+  const muelles = Object.values(m);
+
+  // Valores de reposo y ritmo de cada estado. Tiempos en ms; mirada en unidades del ojo.
+  const MODOS = {
+    idle: { parpado: 0, inferior: 0, ceja: 0, dif: 0, rot: 0, abre: 1, pupila: 1, boca: 0, radio: [13, 8], cadaMirada: [1400, 4200], cadaParpadeo: [2600, 6000] },
+    listening: { parpado: 0, inferior: 0, ceja: -8, dif: 0, rot: -2, abre: 1.05, pupila: 1.14, boca: 0.1, radio: [3, 2], cadaMirada: [2500, 5000], cadaParpadeo: [4000, 7500], inclina: 2.5 },
+    thinking: { parpado: 0, inferior: 0, ceja: -3, dif: 3, rot: 0, abre: 1, pupila: 0.94, boca: 0, radio: [3, 2], centro: [9, -8], alterna: true, cadaMirada: [1000, 2200], cadaParpadeo: [3000, 6000] },
+    speaking: { parpado: 0, inferior: 0, ceja: -1, dif: 0, rot: 0, abre: 1, pupila: 1.03, boca: 0, radio: [5, 3], cadaMirada: [1200, 3000], cadaParpadeo: [2200, 5000] },
+    happy: { parpado: 0, inferior: 0.42, ceja: -7, dif: 0, rot: -3, abre: 1.02, pupila: 1.1, boca: 0.2, radio: [4, 2], cadaMirada: [1500, 3000], cadaParpadeo: [2500, 5000] },
+    error: { parpado: 0.16, inferior: 0, ceja: 5, dif: 0, rot: 9, abre: 0.98, pupila: 0.9, boca: 0, radio: [3, 2], cadaMirada: [800, 1800], cadaParpadeo: [2000, 4000] },
+  };
+  const estados = Object.keys(MODOS);
+  let estado = "idle";
+  let modo = MODOS.idle;
+  let hablando = false;
+
+  const prox = { mirada: 0, micro: 0, parpadeo: 0, gesto: 0, finGesto: 0, finDedo: 0 };
+  const miradaBase = { x: 0, y: 0 };
+  let ladoPensando = 1;
+  let quietoDesde = 0;
+  let ahora = 0;
+
+  // ── Piezas ──────────────────────────────────────────────────────────────────
+  const ojos = $$(".eye").map((el) => ({
+    el,
+    iris: el.querySelector(".iris"),
+    pupila: el.querySelector(".pupila"),
+    sup: el.querySelector(".parpado-sup"),
+    inf: el.querySelector(".parpado-inf"),
+    espejo: el.dataset.espejo ? -1 : 1,
+    recorrido: +el.dataset.recorrido,
+    recorridoInf: +el.dataset.recorridoInf,
+    escala: +el.dataset.escala,
+    sensei: el.classList.contains("eye-sensei"),
+    derecho: el.classList.contains("eye-right") || el.classList.contains("eye-sensei-right"),
+  }));
+  const cejas = $$(".eyebrow").map((el) => ({
+    el,
+    lado: el.className.baseVal.includes("left") ? -1 : 1,
+    sensei: el.classList.contains("eyebrow-sensei"),
+  }));
+
+  // Las dos formas de cada boca tienen los mismos comandos: basta mezclar los números.
+  const NUM = /-?\d+(?:\.\d+)?/g;
+  const bocas = [
     {
-      ojoIzq: "eyeLookRight 4s ease-in-out",
-      ojoDer: "eyeLookRightMirror 4s ease-in-out",
-      cejaIzq: "browShiftRight 4s ease-in-out",
-      cejaDer: "browShiftRight 4s ease-in-out",
-      bocaX: "6px",
-      bocaY: "0px",
+      path: document.querySelector("path.mouth-single"),
+      svg: document.querySelector("svg.mouth:not(.mouth-sensei)"),
+      sensei: false,
+      cerrada: "M 265.112 239.115 C 265.112 243.048 255.383 247.237 243.382 247.237 C 231.381 247.237 221.652 243.048 221.652 239.115 C 221.652 235.182 230.758 240.737 242.759 240.737 C 254.76 240.737 265.112 235.182 265.112 239.115 Z",
+      abierta: "M 265.112 239.115 C 265.112 248.5 255.383 255.0 243.382 255.0 C 231.381 255.0 221.652 248.5 221.652 239.115 C 221.652 229.73 231.381 233.23 243.382 233.23 C 255.383 233.23 265.112 229.73 265.112 239.115 Z",
     },
     {
-      ojoIzq: "eyeLookLeft 4s ease-in-out",
-      ojoDer: "eyeLookLeftMirror 4s ease-in-out",
-      cejaIzq: "browShiftLeft 4s ease-in-out",
-      cejaDer: "browShiftLeft 4s ease-in-out",
-      bocaX: "-6px",
-      bocaY: "0px",
+      path: document.querySelector("path.mouth-sensei"),
+      svg: document.querySelector("svg.mouth-sensei"),
+      sensei: true,
+      cerrada: "M 368.537 453.327 C 368.537 455.896 348.03 459.979 322.733 459.979 C 297.436 459.979 276.929 455.896 276.929 453.327 C 276.929 450.758 297.436 457.692 322.733 457.692 C 348.03 457.692 368.537 450.758 368.537 453.327 Z",
+      abierta: "M 368.537 453.327 C 368.537 464.0 348.03 468.0 322.733 468.0 C 297.436 468.0 276.929 464.0 276.929 453.327 C 276.929 442.654 297.436 438.0 322.733 438.0 C 348.03 438.0 368.537 442.654 368.537 453.327 Z",
     },
-    {
-      ojoIzq: "eyeLookUp 4s ease-in-out",
-      ojoDer: "eyeLookUpMirror 4s ease-in-out",
-      cejaIzq: "browFrownLeft 4s ease-in-out, browShiftLeft 4s ease-in-out",
-      cejaDer: "browFrownRight 4s ease-in-out, browShiftRight 4s ease-in-out",
-      bocaX: "0px",
-      bocaY: "-6px",
+  ];
+  // Formas de los gestos (solo la boca normal; la sensei tira de la abierta).
+  // Mismos comandos que la cerrada: se suman como desplazamientos sobre ella.
+  const FORMAS_BOCA = {
+    sonrisa: "M 265.112 239.115 C 265.112 249.5 255.383 256.5 243.382 256.5 C 231.381 256.5 221.652 249.5 221.652 239.115 C 221.652 236.6 231.381 240.2 243.382 240.2 C 255.383 240.2 265.112 236.6 265.112 239.115 Z",
+    o: "M 253.4 245 C 253.4 251.6 248.9 257 243.382 257 C 237.9 257 233.4 251.6 233.4 245 C 233.4 238.4 237.9 233 243.382 233 C 248.9 233 253.4 238.4 253.4 245 Z",
+    mini: "M 247.4 243 C 247.4 245.5 245.6 247.5 243.382 247.5 C 241.1 247.5 239.4 245.5 239.4 243 C 239.4 240.5 241.1 238.5 243.382 238.5 C 245.6 238.5 247.4 240.5 247.4 243 Z",
+  };
+  bocas.forEach((b) => {
+    b.de = b.cerrada.match(NUM).map(Number);
+    b.a = b.abierta.match(NUM).map(Number);
+    b.formas = b.sensei ? null : Object.fromEntries(Object.entries(FORMAS_BOCA).map(([k, d]) => [k, d.match(NUM).map(Number)]));
+  });
+
+  // Solo toca el DOM si el valor cambia: si algo está quieto, no se repinta.
+  const cache = new WeakMap();
+  function poner(el, clave, valor) {
+    let c = cache.get(el);
+    if (!c) cache.set(el, (c = {}));
+    if (c[clave] === valor) return;
+    c[clave] = valor;
+    if (clave === "transform" || clave === "d") el.setAttribute(clave, valor);
+    else el.style.transform = valor;
+  }
+  // Una décima de px basta para que se vea fluido y evita casi todos los repintados:
+  // en la Pi es lo que más consume. Escalas y giros necesitan más precisión.
+  const f = (v) => v.toFixed(1);
+  const f2 = (v) => v.toFixed(2);
+
+  // ── Parpadeo: baja rápido y sube despacio, como un párpado real ─────────────
+  let parpadeo = null;
+  function parpadear(lento = 1) {
+    parpadeo = { ini: ahora, cierra: 75 * lento, queda: 25 * lento, abre: 170 * lento };
+  }
+  function curvaParpadeo() {
+    if (!parpadeo) return 0;
+    const e = ahora - parpadeo.ini;
+    if (e < parpadeo.cierra) return (e / parpadeo.cierra) ** 2;
+    if (e < parpadeo.cierra + parpadeo.queda) return 1;
+    const u = (e - parpadeo.cierra - parpadeo.queda) / parpadeo.abre;
+    if (u >= 1) {
+      parpadeo = null;
+      return 0;
+    }
+    return (1 - u) ** 2;
+  }
+
+  // ── Mirada: saltos rápidos entre puntos, como los ojos de verdad ────────────
+  function mirar(x, y) {
+    const salto = Math.hypot(x - miradaBase.x, y - miradaBase.y);
+    miradaBase.x = x;
+    miradaBase.y = y;
+    m.miradaX.t = x;
+    m.miradaY.t = y;
+    m.cabezaX.t = x * 0.35; // la cabeza acompaña, más tarde y menos
+    m.cabezaY.t = y * 0.2;
+    if (salto > 9 && Math.random() < 0.4) parpadear();
+  }
+
+  function nuevaMirada() {
+    if (modo.alterna) ladoPensando = -ladoPensando;
+    const cx = (modo.centro ? modo.centro[0] : 0) * ladoPensando;
+    const cy = modo.centro ? modo.centro[1] : 0;
+    if (!modo.centro && Math.random() < 0.35) mirar(0, 0); // suele volver al frente
+    else mirar(cx + azar(-modo.radio[0], modo.radio[0]), cy + azar(-modo.radio[1], modo.radio[1]));
+  }
+
+  function aplicarModo() {
+    m.parpado.t = modo.parpado;
+    m.inferior.t = modo.inferior;
+    m.ceja.t = modo.ceja;
+    m.cejaDif.t = modo.dif;
+    m.cejaRot.t = modo.rot;
+    m.abre.t = modo.abre;
+    m.pupila.t = modo.pupila;
+    m.cabezaR.t = modo.inclina ? modo.inclina * (Math.random() < 0.5 ? -1 : 1) : 0;
+  }
+
+  // ── Gestos de cuando no pasa nada ───────────────────────────────────────────
+  const GESTOS = [
+    function ladear() {
+      m.cabezaR.t = azar(1.5, 3) * (Math.random() < 0.5 ? -1 : 1);
+      return azar(2500, 4000);
+    },
+    function dobleMirada() {
+      const lado = Math.random() < 0.5 ? -1 : 1;
+      mirar(13 * lado, 0);
+      setTimeout(() => estado === "idle" && mirar(-13 * lado, 1), 520);
+      setTimeout(() => estado === "idle" && mirar(0, 0), 1100);
+      prox.mirada = ahora + 2400;
+      return 1400;
+    },
+    function suspiro() {
+      m.cabezaY.v -= 16;
+      m.ceja.t = -3;
+      parpadear(1.8);
+      return 1700;
+    },
+    function asombro() {
+      m.abre.v += 0.9;
+      m.ceja.v -= 50;
+      m.pupila.t = 1.15;
+      return 900;
     },
   ];
 
-  let busquedaInterval;
-
-  // ── Gestos kawaii ──────────────────────────────────────────────────────
-  // Microexpresiones cortas en reposo (ver "GESTOS KAWAII" en _estilos.html).
-  // Duración en ms de cada uno; tiene que cuadrar con sus keyframes.
-  const GESTOS = {
-    feliz: 2600,
-    guino: 1800,
-    corazones: 3200,
-    rubor: 3000,
-    estrellitas: 2600,
-    ladeo: 2800,
-    saltito: 1500,
-    sorpresa: 1800,
-    dormido: 6000,
-    musica: 4800,
-    apuro: 3000,
-  };
-  // Cuántas veces sale cada uno en el sorteo de reposo
-  const PESOS_GESTO = {
-    feliz: 3, guino: 2, corazones: 1, rubor: 2, estrellitas: 2, ladeo: 3,
-    saltito: 2, sorpresa: 1, dormido: 1, musica: 1, apuro: 1,
-  };
-  let gestoActual = null;
-  let gestoTimeout = null;
-  let gestoAleatorioTimeout = null;
-
-  function terminarGesto() {
-    clearTimeout(gestoTimeout);
-    if (gestoActual) face.classList.remove("gesto", "gesto-" + gestoActual);
-    gestoActual = null;
-  }
-
-  // Lanza un gesto si Kaito está en reposo. Devuelve true si se ha hecho.
-  function hacerGesto(nombre) {
-    if (!GESTOS[nombre] || !face.classList.contains("idle")) return false;
-    terminarGesto();
-    detenerBusqueda();
-    const dur = GESTOS[nombre];
-    face.style.setProperty("--gesto-dur", dur + "ms");
-    void face.offsetWidth; // reinicia las animaciones si se repite el mismo gesto
-    face.classList.add("gesto", "gesto-" + nombre);
-    gestoActual = nombre;
-    gestoTimeout = setTimeout(() => {
-      terminarGesto();
-      if (face.classList.contains("idle")) iniciarBusqueda();
-    }, dur);
-    return true;
-  }
-
-  function sortearGesto() {
-    const pesos = Object.assign({}, PESOS_GESTO);
-    const h = new Date().getHours();
-    if (h >= 22 || h < 7) pesos.dormido = 5; // de noche le entra el sueño
-    const total = Object.values(pesos).reduce((a, b) => a + b, 0);
-    let r = Math.random() * total;
-    for (const [nombre, peso] of Object.entries(pesos)) {
-      r -= peso;
-      if (r < 0) return nombre;
+  function gestos() {
+    if (estado !== "idle" || gesto) return;
+    if (prox.finGesto && ahora > prox.finGesto) {
+      prox.finGesto = 0;
+      aplicarModo();
     }
+    if (ahora < prox.gesto) return;
+    // Tras un rato sin nada le entra sueño: parpadeos lentos, nunca ojos a medio cerrar
+    if (ahora - quietoDesde > 60000) {
+      parpadear(2.4);
+      prox.gesto = ahora + azar(5000, 9000);
+      return;
+    }
+    // De vez en cuando, uno de los kawaii en vez de los pequeños
+    if (Math.random() < 0.4 && hacerGesto(sortearKawaii())) return;
+    prox.finGesto = ahora + GESTOS[Math.floor(Math.random() * GESTOS.length)]();
+    prox.gesto = ahora + azar(8000, 18000);
+  }
+
+  function comportamiento() {
+    if (gesto) correrGesto();
+    if (ahora > prox.finDedo && !gesto) {
+      if (ahora > prox.mirada) {
+        nuevaMirada();
+        prox.mirada = ahora + entre(modo.cadaMirada);
+      }
+      if (ahora > prox.micro) {
+        // Microsacadas: los ojos vivos nunca están del todo quietos
+        m.miradaX.t = miradaBase.x + azar(-1.1, 1.1);
+        m.miradaY.t = miradaBase.y + azar(-0.8, 0.8);
+        prox.micro = ahora + azar(500, 1500);
+      }
+    }
+    if (ahora > prox.parpadeo && !gesto) {
+      parpadear();
+      if (Math.random() < 0.15) setTimeout(parpadear, 300); // doble ocasional
+      prox.parpadeo = ahora + entre(modo.cadaParpadeo);
+    }
+    gestos();
+    if (hablando) {
+      // Ritmo de sílabas: dos senos que no coinciden nunca, para que no suene a metrónomo
+      const t = ahora / 1000;
+      const silaba = Math.abs(Math.sin(t * 9.5)) * 0.6 + Math.abs(Math.sin(t * 5.7 + 1)) * 0.4;
+      m.boca.t = 0.15 + 0.8 * silaba;
+    } else {
+      m.boca.t = modo.boca;
+    }
+  }
+
+  // ── Gestos kawaii ───────────────────────────────────────────────────────────
+  // Cada uno es una secuencia [ms desde el inicio, qué cambia] sobre los muelles,
+  // más una clase .gesto-<nombre> en #face que enciende sus adornos (_estilos.html).
+  // Los ojos siguen abiertos salvo en el guiño y el sueñito, que cierran con los
+  // párpados de verdad.
+  let gesto = null;
+  let respiraExtra = 0;
+
+  // Mirar sin el parpadeo que a veces acompaña a los saltos de mirada
+  function mirarSuave(x, y) {
+    miradaBase.x = x;
+    miradaBase.y = y;
+    m.miradaX.t = x;
+    m.miradaY.t = y;
+    m.cabezaX.t = x * 0.35;
+    m.cabezaY.t = y * 0.2;
+  }
+  function vuelveAlReposo() {
+    m.sonrisa.t = m.bocaO.t = m.bocaMini.t = m.aplasta.t = 0;
+    m.cierraIzq.t = m.cierraDer.t = 0;
+    respiraExtra = 0;
+    aplicarModo();
+    mirarSuave(0, 0);
+  }
+
+  function despertar() {
+    face.classList.add("despierta");
+    respiraExtra = 0;
+    m.parpado.t = 0;
+    m.inferior.t = 0;
+    m.abre.v += 1.4;
+    m.ceja.t = 0;
+    m.ceja.v -= 70;
+    m.cabezaR.t = 0;
+    m.cabezaY.t = 0;
+    m.cabezaY.v -= 30;
+    m.bocaMini.t = 0;
+    m.bocaO.t = 0.5;
+  }
+
+  const KAWAII = {
+    feliz: { dur: 2600, peso: 3, pasos: [
+      [0, () => { m.inferior.t = 0.45; m.ceja.t = -7; m.sonrisa.t = 1; m.pupila.t = 1.12; m.cabezaY.v -= 40; }],
+      [450, () => { m.cabezaY.v -= 35; }],
+      [2100, () => { m.sonrisa.t = 0; m.inferior.t = 0; }],
+    ] },
+    guino: { dur: 2000, peso: 2, pasos: [
+      [0, () => { m.cierraDer.t = 1; m.cejaDif.t = 5; m.sonrisa.t = 0.9; m.cabezaR.t = -4; }],
+      [1250, () => { m.cierraDer.t = 0; m.cejaDif.t = 0; m.cabezaR.t = 0; }],
+      [1600, () => { m.sonrisa.t = 0; }],
+    ] },
+    corazones: { dur: 3200, peso: 1, pasos: [
+      [0, () => { m.pupila.t = 0; m.abre.t = 1.08; m.abre.v += 0.6; m.ceja.t = -8; m.sonrisa.t = 1; m.inferior.t = 0.2; }],
+      [2700, () => { m.sonrisa.t = 0; m.inferior.t = 0; }],
+    ] },
+    rubor: { dur: 3000, peso: 2, pasos: [
+      [0, () => { mirarSuave(-9, 8); m.inferior.t = 0.3; m.cabezaR.t = -5; m.ceja.t = -4; m.bocaMini.t = 1; m.pupila.t = 1.1; }],
+      [2400, () => { mirarSuave(0, 0); m.bocaMini.t = 0; m.cabezaR.t = 0; }],
+    ] },
+    estrellitas: { dur: 2600, peso: 2, pasos: [
+      [0, () => { m.abre.t = 1.14; m.abre.v += 1; m.pupila.t = 1.3; m.ceja.t = -10; m.sonrisa.t = 0.9; }],
+      [2100, () => { m.abre.t = 1; m.pupila.t = 1; m.sonrisa.t = 0; }],
+    ] },
+    ladeo: { dur: 2800, peso: 3, pasos: [
+      [0, () => { mirarSuave(7, -6); m.cabezaR.t = 9; m.cabezaX.t = 8; m.cejaDif.t = -6; }],
+      [2200, () => { mirarSuave(0, 0); m.cabezaR.t = 0; m.cejaDif.t = 0; }],
+    ] },
+    saltito: { dur: 1700, peso: 2, pasos: [
+      [0, () => { m.aplasta.t = 0.09; m.cabezaY.t = 5; m.sonrisa.t = 1; m.inferior.t = 0.3; }],
+      [180, () => { m.aplasta.t = 0; m.aplasta.v -= 2.6; m.cabezaY.t = 0; m.cabezaY.v -= 95; m.abre.v += 0.6; }],
+      [620, () => { m.aplasta.v += 2.2; m.cabezaY.v -= 60; }],
+      [1050, () => { m.aplasta.v += 1.2; }],
+      [1300, () => { m.sonrisa.t = 0; m.inferior.t = 0; }],
+    ] },
+    sorpresa: { dur: 1800, peso: 1, pasos: [
+      [0, () => { m.abre.t = 1.16; m.abre.v += 1.6; m.ceja.t = -14; m.ceja.v -= 80; m.bocaO.t = 1; m.pupila.t = 0.8; m.cabezaY.v -= 45; }],
+      [1300, () => { m.abre.t = 1; m.ceja.t = 0; m.bocaO.t = 0; m.pupila.t = 1; }],
+    ] },
+    // Se duerme de verdad: párpados abajo del todo, cabeceos y respiración lenta.
+    // Si lo tocan o le hablan, se despierta.
+    dormido: { dur: 8800, peso: 1, alTocar: despertar, pasos: [
+      [0, () => { m.parpado.t = 0.5; m.ceja.t = 3; mirarSuave(0, 3); }],
+      [500, () => { m.bocaO.t = 0.7; }], // bostezo
+      [900, () => { m.parpado.t = 0.2; }], // aguanta un poco...
+      [1500, () => { m.bocaO.t = 0; m.parpado.t = 1; m.inferior.t = 0.15; m.cabezaR.t = -5; m.cabezaY.t = 7; m.bocaMini.t = 1; respiraExtra = 1.6; }],
+      [3800, () => { m.cabezaY.v += 20; }], // cabeceo
+      [5900, () => { m.cabezaY.v += 16; }],
+      [7600, despertar],
+      [8000, () => { m.bocaO.t = 0; parpadear(); }],
+      [8350, () => parpadear()],
+    ] },
+    musica: { dur: 4800, peso: 1, pasos: [
+      [0, () => { m.inferior.t = 0.4; m.sonrisa.t = 1; m.ceja.t = -5; }],
+      ...[0, 600, 1200, 1800, 2400, 3000, 3600].map((t, i) => [t, () => {
+        const lado = i % 2 ? 1 : -1;
+        m.cabezaR.t = 6 * lado;
+        m.cabezaX.t = 5 * lado;
+      }]),
+      [4200, () => { m.cabezaR.t = 0; m.cabezaX.t = 0; m.sonrisa.t = 0; m.inferior.t = 0; }],
+    ] },
+    apuro: { dur: 3000, peso: 1, pasos: [
+      [0, () => { mirarSuave(-12, 0); m.cejaRot.t = -8; m.ceja.t = -5; m.bocaMini.t = 0.8; }],
+      [1100, () => mirarSuave(12, 0)],
+      [2100, () => mirarSuave(0, 0)],
+      [2500, () => { m.cejaRot.t = 0; m.ceja.t = 0; m.bocaMini.t = 0; }],
+    ] },
+  };
+
+  function sortearKawaii() {
+    const h = new Date().getHours();
+    const noche = h >= 22 || h < 7; // de noche le entra el sueño
+    const lista = Object.entries(KAWAII).map(([n, g]) => [n, n === "dormido" && noche ? 5 : g.peso]);
+    let r = Math.random() * lista.reduce((a, [, p]) => a + p, 0);
+    for (const [n, p] of lista) if ((r -= p) < 0) return n;
     return "feliz";
   }
 
-  // Un gesto al azar cada 18-40 s mientras esté en reposo
-  function programarGestoAleatorio() {
-    clearTimeout(gestoAleatorioTimeout);
-    gestoAleatorioTimeout = setTimeout(() => {
-      if (face.classList.contains("idle") && !gestoActual) hacerGesto(sortearGesto());
-      programarGestoAleatorio();
-    }, 18000 + Math.random() * 22000);
-  }
-
-  function iniciarBusqueda() {
-    detenerBusqueda();
-
-    function elegirMovimiento() {
-      if (
-        !face.classList.contains("idle") &&
-        !face.classList.contains("thinking")
-      )
-        return;
-      if (gestoActual) {
-        // Hay un gesto en marcha: probar otra vez un poco más tarde
-        busquedaInterval = setTimeout(elegirMovimiento, 3000);
-        return;
-      }
-
-      const mov = busquedas[Math.floor(Math.random() * busquedas.length)];
-      // Seleccionamos ojos normales Y sensei
-      const ojosIzq = document.querySelectorAll(".eye-left, .eye-sensei-left");
-      const ojosDer = document.querySelectorAll(
-        ".eye-right, .eye-sensei-right",
-      );
-      // Cejas: las normales son .eyebrow (left/right), las sensei .eyebrow-sensei
-      const cejasIzq = document.querySelectorAll(
-        ".eyebrow-left, .eyebrow-sensei-left",
-      );
-      const cejasDer = document.querySelectorAll(
-        ".eyebrow-right, .eyebrow-sensei-right",
-      );
-      // Bocas: normal y sensei
-      const bocas = document.querySelectorAll(".mouth-single, .mouth-sensei");
-
-      ojosIzq.forEach((ojo) => (ojo.style.animation = mov.ojoIzq));
-      ojosDer.forEach((ojo) => (ojo.style.animation = mov.ojoDer));
-      cejasIzq.forEach((ceja) => (ceja.style.animation = mov.cejaIzq));
-      cejasDer.forEach((ceja) => (ceja.style.animation = mov.cejaDer));
-
-      bocas.forEach((boca) => {
-        boca.style.setProperty("--mouth-x", mov.bocaX);
-        boca.style.setProperty("--mouth-y", mov.bocaY);
-        boca.style.animation = "mouthSearch 4s ease-in-out";
-      });
-
-      // Al terminar el ciclo, volvemos a idle (limpiar estilos inline)
-      busquedaInterval = setTimeout(() => {
-        ojosIzq.forEach((ojo) => (ojo.style.animation = ""));
-        ojosDer.forEach((ojo) => (ojo.style.animation = ""));
-        cejasIzq.forEach((ceja) => (ceja.style.animation = ""));
-        cejasDer.forEach((ceja) => (ceja.style.animation = ""));
-
-        bocas.forEach((boca) => {
-          boca.style.animation = "";
-          boca.style.removeProperty("--mouth-x");
-          boca.style.removeProperty("--mouth-y");
-        });
-
-        // Siguiente busqueda entre 5 y 7 segundos
-        busquedaInterval = setTimeout(
-          elegirMovimiento,
-          5000 + Math.random() * 2000,
-        );
-      }, 4200);
-    }
-
-    busquedaInterval = setTimeout(
-      elegirMovimiento,
-      2000 + Math.random() * 3000,
-    );
-  }
-
-  function detenerBusqueda() {
-    clearTimeout(busquedaInterval);
-    document
-      .querySelectorAll(".eye-left, .eye-sensei-left")
-      .forEach((ojo) => (ojo.style.animation = ""));
-    document
-      .querySelectorAll(".eye-right, .eye-sensei-right")
-      .forEach((ojo) => (ojo.style.animation = ""));
-    document
-      .querySelectorAll(
-        ".eyebrow-left, .eyebrow-sensei-left, .eyebrow-right, .eyebrow-sensei-right",
-      )
-      .forEach((ceja) => (ceja.style.animation = ""));
-
-    const bocas = document.querySelectorAll(".mouth-single, .mouth-sensei");
-    bocas.forEach((boca) => {
-      boca.style.animation = "";
-      boca.style.removeProperty("--mouth-x");
-      boca.style.removeProperty("--mouth-y");
-    });
-  }
-
-  function iniciarParpadeo() {
-    detenerParpadeo();
-    function parpadear() {
-      if (!face.classList.contains("idle") || gestoActual) {
-        programar();
-        return;
-      }
-      document.querySelectorAll(".eye, .eye-sensei").forEach((ojo) => {
-        ojo.classList.add("blink");
-
-        setTimeout(() => {
-          ojo.classList.remove("blink");
-        }, 140);
-      });
-      if (Math.random() < 0.3) {
-        setTimeout(() => {
-          document.querySelectorAll(".eye, .eye-sensei").forEach((ojo) => {
-            ojo.classList.add("blink");
-            setTimeout(() => ojo.classList.remove("blink"), 140);
-          });
-        }, 180);
-      }
-      programar();
-    }
-    function programar() {
-      blinkInterval = setTimeout(parpadear, 2500 + Math.random() * 2200);
-    }
-    programar();
-  }
-
-  function detenerParpadeo() {
-    clearTimeout(blinkInterval);
-  }
-
-  function iniciarParpadeoLento() {
-    detenerParpadeo();
-
-    function parpadear() {
-      // Solo parpadea si sigue en listening
-      if (!face.classList.contains("listening")) return;
-
-      document.querySelectorAll(".eye").forEach((ojo) => {
-        ojo.classList.add("blink");
-        setTimeout(() => ojo.classList.remove("blink"), 180); // más lento que el normal
-      });
-
-      // Parpadeo doble ocasional, igual que en idle pero más raro
-      if (Math.random() < 0.15) {
-        setTimeout(() => {
-          document.querySelectorAll(".eye").forEach((ojo) => {
-            ojo.classList.add("blink");
-            setTimeout(() => ojo.classList.remove("blink"), 180);
-          });
-        }, 220);
-      }
-
-      // Intervalo largo — la gente parpadea poco cuando escucha
-      blinkInterval = setTimeout(parpadear, 4000 + Math.random() * 3000);
-    }
-
-    blinkInterval = setTimeout(parpadear, 3000 + Math.random() * 2000);
-  }
-
-  function detenerParpadeoLento() {
-    clearTimeout(blinkInterval);
-  }
-
-  let listeningTransitionTimeout = null;
-  let transitionTimeout = null;
-
-  const estados = [
-    "idle",
-    "listening",
-    "thinking",
-    "speaking",
-    "happy",
-    "error",
-  ];
-
-  // Swap ATÓMICO y síncrono: fuera todos los estados (y el sufijo de listening),
-  // dentro solo el nuevo. Antes se difería el "add" a un requestAnimationFrame y
-  // la salida de listening a un setTimeout de 700 ms; con eventos seguidos
-  // (listening→thinking→speaking en <1 s) las clases se acumulaban y la cara se
-  // quedaba pillada con dos estados a la vez (y la boca no animaba).
-  function aplicarEstado(nuevo) {
-    if (!estados.includes(nuevo)) return;
-
-    // ¿Ya estamos SOLO en ese estado? No tocar nada.
-    if (
-      face.classList.contains(nuevo) &&
-      !estados.some((e) => e !== nuevo && face.classList.contains(e))
-    ) {
-      return;
-    }
-
-    clearTimeout(listeningTransitionTimeout);
-    clearTimeout(transitionTimeout);
-    detenerParpadeo();
-    detenerParpadeoLento();
-    detenerBusqueda();
+  // Lanza un gesto si está en reposo. Devuelve true si lo ha hecho.
+  function hacerGesto(nombre) {
+    const g = KAWAII[nombre];
+    if (!g || estado !== "idle") return false;
     terminarGesto();
+    prox.finGesto = 0;
+    aplicarModo();
+    face.style.setProperty("--gesto-dur", g.dur + "ms");
+    void face.offsetWidth; // reinicia los adornos si se repite el mismo
+    face.classList.add("gesto-" + nombre);
+    gesto = { nombre, g, ini: ahora, fin: ahora + g.dur, i: 0 };
+    prox.gesto = gesto.fin + azar(8000, 18000);
+    return true;
+  }
 
-    estados.forEach((e) => face.classList.remove(e));
-    face.classList.remove("listening-active");
-    face.classList.add("transition");
-    face.classList.add(nuevo);
+  function correrGesto() {
+    const pasos = gesto.g.pasos;
+    const t = ahora - gesto.ini;
+    while (gesto && gesto.i < pasos.length && pasos[gesto.i][0] <= t) pasos[gesto.i++][1]();
+    if (gesto && ahora >= gesto.fin) {
+      terminarGesto();
+      prox.mirada = ahora + azar(600, 1500);
+      prox.parpadeo = ahora + azar(700, 2000);
+    }
+  }
 
-    if (nuevo === "listening") {
-      listeningTransitionTimeout = setTimeout(
-        () => face.classList.add("listening-active"),
-        50
-      );
-      iniciarParpadeoLento();
-    } else if (nuevo === "idle") {
-      iniciarParpadeo();
-      iniciarBusqueda();
-    } else if (nuevo === "thinking") {
-      iniciarBusqueda();
+  function terminarGesto() {
+    if (!gesto) return;
+    face.classList.remove("gesto-" + gesto.nombre, "despierta");
+    gesto = null;
+    vuelveAlReposo();
+  }
+
+  // ── Bucle ───────────────────────────────────────────────────────────────────
+  let previo = 0;
+  function cuadro(ms) {
+    const dt = Math.min(0.05, (ms - previo) / 1000);
+    previo = ms;
+    ahora = ms;
+    comportamiento();
+
+    // Pasos cortos: los muelles rígidos serían inestables con frames lentos
+    const pasos = Math.ceil(dt * 240) || 1;
+    const h = dt / pasos;
+    for (let i = 0; i < pasos; i++) {
+      for (const s of muelles) {
+        s.v += (s.k * (s.t - s.x) - s.d * s.v) * h;
+        s.x += s.v * h;
+      }
     }
 
-    transitionTimeout = setTimeout(
-      () => face.classList.remove("transition"),
-      450
-    );
+    const t = ms / 1000;
+    const respira = Math.sin(t * 1.35) * 1.5 + Math.sin(t * 0.63) * 0.6;
+    const parp = curvaParpadeo();
+    const parpado = Math.max(acotar(m.parpado.x, 0, 1), parp);
+    const inferior = Math.max(acotar(m.inferior.x, 0, 1), parp * 0.12);
+    const enSensei = face.classList.contains("sensei");
+    const mx = m.miradaX.x;
+    const my = m.miradaY.x;
+
+    const ap = acotar(m.aplasta.x, -0.16, 0.16);
+    poner(face, "style", `translate(${f(m.cabezaX.x)}px,${f(m.cabezaY.x + respira * (1 + respiraExtra) + m.boca.x * 1.2)}px) rotate(${f2(m.cabezaR.x)}deg) scale(${f2(1 + ap)},${f2(1 - ap)})`);
+
+    for (const o of ojos) {
+      if (o.sensei !== enSensei) continue;
+      poner(o.iris, "transform", `translate(${f(mx * o.espejo * o.escala)} ${f(my * o.escala)})`);
+      poner(o.pupila, "style", `scale(${f2(Math.max(0, m.pupila.x))})`);
+      // El guiño cierra solo un ojo; al apretarlo sube también un poco el de abajo
+      const cierra = acotar(o.derecho ? m.cierraDer.x : m.cierraIzq.x, 0, 1);
+      poner(o.sup, "transform", `translate(0 ${f(o.recorrido * Math.max(parpado, cierra))})`);
+      poner(o.inf, "transform", `translate(0 ${f(-o.recorridoInf * Math.max(inferior, cierra * 0.3))})`);
+      poner(o.el, "style", `translate(${f(mx * 0.08)}px,${f(my * 0.08)}px) scale(${f2(m.abre.x)})`);
+    }
+    for (const c of cejas) {
+      if (c.sensei !== enSensei) continue;
+      const y = m.ceja.x + m.cejaDif.x * c.lado + my * 0.25 + parp * 3;
+      poner(c.el, "style", `translate(${f(mx * 0.12)}px,${f(y)}px) rotate(${f2(m.cejaRot.x * -c.lado)}deg)`);
+    }
+    const abierta = acotar(m.boca.x, 0, 1.1);
+    const pesos = {
+      sonrisa: acotar(m.sonrisa.x, 0, 1.1),
+      o: acotar(m.bocaO.x, 0, 1.1),
+      mini: acotar(m.bocaMini.x, 0, 1.1),
+    };
+    for (const b of bocas) {
+      if (b.sensei !== enSensei) continue;
+      // La sensei no tiene formas propias: sonríe o hace la O abriéndose un poco
+      const ab = b.formas ? abierta : abierta + pesos.sonrisa * 0.35 + pesos.o * 0.6;
+      let i = 0;
+      poner(b.path, "d", b.cerrada.replace(NUM, () => {
+        let v = b.de[i] + (b.a[i] - b.de[i]) * ab;
+        if (b.formas) for (const k in pesos) if (pesos[k]) v += (b.formas[k][i] - b.de[i]) * pesos[k];
+        i++;
+        return f(v);
+      }));
+      poner(b.svg, "style", `translate(${f(mx * 0.2)}px,${f(my * 0.1)}px)`);
+    }
+    requestAnimationFrame(cuadro);
+  }
+
+  // ── Estados ─────────────────────────────────────────────────────────────────
+  function aplicarEstado(nuevo) {
+    if (!estados.includes(nuevo) || nuevo === estado) return;
+    terminarGesto();
+    estados.forEach((e) => face.classList.remove(e));
+    face.classList.add(nuevo);
+    estado = nuevo;
+    modo = MODOS[nuevo];
+    prox.finGesto = 0;
+    prox.mirada = 0; // mira a otro sitio al cambiar, como quien cambia de idea
+    prox.parpadeo = ahora + entre(modo.cadaParpadeo);
+    prox.gesto = ahora + azar(8000, 18000);
+    quietoDesde = ahora;
+    aplicarModo();
+
+    // Impulsos: la reacción que un valor de reposo no puede dar
+    if (nuevo === "listening") {
+      miradaBase.x = 0;
+      miradaBase.y = 0;
+      m.abre.v += 1.3;
+      m.ceja.v -= 70;
+    } else if (nuevo === "speaking" || nuevo === "thinking") {
+      parpadear();
+    } else if (nuevo === "happy") {
+      m.cabezaY.v -= 32;
+    } else if (nuevo === "error") {
+      m.cabezaX.v += 55;
+    }
   }
 
   socket.on("estado", (data) => aplicarEstado(data.estado));
+  socket.on("boca", (data) => (hablando = !!data.hablado));
+
+  // Al tocar la pantalla mira hacia el dedo, sin molestar al doble toque ni al cajón
+  document.addEventListener(
+    "pointerdown",
+    (e) => {
+      if (gesto && gesto.g.alTocar && !face.classList.contains("despierta")) {
+        gesto.g.alTocar();
+        gesto.i = gesto.g.pasos.length;
+        gesto.fin = ahora + 900;
+        return;
+      }
+      const r = face.getBoundingClientRect();
+      mirar(
+        acotar(((e.clientX - (r.left + r.width / 2)) / 180) * 16, -16, 16),
+        acotar(((e.clientY - (r.top + r.height / 2)) / 180) * 11, -11, 11),
+      );
+      m.abre.v += 0.8;
+      prox.finDedo = ahora + 1300;
+      prox.mirada = ahora + 1500;
+      quietoDesde = ahora;
+    },
+    { passive: true },
+  );
 
   const senseiJp = document.getElementById("sensei-jp");
 
@@ -340,50 +539,26 @@
   socket.on("sensei_japones", (data) => mostrarJaponesSensei(data.frases));
 
   socket.on("modo_sensei", function (data) {
-    if (data.activo) {
-      face.classList.add("sensei");
-    } else {
-      face.classList.remove("sensei");
-      mostrarJaponesSensei(null);
-    }
+    // Cambia de cara con los ojos cerrados: así el cambio de piezas no se ve
+    parpadear(1.4);
+    setTimeout(() => {
+      face.classList.toggle("sensei", !!data.activo);
+      if (!data.activo) mostrarJaponesSensei(null);
+    }, 105);
   });
 
-  // 🆕 Control de boca por audio real
-  socket.on("boca", function (data) {
-    // Boca normal
-    const mouthsNormal = document.querySelectorAll(".mouth-single");
-    mouthsNormal.forEach((mouth) => {
-      mouth.style.animation = "";
-      mouth.style.removeProperty("--mouth-x");
-      mouth.style.removeProperty("--mouth-y");
-      if (data.hablado) {
-        mouth.classList.add("mouth-active");
-      } else {
-        mouth.classList.remove("mouth-active");
-      }
-    });
-
-    // Boca sensei — solo si el modo sensei está visible/activo
-    const mouthsSensei = document.querySelectorAll(".mouth-sensei");
-    mouthsSensei.forEach((mouth) => {
-      mouth.style.animation = "";
-      if (data.hablado) {
-        mouth.classList.add("mouth-active"); // CSS se encarga del keyframe correcto
-      } else {
-        mouth.classList.remove("mouth-active");
-      }
-    });
-
-    if (data.hablado) {
-      iniciarParpadeo();
-    } else {
-      detenerParpadeo();
-    }
+  // Muestra en pantalla lo que Kaito ha entendido tras el wakeword
+  socket.on("transcripcion", function (data) {
+    const respuestaDiv = document.getElementById("respuesta");
+    respuestaDiv.style.display = "block";
+    respuestaDiv.textContent = `📝 "${data.texto}"`;
   });
 
-  iniciarParpadeo();
-  iniciarBusqueda();
-  programarGestoAleatorio();
+  ahora = previo = quietoDesde = performance.now();
+  prox.parpadeo = ahora + entre(modo.cadaParpadeo);
+  prox.gesto = ahora + azar(8000, 18000);
+  aplicarModo();
+  requestAnimationFrame(cuadro);
 
   // El backend puede pedir un gesto: socketio.emit("gesto", {"gesto": "corazones"})
   socket.on("gesto", (data) => hacerGesto(data && data.gesto));
@@ -393,20 +568,13 @@
   (function () {
     const pedido = new URLSearchParams(location.search).get("gesto");
     if (!pedido) return;
-    const lista = pedido === "todos" ? Object.keys(GESTOS) : [pedido];
+    const lista = pedido === "todos" ? Object.keys(KAWAII) : [pedido];
     let i = 0;
     (function siguiente() {
       if (i >= lista.length) return;
       const nombre = lista[i++];
       hacerGesto(nombre);
-      setTimeout(siguiente, (GESTOS[nombre] || 0) + 900);
+      setTimeout(siguiente, ((KAWAII[nombre] || {}).dur || 0) + 900);
     })();
   })();
-
-  // Muestra en pantalla lo que Kaito ha entendido tras el wakeword
-  socket.on("transcripcion", function (data) {
-    const respuestaDiv = document.getElementById("respuesta");
-    respuestaDiv.style.display = "block";
-    respuestaDiv.textContent = `📝 "${data.texto}"`;
-  });
 </script>
