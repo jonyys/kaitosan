@@ -36,7 +36,6 @@
     triste: muelle(150, 20), // boca hacia abajo
     agacha: muelle(40, 11), // cabeza abajo (+) o echada atrás (-)
     bocaX: muelle(120, 16), // boca torcida a un lado
-    bocaBostezo: muelle(90, 14), // se abre despacio, como un bostezo de verdad
   };
   const muelles = Object.values(m);
 
@@ -59,8 +58,11 @@
   const CADA_GESTO = [25000, 35000];
   // A partir de aquí sin que nadie le hable ni lo toque, le entra sueño
   const EMPIEZA_SUENO = 210000; // 3 min y medio
-  // Antes del reloj: se queda dormido a los 9,6 s y duerme 15 s con zZz
-  const DORMIRSE_MS = 9600 + 15000;
+  // Antes del reloj: 12 s quedándose dormido, 1,5 s cerrando los ojos del todo
+  // y 15 s durmiendo con zZz
+  const CAE_MS = 12000;
+  const CIERRA_MS = 1500;
+  const DORMIRSE_MS = CAE_MS + CIERRA_MS + 15000;
   window.kaitoDormirseMs = DORMIRSE_MS; // el kiosko lo lanza con esta antelación
   const miradaBase = { x: 0, y: 0 };
   let ladoPensando = 1;
@@ -111,7 +113,6 @@
     sonrisa: "M 265.112 239.115 C 265.112 249.5 255.383 256.5 243.382 256.5 C 231.381 256.5 221.652 249.5 221.652 239.115 C 221.652 236.6 231.381 240.2 243.382 240.2 C 255.383 240.2 265.112 236.6 265.112 239.115 Z",
     o: "M 253.4 245 C 253.4 251.6 248.9 257 243.382 257 C 237.9 257 233.4 251.6 233.4 245 C 233.4 238.4 237.9 233 243.382 233 C 248.9 233 253.4 238.4 253.4 245 Z",
     triste: "M 265.112 246.885 C 265.112 242.952 255.383 238.763 243.382 238.763 C 231.381 238.763 221.652 242.952 221.652 246.885 C 221.652 250.818 230.758 245.263 242.759 245.263 C 254.76 245.263 265.112 250.818 265.112 246.885 Z",
-    bostezo: "M 258.4 249 C 258.4 257.8 251.7 265 243.382 265 C 235.1 265 228.4 257.8 228.4 249 C 228.4 240.2 235.1 233 243.382 233 C 251.7 233 258.4 240.2 258.4 249 Z",
     mini: "M 247.4 243 C 247.4 245.5 245.6 247.5 243.382 247.5 C 241.1 247.5 239.4 245.5 239.4 243 C 239.4 240.5 241.1 238.5 243.382 238.5 C 245.6 238.5 247.4 240.5 247.4 243 Z",
   };
   bocas.forEach((b) => {
@@ -191,7 +192,7 @@
     // Lo que solo usan gestos y emociones vuelve a cero
     m.sonrisa.t = m.bocaO.t = m.bocaMini.t = m.aplasta.t = 0;
     m.cierraIzq.t = m.cierraDer.t = 0;
-    m.triste.t = m.agacha.t = m.bocaX.t = m.bocaBostezo.t = 0;
+    m.triste.t = m.agacha.t = m.bocaX.t = 0;
   }
 
   // ── Gestos de cuando no pasa nada ───────────────────────────────────────────
@@ -238,7 +239,7 @@
     if (ahora < prox.gesto) return;
     prox.gesto = ahora + entre(CADA_GESTO);
     // Mitad de las veces uno de los kawaii, mitad uno de los pequeños
-    if (Math.random() < 0.5 && hacerGesto(sortearKawaii(quieto))) return;
+    if (Math.random() < 0.5 && hacerGesto(sortearKawaii())) return;
     prox.finGesto = ahora + GESTOS[Math.floor(Math.random() * GESTOS.length)]();
     prox.gesto = ahora + entre(CADA_GESTO);
   }
@@ -350,15 +351,6 @@
       [0, () => { m.abre.t = 1.16; m.abre.v += 1.6; m.ceja.t = -14; m.ceja.v -= 80; m.bocaO.t = 1; m.pupila.t = 0.8; m.cabezaY.v -= 45; }],
       [1300, () => { m.abre.t = 1; m.ceja.t = 0; m.bocaO.t = 0; m.pupila.t = 1; }],
     ] },
-    // Bostezo: boca muy abierta, cabeza atrás y ojos apretados (sin cerrarse),
-    // y una sacudida para espabilar. Solo se duerme de verdad antes del reloj.
-    bostezo: { dur: 3200, peso: 1, pasos: [
-      [0, () => { m.ceja.t = -6; m.parpado.t = 0.3; m.inferior.t = 0.45; m.agacha.t = -5; m.cabezaR.t = -4; }],
-      [200, () => { m.bocaBostezo.t = 1; }],
-      [1900, () => { m.bocaBostezo.t = 0; m.agacha.t = 2; m.parpado.t = 0.12; m.ceja.t = 0; }],
-      [2300, () => { m.cabezaR.t = 3; m.cabezaX.v += 30; }], // sacudida
-      [2700, () => { m.cabezaR.t = 0; m.agacha.t = 0; m.parpado.t = 0; m.inferior.t = 0; parpadear(); }],
-    ] },
     musica: { dur: 4800, peso: 1, pasos: [
       [0, () => { m.inferior.t = 0.4; m.sonrisa.t = 1; m.ceja.t = -5; }],
       ...[0, 600, 1200, 1800, 2400, 3000, 3600].map((t, i) => [t, () => {
@@ -370,27 +362,27 @@
     ] },
     // ── Reloj: se duerme antes de que salte y se despierta al volver (peso 0) ──
     // Lo lanza el kiosko (window.kaitoDormirse); al cerrar los ojos, al reloj.
-    // ~10 s quedándose dormido (le pesan los párpados, bosteza, cabecea, se
-    // resiste, otro bostezo) y 15 s ya dormido con sus zZz. Entonces, reloj.
+    // Quedarse dormido, en continuo: el párpado de arriba baja poco a poco, cada
+    // parpadeo es más lento y largo, la cabeza se va venciendo y al final los
+    // ojos se cierran del todo, muy despacio. Luego duerme 15 s con zZz y, reloj.
     dormirse: { dur: DORMIRSE_MS + 3000, peso: 0, alTocar: despertar, pasos: [
-      [0, () => { m.parpado.t = 0.35; m.ceja.t = 3; mirarSuave(0, 3); }],
-      [1200, () => { m.bocaBostezo.t = 1; m.cabezaY.t = -2; }], // bostezo
-      [2600, () => { m.bocaBostezo.t = 0; m.cabezaY.t = 0; }],
-      [3200, () => { m.parpado.t = 0.6; }],
-      [4300, () => { m.parpado.t = 0.88; m.cabezaY.v += 18; m.cabezaR.t = -3; }], // cabeceo
-      [5200, () => { m.parpado.t = 0.12; m.abre.v += 0.7; m.cabezaR.t = 0; m.cabezaY.v -= 20; }], // ¡se resiste!
-      [6700, () => { m.parpado.t = 0.5; }],
-      [7900, () => { m.bocaBostezo.t = 0.6; }], // otro bostezo, más pequeño
-      [8900, () => { m.bocaBostezo.t = 0; m.parpado.t = 0.75; }],
-      [9600, () => { m.parpado.t = 1; m.inferior.t = 0.15; m.cabezaR.t = -5; m.cabezaY.t = 7; m.bocaMini.t = 1; respiraExtra = 1.6; }], // dormido
-      // Dormido: cabeceos suaves de vez en cuando mientras salen las zZz
-      [12400, () => { m.cabezaY.v += 16; }],
-      [15800, () => { m.cabezaR.t = -3; }],
-      [17500, () => { m.cabezaY.v += 14; }],
-      [20200, () => { m.cabezaR.t = -6; }],
-      [22000, () => { m.cabezaY.v += 16; }],
+      [0, () => mirarSuave(0, 3)],
+      // [cuándo, cuánto más lento que un parpadeo normal]
+      ...[[1400, 1.3], [3600, 1.7], [5600, 2.2], [7400, 2.8], [9000, 3.5], [10500, 4.3]]
+        .map(([t, lento]) => [t, () => parpadear(lento)]),
       [DORMIRSE_MS, () => { const ir = alDormirse; alDormirse = null; if (ir) ir(); }],
-    ] },
+    ], cadaCuadro(t) {
+      if (face.classList.contains("despierta")) return; // lo han despertado
+      const d = acotar(t / CAE_MS, 0, 1);
+      const e = d * d * (3 - 2 * d); // empieza y acaba suave
+      m.parpado.t = t < CAE_MS ? 0.72 * e : 0.72 + 0.28 * acotar((t - CAE_MS) / CIERRA_MS, 0, 1);
+      m.inferior.t = 0.15 * e;
+      m.ceja.t = 3 * e;
+      m.cabezaY.t = 7 * e;
+      m.cabezaR.t = -5 * e;
+      m.bocaMini.t = acotar((t - CAE_MS * 0.6) / (CAE_MS * 0.4), 0, 1);
+      respiraExtra = 1.6 * e;
+    } },
     despertando: { dur: 2400, peso: 0, pasos: [
       [0, () => { m.parpado.x = m.parpado.t = 1; m.cabezaY.x = m.cabezaY.t = 6; m.bocaMini.t = 1; }],
       [800, despertar],
@@ -422,15 +414,8 @@
   };
 
   // `quieto`: ms que lleva sin que nadie le hable ni lo toque
-  function sortearKawaii(quieto = 0) {
-    const h = new Date().getHours();
-    const noche = h >= 22 || h < 7; // de noche bosteza más
-    // Y cuanto más rato solo, más bostezos: sube hasta +6 justo cuando va a saltar
-    // el reloj (el kiosko pone ese tiempo; sin kiosko, 5 min)
-    const hastaReloj = window.kaitoInactividadMs || 300000;
-    const tramo = Math.max(30000, hastaReloj - EMPIEZA_SUENO);
-    const sueno = (noche ? 5 : 1) + 6 * acotar((quieto - EMPIEZA_SUENO) / tramo, 0, 1);
-    const lista = Object.entries(KAWAII).map(([n, g]) => [n, n === "bostezo" ? sueno : g.peso]);
+  function sortearKawaii() {
+    const lista = Object.entries(KAWAII).map(([n, g]) => [n, g.peso]);
     let r = Math.random() * lista.reduce((a, [, p]) => a + p, 0);
     for (const [n, p] of lista) if ((r -= p) < 0) return n;
     return "feliz";
@@ -522,12 +507,11 @@
       o: acotar(m.bocaO.x, 0, 1.1),
       mini: acotar(m.bocaMini.x, 0, 1.1),
       triste: acotar(m.triste.x, 0, 1.1),
-      bostezo: acotar(m.bocaBostezo.x, 0, 1.1),
     };
     for (const b of bocas) {
       if (b.sensei !== enSensei) continue;
       // La sensei no tiene formas propias: sonríe o hace la O abriéndose un poco
-      const ab = b.formas ? abierta : abierta + pesos.sonrisa * 0.35 + pesos.o * 0.6 + pesos.bostezo;
+      const ab = b.formas ? abierta : abierta + pesos.sonrisa * 0.35 + pesos.o * 0.6;
       const ladoBoca = m.bocaX.x;
       let i = 0;
       poner(b.path, "d", b.cerrada.replace(NUM, () => {
