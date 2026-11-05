@@ -54,7 +54,7 @@ def test_gracias_elige_gestos_buenos_que_existen_y_no_repite():
     kawaii = motor[motor.index("const KAWAII = {"):motor.index("function sortearKawaii")]
     for g in GESTOS_GRACIAS:
         assert re.search(rf"^\s+{g}: \{{", kawaii, re.M), g
-    assert not {"dormido", "apuro", "sorpresa"} & set(GESTOS_GRACIAS)
+    assert not {"bostezo", "dormirse", "apuro", "sorpresa"} & set(GESTOS_GRACIAS)
 
     vistos, anterior = set(), None
     for _ in range(300):
