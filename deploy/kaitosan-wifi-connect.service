@@ -29,10 +29,11 @@ Wants=NetworkManager.service
 
 [Service]
 Type=simple
-# Espera a que NetworkManager termine de intentar conectarse.
-ExecStartPre=/usr/bin/nm-online -s -q --timeout=30
-# Aborta el arranque si YA hay conexion (asi el portal solo aparece si hace falta).
-ExecStartPre=/bin/bash -c '/usr/bin/nmcli -t -f STATE g | grep -q "connected" && exit 1 || exit 0'
+# Espera a NetworkManager y omite el servicio si YA hay conexion. Con
+# ExecCondition no cuenta como fallo, asi que Restart=on-failure no entra en bucle.
+# "^connected": "disconnected" tambien contiene "connected".
+# Va antes que cualquier ExecStartPre, por eso nm-online esta aqui dentro.
+ExecCondition=/bin/bash -c '/usr/bin/nm-online -s -q --timeout=30; ! /usr/bin/nmcli -t -f STATE g | grep -q "^connected"'
 ExecStart=/opt/wifi-connect/wifi-connect \
   --portal-ssid "Kaitosan-Setup" \
   --portal-listening-port 80 \
