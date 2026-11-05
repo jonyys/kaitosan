@@ -16,6 +16,9 @@
     /* Halo: pantalla redonda de 480x480, tiene que quedar dentro y apenas notarse */
     --cara-halo-color: 150, 98, 36;
     --cara-halo-tamano: 360px;
+    /* En el robot Chromium no baja de 500 px de ventana y la pantalla mide 480:
+       sin esto la cara queda 10 px a la derecha. Sirve también para ajustar el centrado. */
+    --cara-ancho: {{ '480px' if es_kiosko else '100vw' }};
   }
   .transition,
   .transition .eye,
@@ -35,7 +38,7 @@
   body {
     margin: 0;
     background: var(--cara-fondo);
-    width: 100vw;
+    width: var(--cara-ancho);
     height: 100vh;
     overflow: hidden;
     display: flex;
@@ -57,7 +60,7 @@
   .face::before {
     content: "";
     position: absolute;
-    left: 50%;
+    left: calc(var(--cara-ancho) / 2);
     top: 48%;
     transform: translate(-50%, -50%);
     z-index: -1;
