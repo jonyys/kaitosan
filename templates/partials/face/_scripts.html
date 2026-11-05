@@ -32,6 +32,76 @@
 
   let busquedaInterval;
 
+  // ── Gestos kawaii ──────────────────────────────────────────────────────
+  // Microexpresiones cortas en reposo (ver "GESTOS KAWAII" en _estilos.html).
+  // Duración en ms de cada uno; tiene que cuadrar con sus keyframes.
+  const GESTOS = {
+    feliz: 2600,
+    guino: 1800,
+    corazones: 3200,
+    rubor: 3000,
+    estrellitas: 2600,
+    ladeo: 2800,
+    saltito: 1500,
+    sorpresa: 1800,
+    dormido: 6000,
+    musica: 4800,
+    apuro: 3000,
+  };
+  // Cuántas veces sale cada uno en el sorteo de reposo
+  const PESOS_GESTO = {
+    feliz: 3, guino: 2, corazones: 1, rubor: 2, estrellitas: 2, ladeo: 3,
+    saltito: 2, sorpresa: 1, dormido: 1, musica: 1, apuro: 1,
+  };
+  let gestoActual = null;
+  let gestoTimeout = null;
+  let gestoAleatorioTimeout = null;
+
+  function terminarGesto() {
+    clearTimeout(gestoTimeout);
+    if (gestoActual) face.classList.remove("gesto", "gesto-" + gestoActual);
+    gestoActual = null;
+  }
+
+  // Lanza un gesto si Kaito está en reposo. Devuelve true si se ha hecho.
+  function hacerGesto(nombre) {
+    if (!GESTOS[nombre] || !face.classList.contains("idle")) return false;
+    terminarGesto();
+    detenerBusqueda();
+    const dur = GESTOS[nombre];
+    face.style.setProperty("--gesto-dur", dur + "ms");
+    void face.offsetWidth; // reinicia las animaciones si se repite el mismo gesto
+    face.classList.add("gesto", "gesto-" + nombre);
+    gestoActual = nombre;
+    gestoTimeout = setTimeout(() => {
+      terminarGesto();
+      if (face.classList.contains("idle")) iniciarBusqueda();
+    }, dur);
+    return true;
+  }
+
+  function sortearGesto() {
+    const pesos = Object.assign({}, PESOS_GESTO);
+    const h = new Date().getHours();
+    if (h >= 22 || h < 7) pesos.dormido = 5; // de noche le entra el sueño
+    const total = Object.values(pesos).reduce((a, b) => a + b, 0);
+    let r = Math.random() * total;
+    for (const [nombre, peso] of Object.entries(pesos)) {
+      r -= peso;
+      if (r < 0) return nombre;
+    }
+    return "feliz";
+  }
+
+  // Un gesto al azar cada 18-40 s mientras esté en reposo
+  function programarGestoAleatorio() {
+    clearTimeout(gestoAleatorioTimeout);
+    gestoAleatorioTimeout = setTimeout(() => {
+      if (face.classList.contains("idle") && !gestoActual) hacerGesto(sortearGesto());
+      programarGestoAleatorio();
+    }, 18000 + Math.random() * 22000);
+  }
+
   function iniciarBusqueda() {
     detenerBusqueda();
 
@@ -41,6 +111,11 @@
         !face.classList.contains("thinking")
       )
         return;
+      if (gestoActual) {
+        // Hay un gesto en marcha: probar otra vez un poco más tarde
+        busquedaInterval = setTimeout(elegirMovimiento, 3000);
+        return;
+      }
 
       const mov = busquedas[Math.floor(Math.random() * busquedas.length)];
       // Seleccionamos ojos normales Y sensei
@@ -121,7 +196,7 @@
   function iniciarParpadeo() {
     detenerParpadeo();
     function parpadear() {
-      if (!face.classList.contains("idle")) {
+      if (!face.classList.contains("idle") || gestoActual) {
         programar();
         return;
       }
@@ -218,6 +293,7 @@
     detenerParpadeo();
     detenerParpadeoLento();
     detenerBusqueda();
+    terminarGesto();
 
     estados.forEach((e) => face.classList.remove(e));
     face.classList.remove("listening-active");
@@ -307,6 +383,25 @@
 
   iniciarParpadeo();
   iniciarBusqueda();
+  programarGestoAleatorio();
+
+  // El backend puede pedir un gesto: socketio.emit("gesto", {"gesto": "corazones"})
+  socket.on("gesto", (data) => hacerGesto(data && data.gesto));
+  window.kaitoGesto = hacerGesto; // para probar desde la consola
+
+  // Prueba rápida en la pantalla: /?gesto=corazones (o ?gesto=todos para verlos seguidos)
+  (function () {
+    const pedido = new URLSearchParams(location.search).get("gesto");
+    if (!pedido) return;
+    const lista = pedido === "todos" ? Object.keys(GESTOS) : [pedido];
+    let i = 0;
+    (function siguiente() {
+      if (i >= lista.length) return;
+      const nombre = lista[i++];
+      hacerGesto(nombre);
+      setTimeout(siguiente, (GESTOS[nombre] || 0) + 900);
+    })();
+  })();
 
   // Muestra en pantalla lo que Kaito ha entendido tras el wakeword
   socket.on("transcripcion", function (data) {

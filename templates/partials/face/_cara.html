@@ -287,6 +287,58 @@
         <rect x="308.85" y="256.097" width="57.731" height="0.628" style="stroke: rgb(0, 0, 0); stroke-width: 0px; fill: var(--cara-parpado);"/>
       </g>
     </svg>
+
+    <!-- Gestos kawaii: capas que se encienden con .gesto-* en #face -->
+    <div class="ojos-fx" aria-hidden="true">
+      <div class="slot slot-izq">
+        <!-- ^^ ojito feliz / guiño -->
+        <svg class="ov ov-arco" viewBox="0 0 100 60" aria-hidden="true">
+          <path d="M 10 50 Q 50 -8 90 50" />
+        </svg>
+        <!-- ojo-corazón -->
+        <svg class="ov ov-corazon" viewBox="0 0 100 92" aria-hidden="true">
+          <path d="M50 88 C 20 66 2 48 2 27 C 2 12 13 2 27 2 C 37 2 45 8 50 17 C 55 8 63 2 73 2 C 87 2 98 12 98 27 C 98 48 80 66 50 88 Z" />
+          <ellipse cx="28" cy="24" rx="9" ry="6" transform="rotate(-30 28 24)" />
+        </svg>
+        <!-- estrellitas -->
+        <svg class="ov ov-brillo ov-brillo-1" viewBox="0 0 100 100" aria-hidden="true">
+          <path d="M50 0 C 54 38 62 46 100 50 C 62 54 54 62 50 100 C 46 62 38 54 0 50 C 38 46 46 38 50 0 Z" />
+        </svg>
+        <svg class="ov ov-brillo ov-brillo-2" viewBox="0 0 100 100" aria-hidden="true">
+          <path d="M50 0 C 54 38 62 46 100 50 C 62 54 54 62 50 100 C 46 62 38 54 0 50 C 38 46 46 38 50 0 Z" />
+        </svg>
+        <!-- rubor con las rayitas de anime -->
+        <div class="ov ov-rubor">
+          <svg viewBox="0 0 60 24" aria-hidden="true">
+            <path d="M14 18 L20 6 M27 18 L33 6 M40 18 L46 6" />
+          </svg>
+        </div>
+      </div>
+      <div class="slot slot-der">
+        <!-- ^^ ojito feliz / guiño -->
+        <svg class="ov ov-arco" viewBox="0 0 100 60" aria-hidden="true">
+          <path d="M 10 50 Q 50 -8 90 50" />
+        </svg>
+        <!-- ojo-corazón -->
+        <svg class="ov ov-corazon" viewBox="0 0 100 92" aria-hidden="true">
+          <path d="M50 88 C 20 66 2 48 2 27 C 2 12 13 2 27 2 C 37 2 45 8 50 17 C 55 8 63 2 73 2 C 87 2 98 12 98 27 C 98 48 80 66 50 88 Z" />
+          <ellipse cx="28" cy="24" rx="9" ry="6" transform="rotate(-30 28 24)" />
+        </svg>
+        <!-- estrellitas -->
+        <svg class="ov ov-brillo ov-brillo-1" viewBox="0 0 100 100" aria-hidden="true">
+          <path d="M50 0 C 54 38 62 46 100 50 C 62 54 54 62 50 100 C 46 62 38 54 0 50 C 38 46 46 38 50 0 Z" />
+        </svg>
+        <svg class="ov ov-brillo ov-brillo-2" viewBox="0 0 100 100" aria-hidden="true">
+          <path d="M50 0 C 54 38 62 46 100 50 C 62 54 54 62 50 100 C 46 62 38 54 0 50 C 38 46 46 38 50 0 Z" />
+        </svg>
+        <!-- rubor con las rayitas de anime -->
+        <div class="ov ov-rubor">
+          <svg viewBox="0 0 60 24" aria-hidden="true">
+            <path d="M14 18 L20 6 M27 18 L33 6 M40 18 L46 6" />
+          </svg>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Boca -->
@@ -349,5 +401,19 @@
         "
       />
     </svg>
+  </div>
+  <!-- Partículas de los gestos (corazones, notas, zZz, sudor) -->
+  <div class="cara-fx" aria-hidden="true">
+    <span class="fx fx-corazon fx-c1"><svg viewBox="0 0 100 92"><path d="M50 88 C 20 66 2 48 2 27 C 2 12 13 2 27 2 C 37 2 45 8 50 17 C 55 8 63 2 73 2 C 87 2 98 12 98 27 C 98 48 80 66 50 88 Z" /></svg></span>
+    <span class="fx fx-corazon fx-c2"><svg viewBox="0 0 100 92"><path d="M50 88 C 20 66 2 48 2 27 C 2 12 13 2 27 2 C 37 2 45 8 50 17 C 55 8 63 2 73 2 C 87 2 98 12 98 27 C 98 48 80 66 50 88 Z" /></svg></span>
+    <span class="fx fx-corazon fx-c3"><svg viewBox="0 0 100 92"><path d="M50 88 C 20 66 2 48 2 27 C 2 12 13 2 27 2 C 37 2 45 8 50 17 C 55 8 63 2 73 2 C 87 2 98 12 98 27 C 98 48 80 66 50 88 Z" /></svg></span>
+    <span class="fx fx-corazon fx-c4"><svg viewBox="0 0 100 92"><path d="M50 88 C 20 66 2 48 2 27 C 2 12 13 2 27 2 C 37 2 45 8 50 17 C 55 8 63 2 73 2 C 87 2 98 12 98 27 C 98 48 80 66 50 88 Z" /></svg></span>
+    <span class="fx fx-nota fx-n1"><svg viewBox="0 0 40 60"><ellipse cx="13" cy="49" rx="11" ry="8" transform="rotate(-20 13 49)" /><rect x="20" y="4" width="4.5" height="46" rx="2" /><path d="M22 4 C 30 12 42 15 37 32 C 35 23 30 19 22 18 Z" /></svg></span>
+    <span class="fx fx-nota fx-n2"><svg viewBox="0 0 60 60"><ellipse cx="12" cy="50" rx="10" ry="7" transform="rotate(-20 12 50)" /><ellipse cx="46" cy="44" rx="10" ry="7" transform="rotate(-20 46 44)" /><rect x="18" y="8" width="4.5" height="42" rx="2" /><rect x="52" y="2" width="4.5" height="42" rx="2" /><path d="M18 8 L57 2 L57 12 L18 18 Z" /></svg></span>
+    <span class="fx fx-nota fx-n3"><svg viewBox="0 0 40 60"><ellipse cx="13" cy="49" rx="11" ry="8" transform="rotate(-20 13 49)" /><rect x="20" y="4" width="4.5" height="46" rx="2" /><path d="M22 4 C 30 12 42 15 37 32 C 35 23 30 19 22 18 Z" /></svg></span>
+    <span class="fx fx-zzz fx-z1">z</span>
+    <span class="fx fx-zzz fx-z2">z</span>
+    <span class="fx fx-zzz fx-z3">Z</span>
+    <span class="fx fx-gota"><svg viewBox="0 0 40 56"><path d="M20 2 C 26 18 38 28 38 38 C 38 48 30 54 20 54 C 10 54 2 48 2 38 C 2 28 14 18 20 2 Z" /><ellipse cx="13" cy="38" rx="4" ry="7" /></svg></span>
   </div>
 </div>
