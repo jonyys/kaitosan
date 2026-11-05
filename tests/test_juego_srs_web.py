@@ -1,7 +1,7 @@
 """Fase 11 — Boletín can-do: ruta /japones/boletin (solo lectura).
 
-`import app` no arranca en este entorno (depende de `picamera2`, hardware de la
-Pi; ver traceback: `core/camera.py` -> `from picamera2 import Picamera2`). El
+`import app` no arranca en este entorno (depende de hardware y librerías de la
+Pi: audio, wakeword, botón GPIO). El
 test de ruta se sustituye por:
   - una app Flask mínima que registra la vista con el MISMO helper
     (`JapaneseMemory.boletin`) y la MISMA plantilla que usa `app.py`, y hace
@@ -161,7 +161,7 @@ def test_boletin_db_vacia():
 
 # ── Fase 12 — Práctica de vocabulario por lección ──────────────────────────────
 #
-# `import app` sigue sin arrancar aquí (picamera2 / google.generativeai, deps de
+# `import app` sigue sin arrancar aquí (google.generativeai y demás deps de
 # la Pi). Igual que `test_boletin`, se monta una app Flask mínima que registra la
 # vista de esta fase con el MISMO cuerpo que `app.py:japones_vocabulario_practicar`
 # (copiado literal), usando un `JapaneseMemory` real sobre BD tmp y el `CURRICULUM`
