@@ -168,6 +168,9 @@
     m.abre.t = modo.abre;
     m.pupila.t = modo.pupila;
     m.cabezaR.t = modo.inclina ? modo.inclina * (Math.random() < 0.5 ? -1 : 1) : 0;
+    // Lo que solo usan gestos y emociones vuelve a cero
+    m.sonrisa.t = m.bocaO.t = m.bocaMini.t = m.aplasta.t = 0;
+    m.cierraIzq.t = m.cierraDer.t = 0;
   }
 
   // ── Gestos de cuando no pasa nada ───────────────────────────────────────────
@@ -265,8 +268,6 @@
     m.cabezaY.t = y * 0.2;
   }
   function vuelveAlReposo() {
-    m.sonrisa.t = m.bocaO.t = m.bocaMini.t = m.aplasta.t = 0;
-    m.cierraIzq.t = m.cierraDer.t = 0;
     respiraExtra = 0;
     aplicarModo();
     mirarSuave(0, 0);
@@ -347,6 +348,21 @@
       }]),
       [4200, () => { m.cabezaR.t = 0; m.cabezaX.t = 0; m.sonrisa.t = 0; m.inferior.t = 0; }],
     ] },
+    // ── Los dos de tocar la pantalla (nunca salen solos: peso 0) ──
+    // Caricia: deslizar el dedo por la cara. Ojos contentos y se arrima a la mano.
+    caricia: { dur: 2200, peso: 0, pasos: [
+      [0, () => { m.inferior.t = 0.45; m.sonrisa.t = 0.8; m.ceja.t = -5; m.pupila.t = 1.15; m.cabezaY.t = 3; }],
+    ] },
+    // Mantener pulsado: cosquillas. Se ríe mientras sigas; al soltar se calma.
+    cosquillas: { dur: 6000, peso: 0, pasos: [
+      [0, () => { m.inferior.t = 0.5; m.ceja.t = -6; m.pupila.t = 1.1; m.abre.v += 0.8; }],
+    ], cadaCuadro(t) {
+      if (gesto.soltado) return;
+      const s = t / 1000;
+      m.cabezaR.t = 4.5 * Math.sin(s * 16);
+      m.cabezaY.t = -2.5 * Math.abs(Math.sin(s * 11));
+      m.sonrisa.t = 0.7 + 0.4 * Math.abs(Math.sin(s * 11)); // "ja, ja, ja"
+    } },
     apuro: { dur: 3000, peso: 1, pasos: [
       [0, () => { mirarSuave(-12, 0); m.cejaRot.t = -8; m.ceja.t = -5; m.bocaMini.t = 0.8; }],
       [1100, () => mirarSuave(12, 0)],
@@ -383,6 +399,7 @@
     const pasos = gesto.g.pasos;
     const t = ahora - gesto.ini;
     while (gesto && gesto.i < pasos.length && pasos[gesto.i][0] <= t) pasos[gesto.i++][1]();
+    if (gesto && gesto.g.cadaCuadro) gesto.g.cadaCuadro(t);
     if (gesto && ahora >= gesto.fin) {
       terminarGesto();
       prox.mirada = ahora + azar(600, 1500);
@@ -464,6 +481,53 @@
     requestAnimationFrame(cuadro);
   }
 
+  // ── Emoción al hablar ───────────────────────────────────────────────────────
+  // El backend manda "emocion" en cuanto tiene la respuesta (la saca de la
+  // etiqueta [feliz] del LLM, core/emociones.py). Se guarda y se pone al
+  // empezar a hablar; al terminar, vuelve al reposo.
+  const EMOCIONES = {
+    feliz: { inferior: 0.3, ceja: -5, sonrisa: 0.55, pupila: 1.1 },
+    carino: { inferior: 0.32, ceja: -4, sonrisa: 0.5, pupila: 1.22, inclina: -4 },
+    bromista: { dif: -6, sonrisa: 0.5, inclina: 3, alFinal: "guino" },
+    sorpresa: { abre: 1.1, ceja: -10, pupila: 0.9 },
+    triste: { ceja: 2, rot: -9, pupila: 1.25, inferior: 0.12, inclina: -3, mira: [0, 6] },
+    pensativo: { dif: 4, mira: [9, -7] },
+  };
+  let emocionPendiente = null;
+  let emocionActual = null;
+
+  function ponerEmocion(nombre) {
+    const e = EMOCIONES[nombre];
+    if (!e) return;
+    emocionActual = nombre;
+    face.classList.add("emocion-" + nombre);
+    if (e.inferior != null) m.inferior.t = e.inferior;
+    if (e.ceja != null) m.ceja.t = e.ceja;
+    if (e.dif != null) m.cejaDif.t = e.dif;
+    if (e.rot != null) m.cejaRot.t = e.rot;
+    if (e.abre != null) { m.abre.t = e.abre; m.abre.v += 0.6; }
+    if (e.pupila != null) m.pupila.t = e.pupila;
+    if (e.sonrisa != null) m.sonrisa.t = e.sonrisa;
+    if (e.inclina != null) m.cabezaR.t = e.inclina;
+    if (e.mira) mirarSuave(e.mira[0], e.mira[1]);
+  }
+
+  function quitarEmocion() {
+    if (!emocionActual) return null;
+    const alFinal = EMOCIONES[emocionActual].alFinal;
+    face.classList.remove("emocion-" + emocionActual);
+    emocionActual = null;
+    return alFinal;
+  }
+
+  socket.on("emocion", (data) => {
+    emocionPendiente = data && EMOCIONES[data.emocion] ? data.emocion : null;
+    if (estado === "speaking" && emocionPendiente && !emocionActual) {
+      ponerEmocion(emocionPendiente);
+      emocionPendiente = null;
+    }
+  });
+
   // ── Estados ─────────────────────────────────────────────────────────────────
   function aplicarEstado(nuevo) {
     if (!estados.includes(nuevo) || nuevo === estado) return;
@@ -478,6 +542,11 @@
     prox.gesto = ahora + azar(8000, 18000);
     quietoDesde = ahora;
     aplicarModo();
+    const alFinal = quitarEmocion();
+    if (nuevo === "speaking" && emocionPendiente) ponerEmocion(emocionPendiente);
+    if (nuevo !== "thinking") emocionPendiente = null;
+    // Remate al acabar de hablar (p. ej. un guiño tras una broma)
+    if (alFinal && nuevo === "idle") setTimeout(() => hacerGesto(alFinal), 350);
 
     // Impulsos: la reacción que un valor de reposo no puede dar
     if (nuevo === "listening") {
@@ -507,6 +576,7 @@
         gesto.fin = ahora + 900;
         return;
       }
+      empezarToque(e);
       const r = face.getBoundingClientRect();
       mirar(
         acotar(((e.clientX - (r.left + r.width / 2)) / 180) * 16, -16, 16),
@@ -519,6 +589,69 @@
     },
     { passive: true },
   );
+
+  // ── Caricia y mantener pulsado ──────────────────────────────────────────────
+  // Siempre un solo toque: el doble toque es del reloj (_kiosko.html), y allí
+  // un toque largo o arrastrado ya no cuenta para el doble toque.
+  const toque = { activo: false, x0: 0, y0: 0, x: 0, y: 0, recorrido: 0, timer: 0, enCara: false };
+
+  function dentroDeLaCara(x, y) {
+    const r = face.getBoundingClientRect();
+    return x > r.left - 30 && x < r.right + 30 && y > r.top - 30 && y < r.bottom + 30;
+  }
+
+  function empezarToque(e) {
+    clearTimeout(toque.timer);
+    toque.activo = true;
+    toque.x0 = toque.x = e.clientX;
+    toque.y0 = toque.y = e.clientY;
+    toque.recorrido = 0;
+    // Los 100 px de arriba son para abrir el cajón deslizando
+    toque.enCara = e.clientY > 100 && dentroDeLaCara(e.clientX, e.clientY);
+    if (!toque.enCara) return;
+    toque.timer = setTimeout(() => {
+      if (toque.activo && Math.hypot(toque.x - toque.x0, toque.y - toque.y0) < 18) hacerGesto("cosquillas");
+    }, 600);
+  }
+
+  document.addEventListener(
+    "pointermove",
+    (e) => {
+      if (!toque.activo || !toque.enCara) return;
+      const dx = e.clientX - toque.x;
+      toque.recorrido += Math.abs(dx);
+      toque.x = e.clientX;
+      toque.y = e.clientY;
+      if (Math.hypot(toque.x - toque.x0, toque.y - toque.y0) > 18) clearTimeout(toque.timer);
+      if (Math.abs(toque.y - toque.y0) > 90) return; // eso es arrastrar en vertical
+      const enCaricia = gesto && gesto.nombre === "caricia";
+      if (toque.recorrido > 90) {
+        toque.recorrido = 0;
+        if (enCaricia) gesto.fin = Math.max(gesto.fin, Math.min(gesto.ini + 7000, ahora + 1600));
+        else if (!gesto || gesto.nombre !== "cosquillas") hacerGesto("caricia");
+      }
+      // Se arrima hacia donde va la mano
+      if (enCaricia && Math.abs(dx) > 2) {
+        m.cabezaR.t = 5 * Math.sign(dx);
+        m.cabezaX.t = 4 * Math.sign(dx);
+      }
+    },
+    { passive: true },
+  );
+
+  function soltarToque() {
+    toque.activo = false;
+    clearTimeout(toque.timer);
+    if (gesto && gesto.nombre === "cosquillas" && !gesto.soltado) {
+      gesto.soltado = true;
+      gesto.fin = Math.min(gesto.fin, ahora + 700);
+      m.cabezaR.t = 0;
+      m.cabezaY.t = 0;
+      m.sonrisa.t = 0.8;
+    }
+  }
+  document.addEventListener("pointerup", soltarToque, { passive: true });
+  document.addEventListener("pointercancel", soltarToque, { passive: true });
 
   const senseiJp = document.getElementById("sensei-jp");
 

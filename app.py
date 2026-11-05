@@ -23,6 +23,7 @@ from core.brain import Brain
 from core.listener import VoiceListener
 from core.button import PowerButton
 from core.config import FLASK_SECRET_KEY
+from core.emociones import es_solo_gracias
 from werkzeug.security import check_password_hash, generate_password_hash
 from core.settings_store import settings_get, settings_set
 from core import system_settings
@@ -148,6 +149,12 @@ def grabar():
         if not texto:
             state.cambiar("idle")
             return jsonify({"error": "No se entendió nada"}), 400
+
+        # Un "gracias" suelto se contesta solo con la cara (igual que por voz)
+        if not brain.profesor.esta_activo() and es_solo_gracias(texto):
+            state.cambiar("idle")
+            socketio.emit("gesto", {"gesto": "corazones"})
+            return jsonify({"transcripcion": texto, "respuesta": "", "estado": "ok"})
 
         # Pensando
         state.cambiar("thinking")
