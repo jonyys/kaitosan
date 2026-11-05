@@ -53,7 +53,9 @@
   let modo = MODOS.idle;
   let hablando = false;
 
-  const prox = { mirada: 0, micro: 0, parpadeo: 0, gesto: 0, finGesto: 0, finDedo: 0, gestoSolo: 0 };
+  const prox = { mirada: 0, micro: 0, parpadeo: 0, gesto: 0, finGesto: 0, finDedo: 0, sueno: 0 };
+  // Un gesto cada 25-35 s en reposo: más a menudo distrae si trabajas al lado
+  const CADA_GESTO = [25000, 35000];
   const miradaBase = { x: 0, y: 0 };
   let ladoPensando = 1;
   let quietoDesde = 0;
@@ -219,25 +221,19 @@
       prox.finGesto = 0;
       aplicarModo();
     }
-    if (ahora < prox.gesto) return;
-    // Tras un rato sin nada le entra sueño: parpadeos lentos, nunca ojos a medio
-    // cerrar. Pero sigue vivo: cada 30-60 s hace uno de los kawaii, y cuanto más
-    // tiempo lleva solo, más fácil que sea el sueñito.
     const quieto = ahora - quietoDesde;
-    if (quieto > 60000) {
-      if (prox.gestoSolo < quietoDesde + 60000) prox.gestoSolo = ahora + azar(20000, 45000);
-      if (ahora >= prox.gestoSolo) {
-        prox.gestoSolo = ahora + azar(30000, 60000);
-        if (hacerGesto(sortearKawaii(quieto))) return;
-      }
+    // Tras un rato sin nada le entra sueño: parpadeos lentos entre gesto y gesto,
+    // nunca ojos a medio cerrar
+    if (quieto > 60000 && ahora > prox.sueno && !prox.finGesto) {
       parpadear(2.4);
-      prox.gesto = ahora + azar(5000, 9000);
-      return;
+      prox.sueno = ahora + azar(5000, 9000);
     }
-    // De vez en cuando, uno de los kawaii en vez de los pequeños
-    if (Math.random() < 0.4 && hacerGesto(sortearKawaii(0))) return;
+    if (ahora < prox.gesto) return;
+    prox.gesto = ahora + entre(CADA_GESTO);
+    // Mitad de las veces uno de los kawaii, mitad uno de los pequeños
+    if (Math.random() < 0.5 && hacerGesto(sortearKawaii(quieto))) return;
     prox.finGesto = ahora + GESTOS[Math.floor(Math.random() * GESTOS.length)]();
-    prox.gesto = ahora + azar(8000, 18000);
+    prox.gesto = ahora + entre(CADA_GESTO);
   }
 
   function comportamiento() {
@@ -277,6 +273,7 @@
   // párpados de verdad.
   let gesto = null;
   let respiraExtra = 0;
+  let alDormirse = null;
 
   // Mirar sin el parpadeo que a veces acompaña a los saltos de mirada
   function mirarSuave(x, y) {
@@ -368,6 +365,22 @@
       }]),
       [4200, () => { m.cabezaR.t = 0; m.cabezaX.t = 0; m.sonrisa.t = 0; m.inferior.t = 0; }],
     ] },
+    // ── Reloj: se duerme antes de que salte y se despierta al volver (peso 0) ──
+    // Lo lanza el kiosko (window.kaitoDormirse); al cerrar los ojos, al reloj.
+    dormirse: { dur: 8000, peso: 0, alTocar: despertar, pasos: [
+      [0, () => { m.parpado.t = 0.5; m.ceja.t = 3; mirarSuave(0, 3); }],
+      [500, () => { m.bocaO.t = 0.7; }], // bostezo
+      [900, () => { m.parpado.t = 0.2; }],
+      [1500, () => { m.bocaO.t = 0; m.parpado.t = 1; m.inferior.t = 0.15; m.cabezaR.t = -5; m.cabezaY.t = 7; m.bocaMini.t = 1; respiraExtra = 1.6; }],
+      [3800, () => { const ir = alDormirse; alDormirse = null; if (ir) ir(); }],
+    ] },
+    despertando: { dur: 2400, peso: 0, pasos: [
+      [0, () => { m.parpado.x = m.parpado.t = 1; m.cabezaY.x = m.cabezaY.t = 6; m.bocaMini.t = 1; }],
+      [800, despertar],
+      [1200, () => { m.bocaO.t = 0; parpadear(); }],
+      [1600, () => parpadear()],
+    ] },
+
     // ── Los dos de tocar la pantalla (nunca salen solos: peso 0) ──
     // Caricia: deslizar el dedo por la cara. Ojos contentos y se arrima a la mano.
     caricia: { dur: 2200, peso: 0, pasos: [
@@ -395,8 +408,10 @@
   function sortearKawaii(quieto = 0) {
     const h = new Date().getHours();
     const noche = h >= 22 || h < 7; // de noche le entra el sueño
-    // Y cuanto más rato solo, más sueño: +1 cada 2,5 min, hasta +6
-    const sueno = (noche ? 5 : 1) + Math.min(6, Math.max(0, (quieto - 60000) / 150000));
+    // Y cuanto más rato solo, más sueño: sube hasta +6 justo cuando va a saltar
+    // el reloj (el kiosko pone ese tiempo; sin kiosko, 5 min)
+    const hastaReloj = Math.max(120000, window.kaitoInactividadMs || 300000);
+    const sueno = (noche ? 5 : 1) + 6 * acotar((quieto - 60000) / (hastaReloj - 60000), 0, 1);
     const lista = Object.entries(KAWAII).map(([n, g]) => [n, n === "dormido" ? sueno : g.peso]);
     let r = Math.random() * lista.reduce((a, [, p]) => a + p, 0);
     for (const [n, p] of lista) if ((r -= p) < 0) return n;
@@ -414,7 +429,7 @@
     void face.offsetWidth; // reinicia los adornos si se repite el mismo
     face.classList.add("gesto-" + nombre);
     gesto = { nombre, g, ini: ahora, fin: ahora + g.dur, i: 0 };
-    prox.gesto = gesto.fin + azar(8000, 18000);
+    prox.gesto = gesto.fin + entre(CADA_GESTO);
     return true;
   }
 
@@ -431,6 +446,7 @@
   }
 
   function terminarGesto() {
+    alDormirse = null; // si le hablan mientras se duerme, ya no salta al reloj
     if (!gesto) return;
     face.classList.remove("gesto-" + gesto.nombre, "despierta");
     gesto = null;
@@ -573,7 +589,7 @@
     prox.finGesto = 0;
     prox.mirada = 0; // mira a otro sitio al cambiar, como quien cambia de idea
     prox.parpadeo = ahora + entre(modo.cadaParpadeo);
-    prox.gesto = ahora + azar(8000, 18000);
+    prox.gesto = ahora + entre(CADA_GESTO);
     quietoDesde = ahora;
     aplicarModo();
     const alFinal = quitarEmocion();
@@ -605,6 +621,7 @@
     "pointerdown",
     (e) => {
       if (gesto && gesto.g.alTocar && !face.classList.contains("despierta")) {
+        alDormirse = null; // tocarlo mientras se duerme cancela el reloj
         gesto.g.alTocar();
         gesto.i = gesto.g.pasos.length;
         gesto.fin = ahora + 900;
@@ -722,8 +739,25 @@
   });
 
   ahora = previo = quietoDesde = performance.now();
+
+  // El kiosko lo llama antes de saltar al reloj: se duerme y, al cerrar los ojos,
+  // `irAlReloj()`. Si no puede (no está en reposo), salta directamente.
+  window.kaitoDormirse = (irAlReloj) => {
+    if (!hacerGesto("dormirse")) return irAlReloj();
+    alDormirse = irAlReloj;
+  };
+  // Y lo cancela si hay actividad mientras se duerme (tecla, estado...): se despierta
+  window.kaitoCancelarDormirse = () => {
+    if (!gesto || gesto.nombre !== "dormirse" || face.classList.contains("despierta")) return;
+    alDormirse = null;
+    despertar();
+    gesto.i = gesto.g.pasos.length;
+    gesto.fin = ahora + 900;
+  };
+  // Si venimos del reloj, abre los ojos despertándose
+  if (/\/reloj(\?|$)/.test(document.referrer)) hacerGesto("despertando");
   prox.parpadeo = ahora + entre(modo.cadaParpadeo);
-  prox.gesto = ahora + azar(8000, 18000);
+  prox.gesto = ahora + entre(CADA_GESTO);
   aplicarModo();
   requestAnimationFrame(cuadro);
 
