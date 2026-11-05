@@ -60,7 +60,7 @@
   .face::before {
     content: "";
     position: absolute;
-    left: calc(var(--cara-ancho) / 2);
+    left: 50%; /* relativo a .face: su animación de transform la hace contenedor */
     top: 48%;
     transform: translate(-50%, -50%);
     z-index: -1;
