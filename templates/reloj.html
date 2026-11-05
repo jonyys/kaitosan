@@ -688,5 +688,34 @@
     frame();
   })();
 </script>
+{% if es_kiosko %}
+<script>
+  // La pantalla táctil redonda del propio robot solo dispara Pointer Events
+  // (pointerdown/pointermove), no los Touch Events clásicos (touchstart/
+  // touchmove) — confirmado con un contador en pantalla: tocar incrementaba
+  // "pointer" pero nunca "touch". Por eso el scroll nativo (que depende de
+  // gestos touch) no funcionaba. Lo hacemos a mano con pointer events,
+  // moviendo window.scrollY directamente — el listener de scroll de arriba
+  // reacciona igual, así que la cabecera se sigue encogiendo. Solo en el
+  // kiosko: en móvil/PC el scroll nativo ya funciona.
+  (function () {
+    var SEL_INTERACTIVO =
+      "button,a,input,select,textarea,label,dialog,summary,#kioskoDrawer,[data-no-tap]";
+    var y0 = null, scroll0 = 0;
+    document.addEventListener("pointerdown", function (e) {
+      if (e.clientY <= 100 || e.target.closest(SEL_INTERACTIVO)) { y0 = null; return; }
+      y0 = e.clientY;
+      scroll0 = window.scrollY;
+    }, { passive: true });
+    document.addEventListener("pointermove", function (e) {
+      if (y0 === null) return;
+      var dy = y0 - e.clientY;
+      var max = document.documentElement.scrollHeight - window.innerHeight;
+      window.scrollTo(0, Math.min(Math.max(scroll0 + dy, 0), max));
+    }, { passive: true });
+    document.addEventListener("pointerup", function () { y0 = null; }, { passive: true });
+  })();
+</script>
+{% endif %}
 </body>
 </html>

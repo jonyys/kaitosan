@@ -186,13 +186,14 @@
         });
       });
 
-      // cerrar deslizando el cajón hacia arriba
+      // cerrar deslizando el cajón hacia arriba (pointer events: esta
+      // pantalla táctil no dispara touchstart/touchmove, ver wireGestos)
       var dy = null;
-      dw.addEventListener("touchstart", function (e) {
-        dy = e.touches[0].clientY;
+      dw.addEventListener("pointerdown", function (e) {
+        dy = e.clientY;
       }, { passive: true });
-      dw.addEventListener("touchmove", function (e) {
-        if (dy !== null && dy - e.touches[0].clientY > 40) { dy = null; cerrar(); }
+      dw.addEventListener("pointermove", function (e) {
+        if (dy !== null && dy - e.clientY > 40) { dy = null; cerrar(); }
       }, { passive: true });
 
       return { abrir: abrir, cerrar: cerrar };
@@ -216,16 +217,17 @@
       });
 
       // deslizar desde el borde superior -> abre el cajón de ajustes rápidos
+      // (pointer events: esta pantalla táctil solo dispara pointerdown/
+      // pointermove, nunca touchstart/touchmove — comprobado con un
+      // contador en pantalla antes de cambiarlo)
       var y0 = null, x0 = 0;
-      document.addEventListener("touchstart", function (e) {
-        var t = e.touches[0];
-        y0 = t.clientY <= 100 ? t.clientY : null;
-        x0 = t.clientX;
+      document.addEventListener("pointerdown", function (e) {
+        y0 = e.clientY <= 100 ? e.clientY : null;
+        x0 = e.clientX;
       }, { passive: true });
-      document.addEventListener("touchmove", function (e) {
+      document.addEventListener("pointermove", function (e) {
         if (y0 === null) return;
-        var t = e.touches[0];
-        if (t.clientY - y0 > 60 && Math.abs(t.clientX - x0) < 60) {
+        if (e.clientY - y0 > 60 && Math.abs(e.clientX - x0) < 60) {
           y0 = null;
           drawer.abrir();
         }
