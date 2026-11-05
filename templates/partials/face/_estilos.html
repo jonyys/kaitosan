@@ -49,13 +49,14 @@
     will-change: transform;
   }
 
-  /* Halo cálido detrás de la cara. Sin filter: blur, que en la Pi se recalcula en
-     cada frame; solo escala y opacidad, que las resuelve la GPU sin repintar. */
+  /* Halo cálido detrás de la cara. Quieto y sin filter: blur: en la Pi animarlo
+     consume más que todo el motor de la cara. Ya se mueve con ella. */
   .face::before {
     content: "";
     position: absolute;
     left: 50%; /* relativo a .face: su transform la hace contenedor */
     top: 48%;
+    transform: translate(-50%, -50%);
     z-index: -1;
     pointer-events: none;
     width: var(--cara-halo-tamano);
@@ -68,19 +69,6 @@
       rgba(var(--cara-halo-color), 0.07) 75%,
       transparent 100%
     );
-    will-change: transform, opacity;
-    animation: faceGlow 5.5s ease-in-out infinite;
-  }
-  @keyframes faceGlow {
-    0%,
-    100% {
-      transform: translate(-50%, -50%) scale(0.97);
-      opacity: 0.85;
-    }
-    50% {
-      transform: translate(-50%, -50%) scale(1.05);
-      opacity: 1;
-    }
   }
 
   /* CEJAS */

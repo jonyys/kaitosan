@@ -100,7 +100,10 @@
     if (clave === "transform" || clave === "d") el.setAttribute(clave, valor);
     else el.style.transform = valor;
   }
-  const f = (v) => v.toFixed(2);
+  // Una décima de px basta para que se vea fluido y evita casi todos los repintados:
+  // en la Pi es lo que más consume. Escalas y giros necesitan más precisión.
+  const f = (v) => v.toFixed(1);
+  const f2 = (v) => v.toFixed(2);
 
   // ── Parpadeo: baja rápido y sube despacio, como un párpado real ─────────────
   let parpadeo = null;
@@ -254,20 +257,20 @@
     const mx = m.miradaX.x;
     const my = m.miradaY.x;
 
-    poner(face, "style", `translate(${f(m.cabezaX.x)}px,${f(m.cabezaY.x + respira + m.boca.x * 1.2)}px) rotate(${f(m.cabezaR.x)}deg)`);
+    poner(face, "style", `translate(${f(m.cabezaX.x)}px,${f(m.cabezaY.x + respira + m.boca.x * 1.2)}px) rotate(${f2(m.cabezaR.x)}deg)`);
 
     for (const o of ojos) {
       if (o.sensei !== enSensei) continue;
       poner(o.iris, "transform", `translate(${f(mx * o.espejo * o.escala)} ${f(my * o.escala)})`);
-      poner(o.pupila, "style", `scale(${f(m.pupila.x)})`);
+      poner(o.pupila, "style", `scale(${f2(m.pupila.x)})`);
       poner(o.sup, "transform", `translate(0 ${f(o.recorrido * parpado)})`);
       poner(o.inf, "transform", `translate(0 ${f(-o.recorridoInf * inferior)})`);
-      poner(o.el, "style", `translate(${f(mx * 0.08)}px,${f(my * 0.08)}px) scale(${f(m.abre.x)})`);
+      poner(o.el, "style", `translate(${f(mx * 0.08)}px,${f(my * 0.08)}px) scale(${f2(m.abre.x)})`);
     }
     for (const c of cejas) {
       if (c.sensei !== enSensei) continue;
       const y = m.ceja.x + m.cejaDif.x * c.lado + my * 0.25 + parp * 3;
-      poner(c.el, "style", `translate(${f(mx * 0.12)}px,${f(y)}px) rotate(${f(m.cejaRot.x * -c.lado)}deg)`);
+      poner(c.el, "style", `translate(${f(mx * 0.12)}px,${f(y)}px) rotate(${f2(m.cejaRot.x * -c.lado)}deg)`);
     }
     const abierta = acotar(m.boca.x, 0, 1.1);
     for (const b of bocas) {
@@ -276,7 +279,7 @@
       poner(b.path, "d", b.cerrada.replace(NUM, () => {
         const v = b.de[i] + (b.a[i] - b.de[i]) * abierta;
         i++;
-        return v.toFixed(2);
+        return f(v);
       }));
       poner(b.svg, "style", `translate(${f(mx * 0.2)}px,${f(my * 0.1)}px)`);
     }
