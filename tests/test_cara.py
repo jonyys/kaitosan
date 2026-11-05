@@ -25,7 +25,7 @@ def test_las_formas_de_los_gestos_se_pueden_mezclar_con_la_boca():
     cerrada = re.search(r'cerrada: "([^"]+)"', MOTOR).group(1)
     bloque = re.search(r"FORMAS_BOCA = \{(.*?)\};", MOTOR, re.S).group(1)
     formas = re.findall(r'(\w+): "([^"]+)"', bloque)
-    assert {n for n, _ in formas} == {"sonrisa", "o", "mini"}
+    assert {n for n, _ in formas} == {"sonrisa", "o", "mini", "triste"}
     for nombre, d in formas:
         assert re.sub(r"-?[\d.]+", "#", d) == re.sub(r"-?[\d.]+", "#", cerrada), nombre
 

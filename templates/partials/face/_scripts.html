@@ -32,6 +32,10 @@
     aplasta: muelle(260, 10), // poca amortiguación: rebota como gelatina
     cierraIzq: muelle(260, 30), // párpado de un solo ojo (guiño)
     cierraDer: muelle(260, 30),
+    // Emociones al hablar
+    triste: muelle(150, 20), // boca hacia abajo
+    agacha: muelle(40, 11), // cabeza abajo (+) o echada atrás (-)
+    bocaX: muelle(120, 16), // boca torcida a un lado
   };
   const muelles = Object.values(m);
 
@@ -98,6 +102,7 @@
   const FORMAS_BOCA = {
     sonrisa: "M 265.112 239.115 C 265.112 249.5 255.383 256.5 243.382 256.5 C 231.381 256.5 221.652 249.5 221.652 239.115 C 221.652 236.6 231.381 240.2 243.382 240.2 C 255.383 240.2 265.112 236.6 265.112 239.115 Z",
     o: "M 253.4 245 C 253.4 251.6 248.9 257 243.382 257 C 237.9 257 233.4 251.6 233.4 245 C 233.4 238.4 237.9 233 243.382 233 C 248.9 233 253.4 238.4 253.4 245 Z",
+    triste: "M 265.112 246.885 C 265.112 242.952 255.383 238.763 243.382 238.763 C 231.381 238.763 221.652 242.952 221.652 246.885 C 221.652 250.818 230.758 245.263 242.759 245.263 C 254.76 245.263 265.112 250.818 265.112 246.885 Z",
     mini: "M 247.4 243 C 247.4 245.5 245.6 247.5 243.382 247.5 C 241.1 247.5 239.4 245.5 239.4 243 C 239.4 240.5 241.1 238.5 243.382 238.5 C 245.6 238.5 247.4 240.5 247.4 243 Z",
   };
   bocas.forEach((b) => {
@@ -152,6 +157,12 @@
   }
 
   function nuevaMirada() {
+    // Una emoción puede fijar hacia dónde mira (triste al suelo, pensativo arriba)
+    if (emocionActual && EMOCIONES[emocionActual].mira) {
+      const [x, y] = EMOCIONES[emocionActual].mira;
+      mirar(x + azar(-2.5, 2.5), y + azar(-1.5, 1.5));
+      return;
+    }
     if (modo.alterna) ladoPensando = -ladoPensando;
     const cx = (modo.centro ? modo.centro[0] : 0) * ladoPensando;
     const cy = modo.centro ? modo.centro[1] : 0;
@@ -171,6 +182,7 @@
     // Lo que solo usan gestos y emociones vuelve a cero
     m.sonrisa.t = m.bocaO.t = m.bocaMini.t = m.aplasta.t = 0;
     m.cierraIzq.t = m.cierraDer.t = 0;
+    m.triste.t = m.agacha.t = m.bocaX.t = 0;
   }
 
   // ── Gestos de cuando no pasa nada ───────────────────────────────────────────
@@ -442,7 +454,7 @@
     const my = m.miradaY.x;
 
     const ap = acotar(m.aplasta.x, -0.16, 0.16);
-    poner(face, "style", `translate(${f(m.cabezaX.x)}px,${f(m.cabezaY.x + respira * (1 + respiraExtra) + m.boca.x * 1.2)}px) rotate(${f2(m.cabezaR.x)}deg) scale(${f2(1 + ap)},${f2(1 - ap)})`);
+    poner(face, "style", `translate(${f(m.cabezaX.x)}px,${f(m.cabezaY.x + m.agacha.x + respira * (1 + respiraExtra) + m.boca.x * 1.2)}px) rotate(${f2(m.cabezaR.x)}deg) scale(${f2(1 + ap)},${f2(1 - ap)})`);
 
     for (const o of ojos) {
       if (o.sensei !== enSensei) continue;
@@ -464,11 +476,13 @@
       sonrisa: acotar(m.sonrisa.x, 0, 1.1),
       o: acotar(m.bocaO.x, 0, 1.1),
       mini: acotar(m.bocaMini.x, 0, 1.1),
+      triste: acotar(m.triste.x, 0, 1.1),
     };
     for (const b of bocas) {
       if (b.sensei !== enSensei) continue;
       // La sensei no tiene formas propias: sonríe o hace la O abriéndose un poco
       const ab = b.formas ? abierta : abierta + pesos.sonrisa * 0.35 + pesos.o * 0.6;
+      const ladoBoca = m.bocaX.x;
       let i = 0;
       poner(b.path, "d", b.cerrada.replace(NUM, () => {
         let v = b.de[i] + (b.a[i] - b.de[i]) * ab;
@@ -476,7 +490,7 @@
         i++;
         return f(v);
       }));
-      poner(b.svg, "style", `translate(${f(mx * 0.2)}px,${f(my * 0.1)}px)`);
+      poner(b.svg, "style", `translate(${f(mx * 0.2 + ladoBoca)}px,${f(my * 0.1)}px) rotate(${f2(ladoBoca * 0.6)}deg)`);
     }
     requestAnimationFrame(cuadro);
   }
@@ -489,9 +503,12 @@
     feliz: { inferior: 0.3, ceja: -5, sonrisa: 0.55, pupila: 1.1 },
     carino: { inferior: 0.32, ceja: -4, sonrisa: 0.5, pupila: 1.22, inclina: -4 },
     bromista: { dif: -6, sonrisa: 0.5, inclina: 3, alFinal: "guino" },
-    sorpresa: { abre: 1.1, ceja: -10, pupila: 0.9 },
-    triste: { ceja: 2, rot: -9, pupila: 1.25, inferior: 0.12, inclina: -3, mira: [0, 6] },
-    pensativo: { dif: 4, mira: [9, -7] },
+    // Ojos enormes con pupila pequeña, cejas arriba, boca en O y respingo atrás
+    sorpresa: { abre: 1.24, ceja: -20, pupila: 0.68, o: 0.6, agacha: -7, impulso: () => { m.abre.v += 1.6; m.ceja.v -= 90; m.agacha.v -= 60; } },
+    // Cejas caídas por fuera, boca hacia abajo, cabeza gacha mirando al suelo, lagrimita
+    triste: { ceja: 15, rot: -18, pupila: 1.3, inferior: 0.1, inclina: -5, triste: 1, agacha: 8, mira: [-3, 9] },
+    // Una ceja arriba y otra abajo, mirada fija arriba a un lado y boca torcida
+    pensativo: { dif: 10, rot: 4, inclina: 6, bocaX: 7, mini: 0.35, mira: [11, -9] },
   };
   let emocionPendiente = null;
   let emocionActual = null;
@@ -509,7 +526,13 @@
     if (e.pupila != null) m.pupila.t = e.pupila;
     if (e.sonrisa != null) m.sonrisa.t = e.sonrisa;
     if (e.inclina != null) m.cabezaR.t = e.inclina;
+    if (e.triste != null) m.triste.t = e.triste;
+    if (e.agacha != null) m.agacha.t = e.agacha;
+    if (e.bocaX != null) m.bocaX.t = e.bocaX;
+    if (e.o != null) m.bocaO.t = e.o;
+    if (e.mini != null) m.bocaMini.t = e.mini;
     if (e.mira) mirarSuave(e.mira[0], e.mira[1]);
+    if (e.impulso) e.impulso();
   }
 
   function quitarEmocion() {

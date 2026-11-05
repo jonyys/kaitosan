@@ -433,4 +433,35 @@
   /* Emoción al hablar: el cariño se nota en las mejillas */
   .ov-rubor { transition: opacity 0.5s ease; }
   .emocion-carino .ov-rubor { opacity: 0.85; }
+
+  /* Signos sobre la cabeza: "!" de sorpresa y "?" de pensar */
+  .fx-signo {
+    font: 900 46px/1 "Nunito", "Varela Round", "DejaVu Sans", sans-serif;
+    color: var(--cara-esclera);
+    text-shadow: 0 0 14px rgba(var(--cara-brillo), 0.8);
+  }
+  .fx-exclama { right: 4%; top: -16%; }
+  .fx-pregunta { right: 2%; top: -14%; }
+  .emocion-sorpresa .fx-exclama { animation: kwSignoPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+  .emocion-pensativo .fx-pregunta { animation: kwSignoPop 0.5s ease both, kwSignoFlota 2.4s ease-in-out 0.5s infinite; }
+  @keyframes kwSignoPop {
+    from { opacity: 0; transform: translateY(12px) scale(0.3) rotate(-15deg); }
+    to { opacity: 1; transform: translateY(0) scale(1) rotate(8deg); }
+  }
+  @keyframes kwSignoFlota {
+    0%, 100% { opacity: 1; transform: translateY(0) rotate(8deg); }
+    50% { opacity: 1; transform: translateY(-7px) rotate(-6deg); }
+  }
+
+  /* Lagrimita: asoma bajo el ojo izquierdo y cae por la mejilla, una y otra vez */
+  .fx-lagrima { width: 18px; left: 25%; top: 64%; }
+  .fx-lagrima path { fill: #9fd8ff; }
+  .fx-lagrima ellipse { fill: #ffffff; opacity: 0.75; }
+  .emocion-triste .fx-lagrima { animation: kwLagrima 2.6s ease-in 0.5s infinite; }
+  @keyframes kwLagrima {
+    0% { opacity: 0; transform: translateY(0) scale(0.3); }
+    20% { opacity: 1; transform: translateY(0) scale(1); }
+    40% { opacity: 1; transform: translateY(4px) scale(1); }
+    100% { opacity: 0; transform: translateY(70px) scale(0.85); }
+  }
 </style>
