@@ -20,6 +20,9 @@
     ceja: muelle(110, 14),
     cejaDif: muelle(110, 14),
     cejaRot: muelle(90, 13),
+    cejaArco: muelle(110, 14), // más curvada (+) o más plana (-)
+    enfasisIzq: muelle(90, 11), // subidas breves de cada ceja al hablar o al tocar
+    enfasisDer: muelle(90, 11),
     abre: muelle(170, 14, 1),
     parpado: muelle(80, 16),
     inferior: muelle(80, 16),
@@ -42,18 +45,18 @@
   // Valores de reposo y ritmo de cada estado. Tiempos en ms; mirada en unidades del ojo.
   const MODOS = {
     idle: { parpado: 0, inferior: 0, ceja: 0, dif: 0, rot: 0, abre: 1, pupila: 1, boca: 0, radio: [13, 8], cadaMirada: [1400, 4200], cadaParpadeo: [2600, 6000] },
-    listening: { parpado: 0, inferior: 0, ceja: -8, dif: 0, rot: -2, abre: 1.05, pupila: 1.14, boca: 0.1, radio: [3, 2], cadaMirada: [2500, 5000], cadaParpadeo: [4000, 7500], inclina: 2.5 },
-    thinking: { parpado: 0, inferior: 0, ceja: -3, dif: 3, rot: 0, abre: 1, pupila: 0.94, boca: 0, radio: [3, 2], centro: [9, -8], alterna: true, cadaMirada: [1000, 2200], cadaParpadeo: [3000, 6000] },
+    listening: { parpado: 0, inferior: 0, ceja: -8, dif: 2.5, rot: -2, arco: 0.2, abre: 1.05, pupila: 1.14, boca: 0.1, radio: [3, 2], cadaMirada: [2500, 5000], cadaParpadeo: [4000, 7500], inclina: 2.5 },
+    thinking: { parpado: 0, inferior: 0, ceja: -3, dif: 0, rot: 5, arco: -0.15, abre: 1, pupila: 0.94, boca: 0, radio: [3, 2], centro: [9, -8], alterna: true, cadaMirada: [1000, 2200], cadaParpadeo: [3000, 6000] },
     speaking: { parpado: 0, inferior: 0, ceja: -1, dif: 0, rot: 0, abre: 1, pupila: 1.03, boca: 0, radio: [5, 3], cadaMirada: [1200, 3000], cadaParpadeo: [2200, 5000] },
-    happy: { parpado: 0, inferior: 0.42, ceja: -7, dif: 0, rot: -3, abre: 1.02, pupila: 1.1, boca: 0.2, radio: [4, 2], cadaMirada: [1500, 3000], cadaParpadeo: [2500, 5000] },
-    error: { parpado: 0.16, inferior: 0, ceja: 5, dif: 0, rot: 9, abre: 0.98, pupila: 0.9, boca: 0, radio: [3, 2], cadaMirada: [800, 1800], cadaParpadeo: [2000, 4000] },
+    happy: { parpado: 0, inferior: 0.42, ceja: -7, dif: 0, rot: -4, arco: 0.3, abre: 1.02, pupila: 1.1, boca: 0.2, radio: [4, 2], cadaMirada: [1500, 3000], cadaParpadeo: [2500, 5000] },
+    error: { parpado: 0.16, inferior: 0, ceja: 5, dif: 0, rot: 12, arco: -0.35, abre: 0.98, pupila: 0.9, boca: 0, radio: [3, 2], cadaMirada: [800, 1800], cadaParpadeo: [2000, 4000] },
   };
   const estados = Object.keys(MODOS);
   let estado = "idle";
   let modo = MODOS.idle;
   let hablando = false;
 
-  const prox = { mirada: 0, micro: 0, parpadeo: 0, gesto: 0, finGesto: 0, finDedo: 0, sueno: 0 };
+  const prox = { mirada: 0, micro: 0, parpadeo: 0, gesto: 0, finGesto: 0, finDedo: 0, sueno: 0, enfasis: 0 };
   // Un gesto cada 25-35 s en reposo: más a menudo distrae si trabajas al lado
   const CADA_GESTO = [25000, 35000];
   // A partir de aquí sin que nadie le hable ni lo toque, le entra sueño
@@ -188,7 +191,10 @@
       mirar(x + azar(-2.5, 2.5), y + azar(-1.5, 1.5));
       return;
     }
-    if (modo.alterna) ladoPensando = -ladoPensando;
+    if (modo.alterna) {
+      ladoPensando = -ladoPensando;
+      m.cejaDif.t = -6 * ladoPensando; // sube la ceja del lado hacia el que mira
+    }
     const cx = (modo.centro ? modo.centro[0] : 0) * ladoPensando;
     const cy = modo.centro ? modo.centro[1] : 0;
     if (!modo.centro && Math.random() < 0.35) mirar(0, 0); // suele volver al frente
@@ -201,6 +207,7 @@
     m.ceja.t = modo.ceja;
     m.cejaDif.t = modo.dif;
     m.cejaRot.t = modo.rot;
+    m.cejaArco.t = modo.arco || 0;
     m.abre.t = modo.abre;
     m.pupila.t = modo.pupila;
     m.cabezaR.t = modo.inclina ? modo.inclina * (Math.random() < 0.5 ? -1 : 1) : 0;
@@ -213,7 +220,9 @@
   // ── Gestos de cuando no pasa nada ───────────────────────────────────────────
   const GESTOS = [
     function ladear() {
-      m.cabezaR.t = azar(1.5, 3) * (Math.random() < 0.5 ? -1 : 1);
+      const lado = Math.random() < 0.5 ? -1 : 1;
+      m.cabezaR.t = azar(1.5, 3) * lado;
+      m.cejaDif.t = -4 * lado;
       return azar(2500, 4000);
     },
     function dobleMirada() {
@@ -227,12 +236,15 @@
     function suspiro() {
       m.cabezaY.v -= 16;
       m.ceja.t = -3;
+      m.cejaRot.t = -6;
+      m.cejaArco.t = 0.2;
       parpadear(1.8);
       return 1700;
     },
     function asombro() {
       m.abre.v += 0.9;
       m.ceja.v -= 50;
+      m.cejaArco.t = 0.4;
       m.pupila.t = 1.15;
       return 900;
     },
@@ -284,9 +296,20 @@
       const t = ahora / 1000;
       const silaba = Math.abs(Math.sin(t * 9.5)) * 0.6 + Math.abs(Math.sin(t * 5.7 + 1)) * 0.4;
       m.boca.t = 0.15 + 0.8 * silaba;
+      if (ahora > prox.enfasis) enfasisCejas();
     } else {
       m.boca.t = modo.boca;
     }
+  }
+
+  // Al hablar las cejas suben un momento, casi siempre las dos y a veces solo una
+  function enfasisCejas() {
+    prox.enfasis = ahora + azar(1300, 3600);
+    const e = emocionActual ? EMOCIONES[emocionActual].enfasis : null;
+    const fuerza = azar(60, 130) * (e == null ? 1 : e);
+    const cual = Math.random();
+    if (cual < 0.85) m.enfasisIzq.v -= fuerza;
+    if (cual < 0.7 || cual >= 0.85) m.enfasisDer.v -= fuerza;
   }
 
   // ── Gestos kawaii ───────────────────────────────────────────────────────────
@@ -321,6 +344,8 @@
     m.abre.v += 1.4;
     m.ceja.t = 0;
     m.ceja.v -= 70;
+    m.cejaRot.t = 0;
+    m.cejaArco.t = 0.35;
     m.cabezaR.t = 0;
     m.cabezaY.t = 0;
     m.cabezaY.v -= 30;
@@ -330,48 +355,49 @@
 
   const KAWAII = {
     feliz: { dur: 2600, peso: 3, pasos: [
-      [0, () => { m.inferior.t = 0.45; m.ceja.t = -7; m.sonrisa.t = 1; m.pupila.t = 1.12; m.cabezaY.v -= 40; }],
-      [450, () => { m.cabezaY.v -= 35; }],
+      [0, () => { m.inferior.t = 0.45; m.ceja.t = -7; m.cejaRot.t = -4; m.cejaArco.t = 0.3; m.ceja.v -= 40; m.sonrisa.t = 1; m.pupila.t = 1.12; m.cabezaY.v -= 40; }],
+      [450, () => { m.cabezaY.v -= 35; m.ceja.v -= 35; }],
       [2100, () => { m.sonrisa.t = 0; m.inferior.t = 0; }],
     ] },
     guino: { dur: 2000, peso: 2, pasos: [
-      [0, () => { m.cierraDer.t = 1; m.cejaDif.t = 5; m.sonrisa.t = 0.9; m.cabezaR.t = -4; }],
-      [1250, () => { m.cierraDer.t = 0; m.cejaDif.t = 0; m.cabezaR.t = 0; }],
+      [0, () => { m.cierraDer.t = 1; m.cejaDif.t = 8; m.cejaArco.t = 0.2; m.ceja.v -= 30; m.sonrisa.t = 0.9; m.cabezaR.t = -4; }],
+      [1250, () => { m.cierraDer.t = 0; m.cejaDif.t = 0; m.cejaArco.t = 0; m.cabezaR.t = 0; }],
       [1600, () => { m.sonrisa.t = 0; }],
     ] },
     corazones: { dur: 3200, peso: 1, pasos: [
-      [0, () => { m.pupila.t = 0; m.abre.t = 1.08; m.abre.v += 0.6; m.ceja.t = -8; m.sonrisa.t = 1; m.inferior.t = 0.2; }],
+      [0, () => { m.pupila.t = 0; m.abre.t = 1.08; m.abre.v += 0.6; m.ceja.t = -8; m.cejaRot.t = -6; m.cejaArco.t = 0.35; m.sonrisa.t = 1; m.inferior.t = 0.2; }],
       [2700, () => { m.sonrisa.t = 0; m.inferior.t = 0; }],
     ] },
     rubor: { dur: 3000, peso: 2, pasos: [
-      [0, () => { mirarSuave(-9, 8); m.inferior.t = 0.3; m.cabezaR.t = -5; m.ceja.t = -4; m.bocaMini.t = 1; m.pupila.t = 1.1; }],
+      [0, () => { mirarSuave(-9, 8); m.inferior.t = 0.3; m.cabezaR.t = -5; m.ceja.t = -4; m.cejaRot.t = -8; m.cejaArco.t = 0.15; m.bocaMini.t = 1; m.pupila.t = 1.1; }],
       [2400, () => { mirarSuave(0, 0); m.bocaMini.t = 0; m.cabezaR.t = 0; }],
     ] },
     estrellitas: { dur: 2600, peso: 2, pasos: [
-      [0, () => { m.abre.t = 1.14; m.abre.v += 1; m.pupila.t = 1.3; m.ceja.t = -10; m.sonrisa.t = 0.9; }],
+      [0, () => { m.abre.t = 1.14; m.abre.v += 1; m.pupila.t = 1.3; m.ceja.t = -10; m.ceja.v -= 50; m.cejaArco.t = 0.4; m.sonrisa.t = 0.9; }],
       [2100, () => { m.abre.t = 1; m.pupila.t = 1; m.sonrisa.t = 0; }],
     ] },
     ladeo: { dur: 2800, peso: 3, pasos: [
-      [0, () => { mirarSuave(7, -6); m.cabezaR.t = 9; m.cabezaX.t = 8; m.cejaDif.t = -6; }],
+      [0, () => { mirarSuave(7, -6); m.cabezaR.t = 9; m.cabezaX.t = 8; m.cejaDif.t = -6; m.cejaRot.t = 3; m.cejaArco.t = 0.15; }],
       [2200, () => { mirarSuave(0, 0); m.cabezaR.t = 0; m.cejaDif.t = 0; }],
     ] },
     saltito: { dur: 1700, peso: 2, pasos: [
-      [0, () => { m.aplasta.t = 0.09; m.cabezaY.t = 5; m.sonrisa.t = 1; m.inferior.t = 0.3; }],
-      [180, () => { m.aplasta.t = 0; m.aplasta.v -= 2.6; m.cabezaY.t = 0; m.cabezaY.v -= 95; m.abre.v += 0.6; }],
-      [620, () => { m.aplasta.v += 2.2; m.cabezaY.v -= 60; }],
+      [0, () => { m.aplasta.t = 0.09; m.cabezaY.t = 5; m.ceja.t = 3; m.sonrisa.t = 1; m.inferior.t = 0.3; }],
+      [180, () => { m.aplasta.t = 0; m.aplasta.v -= 2.6; m.cabezaY.t = 0; m.cabezaY.v -= 95; m.abre.v += 0.6; m.ceja.t = -8; m.ceja.v -= 90; m.cejaArco.t = 0.3; }],
+      [620, () => { m.aplasta.v += 2.2; m.cabezaY.v -= 60; m.ceja.v -= 50; }],
       [1050, () => { m.aplasta.v += 1.2; }],
       [1300, () => { m.sonrisa.t = 0; m.inferior.t = 0; }],
     ] },
     sorpresa: { dur: 1800, peso: 1, pasos: [
-      [0, () => { m.abre.t = 1.16; m.abre.v += 1.6; m.ceja.t = -14; m.ceja.v -= 80; m.bocaO.t = 1; m.pupila.t = 0.8; m.cabezaY.v -= 45; }],
+      [0, () => { m.abre.t = 1.16; m.abre.v += 1.6; m.ceja.t = -14; m.ceja.v -= 80; m.cejaArco.t = 0.5; m.bocaO.t = 1; m.pupila.t = 0.8; m.cabezaY.v -= 45; }],
       [1300, () => { m.abre.t = 1; m.ceja.t = 0; m.bocaO.t = 0; m.pupila.t = 1; }],
     ] },
     musica: { dur: 4800, peso: 1, pasos: [
-      [0, () => { m.inferior.t = 0.4; m.sonrisa.t = 1; m.ceja.t = -5; }],
+      [0, () => { m.inferior.t = 0.4; m.sonrisa.t = 1; m.ceja.t = -5; m.cejaRot.t = -3; m.cejaArco.t = 0.2; }],
       ...[0, 600, 1200, 1800, 2400, 3000, 3600].map((t, i) => [t, () => {
         const lado = i % 2 ? 1 : -1;
         m.cabezaR.t = 6 * lado;
         m.cabezaX.t = 5 * lado;
+        m.ceja.v -= 30; // las cejas también siguen el ritmo
       }]),
       [4200, () => { m.cabezaR.t = 0; m.cabezaX.t = 0; m.sonrisa.t = 0; m.inferior.t = 0; }],
     ] },
@@ -384,7 +410,7 @@
       [0, () => mirarSuave(0, 3)],
       // Tres parpadeos, cada uno más lento: [cuándo, cuánto más lento]
       ...[[2200, 1.4], [5800, 2.2], [9200, 3]]
-        .map(([t, lento]) => [t, () => parpadearConSueno(lento)]),
+        .map(([t, lento]) => [t, () => { parpadearConSueno(lento); m.ceja.v -= 18; }]), // las cejas intentan abrir los ojos
       [DORMIRSE_MS, () => { const ir = alDormirse; alDormirse = null; if (ir) ir(); }],
     ], cadaCuadro(t) {
       if (face.classList.contains("despierta")) return; // lo han despertado
@@ -393,6 +419,8 @@
       m.parpado.t = t < CAE_MS ? 0.72 * e : 0.72 + 0.28 * acotar((t - CAE_MS) / CIERRA_MS, 0, 1);
       m.inferior.t = 0.15 * e;
       m.ceja.t = 3 * e;
+      m.cejaRot.t = -3 * e;
+      m.cejaArco.t = -0.25 * e;
       m.cabezaY.t = 7 * e;
       m.cabezaR.t = -5 * e;
       m.bocaMini.t = acotar((t - CAE_MS * 0.6) / (CAE_MS * 0.4), 0, 1);
@@ -408,23 +436,24 @@
     // ── Los dos de tocar la pantalla (nunca salen solos: peso 0) ──
     // Caricia: deslizar el dedo por la cara. Ojos contentos y se arrima a la mano.
     caricia: { dur: 2200, peso: 0, pasos: [
-      [0, () => { m.inferior.t = 0.45; m.sonrisa.t = 0.8; m.ceja.t = -5; m.pupila.t = 1.15; m.cabezaY.t = 3; }],
+      [0, () => { m.inferior.t = 0.45; m.sonrisa.t = 0.8; m.ceja.t = -5; m.cejaRot.t = -6; m.cejaArco.t = 0.25; m.pupila.t = 1.15; m.cabezaY.t = 3; }],
     ] },
     // Mantener pulsado: cosquillas. Se ríe mientras sigas; al soltar se calma.
     cosquillas: { dur: 6000, peso: 0, pasos: [
-      [0, () => { m.inferior.t = 0.5; m.ceja.t = -6; m.pupila.t = 1.1; m.abre.v += 0.8; }],
+      [0, () => { m.inferior.t = 0.5; m.ceja.t = -6; m.cejaRot.t = -5; m.cejaArco.t = 0.3; m.pupila.t = 1.1; m.abre.v += 0.8; }],
     ], cadaCuadro(t) {
       if (gesto.soltado) return;
       const s = t / 1000;
       m.cabezaR.t = 4.5 * Math.sin(s * 16);
       m.cabezaY.t = -2.5 * Math.abs(Math.sin(s * 11));
       m.sonrisa.t = 0.7 + 0.4 * Math.abs(Math.sin(s * 11)); // "ja, ja, ja"
+      m.ceja.t = -6 - 3 * Math.abs(Math.sin(s * 11));
     } },
     apuro: { dur: 3000, peso: 1, pasos: [
-      [0, () => { mirarSuave(-12, 0); m.cejaRot.t = -8; m.ceja.t = -5; m.bocaMini.t = 0.8; }],
+      [0, () => { mirarSuave(-12, 0); m.cejaRot.t = -12; m.cejaArco.t = 0.2; m.ceja.t = -5; m.bocaMini.t = 0.8; }],
       [1100, () => mirarSuave(12, 0)],
       [2100, () => mirarSuave(0, 0)],
-      [2500, () => { m.cejaRot.t = 0; m.ceja.t = 0; m.bocaMini.t = 0; }],
+      [2500, () => { m.cejaRot.t = 0; m.cejaArco.t = 0; m.ceja.t = 0; m.bocaMini.t = 0; }],
     ] },
   };
 
@@ -518,8 +547,10 @@
     }
     for (const c of cejas) {
       if (c.sensei !== enSensei) continue;
-      const y = m.ceja.x + m.cejaDif.x * c.lado + my * 0.25 + parp * 3;
-      poner(c.el, "style", `translate(${f(mx * 0.12)}px,${f(y)}px) rotate(${f2(m.cejaRot.x * -c.lado)}deg)`);
+      const enfasis = c.lado < 0 ? m.enfasisIzq.x : m.enfasisDer.x;
+      const y = m.ceja.x + m.cejaDif.x * c.lado + enfasis + my * 0.4 + parp * 3;
+      const arco = acotar(1 + m.cejaArco.x, 0.4, 1.9);
+      poner(c.el, "style", `translate(${f(mx * 0.12)}px,${f(y)}px) rotate(${f2(m.cejaRot.x * -c.lado)}deg) scale(1,${f2(arco)})`);
     }
     const abierta = acotar(m.boca.x, 0, 1.1);
     const pesos = {
@@ -550,15 +581,15 @@
   // etiqueta [feliz] del LLM, core/emociones.py). Se guarda y se pone al
   // empezar a hablar; al terminar, vuelve al reposo.
   const EMOCIONES = {
-    feliz: { inferior: 0.3, ceja: -5, sonrisa: 0.55, pupila: 1.1 },
-    carino: { inferior: 0.32, ceja: -4, sonrisa: 0.5, pupila: 1.22, inclina: -4 },
-    bromista: { dif: -6, sonrisa: 0.5, inclina: 3, alFinal: "guino" },
+    feliz: { inferior: 0.3, ceja: -5, rot: -3, arco: 0.25, sonrisa: 0.55, pupila: 1.1 },
+    carino: { inferior: 0.32, ceja: -4, rot: -6, arco: 0.3, sonrisa: 0.5, pupila: 1.22, inclina: -4 },
+    bromista: { dif: -9, arco: 0.2, sonrisa: 0.5, inclina: 3, alFinal: "guino" },
     // Ojos enormes con pupila pequeña, cejas arriba, boca en O y respingo atrás
-    sorpresa: { abre: 1.24, ceja: -20, pupila: 0.68, o: 0.6, agacha: -7, impulso: () => { m.abre.v += 1.6; m.ceja.v -= 90; m.agacha.v -= 60; } },
+    sorpresa: { abre: 1.24, ceja: -20, arco: 0.5, pupila: 0.68, o: 0.6, agacha: -7, impulso: () => { m.abre.v += 1.6; m.ceja.v -= 90; m.agacha.v -= 60; } },
     // Cejas caídas por fuera, boca hacia abajo, cabeza gacha mirando al suelo, lagrimita
-    triste: { ceja: 15, rot: -18, pupila: 1.3, inferior: 0.1, inclina: -5, triste: 1, agacha: 8, mira: [-3, 9] },
+    triste: { ceja: 15, rot: -18, arco: -0.1, enfasis: 0.4, pupila: 1.3, inferior: 0.1, inclina: -5, triste: 1, agacha: 8, mira: [-3, 9] },
     // Una ceja arriba y otra abajo, mirada fija arriba a un lado y boca torcida
-    pensativo: { dif: 10, rot: 4, inclina: 6, bocaX: 7, mini: 0.35, mira: [11, -9] },
+    pensativo: { dif: 10, rot: 4, arco: -0.15, enfasis: 0, inclina: 6, bocaX: 7, mini: 0.35, mira: [11, -9] },
   };
   let emocionPendiente = null;
   let emocionActual = null;
@@ -572,6 +603,7 @@
     if (e.ceja != null) m.ceja.t = e.ceja;
     if (e.dif != null) m.cejaDif.t = e.dif;
     if (e.rot != null) m.cejaRot.t = e.rot;
+    if (e.arco != null) m.cejaArco.t = e.arco;
     if (e.abre != null) { m.abre.t = e.abre; m.abre.v += 0.6; }
     if (e.pupila != null) m.pupila.t = e.pupila;
     if (e.sonrisa != null) m.sonrisa.t = e.sonrisa;
@@ -637,7 +669,11 @@
   }
 
   socket.on("estado", (data) => aplicarEstado(data.estado));
-  socket.on("boca", (data) => (hablando = !!data.hablado));
+  socket.on("boca", (data) => {
+    // Al empezar una frase suele enfatizar con las cejas
+    if (data.hablado && !hablando && Math.random() < 0.6) prox.enfasis = ahora + azar(80, 300);
+    hablando = !!data.hablado;
+  });
 
   // Al tocar la pantalla mira hacia el dedo, sin molestar al doble toque ni al cajón
   document.addEventListener(
@@ -657,6 +693,8 @@
         acotar(((e.clientY - (r.top + r.height / 2)) / 180) * 11, -11, 11),
       );
       m.abre.v += 0.8;
+      m.enfasisIzq.v -= 70;
+      m.enfasisDer.v -= 70;
       prox.finDedo = ahora + 1300;
       prox.mirada = ahora + 1500;
       quietoDesde = ahora;
