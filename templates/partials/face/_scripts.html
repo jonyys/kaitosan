@@ -14,6 +14,7 @@
   const m = {
     miradaX: muelle(900, 56),
     miradaY: muelle(900, 56),
+    paralelo: muelle(14, 7.5), // lenta a propósito: en los ojos reales la convergencia va mucho más lenta que los saltos
     cabezaX: muelle(30, 9),
     cabezaY: muelle(30, 9),
     cabezaR: muelle(26, 8),
@@ -83,7 +84,7 @@
     recorridoInf: +el.dataset.recorridoInf,
     escala: +el.dataset.escala,
     // Cuánto está dibujado el iris hacia la nariz respecto al centro del ojo
-    haciaNariz: el.classList.contains("eye-sensei") ? 9.3 : 10.3,
+    haciaNariz: el.classList.contains("eye-sensei") ? 9.6 : 11.1,
     cos: Math.cos(giroOjo(el)),
     sin: Math.sin(giroOjo(el)),
     sensei: el.classList.contains("eye-sensei"),
@@ -494,6 +495,8 @@
     const enSensei = face.classList.contains("sensei");
     const mx = m.miradaX.x;
     const my = m.miradaY.x;
+    m.paralelo.t = Math.abs(m.miradaX.t) > 6 ? 1 : 0;
+    const paralelo = acotar(m.paralelo.x, 0, 1);
 
     const ap = acotar(m.aplasta.x, -0.16, 0.16);
     poner(face, "style", `translate(${f(m.cabezaX.x)}px,${f(m.cabezaY.x + m.agacha.x + respira * (1 + respiraExtra) + m.boca.x * 1.2)}px) rotate(${f2(m.cabezaR.x)}deg) scale(${f2(1 + ap)},${f2(1 - ap)})`);
@@ -501,8 +504,9 @@
     for (const o of ojos) {
       if (o.sensei !== enSensei) continue;
       // Mismo vector en pantalla para los dos ojos: se deshace el giro de cada uno
-      // y su espejo. El iris va centrado siempre, si no un ojo queda en el borde.
-      const irisX = (mx * o.cos + my * o.sin) * o.espejo * o.escala - o.haciaNariz;
+      // y su espejo. De frente miran hacia la nariz; al mirar a un lado eso se va
+      // quitando despacio para que ningún ojo acabe pegado al borde.
+      const irisX = (mx * o.cos + my * o.sin) * o.espejo * o.escala - o.haciaNariz * paralelo;
       const irisY = (my * o.cos - mx * o.sin) * o.escala;
       poner(o.iris, "transform", `translate(${f(irisX)} ${f(irisY)})`);
       poner(o.pupila, "style", `scale(${f2(Math.max(0, m.pupila.x))})`);
