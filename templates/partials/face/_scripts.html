@@ -70,6 +70,8 @@
   let ahora = 0;
 
   // ── Piezas ──────────────────────────────────────────────────────────────────
+  // Inclinación del ojo en radianes (la propiedad CSS rotate; los de sensei no tienen)
+  const giroOjo = (el) => ((parseFloat(getComputedStyle(el).rotate) || 0) * Math.PI) / 180;
   const ojos = $$(".eye").map((el) => ({
     el,
     iris: el.querySelector(".iris"),
@@ -82,6 +84,8 @@
     escala: +el.dataset.escala,
     // Cuánto está dibujado el iris hacia la nariz respecto al centro del ojo
     haciaNariz: el.classList.contains("eye-sensei") ? 9.3 : 10.3,
+    cos: Math.cos(giroOjo(el)),
+    sin: Math.sin(giroOjo(el)),
     sensei: el.classList.contains("eye-sensei"),
     derecho: el.classList.contains("eye-right") || el.classList.contains("eye-sensei-right"),
   }));
@@ -490,17 +494,17 @@
     const enSensei = face.classList.contains("sensei");
     const mx = m.miradaX.x;
     const my = m.miradaY.x;
-    // De frente los iris miran un poco hacia la nariz; al mirar a un lado esa
-    // convergencia desaparece, para que los dos queden paralelos y no parezca bizco.
-    const u = acotar(Math.abs(mx) / 10, 0, 1);
-    const paralelo = u * u * (3 - 2 * u);
 
     const ap = acotar(m.aplasta.x, -0.16, 0.16);
     poner(face, "style", `translate(${f(m.cabezaX.x)}px,${f(m.cabezaY.x + m.agacha.x + respira * (1 + respiraExtra) + m.boca.x * 1.2)}px) rotate(${f2(m.cabezaR.x)}deg) scale(${f2(1 + ap)},${f2(1 - ap)})`);
 
     for (const o of ojos) {
       if (o.sensei !== enSensei) continue;
-      poner(o.iris, "transform", `translate(${f(mx * o.espejo * o.escala - o.haciaNariz * paralelo)} ${f(my * o.escala)})`);
+      // Mismo vector en pantalla para los dos ojos: se deshace el giro de cada uno
+      // y su espejo. El iris va centrado siempre, si no un ojo queda en el borde.
+      const irisX = (mx * o.cos + my * o.sin) * o.espejo * o.escala - o.haciaNariz;
+      const irisY = (my * o.cos - mx * o.sin) * o.escala;
+      poner(o.iris, "transform", `translate(${f(irisX)} ${f(irisY)})`);
       poner(o.pupila, "style", `scale(${f2(Math.max(0, m.pupila.x))})`);
       // El guiño cierra solo un ojo; al apretarlo sube también un poco el de abajo
       const cierra = acotar(o.derecho ? m.cierraDer.x : m.cierraIzq.x, 0, 1);
