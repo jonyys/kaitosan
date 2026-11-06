@@ -11,7 +11,7 @@ from ai.skills.reminder import ReminderSkill
 from ai.tools import TOOLS, ToolDispatcher
 
 from core.config import TRIGGERS_SALIR_SENSEI
-from core.emociones import extraer_emocion
+from core.emociones import extraer_cierre, extraer_emocion
 from core.japanese_memory import JapaneseMemory
 from core.memory import DB_PATH, Memory
 from ai.sensei.profesor import ProfesorJapones, DESPEDIDAS
@@ -58,6 +58,7 @@ class Brain:
         # Momento del último turno (pregunta o respuesta). Lo usa el filtro de
         # alucinación de Whisper en transcribir_para_turno.
         self.ultimo_turno_ts = 0.0
+        self.asunto_cerrado = False  # la última respuesta llevaba [fin]: no seguir escuchando
 
     def _iniciar_sesion(self):
         self.session_id = self.memory.iniciar_sesion()
@@ -71,6 +72,7 @@ class Brain:
     def responder(self, mensaje: str, pron_contexto: str = None) -> tuple[str, bool]:
         """Devuelve siempre (respuesta, lento_extra). Marca el turno para el
         filtro de alucinación de Whisper (ver transcribir_para_turno)."""
+        self.asunto_cerrado = False
         try:
             return self._responder(mensaje, pron_contexto=pron_contexto)
         finally:
@@ -132,16 +134,18 @@ class Brain:
 
         # La respuesta empieza con una etiqueta de emoción ([feliz]...) para la
         # cara. Se quita antes de decirla; si el modelo no la pone, cara neutra.
-        emocion, respuesta = extraer_emocion(self._limpiar_json_de_respuesta(content or ""))
-        # En el historial va con la etiqueta (normalizada): así el modelo ve que
-        # sus respuestas anteriores la llevaban y no deja de ponerla.
+        self.asunto_cerrado, sin_fin = extraer_cierre(self._limpiar_json_de_respuesta(content or ""))
+        emocion, respuesta = extraer_emocion(sin_fin)
+        # En el historial va con las etiquetas (normalizadas): así el modelo ve que
+        # sus respuestas anteriores las llevaban y no deja de ponerlas.
+        marca_fin = " [fin]" if self.asunto_cerrado else ""
         self.historial.append({
             "role": "assistant",
-            "content": f"[{emocion or 'neutral'}] {respuesta}",
+            "content": f"[{emocion or 'neutral'}]{marca_fin} {respuesta}",
         })
         self.memory.guardar_mensaje(self.session_id, "user", mensaje)
         self.memory.guardar_mensaje(self.session_id, "assistant", respuesta)
-        print(f"🤖 Kaito [{emocion or 'neutral'}]: {respuesta}")
+        print(f"🤖 Kaito [{emocion or 'neutral'}]{marca_fin}: {respuesta}")
         # La cara la guarda y la pone cuando empieza a hablar
         self.socketio.emit("emocion", {"emocion": emocion})
         return respuesta, False

@@ -128,4 +128,10 @@ class VoiceListener:
         while self.state.get() != "idle":
             time.sleep(0.2)
 
+        if self.tts.callado():
+            print("🤐 Le han mandado callar: no sigue escuchando")
+            return False
+        if self.brain.asunto_cerrado:
+            print("🏁 Asunto cerrado: no sigue escuchando")
+            return False
         return not salio_de_sensei

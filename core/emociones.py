@@ -93,6 +93,18 @@ def extraer_emocion(texto: str):
     return encontrada, limpio
 
 
+_FIN = re.compile(r"[*_]*\[\s*fin\s*\][*_]*\s*", re.IGNORECASE)
+
+
+def extraer_cierre(texto: str):
+    """Devuelve (asunto_cerrado, texto_sin_la_marca). Con [fin] Kaito no sigue
+    escuchando tras responder; si el modelo la olvida, sigue como siempre."""
+    if not texto:
+        return False, texto
+    limpio, veces = _FIN.subn("", texto)
+    return veces > 0, limpio
+
+
 # ── "Gracias" suelto ──────────────────────────────────────────────────────────
 # Gestos de la cara (KAWAII en _scripts.html) que dicen "de nada" sin hablar:
 # solo los que transmiten algo bueno.

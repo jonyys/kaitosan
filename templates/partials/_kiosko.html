@@ -212,6 +212,9 @@
       var bajada = { t: 0, x: 0, y: 0 };
       document.addEventListener("pointerdown", function (e) {
         bajada = { t: Date.now(), x: e.clientX, y: e.clientY };
+        // Tocar la pantalla lo calla si está hablando (el cajón no, para poder
+        // bajar el volumen sin cortarle). El servidor ignora si no habla.
+        if (ES_KIOSKO && !e.target.closest("#kioskoDrawer,#kioskoBackdrop")) post("/kiosko/callar", {});
       }, { passive: true });
       document.addEventListener("pointerup", function (e) {
         if (e.target.closest(SEL_INTERACTIVO)) { ultimoTap = 0; return; }

@@ -246,6 +246,16 @@ def kiosko_volumen():
     return jsonify(r), (200 if r.get("ok") else 400)
 
 
+@app.route("/kiosko/callar", methods=["POST"])
+def kiosko_callar():
+    """Tocar la pantalla mientras habla lo calla; si no está hablando, nada."""
+    if not _solo_local():
+        abort(403)
+    if state.get() == "speaking":
+        tts.callar()
+    return jsonify({"ok": True})
+
+
 @app.route("/kiosko/brillo", methods=["POST"])
 def kiosko_brillo():
     if not _solo_local():

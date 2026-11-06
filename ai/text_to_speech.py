@@ -1,5 +1,6 @@
 import asyncio
 import edge_tts
+import threading
 import sounddevice as sd
 import soundfile as sf
 import numpy as np
@@ -41,6 +42,7 @@ class TextToSpeech:
         self.sample_rate_device = 48000
         self.voice_es = "es-ES-AlvaroNeural"
         self.voice_ja = "ja-JP-KeitaNeural"
+        self._callado = threading.Event()
 
         try:
             _nom = sd.query_devices(self.device)["name"] if self.device is not None \
@@ -267,8 +269,18 @@ class TextToSpeech:
         if os.path.exists(list_path):
             os.unlink(list_path)
 
+    def callar(self):
+        """Corta la voz al instante, desde cualquier hilo."""
+        self._callado.set()
+        sd.stop()
+
+    def callado(self) -> bool:
+        """True si la última vez que habló le mandaron callar."""
+        return self._callado.is_set()
+
     def hablar(self, texto: str, lento_extra: bool = False, on_start=None, on_stop=None):
         self._lento_extra = lento_extra
+        self._callado.clear()
 
         if not texto or not texto.strip():
             print("⚠️ TTS: texto vacío, nada que reproducir")
@@ -361,11 +373,16 @@ class TextToSpeech:
         return intervalos
 
     def _reproducir_con_control_boca(self, data, intervalos, on_stop=None):
-        import threading
         import time as tmod
 
         sio = getattr(self, 'socketio', None)
-        
+
+        # Le han mandado callar justo entre on_start y aquí: sd.stop aún no cortaba nada
+        if self._callado.is_set():
+            if on_stop:
+                on_stop()
+            return
+
         if not sio or not intervalos:
             sd.play(data, self.sample_rate_device, device=self.device)
             sd.wait()
@@ -379,7 +396,7 @@ class TextToSpeech:
 
         def control_boca():
             boca_abierta = False
-            while tmod.time() - inicio < duracion_total:
+            while tmod.time() - inicio < duracion_total and not self._callado.is_set():
                 ahora = tmod.time() - inicio
 
                 # Determinar si ahora mismo estamos en un intervalo de habla

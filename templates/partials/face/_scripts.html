@@ -466,9 +466,9 @@
   }
 
   // Lanza un gesto si está en reposo. Devuelve true si lo ha hecho.
-  function hacerGesto(nombre) {
+  function hacerGesto(nombre, forzar = false) {
     const g = KAWAII[nombre];
-    if (!g || estado !== "idle") return false;
+    if (!g || (estado !== "idle" && !forzar)) return false;
     terminarGesto();
     prox.finGesto = 0;
     aplicarModo();
@@ -584,7 +584,7 @@
   const EMOCIONES = {
     feliz: { inferior: 0.3, ceja: -5, rot: -3, arco: 0.25, sonrisa: 0.55, pupila: 1.1 },
     carino: { inferior: 0.32, ceja: -4, rot: -6, arco: 0.3, sonrisa: 0.5, pupila: 1.22, inclina: -4 },
-    bromista: { dif: -9, arco: 0.2, sonrisa: 0.5, inclina: 3, alFinal: "guino" },
+    bromista: { dif: -13, arco: 0.25, inferior: 0.22, sonrisa: 0.65, inclina: 6, alFinal: "guino" },
     // Ojos enormes con pupila pequeña, cejas arriba, boca en O y respingo atrás
     sorpresa: { abre: 1.24, ceja: -20, arco: 0.5, pupila: 0.68, o: 0.6, agacha: -7, impulso: () => { m.abre.v += 1.6; m.ceja.v -= 90; m.agacha.v -= 60; } },
     // Cejas caídas por fuera, boca hacia abajo, cabeza gacha mirando al suelo, lagrimita
@@ -651,8 +651,13 @@
     const alFinal = quitarEmocion();
     if (nuevo === "speaking" && emocionPendiente) ponerEmocion(emocionPendiente);
     if (nuevo !== "thinking") emocionPendiente = null;
-    // Remate al acabar de hablar (p. ej. un guiño tras una broma)
-    if (alFinal && nuevo === "idle") setTimeout(() => hacerGesto(alFinal), 350);
+    // Remate al acabar de hablar (p. ej. un guiño tras una broma). En conversación
+    // ya estará escuchando otra vez cuando le toque, y también se hace.
+    if (alFinal && nuevo === "idle") {
+      setTimeout(() => {
+        if (estado === "idle" || estado === "listening") hacerGesto(alFinal, true);
+      }, 350);
+    }
 
     // Impulsos: la reacción que un valor de reposo no puede dar
     if (nuevo === "listening") {
@@ -680,6 +685,11 @@
   document.addEventListener(
     "pointerdown",
     (e) => {
+      // En el robot, tocar mientras habla lo calla (_kiosko.html): sin remate final
+      if ({{ 'true' if es_kiosko else 'false' }} && estado === "speaking" && !e.target.closest("#kioskoDrawer,#kioskoBackdrop")) {
+        quitarEmocion();
+        hablando = false;
+      }
       if (gesto && gesto.g.alTocar && !face.classList.contains("despierta")) {
         alDormirse = null; // tocarlo mientras se duerme cancela el reloj
         gesto.g.alTocar();
