@@ -399,7 +399,8 @@
       hecho = true;
       alCubrir();
     };
-    const capa = dentroDe(`<svg style="position:absolute;inset:0;width:100%;height:100%" viewBox="0 0 480 480" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${tapa.html()}</svg>`);
+    // --cara-ancho: la ventana del robot mide 500 px, pero su pantalla solo enseña 480
+    const capa = dentroDe(`<svg style="position:absolute;left:0;top:0;width:var(--cara-ancho,100%);height:100%" viewBox="0 0 480 480" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${tapa.html()}</svg>`);
     capa.style.pointerEvents = "none";
     return correr(tapa.ms, (p) => {
       tapa.pinta(capa, p);
@@ -412,6 +413,18 @@
 
   // Quita o deja las que no gusten: se elige una al azar cada vez
   const TIPOS_RELOJ = ["puntos", "zetas"];
+
+  // La primera vez que se usan estas letras la Pi se para medio segundo a cargarlas:
+  // mejor al abrir la cara, donde no se nota, que a mitad de una transición.
+  addEventListener("load", () => {
+    if (!document.getElementById("face")) return;
+    const previa = document.createElement("div");
+    previa.setAttribute("aria-hidden", "true");
+    previa.style.cssText = "position:fixed;left:-9999px;top:0;opacity:0;pointer-events:none";
+    previa.innerHTML = `<span style="font:700 96px 'Noto Serif CJK JP','Noto Sans CJK JP','WenQuanYi Zen Hei',serif">先生</span><span style="font:200 64px 'M PLUS Rounded 1c','Nunito',sans-serif;font-variant-numeric:tabular-nums">0123456789:</span>`;
+    document.body.appendChild(previa);
+    setTimeout(() => previa.remove(), 4000);
+  });
 
   window.KaitoTransicion = { aReloj, aCara, tapar, guardarReloj, enFranja };
 })();
