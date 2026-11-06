@@ -39,6 +39,9 @@
     triste: muelle(150, 20), // boca hacia abajo
     agacha: muelle(40, 11), // cabeza abajo (+) o echada atrás (-)
     bocaX: muelle(120, 16), // boca torcida a un lado
+    // Propios del cambio a sensei y al reloj: los estados no los tocan a medias
+    cierre: muelle(120, 18), // ojos cerrados
+    serio: muelle(60, 12), // cabeza baja
   };
   const muelles = Object.values(m);
 
@@ -523,14 +526,14 @@
     const t = ms / 1000;
     const respira = Math.sin(t * 1.35) * 1.5 + Math.sin(t * 0.63) * 0.6;
     const parp = curvaParpadeo();
-    const parpado = Math.max(acotar(m.parpado.x, 0, 1), parp);
+    const parpado = Math.max(acotar(m.parpado.x, 0, 1), acotar(m.cierre.x, 0, 1), parp);
     const inferior = Math.max(acotar(m.inferior.x, 0, 1), parp * 0.12);
     const enSensei = face.classList.contains("sensei");
     const mx = m.miradaX.x;
     const my = m.miradaY.x;
 
     const ap = acotar(m.aplasta.x, -0.16, 0.16);
-    poner(face, "style", `translate(${f(m.cabezaX.x)}px,${f(m.cabezaY.x + m.agacha.x + respira * (1 + respiraExtra) + m.boca.x * 1.2)}px) rotate(${f2(m.cabezaR.x)}deg) scale(${f2(1 + ap)},${f2(1 - ap)})`);
+    poner(face, "style", `translate(${f(m.cabezaX.x)}px,${f(m.cabezaY.x + m.agacha.x + m.serio.x + respira * (1 + respiraExtra) + m.boca.x * 1.2)}px) rotate(${f2(m.cabezaR.x)}deg) scale(${f2(1 + ap)},${f2(1 - ap)})`);
 
     for (const o of ojos) {
       if (o.sensei !== enSensei) continue;
@@ -550,7 +553,7 @@
     for (const c of cejas) {
       if (c.sensei !== enSensei) continue;
       const enfasis = c.lado < 0 ? m.enfasisIzq.x : m.enfasisDer.x;
-      const y = m.ceja.x + m.cejaDif.x * c.lado + enfasis + my * 0.4 + parp * 3;
+      const y = m.ceja.x + m.cejaDif.x * c.lado + enfasis + my * 0.4 + parp * 3 + m.serio.x * 0.25;
       const arco = acotar(1 + m.cejaArco.x, 0.4, 1.9);
       poner(c.el, "style", `translate(${f(mx * 0.12)}px,${f(y)}px) rotate(${f2(m.cejaRot.x * -c.lado)}deg) scale(1,${f2(arco)})`);
     }
@@ -810,14 +813,55 @@
 
   socket.on("sensei_japones", (data) => mostrarJaponesSensei(data.frases));
 
-  socket.on("modo_sensei", function (data) {
-    // Cambia de cara con los ojos cerrados: así el cambio de piezas no se ve
-    parpadear(1.4);
+  // Baja la cabeza a la sombra, cierra los ojos y sube ya con la otra cara. Al entrar
+  // en sensei abre los ojos de golpe con un destello.
+  function cambioSerio(cambiar, entra) {
+    const sombra = document.getElementById("caraSombra");
+    m.serio.t = 34;
+    m.cierre.t = 1;
+    sombra.classList.add("activa");
+    setTimeout(cambiar, 850);
     setTimeout(() => {
-      face.classList.toggle("sensei", !!data.activo);
-      if (!data.activo) mostrarJaponesSensei(null);
-    }, 105);
-  });
+      m.serio.t = 0;
+      m.serio.v -= 70;
+      sombra.classList.remove("activa");
+    }, 1000);
+    setTimeout(() => {
+      m.cierre.t = 0;
+      if (!entra) return;
+      m.abre.v += 1.2;
+      face.classList.add("destello");
+      setTimeout(() => face.classList.remove("destello"), 900);
+    }, 1350);
+  }
+
+  // Quita o deja las que no gusten: se elige una al azar cada vez
+  const CAMBIOS_SENSEI = ["serio", "pincel", "shoji"];
+  window.kaitoCambiarSensei = (activo, tipo) => {
+    const cambiar = () => {
+      face.classList.toggle("sensei", activo);
+      if (!activo) mostrarJaponesSensei(null);
+    };
+    if (face.classList.contains("sensei") === activo) return cambiar();
+    const elegido = tipo || CAMBIOS_SENSEI[Math.floor(Math.random() * CAMBIOS_SENSEI.length)];
+    if (elegido === "serio" || !window.KaitoTransicion) cambioSerio(cambiar, activo);
+    else window.KaitoTransicion.tapar(elegido, cambiar);
+  };
+  socket.on("modo_sensei", (data) => window.kaitoCambiarSensei(!!data.activo));
+
+  // De dónde parte la capa de la transición, para que no se note cuándo aparece
+  function poseCara(dormido) {
+    const [, x, y, r] = face.style.transform.match(/translate\((-?[\d.]+)px, *(-?[\d.]+)px\) rotate\((-?[\d.]+)deg/) || [0, 0, 0, 0];
+    return { x: +x, y: +y, r: +r, dormido, mini: dormido };
+  }
+  // Al reloj se llega con los ojos cerrados: dormido, o los cierra ahora si ha sido un
+  // doble toque. Con las piezas de sensei, sin transición: la capa dibuja la cara normal.
+  window.kaitoIrAlReloj = (ir, tipo) => {
+    if (!window.KaitoTransicion || face.classList.contains("sensei")) return ir();
+    const dormido = !!gesto && gesto.nombre === "dormirse" && !face.classList.contains("despierta");
+    if (!dormido) m.cierre.t = 1;
+    setTimeout(() => window.KaitoTransicion.aReloj({ pose: poseCara(dormido), tipo }).then(ir), dormido ? 0 : 500);
+  };
 
   // Muestra en pantalla lo que Kaito ha entendido tras el wakeword
   socket.on("transcripcion", function (data) {

@@ -234,6 +234,32 @@
     margin-top: 50px;
   }
 
+  /* Cambio serio a sensei: sombra sobre la cara y destello al abrir los ojos */
+  .cara-sombra {
+    position: fixed;
+    inset: 0;
+    z-index: 5;
+    background: #070402;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.45s ease;
+  }
+  .cara-sombra.activa { opacity: 0.82; }
+  .barra-destello {
+    fill: #ffffff;
+    opacity: 0;
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  .eye-sensei-right .barra-destello { animation-direction: reverse !important; }
+  .destello .barra-destello { animation: kwBarra 0.6s ease-in-out 0.1s both; }
+  .destello .ov-brillo-1 { animation: kwBrillo 0.8s ease-in-out both; }
+  @keyframes kwBarra {
+    0% { opacity: 0; transform: translateX(-85px) rotate(20deg); }
+    15%, 85% { opacity: 0.85; }
+    100% { opacity: 0; transform: translateX(55px) rotate(20deg); }
+  }
+
   /* =====================================================================
      GESTOS KAWAII — solo las capas de adorno.
      El movimiento (cabeza, párpados, cejas, boca) lo hace el motor de

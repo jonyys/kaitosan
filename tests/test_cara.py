@@ -34,6 +34,16 @@ def test_la_cremallera_tiene_dibujo_y_no_sale_sola():
     assert 'hacerGesto("cremallera", true)' in MOTOR
 
 
+def test_las_transiciones_no_dejan_sin_cambiar_de_pantalla():
+    # Si el motor no carga, la pantalla tiene que cambiar igual, solo que de golpe
+    kiosko = Path("templates/partials/_kiosko.html").read_text(encoding="utf-8")
+    assert "window.KaitoTransicion &&" in kiosko and "window.kaitoIrAlReloj)" in kiosko
+    assert "!window.KaitoTransicion" in MOTOR
+    # El reloj y la cara cargan el motor antes de usarlo
+    for plantilla in ("templates/face.html", "templates/reloj.html"):
+        assert "/static/transiciones.js" in Path(plantilla).read_text(encoding="utf-8")
+
+
 def test_cada_ojo_tiene_pupila_de_corazon():
     assert CARA.count('class="pupila-corazon"') == 4
 

@@ -10,6 +10,9 @@
     <meta name="theme-color" content="#15100a">
     {# Antes de pintar nada: si venimos del reloj, la primera imagen ya lleva los ojos cerrados #}
     <script>if (/\/reloj(\?|$)/.test(document.referrer)) document.documentElement.classList.add("ojos-cerrados");</script>
+    {# La misma letra del reloj: la transición lo dibuja desde aquí antes de saltar a él #}
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700&display=swap">
+    <script src="/static/transiciones.js"></script>
     {% include 'partials/face/_estilos.html' %}
 </head>
 <body>

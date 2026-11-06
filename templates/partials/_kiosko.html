@@ -26,11 +26,10 @@
     transform: translateY(-106%); transition: transform .28s ease;
     background: rgba(18, 18, 22, .96); color: #ececec;
     padding: 14px 20px 20px;
-    box-shadow: 0 12px 34px rgba(0, 0, 0, .55);
     font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
     -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
   }
-  #kioskoDrawer.abierto { transform: translateY(0); }
+  #kioskoDrawer.abierto { transform: translateY(0); box-shadow: 0 12px 34px rgba(0, 0, 0, .55); }
   #kioskoDrawer .grip {
     width: 42px; height: 4px; border-radius: 2px;
     background: #5a5a5a; margin: 0 auto 14px;
@@ -72,9 +71,23 @@
     // Solo en la pantalla del propio robot (localhost). Un móvil o PC en la LAN
     // que esté en /reloj, /admin/ajustes, etc. NO debe saltar a la cara.
     var ES_KIOSKO = {{ 'true' if es_kiosko else 'false' }};
+    // Con transición solo en el robot: está hecha para su pantalla redonda de 480 px
+    function pasarACara(velocidad) {
+      var ir = function () { location.replace("/"); };
+      if (ES_KIOSKO && window.KaitoTransicion && location.pathname === "/reloj") {
+        window.KaitoTransicion.aCara({ velocidad: velocidad }).then(ir);
+      } else {
+        ir();
+      }
+    }
+    function pasarAlReloj() {
+      var ir = function () { location.replace("/reloj"); };
+      if (ES_KIOSKO && window.kaitoIrAlReloj) window.kaitoIrAlReloj(ir);
+      else ir();
+    }
     function irACara(d) {
       if (ES_KIOSKO && d && d.estado === "listening" && location.pathname !== "/") {
-        location.replace("/");
+        pasarACara(2); // le están hablando: rápido, que se le vea escuchar
       }
     }
     function conSocket(cb) {
@@ -100,6 +113,7 @@
       fetch("/kiosko/config")
         .then(function (r) { return r.json(); })
         .then(function (cfg) {
+          window.__kioskoNoche = cfg.noche; // la transición al reloj pinta sus colores
           var d = construirDrawer(cfg, ruta);
           wireGestos(ruta, d);
           // El salvapantallas (cara -> reloj tras N min) solo en la Pi: un
@@ -186,7 +200,10 @@
           }
           var go = b.getAttribute("data-go");
           if (go === ruta) { cerrar(); return; }
-          location.replace(go);
+          cerrar();
+          if (go === "/reloj") pasarAlReloj();
+          else if (go === "/") pasarACara(1);
+          else location.replace(go);
         });
       });
 
@@ -228,7 +245,8 @@
         var t = Date.now();
         if (t - ultimoTap < 320) {
           ultimoTap = 0;
-          location.replace(ruta === "/" ? "/reloj" : "/");
+          if (ruta === "/") pasarAlReloj();
+          else pasarACara(1);
         } else {
           ultimoTap = t;
         }
@@ -255,7 +273,7 @@
     function wireInactividad(cfg) {
       var min = Math.max(1, Math.min(120, parseInt(cfg.screensaver_min, 10) || 5));
       window.kaitoInactividadMs = min * 60000; // la cara sube el sueño hasta aquí
-      function irAlReloj() { location.replace("/reloj"); }
+      var irAlReloj = pasarAlReloj;
       var tmr;
       function rearmar() {
         clearTimeout(tmr);

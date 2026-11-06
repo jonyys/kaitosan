@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Reloj · Kaito</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+  <script src="/static/transiciones.js"></script>
   {% include 'partials/admin/_estilos.html' %}
   <style>
     /* ── Salvapantallas: al entrar SOLO se ve el reloj a pantalla completa.
@@ -262,14 +263,7 @@
   // Modo noche: franja horaria en la que el reloj va oscuro (Ajustes → Pantalla).
   const NOCHE = {{ noche|tojson }};
 
-  function enFranjaNoche(d) {
-    if (!NOCHE || !NOCHE.enabled) return false;
-    const [sh, sm] = NOCHE.start.split(':').map(Number);
-    const [eh, em] = NOCHE.end.split(':').map(Number);
-    const ahora = d.getHours() * 60 + d.getMinutes();
-    const ini = sh * 60 + sm, fin = eh * 60 + em;
-    return ini <= fin ? (ahora >= ini && ahora < fin) : (ahora >= ini || ahora < fin);
-  }
+  const enFranjaNoche = (d) => KaitoTransicion.enFranja(NOCHE, d);
 
   function actualizarReloj() {
     const ahora = new Date();
@@ -288,6 +282,7 @@
   }
   actualizarReloj();
   setInterval(actualizarReloj, 1000);
+  document.fonts.ready.then(KaitoTransicion.guardarReloj);
 
   // ── SOCKET.IO ───────────────────────────────────────────────────────────
   const socket = io();
