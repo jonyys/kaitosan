@@ -146,6 +146,8 @@ sed -e "s|^User=.*|User=$KAITO_USER|" \
     -e "s|^WorkingDirectory=.*|WorkingDirectory=$REPO|" \
     -e "s|^ExecStart=.*|ExecStart=$VENV/bin/python app.py|" \
     "$SCRIPT_DIR/kaito.service" > /etc/systemd/system/kaito.service
+install -m 0644 -o root -g root "$SCRIPT_DIR/kaito-audio-init.service" \
+  /etc/systemd/system/kaito-audio-init.service
 
 # --- 9. Onboarding WiFi (§3) ---------------------------------------------------
 log "onboarding: UI -> /opt/wifi-connect/ui/"
@@ -201,6 +203,7 @@ fi
 log "systemd: daemon-reload + enable + restart"
 systemctl daemon-reload
 systemctl enable kaito.service >/dev/null 2>&1 || true
+systemctl enable kaito-audio-init.service >/dev/null 2>&1 || true
 systemctl enable kaitosan-wifi-connect.service >/dev/null 2>&1 || true
 systemctl restart kaito.service || echo "  AVISO: kaito no arrancó — revisa 'journalctl -u kaito -n 50'"
 

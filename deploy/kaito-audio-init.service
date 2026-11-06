@@ -1,0 +1,13 @@
+# Abre el DAC del altavoz con 1 s de silencio nada más arrancar. Sin esto, el
+# altavoz emite una interferencia desde el encendido hasta que suena algo por
+# primera vez. Se reintenta porque la tarjeta puede tardar en estar disponible.
+[Unit]
+Description=Kaito: inicializa el altavoz con silencio al arrancar
+After=sound.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c 'for i in $$(seq 1 15); do aplay -q -D hw:CARD=sndrpihifiberry,DEV=0 -t raw -f S16_LE -r 48000 -c 2 -d 1 /dev/zero && exit 0; sleep 1; done; exit 1'
+
+[Install]
+WantedBy=multi-user.target

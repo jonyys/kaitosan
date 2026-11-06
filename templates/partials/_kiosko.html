@@ -11,6 +11,10 @@
    falta (el /reloj ya lo trae). CSS propio con colores literales: la cara no
    tiene los tokens pastel. #}
 <style>
+  {% if es_kiosko %}
+  /* La pantalla del robot es táctil: sin esto se ve el ratón hasta el primer toque. */
+  * { cursor: none !important; }
+  {% endif %}
   #kioskoBackdrop {
     position: fixed; inset: 0; z-index: 9998;
     background: rgba(0, 0, 0, .4);
