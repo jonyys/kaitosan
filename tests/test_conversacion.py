@@ -87,19 +87,80 @@ def test_no_sigue_si_le_han_mandado_callar():
     assert ciclo(callado=True) is False
 
 
-def test_callar_corta_la_voz_y_cierra_la_boca():
-    import numpy as np
-    from ai import text_to_speech as mod
+class SdFalso:
+    """Como PortAudio en la Pi: parar el stream desde fuera es el fallo que se evita."""
 
-    cortado = threading.Event()
-    sd = mock.Mock()
-    sd.stop.side_effect = cortado.set
-    sd.wait.side_effect = lambda: cortado.wait(5)
+    class CallbackStop(Exception):
+        pass
 
+    def __init__(self):
+        self.sonado = []
+        self.creados = 0
+
+    def OutputStream(self, callback, finished_callback, **_):
+        self.creados += 1
+        sd = self
+
+        class Stream:
+            def start(self):
+                threading.Thread(target=self._bucle, daemon=True).start()
+
+            def _bucle(self):
+                import numpy as np
+                while True:
+                    salida = np.full((480, 1), 9.0, dtype=np.float32)
+                    try:
+                        callback(salida, 480, None, None)
+                    except sd.CallbackStop:
+                        sd.sonado.append(salida.copy())
+                        break
+                    sd.sonado.append(salida.copy())
+                    time.sleep(0.001)
+                finished_callback()
+
+            def stop(self):
+                raise AssertionError("parar el stream desde fuera bloquea PortAudio")
+
+            abort = stop
+
+            def close(self):
+                pass
+
+        return Stream()
+
+    def stop(self):
+        raise AssertionError("sd.stop bloquea PortAudio en la Pi")
+
+
+def _tts(mod):
     t = mod.TextToSpeech.__new__(mod.TextToSpeech)
     t.device, t.sample_rate_device = None, 48000
     t._callado = threading.Event()
     t.socketio = mock.Mock()
+    return t
+
+
+def test_suena_todo_el_audio_y_rellena_el_final_con_silencio():
+    import numpy as np
+    from ai import text_to_speech as mod
+
+    t = _tts(mod)
+    audio = np.arange(1, 1001, dtype=np.float32)
+    sd = SdFalso()
+    with mock.patch.object(mod, "sd", sd):
+        t._reproducir_con_control_boca(audio, [])
+    sonado = np.concatenate(sd.sonado)[:, 0]
+    assert np.array_equal(sonado[:1000], audio)
+    assert not sonado[1000:].any()
+    assert not t.callado()
+
+
+def test_callar_corta_la_voz_y_cierra_la_boca():
+    import numpy as np
+    from ai import text_to_speech as mod
+
+    sd = SdFalso()
+    t = _tts(mod)
     audio = np.zeros(48000 * 60, dtype=np.float32)  # un minuto de audio
 
     with mock.patch.object(mod, "sd", sd):
@@ -121,11 +182,9 @@ def test_callar_antes_de_empezar_no_reproduce():
     import numpy as np
     from ai import text_to_speech as mod
 
-    t = mod.TextToSpeech.__new__(mod.TextToSpeech)
-    t.device, t.sample_rate_device = None, 48000
-    t._callado = threading.Event()
+    t = _tts(mod)
     t._callado.set()
-    sd = mock.Mock()
+    sd = SdFalso()
     with mock.patch.object(mod, "sd", sd):
         t._reproducir_con_control_boca(np.zeros(10, dtype=np.float32), [])
-    sd.play.assert_not_called()
+    assert sd.creados == 0

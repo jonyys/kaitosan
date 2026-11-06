@@ -270,9 +270,35 @@ class TextToSpeech:
             os.unlink(list_path)
 
     def callar(self):
-        """Corta la voz al instante, desde cualquier hilo."""
+        """Corta la voz al instante, desde cualquier hilo (ver _sonar)."""
         self._callado.set()
-        sd.stop()
+
+    def _sonar(self, data):
+        """Reproduce `data` hasta el final o hasta callar(), y no vuelve antes.
+
+        No se usa sd.play + sd.stop: en la Pi, parar o cerrar el stream desde otro
+        hilo deja PortAudio bloqueado para siempre (reproducido con stop y con abort).
+        Al callar, el propio callback termina el stream, igual que al acabarse el audio.
+        """
+        pos = 0
+        terminado = threading.Event()
+
+        def rellenar(salida, frames, _tiempo, _estado):
+            nonlocal pos
+            trozo = data[pos:pos + frames]
+            pos += len(trozo)
+            salida[:len(trozo), 0] = trozo
+            salida[len(trozo):] = 0
+            if self._callado.is_set() or len(trozo) < frames:
+                raise sd.CallbackStop
+
+        stream = sd.OutputStream(
+            samplerate=self.sample_rate_device, device=self.device, channels=1,
+            dtype="float32", callback=rellenar, finished_callback=terminado.set,
+        )
+        stream.start()
+        terminado.wait()
+        stream.close()
 
     def callado(self) -> bool:
         """True si la última vez que habló le mandaron callar."""
@@ -377,20 +403,18 @@ class TextToSpeech:
 
         sio = getattr(self, 'socketio', None)
 
-        # Le han mandado callar justo entre on_start y aquí: sd.stop aún no cortaba nada
+        # Le han mandado callar justo entre on_start y aquí: ni empieza
         if self._callado.is_set():
             if on_stop:
                 on_stop()
             return
 
         if not sio or not intervalos:
-            sd.play(data, self.sample_rate_device, device=self.device)
-            sd.wait()
+            self._sonar(data)
             if on_stop:
                 on_stop()
             return
 
-        sd.play(data, self.sample_rate_device, device=self.device)
         inicio = tmod.time()
         duracion_total = len(data) / self.sample_rate_device
 
@@ -420,6 +444,6 @@ class TextToSpeech:
 
         t = threading.Thread(target=control_boca, daemon=True)
         t.start()
-        sd.wait()
+        self._sonar(data)
         if on_stop:
             on_stop()
