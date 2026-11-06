@@ -33,7 +33,7 @@ def test_las_formas_de_los_gestos_se_pueden_mezclar_con_la_boca():
 def test_la_cremallera_tiene_dibujo_y_no_sale_sola():
     assert 'class="cremallera"' in CARA
     assert re.search(r"cremallera: \{ dur: \d+, peso: 0,", MOTOR)
-    assert 'hacerGesto("cremallera")' in MOTOR
+    assert 'hacerGesto("cremallera", true)' in MOTOR
 
 
 def test_cada_ojo_tiene_pupila_de_corazon():

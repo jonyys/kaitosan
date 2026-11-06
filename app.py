@@ -88,6 +88,7 @@ def chat():
             return jsonify({"error": "Mensaje vacío"}), 400
 
         state.cambiar("listening")
+        tts.empezar_turno()
         state.cambiar("thinking")
 
         respuesta, lento_extra = brain.responder(mensaje)
@@ -157,6 +158,7 @@ def grabar():
             return jsonify({"transcripcion": texto, "respuesta": "", "estado": "ok"})
 
         # Pensando
+        tts.empezar_turno()
         state.cambiar("thinking")
 
         # Responde con Groq (siempre devuelve (respuesta, lento_extra))
@@ -248,11 +250,14 @@ def kiosko_volumen():
 
 @app.route("/kiosko/callar", methods=["POST"])
 def kiosko_callar():
-    """Tocar la pantalla mientras habla lo calla; si no está hablando, nada."""
+    """Tocar la pantalla mientras piensa o habla lo calla; si no, nada. La cara pasa a
+    reposo ya, aunque el modelo tarde en contestar: el estado real sigue ocupado hasta
+    entonces, para que no empiece otro turno por encima de este."""
     if not _solo_local():
         abort(403)
-    if state.get() == "speaking":
+    if state.get() in ("thinking", "speaking"):
         tts.callar()
+        socketio.emit("estado", {"estado": "idle"})
     return jsonify({"ok": True})
 
 

@@ -53,6 +53,9 @@ class TtsFalso:
     def callado(self):
         return self._c
 
+    def empezar_turno(self):
+        pass
+
 
 def ciclo(asunto_cerrado=False, callado=False, salir_de_sensei=False):
     """Un _ciclo_voz con todo falso. Devuelve si seguiría escuchando."""
@@ -176,6 +179,52 @@ def test_callar_corta_la_voz_y_cierra_la_boca():
             time.sleep(0.05)
     assert t.callado()
     assert mock.call("boca", {"hablado": False}) in t.socketio.emit.call_args_list
+
+
+def test_callar_solo_vale_para_el_turno_en_curso():
+    from ai import text_to_speech as mod
+
+    t = _tts(mod)
+    t.callar()
+    assert t.callado()
+    t.empezar_turno()
+    assert not t.callado()
+
+
+def test_callar_mientras_piensa_no_genera_audio_ni_empieza_a_hablar():
+    from ai import text_to_speech as mod
+
+    t = _tts(mod)
+    t._generar_audio_completo = mock.Mock()
+    empieza, para = mock.Mock(), mock.Mock()
+    t.callar()
+    t.hablar("Hola", on_start=empieza, on_stop=para)
+    t._generar_audio_completo.assert_not_called()
+    empieza.assert_not_called()
+    para.assert_called_once()
+
+
+def test_callar_mientras_genera_el_audio_no_llega_a_hablar(tmp_path):
+    import numpy as np
+    from ai import text_to_speech as mod
+
+    t = _tts(mod)
+
+    async def genera(_texto, ruta):
+        with open(ruta, "wb") as f:
+            f.write(b"x")
+        t.callar()  # el toque llega justo ahora
+
+    t._generar_audio_completo = genera
+    empieza, para = mock.Mock(), mock.Mock()
+    sd = SdFalso()
+    sf = mock.Mock()
+    sf.read.return_value = (np.zeros(48000, dtype=np.float32), 48000)
+    with mock.patch.object(mod, "sd", sd), mock.patch.object(mod, "sf", sf):
+        t.hablar("Hola", on_start=empieza, on_stop=para)
+    empieza.assert_not_called()
+    para.assert_called_once()
+    assert sd.creados == 0
 
 
 def test_callar_antes_de_empezar_no_reproduce():

@@ -454,6 +454,7 @@
     width: 120px;
     height: 24px;
     margin-left: -60px;
+    scale: 1.18;
     pointer-events: none;
     opacity: 0;
   }
@@ -524,10 +525,10 @@
     62%, 100% { transform: rotate(0deg); }
   }
   /* La boca se recorta justo al paso del tirador (que va del 10 % al 35 % y la cruza
-     entre el 12 % y el 33 %), para que nunca asome por debajo de la parte ya cerrada */
+     entre el 14 % y el 31 %), para que nunca asome por debajo de la parte ya cerrada */
   @keyframes crBoca {
-    0%, 12% { clip-path: inset(-50% -10% -50% -5%); opacity: 1; }
-    33%, 88% { clip-path: inset(-50% -10% -50% 105%); opacity: 1; }
+    0%, 14% { clip-path: inset(-50% -10% -50% -5%); opacity: 1; }
+    31%, 88% { clip-path: inset(-50% -10% -50% 105%); opacity: 1; }
     88.1% { clip-path: inset(-50% -10% -50% -5%); opacity: 0; }
     96%, 100% { clip-path: inset(-50% -10% -50% -5%); opacity: 1; }
   }

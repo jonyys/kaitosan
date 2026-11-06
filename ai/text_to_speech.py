@@ -301,12 +301,21 @@ class TextToSpeech:
         stream.close()
 
     def callado(self) -> bool:
-        """True si la última vez que habló le mandaron callar."""
+        """True si le han mandado callar en este turno."""
         return self._callado.is_set()
+
+    def empezar_turno(self):
+        """Una orden de callar solo vale para la respuesta de ese turno."""
+        self._callado.clear()
 
     def hablar(self, texto: str, lento_extra: bool = False, on_start=None, on_stop=None):
         self._lento_extra = lento_extra
-        self._callado.clear()
+
+        # Le han mandado callar mientras pensaba: ni siquiera genera el audio
+        if self._callado.is_set():
+            if on_stop:
+                on_stop()
+            return
 
         if not texto or not texto.strip():
             print("⚠️ TTS: texto vacío, nada que reproducir")
@@ -344,6 +353,12 @@ class TextToSpeech:
 
             intervalos = self._detectar_intervalos_habla(data)
             
+            # Le han mandado callar mientras generaba el audio: nunca llega a "hablando"
+            if self._callado.is_set():
+                if on_stop:
+                    on_stop()
+                return
+
             if on_start:
                 on_start()
 

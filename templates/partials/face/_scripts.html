@@ -320,7 +320,6 @@
   let gesto = null;
   let respiraExtra = 0;
   let alDormirse = null;
-  let remateAlCallar = false; // le han mandado callar: cremallera en cuanto deje de hablar
 
   // Mirar sin el parpadeo que a veces acompaña a los saltos de mirada
   function mirarSuave(x, y) {
@@ -642,6 +641,11 @@
   }
 
   socket.on("emocion", (data) => {
+    // Respuesta de un turno cancelado: que no se quede para el siguiente
+    if (estado === "idle") {
+      emocionPendiente = null;
+      return;
+    }
     emocionPendiente = data && EMOCIONES[data.emocion] ? data.emocion : null;
     if (estado === "speaking" && emocionPendiente && !emocionActual) {
       ponerEmocion(emocionPendiente);
@@ -652,6 +656,17 @@
   // ── Estados ─────────────────────────────────────────────────────────────────
   function aplicarEstado(nuevo) {
     if (!estados.includes(nuevo) || nuevo === estado) return;
+    // Ya se ha callado: lo que llegue por detrás no interrumpe la cremallera
+    if (gesto && gesto.nombre === "cremallera" && (nuevo === "idle" || nuevo === "speaking")) {
+      estados.forEach((e) => face.classList.remove(e));
+      face.classList.add(nuevo);
+      estado = nuevo;
+      modo = MODOS[nuevo];
+      quietoDesde = ahora;
+      quitarEmocion();
+      emocionPendiente = null;
+      return;
+    }
     terminarGesto();
     estados.forEach((e) => face.classList.remove(e));
     face.classList.add(nuevo);
@@ -673,9 +688,6 @@
         if (estado === "idle" || estado === "listening") hacerGesto(alFinal, true);
       }, 350);
     }
-
-    if (remateAlCallar && nuevo === "idle") hacerGesto("cremallera");
-    remateAlCallar = false;
 
     // Impulsos: la reacción que un valor de reposo no puede dar
     if (nuevo === "listening") {
@@ -703,12 +715,13 @@
   document.addEventListener(
     "pointerdown",
     (e) => {
-      // En el robot, tocar mientras habla lo calla (_kiosko.html): el único remate es
-      // la cremallera. Ese toque no cuenta como caricia ni le hace mirar al dedo.
-      if ({{ 'true' if es_kiosko else 'false' }} && estado === "speaking" && !e.target.closest("#kioskoDrawer,#kioskoBackdrop")) {
+      // En el robot, tocar mientras piensa o habla lo calla (_kiosko.html): la cremallera
+      // sale ya. Ese toque no cuenta como caricia ni le hace mirar al dedo.
+      if ({{ 'true' if es_kiosko else 'false' }} && (estado === "speaking" || estado === "thinking") && !e.target.closest("#kioskoDrawer,#kioskoBackdrop")) {
         quitarEmocion();
+        emocionPendiente = null;
         hablando = false;
-        remateAlCallar = true;
+        hacerGesto("cremallera", true);
         return;
       }
       if (gesto && gesto.g.alTocar && !face.classList.contains("despierta")) {

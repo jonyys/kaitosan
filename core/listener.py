@@ -93,6 +93,7 @@ class VoiceListener:
             self.socketio.emit("gesto", {"gesto": gesto})
             return False
 
+        self.tts.empezar_turno()
         self.state.cambiar("thinking")
         sensei_estaba_activo = self.brain.profesor.esta_activo()
         respuesta, lento_extra = self.brain.responder(texto, pron_contexto=pron_ctx)
