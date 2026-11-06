@@ -44,6 +44,18 @@ def test_las_transiciones_no_dejan_sin_cambiar_de_pantalla():
         assert "/static/transiciones.js" in Path(plantilla).read_text(encoding="utf-8")
 
 
+def test_las_paginas_no_se_ven_hasta_estar_listas():
+    for plantilla in ("templates/face.html", "templates/reloj.html"):
+        html = Path(plantilla).read_text(encoding="utf-8")
+        assert html.index('rel="expect" href="#paginaLista"') < html.index("<body>")
+        # La marca va al final de todo: el motor y el reloj ya han corrido al llegar a ella
+        assert re.search(r'<div id="paginaLista" hidden></div>\s*</body>', html)
+    # De noche se decide antes de pintar: si no, arranca claro y se funde a negro
+    assert html.index("classList.toggle('night'") < html.index("<body>")
+    kiosko = Path("templates/partials/_kiosko.html").read_text(encoding="utf-8")
+    assert "@view-transition { navigation: auto; }" in kiosko
+
+
 def test_cada_ojo_tiene_pupila_de_corazon():
     assert CARA.count('class="pupila-corazon"') == 4
 

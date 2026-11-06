@@ -426,5 +426,5 @@
     setTimeout(() => previa.remove(), 4000);
   });
 
-  window.KaitoTransicion = { aReloj, aCara, tapar, guardarReloj, enFranja };
+  window.KaitoTransicion = { aReloj, aCara, tapar, guardarReloj, esDeNoche };
 })();

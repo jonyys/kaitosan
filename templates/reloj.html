@@ -4,9 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Reloj · Kaito</title>
+  {% if es_kiosko %}<link rel="expect" href="#paginaLista" blocking="render">{% endif %}
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
   <script src="/static/transiciones.js"></script>
   {% include 'partials/admin/_estilos.html' %}
+  {# Antes de pintar nada: si no, de noche arranca claro y se funde a negro #}
+  <script>
+    window.__kioskoNoche = {{ noche|tojson }}; // franja horaria (Ajustes → Pantalla)
+    document.documentElement.classList.toggle('night', KaitoTransicion.esDeNoche());
+  </script>
   <style>
     /* ── Salvapantallas: al entrar SOLO se ve el reloj a pantalla completa.
        Al hacer scroll (recorrido = .reloj-spacer) el reloj se encoge dentro
@@ -260,11 +266,6 @@
   // ── RELOJ ───────────────────────────────────────────────────────────────
   const DIAS = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
 
-  // Modo noche: franja horaria en la que el reloj va oscuro (Ajustes → Pantalla).
-  const NOCHE = {{ noche|tojson }};
-
-  const enFranjaNoche = (d) => KaitoTransicion.enFranja(NOCHE, d);
-
   function actualizarReloj() {
     const ahora = new Date();
     const h = String(ahora.getHours()).padStart(2,'0');
@@ -275,14 +276,12 @@
     document.getElementById('hora').textContent = `${h}:${m}:${s}`;
     document.getElementById('fecha').textContent =
       `${DIAS[ahora.getDay()]}, ${dd}/${mm}/${ahora.getFullYear()}`;
-    // window.__nocheManual: override desde el cajón de ajustes rápidos (_kiosko).
-    const noche = (window.__nocheManual != null) ? window.__nocheManual
-                                                 : enFranjaNoche(ahora);
-    document.documentElement.classList.toggle('night', noche);
+    document.documentElement.classList.toggle('night', KaitoTransicion.esDeNoche());
   }
   actualizarReloj();
   setInterval(actualizarReloj, 1000);
-  document.fonts.ready.then(KaitoTransicion.guardarReloj);
+  // Hay que pedirla: sin pintar nada, nadie la ha pedido y fonts.ready ya estaría resuelto
+  document.fonts.load("200 64px 'M PLUS Rounded 1c'", "0123456789:").catch(() => {}).then(KaitoTransicion.guardarReloj);
 
   // ── SOCKET.IO ───────────────────────────────────────────────────────────
   const socket = io();
@@ -712,5 +711,6 @@
   })();
 </script>
 {% endif %}
+<div id="paginaLista" hidden></div>
 </body>
 </html>

@@ -14,6 +14,10 @@
   {% if es_kiosko %}
   /* La pantalla del robot es táctil: sin esto se ve el ratón hasta el primer toque. */
   * { cursor: none !important; }
+  /* La cara y el reloj se pintan a trozos mientras cargan: el navegador deja puesta la
+     última imagen de la anterior hasta llegar a su #paginaLista, y cambia sin fundido. */
+  @view-transition { navigation: auto; }
+  ::view-transition-group(root), ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
   {% endif %}
   #kioskoBackdrop {
     position: fixed; inset: 0; z-index: 9998;
