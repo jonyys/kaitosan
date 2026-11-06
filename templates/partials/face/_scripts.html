@@ -427,7 +427,7 @@
       respiraExtra = 1.6 * e;
     } },
     despertando: { dur: 2400, peso: 0, pasos: [
-      [0, () => { m.parpado.x = m.parpado.t = 1; m.cabezaY.x = m.cabezaY.t = 6; m.bocaMini.t = 1; }],
+      [0, () => { m.parpado.x = m.parpado.t = 1; m.cabezaY.x = m.cabezaY.t = 6; m.bocaMini.x = m.bocaMini.t = 1; }],
       [800, despertar],
       [1200, () => { m.bocaO.t = 0; parpadear(); }],
       [1600, () => parpadear()],
@@ -477,6 +477,7 @@
     face.classList.add("gesto-" + nombre);
     gesto = { nombre, g, ini: ahora, fin: ahora + g.dur, i: 0 };
     prox.gesto = gesto.fin + entre(CADA_GESTO);
+    correrGesto(); // el primer paso, ya: el cuadro siguiente puede llevar una marca de tiempo anterior
     return true;
   }
 
@@ -503,7 +504,7 @@
   // ── Bucle ───────────────────────────────────────────────────────────────────
   let previo = 0;
   function cuadro(ms) {
-    const dt = Math.min(0.05, (ms - previo) / 1000);
+    const dt = acotar((ms - previo) / 1000, 0, 0.05);
     previo = ms;
     ahora = ms;
     comportamiento();
@@ -815,12 +816,17 @@
     gesto.i = gesto.g.pasos.length;
     gesto.fin = ahora + 900;
   };
-  // Si venimos del reloj, abre los ojos despertándose
-  if (/\/reloj(\?|$)/.test(document.referrer)) hacerGesto("despertando");
   prox.parpadeo = ahora + entre(modo.cadaParpadeo);
   prox.gesto = ahora + entre(CADA_GESTO);
   aplicarModo();
-  requestAnimationFrame(cuadro);
+  // Si venimos del reloj (lo detecta face.html), abre los ojos despertándose.
+  // Después de aplicarModo, que devolvería los párpados al reposo.
+  if (document.documentElement.classList.contains("ojos-cerrados")) hacerGesto("despertando");
+  requestAnimationFrame((ms) => {
+    cuadro(ms);
+    // Ya están puestos los párpados del motor: el CSS de arranque deja de hacer falta
+    document.documentElement.classList.remove("ojos-cerrados");
+  });
 
   // El backend puede pedir un gesto: socketio.emit("gesto", {"gesto": "corazones"})
   socket.on("gesto", (data) => hacerGesto(data && data.gesto));

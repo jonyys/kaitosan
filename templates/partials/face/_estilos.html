@@ -115,6 +115,15 @@
   .parpado-borde {
     fill: var(--cara-parpado-borde);
   }
+  /* Vuelta del reloj: párpados cerrados hasta que el motor pinta su primer cuadro.
+     Los px son unidades del ojo, los mismos que su data-recorrido en _cara.html */
+  .ojos-cerrados .eye-left .parpado-sup,
+  .ojos-cerrados .eye-right .parpado-sup {
+    transform: translateY(130px);
+  }
+  .ojos-cerrados .eye-sensei .parpado-sup {
+    transform: translateY(94px);
+  }
   .parpado-borde-inf {
     fill: var(--cara-parpado-sombra);
   }
