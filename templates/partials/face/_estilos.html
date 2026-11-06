@@ -122,7 +122,7 @@
     transform: translateY(130px);
   }
   .ojos-cerrados .eye-sensei .parpado-sup {
-    transform: translateY(94px);
+    transform: translateY(102px);
   }
   .parpado-borde-inf {
     fill: var(--cara-parpado-sombra);
@@ -225,15 +225,13 @@
   .sensei .eyebrows {
     gap: 70px;
   }
-  .mouth-sensei {
-    display: none;
+  /* Sus ojos son altos: sin esto la cara queda arriba y la boca pegada a ellos.
+     La cara está centrada, así que baja la mitad de este margen. */
+  .face.sensei {
+    margin-top: 58px;
   }
-  .sensei .mouth:not(.mouth-sensei) {
-    display: none;
-  }
-  .sensei .mouth-sensei {
-    display: block;
-    margin-top: 45px;
+  .sensei .mouth-container {
+    margin-top: 50px;
   }
 
   /* =====================================================================
@@ -457,9 +455,6 @@
     scale: 1.18;
     pointer-events: none;
     opacity: 0;
-  }
-  .sensei .cremallera {
-    top: 40px;
   }
   .cremallera svg {
     position: absolute;

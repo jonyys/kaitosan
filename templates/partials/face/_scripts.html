@@ -101,37 +101,24 @@
     sensei: el.classList.contains("eyebrow-sensei"),
   }));
 
-  // Las dos formas de cada boca tienen los mismos comandos: basta mezclar los números.
+  // Las dos formas de la boca tienen los mismos comandos: basta mezclar los números.
   const NUM = /-?\d+(?:\.\d+)?/g;
-  const bocas = [
-    {
-      path: document.querySelector("path.mouth-single"),
-      svg: document.querySelector("svg.mouth:not(.mouth-sensei)"),
-      sensei: false,
-      cerrada: "M 265.112 239.115 C 265.112 243.048 255.383 247.237 243.382 247.237 C 231.381 247.237 221.652 243.048 221.652 239.115 C 221.652 235.182 230.758 240.737 242.759 240.737 C 254.76 240.737 265.112 235.182 265.112 239.115 Z",
-      abierta: "M 265.112 239.115 C 265.112 248.5 255.383 255.0 243.382 255.0 C 231.381 255.0 221.652 248.5 221.652 239.115 C 221.652 229.73 231.381 233.23 243.382 233.23 C 255.383 233.23 265.112 229.73 265.112 239.115 Z",
-    },
-    {
-      path: document.querySelector("path.mouth-sensei"),
-      svg: document.querySelector("svg.mouth-sensei"),
-      sensei: true,
-      cerrada: "M 368.537 453.327 C 368.537 455.896 348.03 459.979 322.733 459.979 C 297.436 459.979 276.929 455.896 276.929 453.327 C 276.929 450.758 297.436 457.692 322.733 457.692 C 348.03 457.692 368.537 450.758 368.537 453.327 Z",
-      abierta: "M 368.537 453.327 C 368.537 464.0 348.03 468.0 322.733 468.0 C 297.436 468.0 276.929 464.0 276.929 453.327 C 276.929 442.654 297.436 438.0 322.733 438.0 C 348.03 438.0 368.537 442.654 368.537 453.327 Z",
-    },
-  ];
-  // Formas de los gestos (solo la boca normal; la sensei tira de la abierta).
-  // Mismos comandos que la cerrada: se suman como desplazamientos sobre ella.
+  const boca = {
+    path: document.querySelector("path.mouth-single"),
+    svg: document.querySelector("svg.mouth"),
+    cerrada: "M 265.112 239.115 C 265.112 243.048 255.383 247.237 243.382 247.237 C 231.381 247.237 221.652 243.048 221.652 239.115 C 221.652 235.182 230.758 240.737 242.759 240.737 C 254.76 240.737 265.112 235.182 265.112 239.115 Z",
+    abierta: "M 265.112 239.115 C 265.112 248.5 255.383 255.0 243.382 255.0 C 231.381 255.0 221.652 248.5 221.652 239.115 C 221.652 229.73 231.381 233.23 243.382 233.23 C 255.383 233.23 265.112 229.73 265.112 239.115 Z",
+  };
+  // Formas de los gestos. Mismos comandos que la cerrada: se suman como desplazamientos sobre ella.
   const FORMAS_BOCA = {
     sonrisa: "M 265.112 239.115 C 265.112 249.5 255.383 256.5 243.382 256.5 C 231.381 256.5 221.652 249.5 221.652 239.115 C 221.652 236.6 231.381 240.2 243.382 240.2 C 255.383 240.2 265.112 236.6 265.112 239.115 Z",
     o: "M 253.4 245 C 253.4 251.6 248.9 257 243.382 257 C 237.9 257 233.4 251.6 233.4 245 C 233.4 238.4 237.9 233 243.382 233 C 248.9 233 253.4 238.4 253.4 245 Z",
     triste: "M 265.112 246.885 C 265.112 242.952 255.383 238.763 243.382 238.763 C 231.381 238.763 221.652 242.952 221.652 246.885 C 221.652 250.818 230.758 245.263 242.759 245.263 C 254.76 245.263 265.112 250.818 265.112 246.885 Z",
     mini: "M 247.4 243 C 247.4 245.5 245.6 247.5 243.382 247.5 C 241.1 247.5 239.4 245.5 239.4 243 C 239.4 240.5 241.1 238.5 243.382 238.5 C 245.6 238.5 247.4 240.5 247.4 243 Z",
   };
-  bocas.forEach((b) => {
-    b.de = b.cerrada.match(NUM).map(Number);
-    b.a = b.abierta.match(NUM).map(Number);
-    b.formas = b.sensei ? null : Object.fromEntries(Object.entries(FORMAS_BOCA).map(([k, d]) => [k, d.match(NUM).map(Number)]));
-  });
+  boca.de = boca.cerrada.match(NUM).map(Number);
+  boca.a = boca.abierta.match(NUM).map(Number);
+  boca.formas = Object.fromEntries(Object.entries(FORMAS_BOCA).map(([k, d]) => [k, d.match(NUM).map(Number)]));
 
   // Solo toca el DOM si el valor cambia: si algo está quieto, no se repinta.
   const cache = new WeakMap();
@@ -574,20 +561,15 @@
       mini: acotar(m.bocaMini.x, 0, 1.1),
       triste: acotar(m.triste.x, 0, 1.1),
     };
-    for (const b of bocas) {
-      if (b.sensei !== enSensei) continue;
-      // La sensei no tiene formas propias: sonríe o hace la O abriéndose un poco
-      const ab = b.formas ? abierta : abierta + pesos.sonrisa * 0.35 + pesos.o * 0.6;
-      const ladoBoca = m.bocaX.x;
-      let i = 0;
-      poner(b.path, "d", b.cerrada.replace(NUM, () => {
-        let v = b.de[i] + (b.a[i] - b.de[i]) * ab;
-        if (b.formas) for (const k in pesos) if (pesos[k]) v += (b.formas[k][i] - b.de[i]) * pesos[k];
-        i++;
-        return f(v);
-      }));
-      poner(b.svg, "style", `translate(${f(mx * 0.2 + ladoBoca)}px,${f(my * 0.1)}px) rotate(${f2(ladoBoca * 0.6)}deg)`);
-    }
+    const ladoBoca = m.bocaX.x;
+    let i = 0;
+    poner(boca.path, "d", boca.cerrada.replace(NUM, () => {
+      let v = boca.de[i] + (boca.a[i] - boca.de[i]) * abierta;
+      for (const k in pesos) if (pesos[k]) v += (boca.formas[k][i] - boca.de[i]) * pesos[k];
+      i++;
+      return f(v);
+    }));
+    poner(boca.svg, "style", `translate(${f(mx * 0.2 + ladoBoca)}px,${f(my * 0.1)}px) rotate(${f2(ladoBoca * 0.6)}deg)`);
     requestAnimationFrame(cuadro);
   }
 

@@ -12,12 +12,10 @@ def test_cada_ojo_tiene_las_piezas_que_anima_el_motor():
         assert CARA.count(pieza) == 4, pieza
 
 
-def test_las_formas_de_cada_boca_se_pueden_mezclar():
+def test_las_formas_de_la_boca_se_pueden_mezclar():
     # Se interpolan número a número: si difieren en cantidad, la boca se rompe.
-    formas = re.findall(r'(cerrada|abierta): "([^"]+)"', MOTOR)
-    assert len(formas) == 4
-    for (_, cerrada), (_, abierta) in zip(formas[0::2], formas[1::2]):
-        assert re.sub(r"-?[\d.]+", "#", cerrada) == re.sub(r"-?[\d.]+", "#", abierta)
+    (_, cerrada), (_, abierta) = re.findall(r'(cerrada|abierta): "([^"]+)"', MOTOR)
+    assert re.sub(r"-?[\d.]+", "#", cerrada) == re.sub(r"-?[\d.]+", "#", abierta)
 
 
 def test_las_formas_de_los_gestos_se_pueden_mezclar_con_la_boca():
