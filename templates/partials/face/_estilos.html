@@ -443,6 +443,91 @@
 
   .gesto-apuro .fx-gota { animation: kwGota var(--gesto-dur) ease-in both; }
 
+  /* Cremallera en la boca, al mandarle callar tocando la pantalla */
+  .mouth-container {
+    position: relative;
+  }
+  .cremallera {
+    position: absolute;
+    left: 50%;
+    top: -2px;
+    width: 120px;
+    height: 24px;
+    margin-left: -60px;
+    pointer-events: none;
+    opacity: 0;
+  }
+  .sensei .cremallera {
+    top: 40px;
+  }
+  .cremallera svg {
+    position: absolute;
+    overflow: visible;
+  }
+  .cremallera-dientes {
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .cr-cinta,
+  .cr-dientes {
+    fill: none;
+    stroke-linecap: butt;
+  }
+  .cr-cinta {
+    stroke: var(--cara-boca-oscuro);
+    stroke-width: 9px;
+    stroke-linecap: round;
+  }
+  .cr-dientes {
+    stroke: var(--cara-iris-claro);
+    stroke-width: 6px;
+    stroke-dasharray: 3 3;
+  }
+  .cremallera-tirador {
+    left: 48px;
+    top: 2px;
+    width: 24px;
+    height: 40px;
+  }
+  .cr-cuerpo { fill: var(--cara-esclera); }
+  .cr-pestana {
+    fill: var(--cara-iris-claro);
+    stroke: var(--cara-iris-oscuro);
+    stroke-width: 1.5px;
+    transform-box: fill-box;
+    transform-origin: 50% 0;
+  }
+  .gesto-cremallera .cremallera { animation: crVisible var(--gesto-dur) ease both; }
+  .gesto-cremallera .cremallera-dientes { animation: crCierra var(--gesto-dur) linear both; }
+  .gesto-cremallera .cremallera-tirador { animation: crTirador var(--gesto-dur) linear both; }
+  .gesto-cremallera .cr-pestana { animation: crBalanceo var(--gesto-dur) ease-in-out both; }
+  .gesto-cremallera .mouth { animation: crBoca var(--gesto-dur) ease both; }
+  @keyframes crVisible {
+    0%, 96%, 100% { opacity: 0; }
+    6%, 88% { opacity: 1; }
+  }
+  @keyframes crCierra {
+    0%, 10% { clip-path: inset(-12px 100% -12px -12px); }
+    35%, 100% { clip-path: inset(-12px -12px -12px -12px); }
+  }
+  @keyframes crTirador {
+    0%, 10% { transform: translate(-54px, 0); }
+    22.5% { transform: translate(0, 2.5px); }
+    35%, 100% { transform: translate(54px, 0); }
+  }
+  @keyframes crBalanceo {
+    0%, 35% { transform: rotate(-8deg); }
+    41% { transform: rotate(24deg); }
+    48% { transform: rotate(-16deg); }
+    55% { transform: rotate(9deg); }
+    62%, 100% { transform: rotate(0deg); }
+  }
+  @keyframes crBoca {
+    0%, 28%, 96%, 100% { opacity: 1; }
+    34%, 88% { opacity: 0; }
+  }
+
   /* Caricia y cosquillas */
   /* Sin keyframes: duran lo que dure el toque, así que se encienden y apagan con transición */
   .gesto-caricia .ov-rubor,

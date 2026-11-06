@@ -320,6 +320,7 @@
   let gesto = null;
   let respiraExtra = 0;
   let alDormirse = null;
+  let remateAlCallar = false; // le han mandado callar: cremallera en cuanto deje de hablar
 
   // Mirar sin el parpadeo que a veces acompaña a los saltos de mirada
   function mirarSuave(x, y) {
@@ -448,6 +449,20 @@
       m.cabezaY.t = -2.5 * Math.abs(Math.sin(s * 11));
       m.sonrisa.t = 0.7 + 0.4 * Math.abs(Math.sin(s * 11)); // "ja, ja, ja"
       m.ceja.t = -6 - 3 * Math.abs(Math.sin(s * 11));
+    } },
+    // Le han mandado callar tocando: mira cómo se cierra la cremallera de la boca y
+    // dice "mm-mm" con cara de culpable. La cremallera es CSS (.gesto-cremallera):
+    // cierra entre el 10 % y el 35 % de los 2,8 s, y aquí la mirada la sigue.
+    cremallera: { dur: 2800, peso: 0, pasos: [
+      [0, () => { mirarSuave(-11, 9); m.bocaMini.t = 0.6; m.ceja.t = -6; m.cejaRot.t = -8; m.cejaArco.t = 0.15; m.abre.v += 0.5; m.cabezaY.v -= 18; }],
+      [1000, () => { mirarSuave(0, -1); parpadear(); m.bocaMini.t = 0; m.inferior.t = 0.3; m.ceja.t = -10; m.ceja.v -= 40; m.aplasta.v += 1.2; }],
+      [1300, () => { m.cabezaR.t = -5; m.cabezaX.t = -4; }],
+      [1560, () => { m.cabezaR.t = 5; m.cabezaX.t = 4; }],
+      [1820, () => { m.cabezaR.t = -3; m.cabezaX.t = -2; }],
+      [2080, () => { m.cabezaR.t = 0; m.cabezaX.t = 0; }],
+    ], cadaCuadro(t) {
+      if (t < 280 || t > 980) return;
+      m.miradaX.t = miradaBase.x = -11 + (22 * (t - 280)) / 700;
     } },
     apuro: { dur: 3000, peso: 1, pasos: [
       [0, () => { mirarSuave(-12, 0); m.cejaRot.t = -12; m.cejaArco.t = 0.2; m.ceja.t = -5; m.bocaMini.t = 0.8; }],
@@ -659,6 +674,9 @@
       }, 350);
     }
 
+    if (remateAlCallar && nuevo === "idle") hacerGesto("cremallera");
+    remateAlCallar = false;
+
     // Impulsos: la reacción que un valor de reposo no puede dar
     if (nuevo === "listening") {
       miradaBase.x = 0;
@@ -685,10 +703,13 @@
   document.addEventListener(
     "pointerdown",
     (e) => {
-      // En el robot, tocar mientras habla lo calla (_kiosko.html): sin remate final
+      // En el robot, tocar mientras habla lo calla (_kiosko.html): el único remate es
+      // la cremallera. Ese toque no cuenta como caricia ni le hace mirar al dedo.
       if ({{ 'true' if es_kiosko else 'false' }} && estado === "speaking" && !e.target.closest("#kioskoDrawer,#kioskoBackdrop")) {
         quitarEmocion();
         hablando = false;
+        remateAlCallar = true;
+        return;
       }
       if (gesto && gesto.g.alTocar && !face.classList.contains("despierta")) {
         alDormirse = null; // tocarlo mientras se duerme cancela el reloj
