@@ -395,9 +395,76 @@
     return `<rect data-rendija x="200" y="-400" width="80" height="1280" fill="${FONDO_CARA}" opacity="0"/>${puerta("i", 0, "先", 176)}${puerta("d", 240, "生", 304)}`;
   }
 
+  // Pétalos y humo: sin azar real, las mismas posiciones cada vez (más barato y sin sorpresas)
+  const frac = (i, k) => (i * k) % 1;
+  // Pétalos y flores en una ráfaga de viento: 300 piezas pequeñas, mitad flores de cinco
+  // pétalos con contorno y mitad pétalos sueltos. Todas cruzan la pantalla de izquierda a
+  // derecha a la misma velocidad y salen una tras otra, así que sin pararse nunca forman
+  // un manto que tapa la pantalla (sin fondo) justo a mitad, cuando cambia la cara.
+  const HOJA = "M 0 -10 C 8 -9 9 4 1 11 L 0 7 L -1 11 C -9 4 -8 -9 0 -10 Z";
+  const PETALO_FLOR = "M 0 0 C -24 -10 -27 -38 -10 -46 C -5 -48 -2 -45 0 -41 C 2 -45 5 -48 10 -46 C 27 -38 24 -10 0 0 Z";
+  const ROSAS = ["#ff8f8f", "#ffb3c1", "#f7798f"];
+  const NPIEZAS = 300;
+  const PIEZAS = Array.from({ length: NPIEZAS }, (_, n) => {
+    const flor = n % 2 === 0;
+    return {
+      n, flor, sal: (n / NPIEZAS) * 0.5, y: frac(n, 0.618034) * 540 - 30, caida: 40 + frac(n, 0.43) * 40,
+      esc: flor ? 0.62 + frac(n, 0.757) * 0.16 : 2.5 + frac(n, 0.757) * 0.9,
+      fase: frac(n, 0.53) * 6.28, giro: (flor ? 200 : 520) * (frac(n, 0.29) - 0.2),
+    };
+  });
+
+  function htmlPetalos() {
+    const tinta = "#2b1420";
+    const ang = [0, 40, 80, 120, 160, 200, 240, 280, 320].map((a, k) => [Math.cos((a * Math.PI) / 180) * (14 + (k % 3) * 4), Math.sin((a * Math.PI) / 180) * (14 + (k % 3) * 4)]);
+    const rayas = ang.map(([x, y]) => `M 0 0 L ${x.toFixed(1)} ${y.toFixed(1)}`).join(" ");
+    const puntos = ang.map(([x, y]) => `M ${x.toFixed(1)} ${y.toFixed(1)} h 0`).join(" ");
+    const flores = ROSAS.map((c, k) => `<g id="ktF${k}"><g fill="${c}" stroke="${tinta}" stroke-width="3" stroke-linejoin="round">${[0, 72, 144, 216, 288].map((a) => `<path transform="rotate(${a})" d="${PETALO_FLOR}"/>`).join("")}</g><path d="${rayas}" fill="none" stroke="${tinta}" stroke-width="1.6" stroke-linecap="round"/><path d="${puntos}" fill="none" stroke="${tinta}" stroke-width="4.4" stroke-linecap="round"/></g>`).join("");
+    return `<defs>${flores}</defs>` + PIEZAS.map((q) => q.flor
+      ? `<use data-p href="#ktF${q.n % 3}"/>`
+      : `<path data-p d="${HOJA}" fill="${["#f7b6c8", "#fbd0dc", "#f29bb3"][q.n % 3]}"/>`).join("");
+  }
+
+  function petalos(capa, p) {
+    capa.querySelectorAll("[data-p]").forEach((e, i) => {
+      const q = PIEZAS[i], f = tramo(p, q.sal, q.sal + 0.5);
+      const x = mezcla(-70, 560, f), y = q.y + 22 * Math.sin(f * 11 + q.fase) + q.caida * (f - 0.5);
+      const ay = q.flor ? q.esc : q.esc * (0.75 + 0.25 * Math.cos(f * 16 + q.fase));
+      e.setAttribute("transform", `translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${(q.giro * f).toFixed(0)}) scale(${q.esc.toFixed(2)} ${ay.toFixed(2)})`);
+    });
+  }
+
+  // Humo de dibujo: nubes blancas de bordes abollados con sombra azulada abajo a la
+  // derecha y unas burbujitas sueltas. Cada bola se pinta dos veces: la sombra corrida y
+  // encima el cuerpo, así solo asoma una media luna de sombra.
+  const NUBES = [[240, 240, 200], [110, 130, 150], [370, 120, 150], [100, 360, 150], [380, 370, 160], [240, 90, 130], [240, 400, 130], [60, 240, 130], [420, 240, 130], [170, 250, 150], [320, 240, 150],
+    [175, 170, 90], [310, 175, 90], [190, 330, 95], [300, 320, 95], [60, 90, 60], [420, 60, 60], [60, 430, 60], [425, 430, 60]];
+  const BURBUJAS = [[85, 95, 14], [405, 70, 10], [55, 335, 12], [435, 405, 16], [350, 205, 9], [150, 425, 11], [300, 55, 8]];
+  const BOLAS = NUBES.concat(BURBUJAS);
+  function htmlHumo() {
+    const bolas = (color) => BOLAS.map(() => `<circle r="0" fill="${color}"/>`).join("");
+    return `<rect data-lavado width="480" height="480" fill="#f2fafd" opacity="0"/>
+      <g data-sombra>${bolas("#b8dbe7")}</g><g data-cuerpo>${bolas("#f2fafd")}</g>`;
+  }
+
+  function humo(capa, p) {
+    capa.querySelector("[data-lavado]").setAttribute("opacity", tramo(p, 0.4, 0.48) * (1 - tramo(p, 0.54, 0.6)));
+    ["sombra", "cuerpo"].forEach((k, capaI) => capa.querySelectorAll(`[data-${k}] circle`).forEach((c, i) => {
+      const [x, y, r] = BOLAS[i], burbuja = i >= NUBES.length;
+      const crece = (burbuja ? rebota : suave)(tramo(p, burbuja ? 0.2 : 0.03 + (i % 5) * 0.04, burbuja ? 0.5 : 0.5));
+      const mengua = suave(tramo(p, 0.55 + (i % 5) * 0.045, 0.82 + (i % 5) * 0.045));
+      const sube = suave(tramo(p, 0.55, 1)), f = acota(crece, 0, 1.05);
+      c.setAttribute("cx", mezcla(240, x, f) + (x - 240) * 0.1 * sube + (capaI ? 0 : 7));
+      c.setAttribute("cy", mezcla(240, y, f) - 50 * sube + (capaI ? 0 : 10));
+      c.setAttribute("r", Math.max(0, r * crece * (1 - mengua)));
+    }));
+  }
+
   const TAPAS = {
     pincel: { ms: 2300, html: htmlPincel, pinta: pincel },
     shoji: { ms: 2100, html: htmlShoji, pinta: shoji },
+    petalos: { ms: 2000, html: htmlPetalos, pinta: petalos },
+    humo: { ms: 1900, html: htmlHumo, pinta: humo },
   };
 
   // Cubre la pantalla y, a mitad, con todo tapado, hace el cambio que le pasan

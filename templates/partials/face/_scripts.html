@@ -814,14 +814,15 @@
   socket.on("sensei_japones", (data) => mostrarJaponesSensei(data.frases));
 
   // Quita o deja las que no gusten: se elige una al azar cada vez
-  const CAMBIOS_SENSEI = ["pincel", "shoji"];
+  const CAMBIOS_SENSEI = ["pincel", "shoji", "petalos", "humo"];
   window.kaitoCambiarSensei = (activo, tipo) => {
     const cambiar = () => {
       face.classList.toggle("sensei", activo);
       if (!activo) mostrarJaponesSensei(null);
     };
     if (face.classList.contains("sensei") === activo) return cambiar();
-    const elegido = tipo || CAMBIOS_SENSEI[Math.floor(Math.random() * CAMBIOS_SENSEI.length)];
+    // ponytail: prueba en la Pi, fijo pétalos al entrar y humo al salir; luego volver al azar
+    const elegido = tipo || (activo ? "petalos" : "humo");
     if (window.KaitoTransicion) window.KaitoTransicion.tapar(elegido, cambiar);
     else cambiar();
   };
