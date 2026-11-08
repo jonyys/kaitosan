@@ -711,6 +711,10 @@
   })();
 </script>
 {% endif %}
+{# Venimos de la cara: primera imagen = última de la transición, que se funde #}
+<script>
+  if (/^https?:\/\/[^/]+\/(\?.*)?$/.test(document.referrer)) { KaitoTransicion.cubrirReloj(); KaitoTransicion.quitar(); }
+</script>
 <div id="paginaLista" hidden></div>
 </body>
 </html>

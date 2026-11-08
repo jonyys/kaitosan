@@ -507,7 +507,11 @@
 
   // ── Bucle ───────────────────────────────────────────────────────────────────
   let previo = 0;
+  // La respiración arranca en fase 0 en el primer cuadro: si cuenta desde que empezó a cargar la
+  // página, en la Pi (que tarda) el primer cuadro sale hasta 2 px desplazado y salta
+  let origenRespira = null;
   function cuadro(ms) {
+    if (origenRespira === null) origenRespira = ms;
     const dt = acotar((ms - previo) / 1000, 0, 0.05);
     previo = ms;
     ahora = ms;
@@ -523,7 +527,7 @@
       }
     }
 
-    const t = ms / 1000;
+    const t = (ms - origenRespira) / 1000;
     const respira = Math.sin(t * 1.35) * 1.5 + Math.sin(t * 0.63) * 0.6;
     const parp = curvaParpadeo();
     const parpado = Math.max(acotar(m.parpado.x, 0, 1), acotar(m.cierre.x, 0, 1), parp);
@@ -874,6 +878,7 @@
     cuadro(ms);
     // Ya están puestos los párpados del motor: el CSS de arranque deja de hacer falta
     document.documentElement.classList.remove("ojos-cerrados");
+    if (window.KaitoTransicion) window.KaitoTransicion.quitar();
   });
 
   // El backend puede pedir un gesto: socketio.emit("gesto", {"gesto": "corazones"})

@@ -115,14 +115,41 @@
       }),
       fecha: { izq: cajaFecha.left, ancho: cajaFecha.width, arriba: cajaFecha.top, tam: estiloFecha.fontSize, espacio: estiloFecha.letterSpacing, familia: estiloFecha.fontFamily },
     };
-    // Los dos puntos del reloj no están en el centro de la caja de texto: se mide dónde
-    // cae su tinta para que los ojos terminen justo ahí y no den un salto al acabar.
+    // Los dos puntos del reloj no están en el centro de la caja de texto: se pintan en un
+    // canvas ampliado y se miden (centro, radio y separación de cada punto), para que los
+    // ojos acaben justo ahí. Con constantes a ojo se veía un salto de unos píxeles.
     try {
-      const m = document.createElement("canvas").getContext("2d");
-      m.font = `${estilo.fontWeight} ${estilo.fontSize} ${estilo.fontFamily}`;
-      const t = m.measureText(":");
-      const base = caja.top + (caja.height - (t.fontBoundingBoxAscent + t.fontBoundingBoxDescent)) / 2 + t.fontBoundingBoxAscent;
-      datos.baja = base - (t.actualBoundingBoxAscent - t.actualBoundingBoxDescent) / 2 - (caja.top + caja.height / 2);
+      const E = 8, tam = parseFloat(estilo.fontSize) * E, pad = 4 * E;
+      const cv = document.createElement("canvas");
+      cv.width = Math.ceil(tam) + 2 * pad;
+      cv.height = Math.ceil(tam * 1.6);
+      const m = cv.getContext("2d", { willReadFrequently: true });
+      m.font = `${estilo.fontWeight} ${tam}px ${estilo.fontFamily}`;
+      // Alto de la letra a su tamaño real (a 8x el redondeo de la caja no sería el de la página)
+      const m1 = document.createElement("canvas").getContext("2d");
+      m1.font = `${estilo.fontWeight} ${estilo.fontSize} ${estilo.fontFamily}`;
+      const fm = m1.measureText(":");
+      const base0 = Math.round(cv.height * 0.75);
+      m.fillText(":", pad, base0);
+      const px = m.getImageData(0, 0, cv.width, cv.height).data;
+      // Cada punto es una racha de filas con tinta: su centro, su área y dónde cae en x
+      const puntos = [];
+      let racha = null;
+      for (let y = 0; y <= cv.height; y++) {
+        let fila = 0, sx = 0;
+        if (y < cv.height) for (let x = 0; x < cv.width; x++) { const a = px[(y * cv.width + x) * 4 + 3]; fila += a; sx += a * x; }
+        if (fila > 0) {
+          racha = racha || { a: 0, sy: 0, sx: 0 };
+          racha.a += fila; racha.sy += fila * y; racha.sx += sx;
+        } else if (racha) { puntos.push(racha); racha = null; }
+      }
+      if (puntos.length === 2) {
+        const c = puntos.map((q) => [q.sx / q.a, q.sy / q.a, Math.sqrt(q.a / 255 / Math.PI)]);
+        const yMedio = (c[0][1] + c[1][1]) / 2 - base0;
+        const base = caja.top + (caja.height - (fm.fontBoundingBoxAscent + fm.fontBoundingBoxDescent)) / 2 + fm.fontBoundingBoxAscent;
+        datos.baja = base + yMedio / E - (caja.top + caja.height / 2);
+        datos.punto = { r: (c[0][2] + c[1][2]) / 2 / E, sep: (c[1][1] - c[0][1]) / 2 / E, dx: (c[0][0] + c[1][0]) / 2 / E - pad / E };
+      }
     } catch (e) {}
     if (aviso) {
       const c = aviso.getBoundingClientRect();
@@ -207,7 +234,9 @@
     const centro = R.trozos.map(([x, w]) => x + w / 2);
     const yDe = R.arriba + R.alto / 2;
     const yPuntos = yDe + (R.baja || 0);
-    const sep = R.tam * 0.24, radio = R.tam * 0.053;
+    const punto = R.punto || { r: R.tam * 0.053, sep: R.tam * 0.24, dx: R.trozos[1][1] / 2 };
+    const sep = punto.sep, radio = punto.r;
+    const xPuntos = [R.trozos[1][0] + punto.dx, R.trozos[3][0] + punto.dx];
     const y0 = (alto - 480) / 2;
 
     function pintaCara(f, k, op) {
@@ -263,7 +292,7 @@
       const color = mezclaColor("#c89b57", colores.texto, tramo(p, 0.42, 0.58));
       const ola = suave(tramo(p, 0.38, 0.8)) * 1.3 * Math.max(ancho, alto);
       [0, 1].forEach((i) => {
-        const x = mezcla(OJOS_X[i], centro[i * 2 + 1], t), y = mezcla(232 + y0, yPuntos, t);
+        const x = mezcla(OJOS_X[i], xPuntos[i], t), y = mezcla(232 + y0, yPuntos, t);
         olas[i].setAttribute("cx", x);
         olas[i].setAttribute("cy", y);
         olas[i].setAttribute("r", ola);
@@ -347,6 +376,30 @@
     const pose = { x: 0, y: 6, r: 0, dormido: false, mini: true };
     const pinta = escenaReloj(tipo || azar(TIPOS_RELOJ), medido, pose, zetasDe(0));
     return correr(2200 / velocidad, (t) => pinta(1 - t, t * 2.2, true));
+  }
+
+  // Al llegar a la página nueva, su primera imagen es la última de la transición (la misma
+  // capa, que va debajo de lo real), y se funde: así no hay un corte entre la réplica y la
+  // pantalla de verdad, solo un cambio suave aunque no coincidan al píxel.
+  function cubrirCara() {
+    enCurso = true;
+    const pose = { x: 0, y: 6, r: 0, dormido: false, mini: true };
+    escenaReloj("puntos", relojGuardado(), pose, zetasDe(0))(0, 0, true);
+    document.getElementById("kaitoTransicion").style.pointerEvents = "none";
+  }
+  function cubrirReloj() {
+    enCurso = true;
+    escenaReloj("puntos", relojGuardado(), { x: 0, y: 0, r: 0, dormido: false, mini: false }, zetasDe(0))(1, 0, false);
+    document.getElementById("kaitoTransicion").style.pointerEvents = "none";
+  }
+  // Cuando lo de debajo ya se ha pintado (dos cuadros), la capa se funde y se quita
+  function quitar(ms = 180) {
+    const capa = document.getElementById("kaitoTransicion");
+    if (!capa) return;
+    capa.removeAttribute("id");
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      capa.animate({ opacity: [1, 0] }, { duration: ms, fill: "forwards" }).onfinish = () => { capa.remove(); enCurso = false; };
+    }));
   }
 
   // ── Lo que tapa la pantalla al cambiar de cara ──────────────────────────────
@@ -518,5 +571,5 @@
     setTimeout(() => previa.remove(), 4000);
   });
 
-  window.KaitoTransicion = { aReloj, aCara, tapar, guardarReloj, esDeNoche };
+  window.KaitoTransicion = { aReloj, aCara, tapar, cubrirCara, cubrirReloj, quitar, guardarReloj, esDeNoche };
 })();
