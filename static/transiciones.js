@@ -115,6 +115,15 @@
       }),
       fecha: { izq: cajaFecha.left, ancho: cajaFecha.width, arriba: cajaFecha.top, tam: estiloFecha.fontSize, espacio: estiloFecha.letterSpacing, familia: estiloFecha.fontFamily },
     };
+    // Los dos puntos del reloj no están en el centro de la caja de texto: se mide dónde
+    // cae su tinta para que los ojos terminen justo ahí y no den un salto al acabar.
+    try {
+      const m = document.createElement("canvas").getContext("2d");
+      m.font = `${estilo.fontWeight} ${estilo.fontSize} ${estilo.fontFamily}`;
+      const t = m.measureText(":");
+      const base = caja.top + (caja.height - (t.fontBoundingBoxAscent + t.fontBoundingBoxDescent)) / 2 + t.fontBoundingBoxAscent;
+      datos.baja = base - (t.actualBoundingBoxAscent - t.actualBoundingBoxDescent) / 2 - (caja.top + caja.height / 2);
+    } catch (e) {}
     if (aviso) {
       const c = aviso.getBoundingClientRect();
       datos.aviso = { izq: c.left, arriba: c.top, ancho: c.width, tam: getComputedStyle(aviso).fontSize, html: aviso.innerHTML };
@@ -197,6 +206,7 @@
 
     const centro = R.trozos.map(([x, w]) => x + w / 2);
     const yDe = R.arriba + R.alto / 2;
+    const yPuntos = yDe + (R.baja || 0);
     const sep = R.tam * 0.24, radio = R.tam * 0.053;
     const y0 = (alto - 480) / 2;
 
@@ -253,7 +263,7 @@
       const color = mezclaColor("#c89b57", colores.texto, tramo(p, 0.42, 0.58));
       const ola = suave(tramo(p, 0.38, 0.8)) * 1.3 * Math.max(ancho, alto);
       [0, 1].forEach((i) => {
-        const x = mezcla(OJOS_X[i], centro[i * 2 + 1], t), y = mezcla(232 + y0, yDe, t);
+        const x = mezcla(OJOS_X[i], centro[i * 2 + 1], t), y = mezcla(232 + y0, yPuntos, t);
         olas[i].setAttribute("cx", x);
         olas[i].setAttribute("cy", y);
         olas[i].setAttribute("r", ola);
