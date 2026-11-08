@@ -720,19 +720,67 @@
   (function () {
     var SEL_INTERACTIVO =
       "button,a,input,select,textarea,label,dialog,summary,#kioskoDrawer,[data-no-tap]";
-    var y0 = null, scroll0 = 0;
+    var y0 = null, scroll0 = 0, muestras = [], anim = 0;
+    var GANANCIA = 1.7;       // cuánto avanza la pantalla por cada píxel que avanza el dedo
+    var UMBRAL_LANZAR = 0.35; // px/ms: a partir de aquí un deslizamiento corto ya cambia de sección
+    function maximo() { return document.documentElement.scrollHeight - window.innerHeight; }
+    function recorrido() { var sp = document.querySelector('.reloj-spacer'); return (sp && sp.offsetHeight) || window.innerHeight; }
+    function ir(y) { window.scrollTo(0, Math.min(Math.max(y, 0), maximo())); }
+    function parar() { cancelAnimationFrame(anim); anim = 0; }
+
+    // Suave hasta un punto (frenando al llegar)
+    function deslizarA(destino) {
+      parar();
+      var ini = window.scrollY, t0 = performance.now(), dur = 150 + Math.min(Math.abs(destino - ini), 600) * 0.5;
+      (function paso(ahora) {
+        var t = Math.min((ahora - t0) / dur, 1), e = 1 - Math.pow(1 - t, 3);
+        ir(ini + (destino - ini) * e);
+        if (t < 1) anim = requestAnimationFrame(paso);
+      })(t0);
+    }
+    // Sigue un rato con lo que llevaba el dedo y va frenando. Si vuelve hacia el reloj, se
+    // detiene en la sección en vez de quedarse a medias.
+    function inercia(v) {
+      parar();
+      var t0 = performance.now();
+      (function paso(ahora) {
+        var dt = Math.min(ahora - t0, 50); t0 = ahora;
+        v *= Math.pow(0.94, dt / 16.7);
+        var y = window.scrollY + v * dt;
+        if (y < recorrido() && v < 0) return deslizarA(0);
+        ir(y);
+        if (Math.abs(v) > 0.02 && y > 0 && y < maximo()) anim = requestAnimationFrame(paso);
+      })(t0);
+    }
+
     document.addEventListener("pointerdown", function (e) {
+      parar();
       if (e.clientY <= 100 || e.target.closest(SEL_INTERACTIVO)) { y0 = null; return; }
       y0 = e.clientY;
       scroll0 = window.scrollY;
+      muestras = [{ t: e.timeStamp, y: e.clientY }];
     }, { passive: true });
     document.addEventListener("pointermove", function (e) {
       if (y0 === null) return;
-      var dy = y0 - e.clientY;
-      var max = document.documentElement.scrollHeight - window.innerHeight;
-      window.scrollTo(0, Math.min(Math.max(scroll0 + dy, 0), max));
+      ir(scroll0 + (y0 - e.clientY) * GANANCIA);
+      muestras.push({ t: e.timeStamp, y: e.clientY });
+      while (muestras.length > 2 && e.timeStamp - muestras[0].t > 100) muestras.shift();
     }, { passive: true });
-    document.addEventListener("pointerup", function () { y0 = null; }, { passive: true });
+    document.addEventListener("pointerup", function (e) {
+      if (y0 === null) return;
+      y0 = null;
+      var a = muestras[0], b = muestras[muestras.length - 1];
+      // px/ms con que se movía la pantalla al soltar (positivo = hacia las alarmas)
+      var v = b.t > a.t && e.timeStamp - b.t < 80 ? (a.y - b.y) * GANANCIA / (b.t - a.t) : 0;
+      var y = window.scrollY, tope = recorrido();
+      if (y < tope) {
+        // Entre el reloj y las alarmas no se queda a medias: va a una de las dos
+        deslizarA(v > UMBRAL_LANZAR ? tope : v < -UMBRAL_LANZAR ? 0 : (y > tope / 2 ? tope : 0));
+      } else if (Math.abs(v) > 0.05) {
+        inercia(v);
+      }
+    }, { passive: true });
+    document.addEventListener("pointercancel", function () { y0 = null; }, { passive: true });
   })();
 </script>
 {% endif %}
