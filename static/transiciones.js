@@ -155,7 +155,7 @@
   function htmlCara(alto, ancho) {
     const parpados = `<g data-k="sup"><path fill="url(#ktSombra)" d="M -12 -29 Q 50 -7 112 -29 L 112 -15 Q 50 7 -12 -15 Z"/><path fill="url(#ktPiel)" d="M -12 -142 H 112 V -28 Q 50 -6 -12 -28 Z"/><path d="M 2 -46 Q 50 -28 98 -46" fill="none" stroke="#33220f" stroke-width="2.5" stroke-linecap="round"/><path fill="#120b04" d="M -12 -29 Q 50 -7 112 -29 Q 50 2 -12 -29 Z"/></g><g data-k="inf"><path fill="url(#ktInf)" d="M -12 122 Q 50 100 112 122 V 170 H -12 Z"/><path fill="#33220f" d="M -12 122 Q 50 100 112 122 Q 50 105 -12 122 Z"/></g>`;
     const ojo = `<g data-k="ojo"><path d="${OJO}" fill="#fff3da"/><g clip-path="url(#ktOjo)">${parpados}</g></g>`;
-    const ceja = (t) => `<g data-k="ceja"><path transform="translate(${t},86) scale(${t > 200 ? -1.331 : 1.331},1.331) translate(-105.25,-165.48)" d="${CEJA}" fill="url(#ktCeja)"/></g>`;
+    const ceja = (t) => `<g data-k="ceja"><path transform="translate(${t},83.9) scale(${t > 200 ? -1.331 : 1.331},1.331) translate(-105.25,-165.48)" d="${CEJA}" fill="url(#ktCeja)"/></g>`;
     return `<svg style="position:absolute;inset:0" width="${ancho}" height="${alto}" aria-hidden="true">
       <defs>
         <radialGradient id="ktHalo"><stop offset="0" stop-color="#966224" stop-opacity=".34"/><stop offset=".45" stop-color="#966224" stop-opacity=".2"/><stop offset=".75" stop-color="#966224" stop-opacity=".07"/><stop offset="1" stop-color="#966224" stop-opacity="0"/></radialGradient>
@@ -170,7 +170,7 @@
       <rect width="${ancho}" height="${alto}" fill="${FONDO_CARA}"/>
       <g data-k="todo">
         <circle cx="240" cy="230" r="210" fill="url(#ktHalo)"/>
-        <g data-k="cara">${ceja(65)}${ceja(415)}${ojo}${ojo}<path data-k="boca" transform="translate(195,340) scale(2.07) translate(-221.652,-237.707)" fill="url(#ktBoca)"/></g>
+        <g data-k="cara">${ceja(65)}${ceja(415)}${ojo}${ojo}<path data-k="boca" transform="translate(195,334.6) scale(2.07) translate(-221.652,-237.707)" fill="url(#ktBoca)"/></g>
       </g>
       <rect data-k="fondoReloj" width="${ancho}" height="${alto}" clip-path="url(#ktInunda)"/>
       <g data-k="zetas" font-family="Nunito,'Varela Round','DejaVu Sans',sans-serif" font-weight="800" text-anchor="middle"><text font-size="24">z</text><text font-size="32">z</text><text font-size="42">Z</text></g>
