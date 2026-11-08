@@ -397,19 +397,19 @@
 
   // Pétalos y humo: sin azar real, las mismas posiciones cada vez (más barato y sin sorpresas)
   const frac = (i, k) => (i * k) % 1;
-  // Pétalos y flores en una ráfaga de viento: 300 piezas pequeñas, mitad flores de cinco
+  // Pétalos y flores en una ráfaga de viento: 140 piezas, mitad flores de cinco
   // pétalos con contorno y mitad pétalos sueltos. Todas cruzan la pantalla de izquierda a
   // derecha a la misma velocidad y salen una tras otra, así que sin pararse nunca forman
   // un manto que tapa la pantalla (sin fondo) justo a mitad, cuando cambia la cara.
   const HOJA = "M 0 -10 C 8 -9 9 4 1 11 L 0 7 L -1 11 C -9 4 -8 -9 0 -10 Z";
   const PETALO_FLOR = "M 0 0 C -24 -10 -27 -38 -10 -46 C -5 -48 -2 -45 0 -41 C 2 -45 5 -48 10 -46 C 27 -38 24 -10 0 0 Z";
   const ROSAS = ["#ff8f8f", "#ffb3c1", "#f7798f"];
-  const NPIEZAS = 300;
+  const NPIEZAS = 140;
   const PIEZAS = Array.from({ length: NPIEZAS }, (_, n) => {
     const flor = n % 2 === 0;
     return {
       n, flor, sal: (n / NPIEZAS) * 0.5, y: frac(n, 0.618034) * 540 - 30, caida: 40 + frac(n, 0.43) * 40,
-      esc: flor ? 0.62 + frac(n, 0.757) * 0.16 : 2.5 + frac(n, 0.757) * 0.9,
+      esc: flor ? 0.95 + frac(n, 0.757) * 0.15 : 4.2 + frac(n, 0.757) * 0.8,
       fase: frac(n, 0.53) * 6.28, giro: (flor ? 200 : 520) * (frac(n, 0.29) - 0.2),
     };
   });
