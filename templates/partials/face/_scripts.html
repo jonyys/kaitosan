@@ -821,8 +821,7 @@
       if (!activo) mostrarJaponesSensei(null);
     };
     if (face.classList.contains("sensei") === activo) return cambiar();
-    // ponytail: prueba en la Pi, fijo pétalos al entrar y humo al salir; luego volver al azar
-    const elegido = tipo || (activo ? "petalos" : "humo");
+    const elegido = tipo || CAMBIOS_SENSEI[Math.floor(Math.random() * CAMBIOS_SENSEI.length)];
     if (window.KaitoTransicion) window.KaitoTransicion.tapar(elegido, cambiar);
     else cambiar();
   };
