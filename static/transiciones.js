@@ -25,7 +25,7 @@
   const FONDO_CARA = "#15100a";
   const DIAS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
   const COLORES = {
-    dia: { fondo: "#fff5f8", texto: "#5b3a4a", suave: "#8a6b7a" },
+    dia: { fondo: "#15100a", texto: "#fff3da", suave: "#b99a68" },
     noche: { fondo: "#000000", texto: "#d0d0d0", suave: "#7c7c7c" },
   };
   const RELOJ_GUARDADO = "kaito.reloj";
