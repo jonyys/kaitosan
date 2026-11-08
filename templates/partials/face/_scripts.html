@@ -813,30 +813,8 @@
 
   socket.on("sensei_japones", (data) => mostrarJaponesSensei(data.frases));
 
-  // Baja la cabeza a la sombra, cierra los ojos y sube ya con la otra cara. Al entrar
-  // en sensei abre los ojos de golpe con un destello.
-  function cambioSerio(cambiar, entra) {
-    const sombra = document.getElementById("caraSombra");
-    m.serio.t = 34;
-    m.cierre.t = 1;
-    sombra.classList.add("activa");
-    setTimeout(cambiar, 850);
-    setTimeout(() => {
-      m.serio.t = 0;
-      m.serio.v -= 70;
-      sombra.classList.remove("activa");
-    }, 1000);
-    setTimeout(() => {
-      m.cierre.t = 0;
-      if (!entra) return;
-      m.abre.v += 1.2;
-      face.classList.add("destello");
-      setTimeout(() => face.classList.remove("destello"), 900);
-    }, 1350);
-  }
-
   // Quita o deja las que no gusten: se elige una al azar cada vez
-  const CAMBIOS_SENSEI = ["serio", "pincel", "shoji"];
+  const CAMBIOS_SENSEI = ["pincel", "shoji"];
   window.kaitoCambiarSensei = (activo, tipo) => {
     const cambiar = () => {
       face.classList.toggle("sensei", activo);
@@ -844,8 +822,8 @@
     };
     if (face.classList.contains("sensei") === activo) return cambiar();
     const elegido = tipo || CAMBIOS_SENSEI[Math.floor(Math.random() * CAMBIOS_SENSEI.length)];
-    if (elegido === "serio" || !window.KaitoTransicion) cambioSerio(cambiar, activo);
-    else window.KaitoTransicion.tapar(elegido, cambiar);
+    if (window.KaitoTransicion) window.KaitoTransicion.tapar(elegido, cambiar);
+    else cambiar();
   };
   socket.on("modo_sensei", (data) => window.kaitoCambiarSensei(!!data.activo));
 
