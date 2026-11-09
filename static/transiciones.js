@@ -29,6 +29,12 @@
     noche: { fondo: "#000000", texto: "#d9a35a", suave: "#8a6a3a" },
     claro: { fondo: "#f6eee3", texto: "#2a1f12", suave: "#7a6a56" },
   };
+  // Los brillos de fondo del reloj (los mismos que --blobs de partials/_kiosko.html): [r, g, b, opacidad].
+  // De noche no hay. Sin ellos, la réplica del reloj sería plana y al llegar el de verdad daría un salto.
+  const BRILLOS = {
+    dia: { ambar: [224, 164, 77, 0.34], turquesa: [79, 209, 197, 0.2] },
+    claro: { ambar: [240, 176, 80, 0.5], turquesa: [120, 205, 195, 0.4] },
+  };
   const RELOJ_GUARDADO = "kaito.reloj2"; // el 2: la distribución del reloj cambió con las páginas
   // ponytail: medidas de la pantalla de 480 px para el primer paso tras arrancar,
   // antes de haber visto el reloj; si la cara no encaja, ajustar aquí viéndolo en la Pi.
@@ -200,6 +206,8 @@
         <linearGradient id="ktSombra" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a1604" stop-opacity=".55"/><stop offset="1" stop-color="#2a1604" stop-opacity="0"/></linearGradient>
         <linearGradient id="ktCeja" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b98536"/><stop offset="1" stop-color="#7a5220"/></linearGradient>
         <radialGradient id="ktBoca"><stop offset="0" stop-color="#e0a44d"/><stop offset="1" stop-color="#8a5a1e"/></radialGradient>
+        <radialGradient id="ktBrA" gradientUnits="userSpaceOnUse" cx="${480 * 0.76}" cy="${alto * 0.2}" r="250"><stop data-k="brA" offset="0"/><stop data-k="brA" offset=".7"/></radialGradient>
+        <radialGradient id="ktBrT" gradientUnits="userSpaceOnUse" cx="${480 * 0.22}" cy="${alto * 0.8}" r="270"><stop data-k="brT" offset="0"/><stop data-k="brT" offset=".7"/></radialGradient>
         <clipPath id="ktOjo"><path d="${OJO}"/></clipPath>
         <clipPath id="ktInunda"><circle data-k="ola" r="0"/><circle data-k="ola" r="0"/></clipPath>
       </defs>
@@ -209,6 +217,8 @@
         <g data-k="cara">${ceja(65)}${ceja(415)}${ojo}${ojo}<path data-k="boca" transform="translate(195,334.6) scale(2.07) translate(-221.652,-237.707)" fill="url(#ktBoca)"/></g>
       </g>
       <rect data-k="fondoReloj" width="${ancho}" height="${alto}" clip-path="url(#ktInunda)"/>
+      <rect data-k="brilloA" width="${ancho}" height="${alto}" fill="url(#ktBrA)" clip-path="url(#ktInunda)" display="none"/>
+      <rect data-k="brilloT" width="${ancho}" height="${alto}" fill="url(#ktBrT)" clip-path="url(#ktInunda)" display="none"/>
       <g data-k="zetas" font-family="Nunito,'Varela Round','DejaVu Sans',sans-serif" font-weight="800" text-anchor="middle"><text font-size="24">z</text><text font-size="32">z</text><text font-size="42">Z</text></g>
       <g data-k="puntos"><circle/><circle/><circle/><circle/></g>
     </svg>`;
@@ -236,6 +246,16 @@
     const olas = de("ola"), trozos = de("trozo"), fecha = uno("fecha"), aviso = uno("aviso");
     const NB = BOCA.match(NUM).map(Number), NM = BOCA_MINI.match(NUM).map(Number);
     fondo.setAttribute("fill", colores.fondo);
+    const brillos = esDeNoche() ? null : document.documentElement.dataset.robot === "claro" ? BRILLOS.claro : BRILLOS.dia;
+    if (brillos) {
+      [["brilloA", "brA", brillos.ambar], ["brilloT", "brT", brillos.turquesa]].forEach(([rect, stops, [r, g, b, a]]) => {
+        uno(rect).setAttribute("display", "inline");
+        de(stops).forEach((st, i) => {
+          st.setAttribute("stop-color", `rgb(${r},${g},${b})`);
+          st.setAttribute("stop-opacity", i ? 0 : a);
+        });
+      });
+    }
     todo.setAttribute("transform", `translate(0 ${(alto - 480) / 2})`);
     de("sup").forEach((e) => e.setAttribute("transform", "translate(0 130)"));
     de("inf").forEach((e) => e.setAttribute("transform", "translate(0 -5.1)"));

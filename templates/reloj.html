@@ -579,7 +579,8 @@
     editandoId = null;
     document.getElementById('edit-eliminar').classList.remove('ver');
     document.getElementById('edit-titulo').textContent = 'Nueva alarma';
-    ruedaH.poner(7); ruedaM.poner(0);
+    const ahora = new Date();
+    ruedaH.poner(ahora.getHours()); ruedaM.poner(ahora.getMinutes()); // la hora de ahora
     diasSel = []; pintarDias();
     abrirHoja('editModal');
   }
