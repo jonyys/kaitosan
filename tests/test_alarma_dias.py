@@ -42,3 +42,16 @@ def test_el_interruptor_apaga_y_enciende_sin_borrar():
     skill.activar_alarma(alarma["id"], True)
     assert alarma["activa"] is True and alarma["timer"].is_alive()
     alarma["timer"].cancel()
+
+
+def test_temporizador_pausa_reanuda_y_se_detiene():
+    skill = AlarmSkill()
+    skill.poner_temporizador(0, 10)
+    t = skill.temporizadores[0]
+    skill.estado_temporizador(t["id"], "pausar")
+    assert t["pausado"] and 9 < t["restante"] <= 10
+    skill.estado_temporizador(t["id"], "reanudar")
+    assert not t["pausado"] and t["timer"].is_alive()
+    skill.estado_temporizador(t["id"], "detener")
+    assert t["pausado"] and t["restante"] == 10  # parado y con la duración entera
+    t["timer"].cancel()

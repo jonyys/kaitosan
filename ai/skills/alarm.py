@@ -56,7 +56,9 @@ class AlarmSkill:
                     "segundos": t["segundos"],
                     "duracion_total": t["duracion_total"],
                     "inicio": t["inicio"],
-                    "activo": t["activo"]
+                    "activo": t["activo"],
+                    "pausado": t.get("pausado", False),
+                    "restante": t.get("restante", t["duracion_total"])
                 }
                 for t in self.temporizadores
             ]
@@ -183,37 +185,39 @@ class AlarmSkill:
         lista = ", ".join(a["hora"] for a in activas)
         return f"Alarmas activas: {lista}."
 
+    def _programar_temporizador(self, temp_id, segundos):
+        timer = threading.Timer(segundos, self._temporizador_sono, args=[temp_id])
+        timer.daemon = True
+        timer.start()
+        return timer
+
+    def _temporizador_sono(self, temp_id):
+        t = next((x for x in self.temporizadores if x["id"] == temp_id), None)
+        if not t:
+            return
+        print(f"⏲️ ¡Temporizador! Han pasado {t['minutos']}m {t['segundos']}s")
+        for _ in range(2):
+            self._generar_sonido(0.5, 440)
+            time.sleep(0.3)
+        t["activo"] = False
+        self._emitir_estado()
+
     def poner_temporizador(self, minutos: int = 0, segundos: int = 0) -> str:
         retraso = minutos * 60 + segundos
         if retraso <= 0:
             return "Necesito un tiempo válido para el temporizador."
 
         temp_id = self._siguiente_id()
-        inicio = time.time()
-
-        def sonar_temporizador():
-            print(f"⏲️ ¡Temporizador! Han pasado {minutos}m {segundos}s")
-            for _ in range(2):
-                self._generar_sonido(0.5, 440)
-                time.sleep(0.3)
-            for t in self.temporizadores:
-                if t["id"] == temp_id:
-                    t["activo"] = False
-                    break
-            self._emitir_estado()
-
-        timer = threading.Timer(retraso, sonar_temporizador)
-        timer.daemon = True
-        timer.start()
-
         temp_info = {
             "id": temp_id,
             "minutos": minutos,
             "segundos": segundos,
             "duracion_total": retraso,
-            "inicio": inicio,
-            "timer": timer,
-            "activo": True
+            "inicio": time.time(),
+            "timer": self._programar_temporizador(temp_id, retraso),
+            "activo": True,
+            "pausado": False,
+            "restante": retraso,
         }
         self.temporizadores.append(temp_info)
         self._emitir_estado()
@@ -224,6 +228,28 @@ class AlarmSkill:
             return f"Temporizador de {minutos} minutos puesto."
         else:
             return f"Temporizador de {segundos} segundos puesto."
+
+    def estado_temporizador(self, temp_id: int, accion: str) -> str:
+        """Pausa, reanuda o detiene (vuelve a la duración entera, parado) un temporizador."""
+        t = next((x for x in self.temporizadores if x["id"] == temp_id and x["activo"]), None)
+        if not t:
+            return "No encontré ese temporizador."
+        total = t["duracion_total"]
+        if accion == "pausar" and not t["pausado"]:
+            t["timer"].cancel()
+            t["restante"] = max(0, total - (time.time() - t["inicio"]))
+            t["pausado"] = True
+        elif accion == "reanudar" and t["pausado"]:
+            # inicio se retrasa lo ya gastado: la cuenta atrás de la pantalla sigue valiendo igual
+            t["inicio"] = time.time() - (total - t["restante"])
+            t["timer"] = self._programar_temporizador(temp_id, t["restante"])
+            t["pausado"] = False
+        elif accion == "detener":
+            t["timer"].cancel()
+            t["restante"] = total
+            t["pausado"] = True
+        self._emitir_estado()
+        return "Temporizador pausado." if t["pausado"] else "Temporizador en marcha."
 
     def cancelar_temporizador(self, indice: int = 1) -> str:
         activos = [t for t in self.temporizadores if t["activo"]]

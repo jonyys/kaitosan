@@ -83,6 +83,13 @@
     .fila.alarma .col { display: flex; flex-direction: column; gap: 5px; }
     .fila.alarma .etq { text-align: left; }
     .fila.alarma.off .valor { color: var(--text-faint); }
+    .fila.rem { align-items: center; }
+    .acc { display: flex; gap: 8px; flex: none; }
+    .ib { flex: none; width: 44px; height: 44px; border-radius: 50%; border: 1.5px solid var(--border-fuerte); background: transparent; color: var(--rosa-accion); display: flex; align-items: center; justify-content: center; padding: 0; cursor: pointer; }
+    .ib .ico { width: 20px; height: 20px; margin: 0; }
+    .ib .solido { fill: currentColor; }
+    .ib.peligro { color: var(--peligro-tinta); }
+    .ib:active { background: var(--surface); }
     .sw { flex: none; width: 58px; height: 34px; border-radius: 17px; border: 0; padding: 0; background: var(--border-fuerte); position: relative; cursor: pointer; transition: background .2s; }
     .sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 28px; height: 28px; border-radius: 50%; background: #fff3da; transition: transform .2s; }
     .sw[aria-checked="true"] { background: var(--rosa-accion); }
@@ -150,6 +157,10 @@
 </head>
 <body>
 {% include 'partials/_iconos.html' %}
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <symbol id="i-pausa" viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></symbol>
+  <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></symbol>
+</svg>
 
 <div class="carril" id="carril">
 
@@ -237,7 +248,6 @@
     <button class="btn btn-yellow" onclick="abrirRecordatorio(true)">Atrás</button>
     <button class="btn btn-blue" onclick="guardarRecordatorio()">Guardar</button>
   </div>
-  <button class="eliminar" id="rem-eliminar" style="top:358px" onclick="eliminarDesdeHojaRem()">Eliminar recordatorio</button>
 </div>
 
 <!-- Toast -->
@@ -343,12 +353,17 @@
     countdowns = {};
 
     list.innerHTML = activos.map(t => `
-      <li class="fila" id="timer-item-${t.id}" data-accion="eliminarTemporizador" data-args='[${t.id}]'>
-        <div class="valor" id="timer-val-${t.id}">${formatTimer(t)}</div><div class="etq">de ${fmtDuracion(t.duracion_total)}</div>
+      <li class="fila alarma" id="timer-item-${t.id}" data-accion="eliminarTemporizador" data-args='[${t.id}]'>
+        <div class="col"><div class="valor" id="timer-val-${t.id}">${formatTimer(t)}</div><div class="etq">de ${fmtDuracion(t.duracion_total)}</div></div>
+        <div class="acc">
+          <button class="ib" aria-label="${t.pausado ? 'Reanudar' : 'Pausar'}" onclick="estadoTemporizador(${t.id}, '${t.pausado ? 'reanudar' : 'pausar'}')"><svg class="ico solido"><use href="#${t.pausado ? 'i-play' : 'i-pausa'}"/></svg></button>
+          ${t.pausado && t.restante >= t.duracion_total ? '' : `<button class="ib" aria-label="Detener" onclick="estadoTemporizador(${t.id}, 'detener')"><svg class="ico solido"><use href="#i-stop"/></svg></button>`}
+        </div>
       </li>
     `).join('');
 
-    activos.forEach(t => {
+    // Los pausados no cuentan: se quedan en su tiempo
+    activos.filter(t => !t.pausado).forEach(t => {
       const inicio = t.inicio * 1000;
       const duracion = t.duracion_total * 1000;
       countdowns[t.id] = setInterval(() => {
@@ -367,10 +382,21 @@
     });
   }
 
+  async function estadoTemporizador(id, accion) {
+    try {
+      const res = await fetch(`/reloj/temporizadores/${id}/estado`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({accion})
+      });
+      aplicarEstado(await res.json());
+    } catch(e) { mostrarToast('No se pudo cambiar el temporizador', 'err'); }
+  }
+
   function formatTimer(t) {
     const inicio = t.inicio * 1000;
     const duracion = t.duracion_total * 1000;
-    const restante = Math.max(0, duracion - (Date.now() - inicio));
+    const restante = t.pausado ? t.restante * 1000 : Math.max(0, duracion - (Date.now() - inicio));
     const m = Math.floor(restante / 60000);
     const s = Math.floor((restante % 60000) / 1000);
     return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
@@ -606,8 +632,9 @@
     });
     list.parentNode.classList.toggle('vacia', !todos.length);
     list.innerHTML = todos.map(r => `
-      <li class="fila${r.completado ? ' hecho' : ''}" ${r.completado ? '' : `data-accion="editarRecordatorio" data-args='[${r.id}]'`}>
+      <li class="fila rem${r.completado ? ' hecho' : ''}" ${r.completado ? '' : `data-accion="editarRecordatorio" data-args='[${r.id}]'`}>
         <div class="texto">${esc(r.texto)}<small>${fmtFecha(r.fecha_hora)}${r.completado ? ' · completado' : ''}</small></div>
+        ${r.completado ? '' : `<button class="ib peligro" aria-label="Eliminar" onclick="eliminarRecordatorio(${r.id})"><svg class="ico"><use href="#i-trash"/></svg></button>`}
       </li>
     `).join('');
   }
@@ -689,7 +716,6 @@
     teclado.poner(r.texto);
     abrirRecordatorio(true);
   }
-  function eliminarDesdeHojaRem() { const id = editandoRem; cerrarModal(); if (id !== null) eliminarRecordatorio(id); }
   function remSiguiente() {
     if (!teclado.texto().trim()) { mostrarToast('Escribe qué hay que recordar', 'warn'); return; }
     // El día: hoy, mañana y los 120 siguientes, con su nombre
@@ -711,7 +737,6 @@
     ruedaRd = Rueda(document.getElementById('rueda-rd'), 120, i => etiqueta(diasRem[i], i), { ini: ini.dia });
     ruedaRh = Rueda(document.getElementById('rueda-rh'), 24, dos, { loop: true, ini: ini.h });
     ruedaRm = Rueda(document.getElementById('rueda-rm'), 60, dos, { loop: true, ini: ini.m });
-    document.getElementById('rem-eliminar').classList.toggle('ver', editandoRem !== null);
     abrirHoja('remCuando');
   }
   async function guardarRecordatorio() {

@@ -340,6 +340,14 @@ def reloj_temporizador_crear():
     resultado = brain.alarm.poner_temporizador(minutos, segundos)
     return jsonify({"mensaje": resultado, **brain.alarm._estado_serializable()})
 
+@app.route("/reloj/temporizadores/<int:temp_id>/estado", methods=["PUT"])
+def reloj_temporizador_estado(temp_id):
+    accion = (request.get_json() or {}).get("accion", "")
+    if accion not in ("pausar", "reanudar", "detener"):
+        return jsonify({"error": "Acción inválida"}), 400
+    resultado = brain.alarm.estado_temporizador(temp_id, accion)
+    return jsonify({"mensaje": resultado, **brain.alarm._estado_serializable()})
+
 @app.route("/reloj/temporizadores/<int:temp_id>", methods=["DELETE"])
 def reloj_temporizador_borrar(temp_id):
     temp = next((t for t in brain.alarm.temporizadores if t["id"] == temp_id), None)
