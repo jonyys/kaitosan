@@ -87,6 +87,11 @@
     .fila.alarma .col { display: flex; flex-direction: column; gap: 5px; }
     .fila.alarma .etq { text-align: left; }
     .fila.alarma.off .valor { color: var(--text-faint); }
+    /* Alarma pospuesta: en lavanda, para distinguirla de las programadas (que son ámbar) */
+    .fila.alarma.pospuesta .valor { color: #b7a6ea; }
+    .fila.alarma.pospuesta .etq { color: #8f82bd; }
+    .fila.alarma.pospuesta .ib { color: #b7a6ea; border-color: #4a3f7a; }
+    .fila.alarma.pospuesta .ib:active { background: #221d3a; }
     .fila.rem { align-items: center; }
     .acc { display: flex; gap: 8px; flex: none; }
     /* Las cifras miden 52 px y empiezan a 7 px del borde de la fila; el botón (44 px) se centra con ellas */
@@ -331,9 +336,9 @@
     list.parentNode.classList.toggle('vacia', !alarmas.length && !pospuestas.length);
     // Una alarma pospuesta aparece arriba con su hora nueva y un botón para anularla
     const pos = pospuestas.map(p => `
-      <li class="fila alarma temp">
+      <li class="fila alarma temp pospuesta">
         <div class="col"><div class="valor">${p.hora}</div><div class="etq">Pospuesta · era de las ${p.origen}</div></div>
-        <div class="acc"><button class="ib peligro" aria-label="Cancelar la alarma pospuesta" onclick="cancelarPospuesta(${p.id})"><svg class="ico solido"><use href="#i-stop"/></svg></button></div>
+        <div class="acc"><button class="ib" aria-label="Cancelar la alarma pospuesta" onclick="cancelarPospuesta(${p.id})"><svg class="ico"><use href="#i-trash"/></svg></button></div>
       </li>
     `).join('');
     list.innerHTML = pos + alarmas.map(a => `
