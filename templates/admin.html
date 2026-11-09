@@ -193,6 +193,10 @@
           p.style.right = cabeAIzquierda ? "0" : "auto";
           p.style.maxWidth = "calc(100vw - 16px)";
         });
+        // pinchar fuera (también en la zona atenuada) lo cierra
+        document.addEventListener("click", function (e) {
+          if (d.open && (e.target === d || !d.contains(e.target))) d.open = false;
+        });
       })();
     </script>
     <script>

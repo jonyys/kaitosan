@@ -257,6 +257,16 @@
     .navmenu-panel a + a { border-top: 1px solid var(--border); }
     .navmenu-panel a:hover { background: var(--surface-2); }
 
+    /* Menús desplegables (servicio y ☰): al abrirlos se atenúa el resto de la pantalla, como con un pop-up.
+       Pinchar en la zona atenuada los cierra (lo hace el script de cada menú). */
+    .hdr-menu[open]::before, .navmenu[open]::before {
+        content: ""; position: fixed; inset: 0; z-index: 30; background: var(--velo);
+        -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+        animation: scrim-in .2s ease-out;
+    }
+    .hdr-menu[open] > summary, .navmenu[open] > summary { position: relative; z-index: 41; }
+    @keyframes scrim-in { from { opacity: 0; } to { opacity: 1; } }
+
     /* ---- Pop-ups (<dialog>) ---- */
     /* Con un pop-up abierto, la página de detrás no hace scroll (lo pilota el
        JS de _iconos.html con la clase .modal-abierto). */
@@ -576,9 +586,14 @@
     html[data-tema] dialog.flash-pop::backdrop { background: var(--velo); }
 
     /* Cristal: desenfoque tras las superficies y un reflejo fino en el borde de arriba */
-    html[data-tema^="cristal"] :is(.card, details.acc > summary, .navmenu-panel, .navmenu > summary, dialog.flash-pop, .pager button, .btn-yellow, .btn-ghost, .alert) {
+    html[data-tema^="cristal"] :is(.navmenu-panel, .hdr-menu-panel, dialog.flash-pop) {
         -webkit-backdrop-filter: blur(22px) saturate(170%); backdrop-filter: blur(22px) saturate(170%);
     }
+    /* los menús flotantes, más opacos que las tarjetas para que se lea lo que ponen sobre cualquier fondo */
+    html[data-tema^="cristal"] :is(.navmenu-panel, .hdr-menu-panel) { background: color-mix(in srgb, var(--bg) 84%, transparent); }
+    /* sin transición de fondo en las filas: el efecto al pasar el ratón es el borde */
+    html[data-tema] details.acc > summary { transition: none; }
+    html[data-tema] details.acc > summary:hover { background: var(--surface); border-color: var(--border-fuerte); }
     html[data-tema^="cristal"] :is(.card, details.acc > summary, .navmenu-panel) {
         box-shadow: var(--sombra), inset 0 1px 0 var(--brillo-borde);
     }

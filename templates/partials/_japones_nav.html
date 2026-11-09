@@ -69,6 +69,8 @@
           if (e.target.closest("summary")) {
             e.preventDefault();
             cerrar(d);
+          } else if (e.target === d) {
+            cerrar(d); // la zona atenuada (::before) cuenta como un clic en el propio <details>
           }
         } else {
           cerrar(d);
