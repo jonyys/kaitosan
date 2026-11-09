@@ -85,6 +85,9 @@
     .fila.alarma.off .valor { color: var(--text-faint); }
     .fila.rem { align-items: center; }
     .acc { display: flex; gap: 8px; flex: none; }
+    /* Las cifras miden 52 px y empiezan a 7 px del borde de la fila; el botón (44 px) se centra con ellas */
+    .fila.temp { align-items: flex-start; padding-top: 7px; }
+    .fila.temp .acc { margin-top: 4px; }
     .ib { flex: none; width: 44px; height: 44px; border-radius: 50%; border: 1.5px solid var(--border-fuerte); background: transparent; color: var(--rosa-accion); display: flex; align-items: center; justify-content: center; padding: 0; cursor: pointer; }
     .ib .ico { width: 20px; height: 20px; margin: 0; }
     .ib .solido { fill: currentColor; }
@@ -135,9 +138,10 @@
     .caja-texto .ph { color: var(--text-faint); }
     .caja-texto .cursor { display: inline-block; width: 2px; height: 1.05em; background: var(--rosa-accion); vertical-align: -3px; animation: parpadeo 1s steps(1) infinite; }
     @keyframes parpadeo { 50% { opacity: 0; } }
-    .teclado { position: absolute; left: 0; right: 0; top: 168px; }
+    .teclado { position: absolute; left: 0; right: 0; top: 172px; }
+    .variantes { position: absolute; display: flex; gap: 4px; padding: 4px; border-radius: 12px; background: var(--surface); border: 1.5px solid var(--border-fuerte); z-index: 2; }
     .tecla-fila { display: flex; justify-content: center; gap: 4px; margin-bottom: 4px; }
-    .tecla { height: 40px; min-width: 40px; padding: 0 6px; border-radius: 9px; border: 0; background: var(--surface-2); color: var(--text); font: inherit; font-size: 19px; cursor: pointer; flex: none; }
+    .tecla { height: 44px; min-width: 40px; padding: 0 6px; border-radius: 9px; border: 0; background: var(--surface-2); color: var(--text); font: inherit; font-size: 19px; cursor: pointer; flex: none; }
     .tecla.accion { background: var(--surface); color: var(--rosa-accion); font-size: 15px; }
     .tecla.on { background: var(--rosa-accion); color: #15100a; }
     .tecla.listo { background: #8a5a1e; color: #fff3da; font-weight: 500; font-size: 16px; }
@@ -353,7 +357,7 @@
     countdowns = {};
 
     list.innerHTML = activos.map(t => `
-      <li class="fila alarma" id="timer-item-${t.id}" data-accion="eliminarTemporizador" data-args='[${t.id}]'>
+      <li class="fila alarma temp" id="timer-item-${t.id}" data-accion="eliminarTemporizador" data-args='[${t.id}]'>
         <div class="col"><div class="valor" id="timer-val-${t.id}">${formatTimer(t)}</div><div class="etq">de ${fmtDuracion(t.duracion_total)}</div></div>
         <div class="acc">
           <button class="ib" aria-label="${t.pausado ? 'Reanudar' : 'Pausar'}" onclick="estadoTemporizador(${t.id}, '${t.pausado ? 'reanudar' : 'pausar'}')"><svg class="ico solido"><use href="#${t.pausado ? 'i-play' : 'i-pausa'}"/></svg></button>
@@ -649,9 +653,11 @@
 
   // Texto con el teclado en pantalla y, después, día y hora con ruedas
   const FILAS = {
-    letras: ['qwertyuiop', 'asdfghjklñ', '⇧zxcvbnm⌫', 'áéíóúü¿¡'],
-    simbolos: ['1234567890', '-/:;()€&@"', '#%+=*_<>⌫', 'áéíóúü¿¡'],
+    letras: ['qwertyuiop', 'asdfghjklñ', '⇧zxcvbnm⌫'],
+    simbolos: ['1234567890', '-/:;()€&@"', '¿?¡!,.\'#⌫'],
   };
+  // Mantener pulsada una tecla saca sus variantes (tildes en las vocales, signos en el punto)
+  const VARIANTES = { a: ['á'], e: ['é'], i: ['í'], o: ['ó'], u: ['ú', 'ü'], '.': [',', '?', '!', '¿', '¡'] };
   const teclado = (function () {
     const cont = document.getElementById('teclado'), caja = document.getElementById('rem-caja');
     let texto = '', mayus = true, simbolos = false;
@@ -689,7 +695,36 @@
         '<button class="tecla listo" data-k="listo" style="min-width:72px">Listo</button></div>';
       caja.innerHTML = '<div>' + (texto ? esc(texto) + '<span class="cursor"></span>' : '<span class="ph">¿Qué hay que recordar?</span>') + '</div>';
     }
-    cont.addEventListener('click', e => { const b = e.target.closest('[data-k]'); if (b) api.tecla(b.dataset.k); });
+    let pulsacion = 0, larga = false;
+    function variantes(b) {
+      const vs = VARIANTES[b.dataset.k];
+      const barra = document.createElement('div');
+      barra.className = 'variantes';
+      barra.innerHTML = vs.map(v => `<button class="tecla" data-k="${v}">${mayus ? v.toUpperCase() : v}</button>`).join('');
+      barra.style.top = (b.offsetTop - 50) + 'px';
+      barra.style.left = Math.min(Math.max(b.offsetLeft + b.offsetWidth / 2 - vs.length * 22, 6), 480 - vs.length * 44 - 14) + 'px';
+      cont.appendChild(barra);
+    }
+    cont.addEventListener('pointerdown', e => {
+      const b = e.target.closest('[data-k]');
+      if (!b || !VARIANTES[b.dataset.k] || b.closest('.variantes')) return;
+      pulsacion = setTimeout(() => { larga = true; variantes(b); }, 380);
+    });
+    ['pointercancel', 'pointerleave'].forEach(ev => cont.addEventListener(ev, () => clearTimeout(pulsacion)));
+    cont.addEventListener('pointerup', e => {
+      clearTimeout(pulsacion);
+      if (!larga) return;
+      // Soltando sobre una variante (deslizando desde la tecla) se escribe esa; si no, queda abierta para tocarla
+      const v = document.elementFromPoint(e.clientX, e.clientY);
+      const t = v && v.closest('.variantes [data-k]');
+      setTimeout(() => { larga = false; }, 0); // después del clic que sigue a soltar: ese no escribe la vocal
+      if (t) api.tecla(t.dataset.k);
+    });
+    cont.addEventListener('click', e => {
+      if (larga) return;
+      const b = e.target.closest('[data-k]');
+      if (b) api.tecla(b.dataset.k);
+    });
     // También con un teclado de verdad (para probar en el ordenador)
     document.addEventListener('keydown', e => {
       if (!document.getElementById('remTexto').classList.contains('open') || e.ctrlKey || e.metaKey) return;
