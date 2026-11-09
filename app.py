@@ -231,6 +231,7 @@ def _kiosko_pantalla():
         "noche": system_settings.noche_estado(),
         "brillo_suave": system_settings.brillo_suave_get(),
         "no_molestar": system_settings.no_molestar_get(),
+        "tema": system_settings.tema_robot_get(),
     }
 
 
@@ -757,6 +758,13 @@ def ajustes_brillo():
     _flash_resultado(system_settings.brillo_set(request.form.get("brillo", "")),
                      "Brillo actualizado")
     return redirect(url_for("ajustes"))
+
+@app.route("/admin/ajustes/pantalla/tema", methods=["POST"])
+@login_requerido
+def ajustes_pantalla_tema():
+    r = system_settings.tema_robot_set(request.form.get("tema", ""))
+    return jsonify(r), (200 if r.get("ok") else 400)
+
 
 @app.route("/admin/ajustes/pantalla/inactividad", methods=["POST"])
 @login_requerido

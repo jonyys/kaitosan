@@ -1558,6 +1558,19 @@ def brillo_suave_set(pct) -> dict:
     return {"ok": True, "valor": n}
 
 
+def tema_robot_get() -> str:
+    """Tema de la pantalla del robot: 'oscuro' (por defecto) o 'claro'."""
+    return "claro" if (settings_get("tema_robot") or "").strip() == "claro" else "oscuro"
+
+
+def tema_robot_set(valor) -> dict:
+    v = str(valor).strip().lower()
+    if v not in ("claro", "oscuro"):
+        return {"ok": False, "error": "tema no válido"}
+    settings_set("tema_robot", v)
+    return {"ok": True, "tema": v}
+
+
 def no_molestar_get() -> bool:
     return (settings_get("no_molestar") or "0") in _BOOL_TRUE
 

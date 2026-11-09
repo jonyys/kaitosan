@@ -99,3 +99,14 @@ def test_volumen_software(monkeypatch):
     assert s.volumen_get() == 100 and s.volumen_factor() == 1
     assert s.volumen_set("40")["valor"] == 40 and abs(s.volumen_factor() - 0.16) < 1e-9
     assert not s.volumen_set("x")["ok"]
+
+
+def test_tema_del_robot(monkeypatch):
+    from core import system_settings as s
+    store = {}
+    monkeypatch.setattr(s, "settings_get", lambda k, d=None: store.get(k, d))
+    monkeypatch.setattr(s, "settings_set", store.__setitem__)
+    assert s.tema_robot_get() == "oscuro"                      # por defecto
+    assert s.tema_robot_set("claro")["ok"] and s.tema_robot_get() == "claro"
+    assert not s.tema_robot_set("rosa")["ok"] and s.tema_robot_get() == "claro"
+    assert s.tema_robot_set("oscuro")["ok"] and s.tema_robot_get() == "oscuro"

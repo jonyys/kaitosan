@@ -27,6 +27,7 @@
   const COLORES = {
     dia: { fondo: "#15100a", texto: "#ffffff", suave: "#b99a68" },
     noche: { fondo: "#000000", texto: "#d9a35a", suave: "#8a6a3a" },
+    claro: { fondo: "#f6eee3", texto: "#2a1f12", suave: "#7a6a56" },
   };
   const RELOJ_GUARDADO = "kaito.reloj2"; // el 2: la distribución del reloj cambió con las páginas
   // ponytail: medidas de la pantalla de 480 px para el primer paso tras arrancar,
@@ -226,7 +227,7 @@
   // pose: de dónde parte la cara. dormido inclina cejas y cabeza; mini es la boca pequeña.
   function escenaReloj(tipo, R, pose, zetasReales) {
     const ancho = innerWidth, alto = innerHeight;
-    const colores = esDeNoche() ? COLORES.noche : COLORES.dia;
+    const colores = esDeNoche() ? COLORES.noche : document.documentElement.dataset.robot === "claro" ? COLORES.claro : COLORES.dia;
     const capa = dentroDe(htmlCara(alto, ancho) + htmlHora(R, colores, horaAhora()));
     const de = (k) => [...capa.querySelectorAll(`[data-k="${k}"]`)];
     const uno = (k) => de(k)[0];

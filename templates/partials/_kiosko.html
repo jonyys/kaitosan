@@ -10,8 +10,34 @@
    desde face.html. Idempotente (window.__kiosko). Carga socket.io solo si hace
    falta (el /reloj ya lo trae). CSS propio con colores literales: la cara no
    tiene los tokens pastel. #}
+{% if es_kiosko %}
+<script>document.documentElement.setAttribute("data-robot", "{{ (kiosko_pantalla or {}).get('tema', 'oscuro') }}");</script>
+{% endif %}
 <style>
   {% if es_kiosko %}
+  /* Tema de la pantalla del robot (Ajustes > Pantalla): oscuro o claro, los dos con brillos suaves de fondo
+     (ámbar y turquesa) y superficies de cristal. <html data-robot="…"> lo pone el script de arriba.
+     Las páginas del robot (reloj, Ajustes, cajón, alarma) leen estos tokens; la cara no. */
+  html[data-robot] {
+    --blobs: radial-gradient(250px 250px at 76% 20%, rgba(224, 164, 77, .34), transparent 70%),
+             radial-gradient(270px 270px at 22% 80%, rgba(79, 209, 197, .2), transparent 70%);
+    --cristal: rgba(255, 255, 255, .07); --cristal-borde: rgba(255, 255, 255, .16); --brillo-borde: rgba(255, 255, 255, .14);
+    --on-acc: #15100a; --acc-boton: #8a5a1e; --on-boton: #ffffff;
+  }
+  html[data-robot="claro"]:not(.night) {
+    color-scheme: light;
+    --bg: #f6eee3; --bg-alt: rgba(255, 255, 255, .4); --surface: rgba(255, 255, 255, .6); --surface-2: rgba(255, 255, 255, .5);
+    --border: rgba(120, 80, 20, .16); --border-fuerte: rgba(120, 80, 20, .32);
+    --text: #2a1f12; --text-soft: rgba(42, 31, 18, .64); --text-faint: rgba(42, 31, 18, .38);
+    --rosa: rgba(224, 164, 77, .35); --rosa-medio: #e0a44d; --rosa-accion: #c47a10; --rosa-tinta: #a8620a;
+    --ok-bg: rgba(28, 154, 122, .14); --ok-tinta: #126b53; --aviso-bg: rgba(224, 164, 77, .2); --aviso-tinta: #8a540a;
+    --peligro-bg: rgba(210, 75, 70, .12); --peligro-tinta: #a8302b;
+    --sombra: 0 8px 26px rgba(120, 80, 20, .13); --sombra-sm: 0 2px 8px rgba(120, 80, 20, .1);
+    --on-acc: #2a1a06; --acc-boton: #e0a44d; --on-boton: #2a1a06;
+    --cristal: rgba(255, 255, 255, .6); --cristal-borde: rgba(120, 80, 20, .16); --brillo-borde: rgba(255, 255, 255, .9);
+    --blobs: radial-gradient(250px 250px at 76% 20%, rgba(240, 176, 80, .5), transparent 70%),
+             radial-gradient(270px 270px at 22% 80%, rgba(120, 205, 195, .4), transparent 70%);
+  }
   /* La pantalla del robot es táctil: sin esto se ve el ratón hasta el primer toque. */
   * { cursor: none !important; }
   /* La cara y el reloj se pintan a trozos mientras cargan: el navegador deja puesta la
@@ -44,8 +70,8 @@
     width: var(--cara-ancho, var(--ancho, 100%));
     box-sizing: border-box; padding: 78px 0 30px;
     transform: translateY(-106%); transition: transform .28s ease;
-    background: #15100a; color: #ffffff;
-    border-radius: 0 0 40px 40px; border-bottom: 1.5px solid #3a2a14;
+    background: var(--blobs, none), var(--bg, #15100a); color: var(--text, #ffffff);
+    border-radius: 0 0 40px 40px; border-bottom: 1.5px solid var(--border, #3a2a14);
     font: 500 16px/1.2 'M PLUS Rounded 1c', 'Nunito', 'Segoe UI', system-ui, sans-serif;
     -webkit-user-select: none; user-select: none;
   }
@@ -53,15 +79,15 @@
   #kioskoDrawer.abierto { transform: translateY(0); box-shadow: 0 12px 34px rgba(0, 0, 0, .6); }
   #kioskoDrawer .grip {
     position: absolute; top: 12px; left: 50%; margin-left: -22px;
-    width: 44px; height: 5px; border-radius: 3px; background: #5a4020;
+    width: 44px; height: 5px; border-radius: 3px; background: var(--border-fuerte, #5a4020);
   }
   #kioskoDrawer .cj-col { width: 300px; margin: 0 auto; }
   #kioskoDrawer .cj-fila { margin: 0 0 12px; }
   #kioskoDrawer .cj-fila label {
     display: flex; justify-content: space-between; align-items: baseline;
-    font-size: 13px; font-weight: 400; color: #b99a68; margin: 0 0 4px; padding: 0; width: auto;
+    font-size: 13px; font-weight: 400; color: var(--text-soft, #b99a68); margin: 0 0 4px; padding: 0; width: auto;
   }
-  #kioskoDrawer .cj-fila label output { color: #ffffff; font-weight: 500; font-variant-numeric: tabular-nums; }
+  #kioskoDrawer .cj-fila label output { color: var(--text, #ffffff); font-weight: 500; font-variant-numeric: tabular-nums; }
   /* Deslizadores: el tramo recorrido en ámbar (--v lo pone el script) y un tirador crema */
   #kioskoDrawer input[type="range"] {
     -webkit-appearance: none; appearance: none; display: block; width: 100%; height: 28px; margin: 0;
@@ -69,53 +95,53 @@
   }
   #kioskoDrawer input[type="range"]::-webkit-slider-runnable-track {
     height: 8px; border-radius: 4px;
-    background: linear-gradient(to right, #e0a44d var(--v, 50%), #3a2a14 var(--v, 50%));
+    background: linear-gradient(to right, var(--rosa-accion, #e0a44d) var(--v, 50%), var(--border-fuerte, #3a2a14) var(--v, 50%));
   }
   #kioskoDrawer input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none; width: 28px; height: 28px; margin-top: -10px; border-radius: 50%;
-    background: #fff3da; border: 0;
+    background: #fff3da; border: 0; box-shadow: 0 1px 4px rgba(0, 0, 0, .35);
   }
   /* Modo noche (cama) y no molestar (micro): botones con icono que se encienden y se apagan */
   #kioskoDrawer .cj-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 4px 0 12px; }
   #kioskoDrawer .cj-tile {
     display: flex; align-items: center; justify-content: center; gap: 8px; height: 54px; padding: 0 10px;
-    border: 1.5px solid #5a4020; border-radius: 27px; background: #1d160d; color: #b99a68;
+    border: 1.5px solid var(--cristal-borde, #5a4020); border-radius: 27px; background: var(--cristal, #1d160d); color: var(--text-soft, #b99a68);
     font: inherit; font-size: 14px; cursor: pointer; transition: background .2s, color .2s;
   }
   #kioskoDrawer .cj-tile svg { width: 26px; height: 26px; flex: none; }
-  #kioskoDrawer .cj-tile.on { background: #e0a44d; border-color: #e0a44d; color: #15100a; font-weight: 500; }
+  #kioskoDrawer .cj-tile.on { background: var(--rosa-accion, #e0a44d); border-color: var(--rosa-accion, #e0a44d); color: var(--on-acc, #15100a); font-weight: 500; }
   #kioskoDrawer .cj-tile .tacha { display: none; }
   #kioskoDrawer .cj-tile.on .tacha { display: inline; }
   #kioskoDrawer .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   #kioskoDrawer .btns button {
-    height: 44px; padding: 0 12px; border: 1.5px solid #5a4020; border-radius: 22px;
-    background: #1d160d; color: #ffffff; font: inherit; font-size: 16px; cursor: pointer;
+    height: 44px; padding: 0 12px; border: 1.5px solid var(--cristal-borde, #5a4020); border-radius: 22px;
+    background: var(--cristal, #1d160d); color: var(--text, #ffffff); font: inherit; font-size: 16px; cursor: pointer;
   }
-  #kioskoDrawer .btns button:active { background: #3a2a14; }
-  #kioskoDrawer .btns button[data-salir] { grid-column: 1 / -1; width: 150px; justify-self: center; border-color: #3a2a14; color: #e88a8a; }
+  #kioskoDrawer .btns button:active { background: var(--border-fuerte, #3a2a14); }
+  #kioskoDrawer .btns button[data-salir] { grid-column: 1 / -1; width: 150px; justify-self: center; border-color: var(--border, #3a2a14); color: var(--peligro-tinta, #e88a8a); }
   /* Alarma o temporizador sonando: pantalla completa, como la del iPhone */
   #kioskoSonando {
     position: fixed; inset: 0; z-index: 10000; display: none; flex-direction: column;
     align-items: center; justify-content: center; text-align: center; gap: 0;
-    background: #15100a; color: #ffffff;
+    background: var(--blobs, none), var(--bg, #15100a); color: var(--text, #ffffff);
     font: 500 16px/1.2 'M PLUS Rounded 1c', 'Nunito', 'Segoe UI', system-ui, sans-serif;
     -webkit-user-select: none; user-select: none;
   }
   #kioskoSonando.abierto { display: flex; }
-  #kioskoSonando .son-ico { width: 44px; height: 44px; color: #e0a44d; animation: kioskoTimbre .9s ease-in-out infinite; }
-  #kioskoSonando .son-tit { margin: 8px 0 4px; font-size: 17px; letter-spacing: .08em; text-transform: uppercase; color: #e0a44d; }
+  #kioskoSonando .son-ico { width: 44px; height: 44px; color: var(--rosa-accion, #e0a44d); animation: kioskoTimbre .9s ease-in-out infinite; }
+  #kioskoSonando .son-tit { margin: 8px 0 4px; font-size: 17px; letter-spacing: .08em; text-transform: uppercase; color: var(--rosa-accion, #e0a44d); }
   #kioskoSonando .son-hora { font-size: 88px; font-weight: 200; line-height: 1; font-variant-numeric: tabular-nums; }
   #kioskoSonando .son-hora.txt { font-size: 56px; font-weight: 400; }
-  #kioskoSonando .son-sub { margin-top: 6px; min-height: 20px; font-size: 16px; color: #b99a68; }
+  #kioskoSonando .son-sub { margin-top: 6px; min-height: 20px; font-size: 16px; color: var(--text-soft, #b99a68); }
   #kioskoSonando .son-btns { display: flex; flex-direction: column; gap: 12px; margin-top: 26px; width: 250px; }
   #kioskoSonando button {
-    height: 56px; border-radius: 28px; border: 1.5px solid #5a4020; background: #1d160d; color: #ffffff;
+    height: 56px; border-radius: 28px; border: 1.5px solid var(--cristal-borde, #5a4020); background: var(--cristal, #1d160d); color: var(--text, #ffffff);
     font: inherit; font-size: 18px; cursor: pointer;
   }
   #kioskoSonando button.parar {
     width: 76px; height: 76px; padding: 0; border-radius: 50%; align-self: center; margin-top: 4px;
     display: flex; align-items: center; justify-content: center;
-    background: #e0a44d; border-color: #e0a44d; color: #15100a;
+    background: var(--rosa-accion, #e0a44d); border-color: var(--rosa-accion, #e0a44d); color: var(--on-acc, #15100a);
   }
   #kioskoSonando button.parar svg { width: 30px; height: 30px; }
   #kioskoSonando button:active { filter: brightness(.85); }

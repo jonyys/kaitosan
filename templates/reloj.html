@@ -32,10 +32,12 @@
       --ancho: {{ '480px' if es_kiosko else '100vw' }};
     }
     .btn-blue, .btn-green {
-      background: #8a5a1e;
+      background: var(--acc-boton, #8a5a1e);
       background-image: none;
-      color: #ffffff;
+      color: var(--on-boton, #ffffff);
     }
+    /* Fondo con brillos suaves (tema del robot: ver partials/_kiosko.html) */
+    body { background: var(--blobs, none), var(--bg); }
     /* Pop-ups: aceptar un borrado en rojo, y el OK con letra oscura sobre el ámbar */
     dialog#confirm-pop .cp-yes { background: #c53a3a; color: #fff; }
     dialog.flash-pop form button { color: #15100a; }
@@ -53,6 +55,8 @@
       --text-faint: #4a3a20;
       --rosa-accion: #b07a30;
       --rosa-tinta: #c08a3a;
+      --cristal: rgba(255, 255, 255, .04); --cristal-borde: rgba(255, 255, 255, .08); --brillo-borde: transparent;
+      --blobs: none;
     }
     html.night body { background: #000; }
     body, #hora, #fecha { transition: background-color .8s ease, color .8s ease; }
@@ -91,12 +95,20 @@
     .fila.alarma .col { display: flex; flex-direction: column; gap: 5px; }
     .fila.alarma .etq { text-align: left; }
     .fila.alarma.off .valor { color: var(--text-faint); }
-    /* Alarma pospuesta: en lavanda, para distinguirla de las programadas (que son ámbar) */
-    .fila.alarma.pospuesta .valor { color: #b7a6ea; }
-    .fila.alarma.pospuesta .etq { color: #8f82bd; }
-    .fila.alarma.pospuesta .ib { color: #b7a6ea; border-color: #4a3f7a; }
-    .fila.alarma.pospuesta .ib:active { background: #221d3a; }
+    /* Alarma pospuesta: en turquesa (el segundo color del tema), para distinguirla de las programadas (que son ámbar) */
+    .fila.alarma.pospuesta .valor { color: #4fd1c5; }
+    .fila.alarma.pospuesta .etq { color: #3fa89e; }
+    .fila.alarma.pospuesta .ib { color: #4fd1c5; border-color: #2c6f6a; }
+    .fila.alarma.pospuesta .ib:active { background: #10282a; }
+    html[data-robot="claro"]:not(.night) .fila.alarma.pospuesta .valor { color: #1c8f83; }
+    html[data-robot="claro"]:not(.night) .fila.alarma.pospuesta .etq { color: #2b7f76; }
+    html[data-robot="claro"]:not(.night) .fila.alarma.pospuesta .ib { color: #1c8f83; border-color: rgba(28, 143, 131, .45); }
     .fila.rem { align-items: center; }
+    /* Filas de cristal: translúcidas, con un reflejo fino arriba */
+    .fila.alarma, .fila.rem {
+      background: var(--cristal, transparent); border: 1px solid var(--cristal-borde, transparent); border-radius: 22px;
+      box-shadow: inset 0 1px 0 var(--brillo-borde, transparent); padding-left: 14px; padding-right: 10px; margin-bottom: 6px;
+    }
     .acc { display: flex; gap: 8px; flex: none; }
     /* Las cifras miden 52 px y empiezan a 7 px del borde de la fila; el botón (44 px) se centra con ellas */
     .fila.temp { align-items: flex-start; padding-top: 7px; }
@@ -122,7 +134,7 @@
     #scrollHint { position: absolute; left: 0; right: 0; bottom: 24px; text-align: center; font-size: 14px; z-index: 5; }
 
     /* Pantallas de nueva alarma, temporizador y recordatorio: ocupan toda la pantalla y suben desde abajo */
-    .modal-overlay { display: none; position: absolute; inset: 0; z-index: 100; background: var(--bg); }
+    .modal-overlay { display: none; position: absolute; inset: 0; z-index: 100; background: var(--blobs, none), var(--bg); }
     .modal-overlay.open { display: block; animation: sube .28s cubic-bezier(.2, .8, .2, 1); }
     @keyframes sube { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
     .hoja-titulo { position: absolute; left: 0; right: 0; top: 34px; text-align: center; font-size: 17px; font-weight: 500; color: var(--rosa-tinta); }
@@ -132,13 +144,13 @@
       -webkit-mask-image: linear-gradient(to bottom, transparent, #000 32%, #000 68%, transparent);
       mask-image: linear-gradient(to bottom, transparent, #000 32%, #000 68%, transparent); }
     .rueda-lista { position: absolute; left: 0; right: 0; top: 0; will-change: transform; }
-    .rueda-item { height: 38px; line-height: 38px; text-align: center; font-size: 28px; font-weight: 300; font-variant-numeric: tabular-nums; white-space: nowrap; color: #7d6c4c; transform: scale(.82); }
+    .rueda-item { height: 38px; line-height: 38px; text-align: center; font-size: 28px; font-weight: 300; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--text); opacity: .4; transform: scale(.82); }
     .rueda.ancha .rueda-item { font-size: 21px; }
     .sep { align-self: flex-start; margin-top: 76px; line-height: 38px; height: 38px; font-size: 28px; font-weight: 300; padding: 0 4px; position: relative; z-index: 1; }
     .unidad { align-self: flex-start; margin-top: 76px; line-height: 38px; height: 38px; font-size: 14px; color: var(--text-soft); padding: 0 8px 0 4px; position: relative; z-index: 1; }
     .dias { position: absolute; left: 0; right: 0; top: 270px; display: flex; justify-content: center; gap: 6px; }
     .dia { width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid var(--border-fuerte); background: transparent; color: var(--text-soft); font: inherit; font-size: 15px; padding: 0; cursor: pointer; }
-    .dia.on { background: var(--rosa-accion); border-color: var(--rosa-accion); color: #15100a; font-weight: 500; }
+    .dia.on { background: var(--rosa-accion); border-color: var(--rosa-accion); color: var(--on-acc, #15100a); font-weight: 500; }
     .dias-txt { position: absolute; left: 0; right: 0; top: 318px; text-align: center; font-size: 13px; color: var(--text-soft); }
     .chips { position: absolute; left: 0; right: 0; top: 274px; display: flex; justify-content: center; gap: 8px; }
     .chips button { height: 40px; white-space: nowrap; padding: 0 12px; border-radius: 20px; border: 1.5px solid var(--border-fuerte); background: transparent; color: var(--text); font: inherit; font-size: 15px; cursor: pointer; }
@@ -157,8 +169,8 @@
     .tecla-fila { display: flex; justify-content: center; gap: 4px; margin-bottom: 4px; }
     .tecla { height: 44px; min-width: 40px; padding: 0 6px; border-radius: 9px; border: 0; background: var(--surface-2); color: var(--text); font: inherit; font-size: 19px; cursor: pointer; flex: none; }
     .tecla.accion { background: var(--surface); color: var(--rosa-accion); font-size: 15px; }
-    .tecla.on { background: var(--rosa-accion); color: #15100a; }
-    .tecla.listo { background: #8a5a1e; color: #ffffff; font-weight: 500; font-size: 16px; }
+    .tecla.on { background: var(--rosa-accion); color: var(--on-acc, #15100a); }
+    .tecla.listo { background: var(--acc-boton, #8a5a1e); color: var(--on-boton, #ffffff); font-weight: 500; font-size: 16px; }
     .tecla:active { filter: brightness(1.4); }
 
     /* Aviso de feedback, centrado abajo: la pantalla es redonda */
@@ -214,7 +226,7 @@
 </div>
 
 <!-- Puntos de página: estilos en línea y ya puestos al cargar, porque la transición mide y copia este bloque tal cual -->
-<div id="scrollHint" data-no-tap><span data-ir="0" style="display:inline-block;width:12px;height:12px;border-radius:50%;margin:12px 7px;vertical-align:middle;background:#f6c063"></span><span data-ir="1" style="display:inline-block;width:8px;height:8px;border-radius:50%;margin:12px 7px;vertical-align:middle;background:#5a4020"></span><span data-ir="2" style="display:inline-block;width:8px;height:8px;border-radius:50%;margin:12px 7px;vertical-align:middle;background:#5a4020"></span><span data-ir="3" style="display:inline-block;width:8px;height:8px;border-radius:50%;margin:12px 7px;vertical-align:middle;background:#5a4020"></span></div>
+<div id="scrollHint" data-no-tap><span data-ir="0" style="display:inline-block;width:12px;height:12px;border-radius:50%;margin:12px 7px;vertical-align:middle;background:var(--rosa-tinta)"></span><span data-ir="1" style="display:inline-block;width:8px;height:8px;border-radius:50%;margin:12px 7px;vertical-align:middle;background:var(--border-fuerte)"></span><span data-ir="2" style="display:inline-block;width:8px;height:8px;border-radius:50%;margin:12px 7px;vertical-align:middle;background:var(--border-fuerte)"></span><span data-ir="3" style="display:inline-block;width:8px;height:8px;border-radius:50%;margin:12px 7px;vertical-align:middle;background:var(--border-fuerte)"></span></div>
 
 <!-- Alarma nueva / modificar: ruedas de hora y minutos y días de la semana -->
 <div class="modal-overlay" id="editModal" data-no-tap>
@@ -463,12 +475,12 @@
     // La fila de en medio, más grande y blanca; según se aleja, más pequeña y oscura
     function estilar() {
       var f = (C - pos) / H, c = Math.round(f);
-      estilados.forEach(function (i) { if (i < c - 3 || i > c + 3) { items[i].style.transform = ''; items[i].style.color = ''; } });
+      estilados.forEach(function (i) { if (i < c - 3 || i > c + 3) { items[i].style.transform = ''; items[i].style.opacity = ''; } });
       estilados = [];
       for (var i = Math.max(c - 3, 0); i <= Math.min(c + 3, items.length - 1); i++) {
-        var k = Math.min(Math.abs(f - i) / 2, 1), v = Math.round(125 + 130 * (1 - k));
+        var k = Math.min(Math.abs(f - i) / 2, 1);
         items[i].style.transform = 'scale(' + (1.16 - 0.34 * k).toFixed(3) + ')';
-        items[i].style.color = 'rgb(' + v + ',' + Math.round(108 + 147 * (1 - k)) + ',' + Math.round(76 + 179 * (1 - k)) + ')';
+        items[i].style.opacity = (0.4 + 0.6 * (1 - k)).toFixed(2);
         estilados.push(i);
       }
     }
@@ -886,7 +898,7 @@
       for (var i = 0; i < N; i++) {
         var on = i === pag;
         h += '<span data-ir="' + i + '" style="display:inline-block;width:' + (on ? 12 : 8) + 'px;height:' + (on ? 12 : 8) +
-          'px;border-radius:50%;margin:12px 7px;vertical-align:middle;background:' + (on ? '#f6c063' : '#5a4020') + '"></span>';
+          'px;border-radius:50%;margin:12px 7px;vertical-align:middle;background:' + (on ? 'var(--rosa-tinta)' : 'var(--border-fuerte)') + '"></span>';
       }
       puntos.innerHTML = h;
     }

@@ -21,6 +21,46 @@
     </div>
     {% endif %}
 
+    {# --- Tema de la pantalla del robot: oscuro o claro --- #}
+    {% set tema_actual = (kiosko_pantalla or {}).get('tema', 'oscuro') %}
+    <div style="margin-top:4px">
+        <span class="et" style="display:block; margin-bottom:6px">Tema de la pantalla del robot</span>
+        <div class="tema-rb" role="group" aria-label="Tema de la pantalla del robot">
+            <button type="button" data-tema-robot="oscuro" aria-pressed="{{ 'true' if tema_actual == 'oscuro' else 'false' }}"><svg class="ico"><use href="#i-moon"/></svg> Oscuro</button>
+            <button type="button" data-tema-robot="claro" aria-pressed="{{ 'true' if tema_actual == 'claro' else 'false' }}"><svg class="ico"><use href="#i-sun"/></svg> Claro</button>
+        </div>
+        <p class="et" style="color:var(--text-soft); margin:8px 0 0">
+            Cambia el reloj, Ajustes, el cajón y las alarmas. La cara se queda igual, y de noche el reloj sigue oscuro.
+        </p>
+    </div>
+    <style>
+        .tema-rb { display: flex; gap: 8px; }
+        .tema-rb button {
+            flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px;
+            border: 1.5px solid var(--border-fuerte); border-radius: var(--radio-pill); background: var(--surface-2);
+            color: var(--text); font: inherit; font-weight: 700; cursor: pointer;
+        }
+        .tema-rb button[aria-pressed="true"] { background: var(--acc-boton, var(--rosa-tinta)); border-color: var(--acc-boton, var(--rosa-tinta)); color: var(--on-acc, #fff); }
+        .tema-rb .ico { margin: 0; }
+    </style>
+    <script>
+        (function () {
+            var botones = document.querySelectorAll('[data-tema-robot]');
+            botones.forEach(function (b) {
+                b.addEventListener('click', function () {
+                    var t = b.dataset.temaRobot;
+                    botones.forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+                    // en la pantalla del robot se ve al momento (en el móvil solo se guarda)
+                    if (document.documentElement.hasAttribute('data-robot')) document.documentElement.setAttribute('data-robot', t);
+                    fetch('/admin/ajustes/pantalla/tema', {
+                        method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: 'tema=' + encodeURIComponent(t)
+                    }).catch(function () {});
+                });
+            });
+        })();
+    </script>
+
     {# --- Salvapantallas: minutos de inactividad hasta mostrar solo el reloj --- #}
     <form method="POST" action="/admin/ajustes/pantalla/inactividad" style="margin-top:20px">
         <label class="et" for="inact">Tiempo de inactividad (salvapantallas)</label>
