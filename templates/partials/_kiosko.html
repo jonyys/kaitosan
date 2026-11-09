@@ -17,6 +17,17 @@
   /* La cara y el reloj se pintan a trozos mientras cargan: el navegador deja puesta la
      última imagen de la anterior hasta llegar a su #paginaLista, y cambia sin fundido. */
   @view-transition { navigation: auto; }
+  /* Atenuar la pantalla: no tiene luz de fondo que bajar (es HDMI), así que una capa negra
+     encima de todo, incluidas las transiciones. --atenua (0..1) lo pone el script. */
+  html::after {
+    content: ""; position: fixed; inset: 0; z-index: 2147483647; pointer-events: none;
+    background: #000; opacity: var(--atenua, 0); transition: opacity .8s ease;
+  }
+  #kioskoNoMolestar {
+    position: fixed; top: 22px; left: 50%; margin-left: -13px; z-index: 9000; width: 26px; height: 26px;
+    color: #b98536; opacity: .75; display: none; pointer-events: none;
+  }
+  html.no-molestar #kioskoNoMolestar { display: block; }
   ::view-transition-group(root), ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
   {% endif %}
   /* Cajón de ajustes: pensado para la pantalla redonda de 480 px, así que todo va en una columna
@@ -65,7 +76,8 @@
     background: #fff3da; border: 0;
   }
   /* Modo noche: interruptor, el mismo del reloj */
-  #kioskoDrawer .cj-noche { display: flex; justify-content: space-between; align-items: center; height: 36px; margin: 2px 0 12px; font-size: 16px; }
+  #kioskoDrawer .cj-noche { display: flex; justify-content: space-between; align-items: center; min-height: 36px; margin: 2px 0 10px; font-size: 16px; }
+  #kioskoDrawer .cj-noche small { display: block; font-size: 12px; font-weight: 400; color: #b99a68; margin-top: 2px; }
   #kioskoDrawer input[type="checkbox"] {
     -webkit-appearance: none; appearance: none; position: relative; flex: none;
     width: 58px; height: 34px; margin: 0; border-radius: 17px; background: #5a4020; cursor: pointer; transition: background .2s;
@@ -89,18 +101,29 @@
     if (window.__kiosko) return;
     window.__kiosko = true;
 
-    // El override manual de "modo noche" (cajón de ajustes) persiste en este
-    // dispositivo entre recargas; el /reloj lo respeta antes que la franja
-    // horaria, así que hay que restaurarlo antes de que pinte.
-    try {
-      var __nm = localStorage.getItem("nocheManual");
-      if (__nm != null) window.__nocheManual = __nm === "1";
-    } catch (e) {}
+    {% set kp = kiosko_pantalla or {} %}
+    // Lo de la pantalla (franja y interruptor del modo noche, brillo, no molestar) llega con la
+    // propia página, para atenuar desde el primer pintado y no a los 200 ms, cuando llegue la config.
+    window.__kioskoNoche = window.__kioskoNoche || {{ (kp.get('noche') or {})|tojson }};
+    window.__brilloSuave = {{ kp.get('brillo_suave', 100) }};
+    window.__noMolestar = {{ 'true' if kp.get('no_molestar') else 'false' }};
+
+    // Brillo de siempre; de noche, el menor entre ese y el nivel nocturno
+    function atenua() {
+      if (!ES_KIOSKO) return;
+      var n = window.__kioskoNoche || {}, brillo = window.__brilloSuave || 100;
+      if (window.KaitoTransicion && n.nivel && window.KaitoTransicion.esDeNoche()) brillo = Math.min(brillo, n.nivel);
+      document.documentElement.style.setProperty("--atenua", String(Math.min(0.88, 1 - brillo / 100)));
+    }
+    function pintaNoMolestar() { document.documentElement.classList.toggle("no-molestar", !!window.__noMolestar); }
 
     // ── Fase 1: volver a la cara cuando Kaito se despierta ──────────────────
     // Solo en la pantalla del propio robot (localhost). Un móvil o PC en la LAN
     // que esté en /reloj, /admin/ajustes, etc. NO debe saltar a la cara.
     var ES_KIOSKO = {{ 'true' if es_kiosko else 'false' }};
+    atenua();
+    pintaNoMolestar();
+    setInterval(atenua, 20000); // la franja de la noche empieza y acaba sola
     // Con transición solo en el robot: está hecha para su pantalla redonda de 480 px
     function pasarACara(velocidad) {
       var ir = function () { location.replace("/"); };
@@ -133,7 +156,17 @@
       };
       (document.head || document.documentElement).appendChild(s);
     }
-    conSocket(function (s) { s.on("estado", irACara); });
+    conSocket(function (s) {
+      s.on("estado", irACara);
+      s.on("no_molestar", function (d) { window.__noMolestar = !!d.activo; pintaNoMolestar(); });
+    });
+    // Icono de "no molestar" arriba, en el centro, solo en el robot
+    if (ES_KIOSKO) {
+      var ic = document.createElement("div");
+      ic.id = "kioskoNoMolestar";
+      ic.innerHTML = '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 9v3a3 3 0 0 0 5.1 2.1M15 9.3V5a3 3 0 0 0-5.7-1.3M5 11a7 7 0 0 0 11.5 5.3M19 11a7 7 0 0 1-.5 2.6M12 18v3M3 3l18 18"/></svg>';
+      document.documentElement.appendChild(ic);
+    }
 
     // ── Fases 2 y 3: solo en la cara y el reloj ────────────────────────────
     function init() {
@@ -144,6 +177,9 @@
         .then(function (r) { return r.json(); })
         .then(function (cfg) {
           window.__kioskoNoche = cfg.noche; // la transición al reloj pinta sus colores
+          window.__brilloSuave = cfg.brillo_suave;
+          window.__noMolestar = cfg.no_molestar;
+          atenua(); pintaNoMolestar();
           var d = construirDrawer(cfg, ruta);
           wireGestos(ruta, d);
           // El salvapantallas (cara -> reloj tras N min) solo en la Pi: un
@@ -170,11 +206,11 @@
       var dw = document.createElement("div");
       dw.id = "kioskoDrawer";
 
-      var filaBrillo = cfg.brillo && cfg.brillo.soportado
-        ? '<div class="cj-fila"><label for="kioskoBrillo">Brillo<output id="kioskoBrilloN"></output></label>' +
-          '<input type="range" id="kioskoBrillo" min="10" max="100" step="5" value="' +
-          (cfg.brillo.pct || 50) + '"></div>'
-        : "";
+      // Con luz de fondo controlable (otros aparatos) se baja la de verdad; si no, se atenúa la imagen
+      var hard = !!(cfg.brillo && cfg.brillo.soportado);
+      var filaBrillo = '<div class="cj-fila"><label for="kioskoBrillo">Brillo<output id="kioskoBrilloN"></output></label>' +
+        '<input type="range" id="kioskoBrillo" min="' + (hard ? 10 : 15) + '" max="100" step="5" value="' +
+        (hard ? (cfg.brillo.pct || 50) : (cfg.brillo_suave || 100)) + '"></div>';
 
       dw.innerHTML =
         '<div class="grip"></div><div class="cj-col">' +
@@ -183,8 +219,9 @@
         (cfg.volumen || 0) + '"></div>' +
         filaBrillo +
         '<div class="cj-noche"><label for="kioskoNoche">Modo noche</label>' +
-        '<input type="checkbox" id="kioskoNoche"' +
-        (cfg.noche && cfg.noche.enabled ? " checked" : "") + "></div>" +
+        '<input type="checkbox" id="kioskoNoche"' + (window.KaitoTransicion && window.KaitoTransicion.esDeNoche() ? " checked" : "") + "></div>" +
+        '<div class="cj-noche"><label for="kioskoNoMolestarSw">No molestar<small>Solo responde al botón</small></label>' +
+        '<input type="checkbox" id="kioskoNoMolestarSw"' + (cfg.no_molestar ? " checked" : "") + "></div>" +
         '<div class="btns">' +
         '<button data-go="/admin/ajustes">Ajustes</button>' +
         '<button data-go="/admin/ajustes#wifi">WiFi</button>' +
@@ -214,17 +251,28 @@
         post("/kiosko/volumen", { v: vol.value });
       });
       var bri = dw.querySelector("#kioskoBrillo");
-      if (bri) bri.addEventListener("change", function () {
-        post("/kiosko/brillo", { v: bri.value });
+      bri.addEventListener("input", function () {
+        if (!hard) { window.__brilloSuave = +bri.value; atenua(); }   // se ve al arrastrar
       });
+      bri.addEventListener("change", function () {
+        post(hard ? "/kiosko/brillo" : "/kiosko/brillo-suave", { v: bri.value });
+      });
+      // Modo noche: encender o apagar ahora. Se guarda con el estado de la franja, para que valga
+      // hasta que la franja empiece o acabe (y entonces vuelva a mandar ella).
       var noche = dw.querySelector("#kioskoNoche");
       noche.addEventListener("change", function () {
-        post("/kiosko/noche", { enabled: noche.checked ? 1 : 0 });
-        window.__nocheManual = noche.checked;          // el /reloj lo respeta ya
-        try {
-          localStorage.setItem("nocheManual", noche.checked ? "1" : "0");
-        } catch (e) {}
+        var franja = window.KaitoTransicion ? window.KaitoTransicion.franjaAhora() : false;
+        post("/kiosko/noche", { enabled: noche.checked ? 1 : 0, franja: franja ? 1 : 0 });
+        (window.__kioskoNoche = window.__kioskoNoche || {}).manual = { valor: noche.checked, franja: franja };
         document.documentElement.classList.toggle("night", noche.checked);
+        atenua();
+      });
+      // No molestar: sin wakeword, solo responde al botón de la caja
+      var nm = dw.querySelector("#kioskoNoMolestarSw");
+      nm.addEventListener("change", function () {
+        post("/kiosko/no-molestar", { enabled: nm.checked ? 1 : 0 });
+        window.__noMolestar = nm.checked;
+        pintaNoMolestar();
       });
 
       dw.querySelectorAll(".btns button").forEach(function (b) {

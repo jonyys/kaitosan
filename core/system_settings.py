@@ -1505,6 +1505,65 @@ def noche_set(enabled, start, end) -> dict:
     return {"ok": True, "enabled": on}
 
 
+# Atenuación y "no molestar" de la pantalla del robot.
+# La pantalla es HDMI y no tiene luz de fondo controlable (no hay /sys/class/backlight), así
+# que "atenuar" es una capa negra semitransparente sobre la página: `brillo_suave` es el
+# brillo de siempre y `nivel` el que se aplica de noche (el menor de los dos manda).
+_NOCHE_NIVEL_DEF = 35
+
+
+def _pct(clave, defecto, minimo) -> int:
+    try:
+        n = int((settings_get(clave) or "").strip())
+    except (TypeError, ValueError):
+        return defecto
+    return max(minimo, min(100, n))
+
+
+def noche_manual_get():
+    """El interruptor del cajón: {valor, franja} o None. `franja` es si la franja horaria estaba
+    activa al pulsarlo: el interruptor vale hasta que la franja cambia (como en el iPhone)."""
+    v = (settings_get("night_manual") or "").strip()
+    if v in ("0:0", "0:1", "1:0", "1:1"):
+        return {"valor": v[0] == "1", "franja": v[2] == "1"}
+    return None
+
+
+def noche_manual_set(valor, franja) -> dict:
+    on = str(valor).strip().lower() in _BOOL_TRUE
+    fr = str(franja).strip().lower() in _BOOL_TRUE
+    settings_set("night_manual", f"{int(on)}:{int(fr)}")
+    return {"ok": True, "valor": on}
+
+
+def noche_estado() -> dict:
+    """Todo lo que necesita la pantalla del modo noche: franja, interruptor y nivel de brillo."""
+    return {**noche_get(), "manual": noche_manual_get(), "nivel": _pct("night_nivel", _NOCHE_NIVEL_DEF, 5)}
+
+
+def brillo_suave_get() -> int:
+    return _pct("brillo_suave", 100, 15)
+
+
+def brillo_suave_set(pct) -> dict:
+    n = _clamp_pct(pct)
+    if n is None:
+        return {"ok": False, "error": "valor de brillo no válido"}
+    n = max(15, n)  # por debajo de 15 no se vería nada
+    settings_set("brillo_suave", str(n))
+    return {"ok": True, "valor": n}
+
+
+def no_molestar_get() -> bool:
+    return (settings_get("no_molestar") or "0") in _BOOL_TRUE
+
+
+def no_molestar_set(activo) -> dict:
+    on = str(activo).strip().lower() in _BOOL_TRUE
+    settings_set("no_molestar", "1" if on else "0")
+    return {"ok": True, "activo": on}
+
+
 # --------------------------------------------------------------------------- #
 # Sistema
 # --------------------------------------------------------------------------- #

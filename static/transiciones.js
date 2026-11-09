@@ -26,7 +26,7 @@
   const DIAS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
   const COLORES = {
     dia: { fondo: "#15100a", texto: "#fff3da", suave: "#b99a68" },
-    noche: { fondo: "#000000", texto: "#d0d0d0", suave: "#7c7c7c" },
+    noche: { fondo: "#000000", texto: "#d9a35a", suave: "#8a6a3a" },
   };
   const RELOJ_GUARDADO = "kaito.reloj2"; // el 2: la distribución del reloj cambió con las páginas
   // ponytail: medidas de la pantalla de 480 px para el primer paso tras arrancar,
@@ -85,9 +85,15 @@
     return ini <= fin ? ahora >= ini && ahora < fin : ahora >= ini || ahora < fin;
   }
 
+  // ¿La franja horaria de Ajustes está activa ahora?
+  function franjaAhora() { return enFranja(window.__kioskoNoche, new Date()); }
+
+  // Noche = franja horaria, salvo que el interruptor del cajón diga otra cosa. El interruptor
+  // se acuerda de si la franja estaba activa al pulsarlo: vale mientras eso siga igual y, cuando
+  // la franja cambia (empieza o acaba), vuelve a mandar la franja.
   function esDeNoche() {
-    if (window.__nocheManual != null) return window.__nocheManual;
-    return enFranja(window.__kioskoNoche, new Date());
+    const franja = franjaAhora(), m = (window.__kioskoNoche || {}).manual;
+    return m && m.franja === franja ? m.valor : franja;
   }
 
   // Lo llama el reloj al cargar: la cara no puede medirlo, y así acaba clavada en él
@@ -573,5 +579,5 @@
     setTimeout(() => previa.remove(), 4000);
   });
 
-  window.KaitoTransicion = { aReloj, aCara, tapar, cubrirCara, cubrirReloj, quitar, guardarReloj, esDeNoche };
+  window.KaitoTransicion = { aReloj, aCara, tapar, cubrirCara, cubrirReloj, quitar, guardarReloj, esDeNoche, franjaAhora };
 })();

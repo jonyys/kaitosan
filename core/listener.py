@@ -36,6 +36,14 @@ class VoiceListener:
     def detener(self):
         self._detector.detener()
 
+    def set_no_molestar(self, activo: bool):
+        """Con "no molestar" Kaito deja de escuchar el wakeword: solo responde al botón."""
+        if activo:
+            self._detector.pausar()
+        else:
+            self._detector.reanudar()
+        print(f"🔕 No molestar {'activado' if activo else 'desactivado'}")
+
     def procesar_voz(self):
         """Punto de entrada público para un único ciclo (usado por /grabar)."""
         self._ciclo_voz()

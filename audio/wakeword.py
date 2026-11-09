@@ -318,7 +318,14 @@ class WakeWordDetector:
     def __init__(self, on_detected):
         self._on_detected = on_detected
         self._stop_event = threading.Event()
+        self._pausa = threading.Event()  # "no molestar": no escucha, ni el micro queda abierto
         self._thread = None
+
+    def pausar(self):
+        self._pausa.set()
+
+    def reanudar(self):
+        self._pausa.clear()
 
     def iniciar(self):
         self._stop_event.clear()
@@ -338,9 +345,19 @@ class WakeWordDetector:
               f"ONNX threads={_ORT_THREADS}")
         loop = asyncio.get_running_loop()
         while not self._stop_event.is_set():
+            if self._pausa.is_set():
+                await asyncio.sleep(0.3)
+                continue
             try:
                 async with _WakeWordListener(model, threshold=_umbral_actual()) as listener:
-                    detection = await listener.wait_for_detection()
+                    # Se espera la detección sin bloquear: si entra "no molestar" se suelta el micro
+                    espera = asyncio.ensure_future(listener.wait_for_detection())
+                    while not espera.done() and not self._pausa.is_set():
+                        await asyncio.sleep(0.2)
+                    if not espera.done():
+                        espera.cancel()
+                        continue
+                    detection = espera.result()
                 print(f"[WAKEWORD] '{detection.name}' detectado (confidence: {detection.confidence:.3f})")
                 await loop.run_in_executor(None, self._on_detected)
             except Exception as e:

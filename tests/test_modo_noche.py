@@ -52,3 +52,26 @@ def test_horas_no_validas_no_bloquean_si_desactivado(db):
     # apagar el modo noche no exige horas válidas
     assert db.noche_set("0", "", "")["ok"] is True
     assert db.noche_get()["enabled"] is False
+
+
+def test_interruptor_manual_y_nivel(db):
+    assert db.noche_manual_get() is None
+    db.noche_manual_set("1", "0")
+    assert db.noche_manual_get() == {"valor": True, "franja": False}
+    est = db.noche_estado()
+    assert est["manual"] == {"valor": True, "franja": False} and est["nivel"] == 35 and est["enabled"] is False
+    db.noche_manual_set("0", "1")
+    assert db.noche_manual_get() == {"valor": False, "franja": True}
+
+
+def test_brillo_suave_no_baja_de_15(db):
+    assert db.brillo_suave_get() == 100
+    assert db.brillo_suave_set(40)["valor"] == 40 and db.brillo_suave_get() == 40
+    assert db.brillo_suave_set(3)["valor"] == 15
+    assert db.brillo_suave_set("x")["ok"] is False
+
+
+def test_no_molestar_se_guarda(db):
+    assert db.no_molestar_get() is False
+    assert db.no_molestar_set("1")["activo"] is True and db.no_molestar_get() is True
+    assert db.no_molestar_set("0")["activo"] is False and db.no_molestar_get() is False

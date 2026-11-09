@@ -197,7 +197,7 @@ def grabar():
 
 @app.route("/reloj")
 def reloj():
-    return render_template("reloj.html", noche=system_settings.noche_get())
+    return render_template("reloj.html", noche=system_settings.noche_estado())
 
 
 # ── KIOSKO: gestos y ajustes rápidos de la pantalla del propio robot ──────────
@@ -219,9 +219,19 @@ def _inyectar_es_kiosko():
     pantalla del aparato; un móvil/PC en kaitosan.local no se mueve de donde
     esté."""
     try:
-        return {"es_kiosko": _solo_local()}
+        return {"es_kiosko": _solo_local(), "kiosko_pantalla": _kiosko_pantalla()}
     except Exception:
-        return {"es_kiosko": False}
+        return {"es_kiosko": False, "kiosko_pantalla": {}}
+
+
+def _kiosko_pantalla():
+    """Lo que la pantalla necesita ya en el primer pintado (atenuación, modo noche, no molestar):
+    así no parpadea a pleno brillo mientras llega /kiosko/config."""
+    return {
+        "noche": system_settings.noche_estado(),
+        "brillo_suave": system_settings.brillo_suave_get(),
+        "no_molestar": system_settings.no_molestar_get(),
+    }
 
 
 def _kiosko_config():
@@ -231,7 +241,7 @@ def _kiosko_config():
         "screensaver_min": system_settings.pantalla_inactividad_get(),
         "volumen": system_settings.volumen_get(),
         "brillo": {"soportado": bool(b.get("soportado")), "pct": pct},
-        "noche": system_settings.noche_get(),
+        **_kiosko_pantalla(),
     }
 
 
@@ -271,11 +281,30 @@ def kiosko_brillo():
 
 @app.route("/kiosko/noche", methods=["POST"])
 def kiosko_noche():
+    """El interruptor "Modo noche" del cajón: encender o apagar ahora, sin tocar la franja de Ajustes."""
     if not _solo_local():
         abort(403)
-    n = system_settings.noche_get()
-    r = system_settings.noche_set(request.form.get("enabled", ""), n["start"], n["end"])
+    r = system_settings.noche_manual_set(request.form.get("enabled", ""), request.form.get("franja", ""))
+    return jsonify(r)
+
+
+@app.route("/kiosko/brillo-suave", methods=["POST"])
+def kiosko_brillo_suave():
+    if not _solo_local():
+        abort(403)
+    r = system_settings.brillo_suave_set(request.form.get("v", ""))
     return jsonify(r), (200 if r.get("ok") else 400)
+
+
+@app.route("/kiosko/no-molestar", methods=["POST"])
+def kiosko_no_molestar():
+    """No molestar: sin wakeword (solo el botón físico). Se guarda y sobrevive a reinicios."""
+    if not _solo_local():
+        abort(403)
+    r = system_settings.no_molestar_set(request.form.get("enabled", ""))
+    voice_listener.set_no_molestar(r["activo"])
+    socketio.emit("no_molestar", {"activo": r["activo"]})
+    return jsonify(r)
 
 
 @app.route("/kiosko/salir", methods=["POST"])
@@ -1963,6 +1992,7 @@ signal.signal(signal.SIGTERM, _on_sigterm)
 if __name__ == "__main__":
     print("🤖 Kaitosan arrancando...")
     voice_listener.iniciar()
+    voice_listener.set_no_molestar(system_settings.no_molestar_get())
     PowerButton(on_short_press=voice_listener._on_wakeword)
     state.cambiar("idle")
     try:
