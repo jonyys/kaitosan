@@ -279,12 +279,36 @@ def kiosko_brillo():
     return jsonify(r), (200 if r.get("ok") else 400)
 
 
+_silencio_aplicado = None
+
+
+def _aplicar_silencio():
+    """Pausa o reanuda el wakeword según "no molestar" y el modo noche (solo avisa si cambia)."""
+    global _silencio_aplicado
+    activo = system_settings.silencio_activo()
+    if activo != _silencio_aplicado:
+        _silencio_aplicado = activo
+        voice_listener.set_no_molestar(activo)
+
+
+def _vigilar_silencio():
+    """La franja de noche empieza y acaba sola: se mira cada medio minuto."""
+    while True:
+        time.sleep(30)
+        try:
+            _aplicar_silencio()
+        except Exception as e:  # noqa: BLE001
+            print(f"⚠️ Error vigilando el silencio: {e}")
+
+
 @app.route("/kiosko/noche", methods=["POST"])
 def kiosko_noche():
-    """El interruptor "Modo noche" del cajón: encender o apagar ahora, sin tocar la franja de Ajustes."""
+    """El interruptor "Modo noche" del cajón: encender o apagar ahora, sin tocar la franja de Ajustes.
+    De noche, además, Kaito no escucha el wakeword."""
     if not _solo_local():
         abort(403)
     r = system_settings.noche_manual_set(request.form.get("enabled", ""), request.form.get("franja", ""))
+    _aplicar_silencio()
     return jsonify(r)
 
 
@@ -302,7 +326,7 @@ def kiosko_no_molestar():
     if not _solo_local():
         abort(403)
     r = system_settings.no_molestar_set(request.form.get("enabled", ""))
-    voice_listener.set_no_molestar(r["activo"])
+    _aplicar_silencio()
     socketio.emit("no_molestar", {"activo": r["activo"]})
     return jsonify(r)
 
@@ -1992,7 +2016,8 @@ signal.signal(signal.SIGTERM, _on_sigterm)
 if __name__ == "__main__":
     print("🤖 Kaitosan arrancando...")
     voice_listener.iniciar()
-    voice_listener.set_no_molestar(system_settings.no_molestar_get())
+    _aplicar_silencio()
+    threading.Thread(target=_vigilar_silencio, daemon=True).start()
     PowerButton(on_short_press=voice_listener._on_wakeword)
     state.cambiar("idle")
     try:

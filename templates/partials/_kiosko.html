@@ -75,19 +75,17 @@
     -webkit-appearance: none; width: 28px; height: 28px; margin-top: -10px; border-radius: 50%;
     background: #fff3da; border: 0;
   }
-  /* Modo noche: interruptor, el mismo del reloj */
-  #kioskoDrawer .cj-noche { display: flex; justify-content: space-between; align-items: center; min-height: 36px; margin: 2px 0 10px; font-size: 16px; }
-  #kioskoDrawer .cj-noche small { display: block; font-size: 12px; font-weight: 400; color: #b99a68; margin-top: 2px; }
-  #kioskoDrawer input[type="checkbox"] {
-    -webkit-appearance: none; appearance: none; position: relative; flex: none;
-    width: 58px; height: 34px; margin: 0; border-radius: 17px; background: #5a4020; cursor: pointer; transition: background .2s;
+  /* Modo noche (cama) y no molestar (micro): botones con icono que se encienden y se apagan */
+  #kioskoDrawer .cj-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 4px 0 12px; }
+  #kioskoDrawer .cj-tile {
+    display: flex; align-items: center; justify-content: center; gap: 8px; height: 54px; padding: 0 10px;
+    border: 1.5px solid #5a4020; border-radius: 27px; background: #1d160d; color: #b99a68;
+    font: inherit; font-size: 14px; cursor: pointer; transition: background .2s, color .2s;
   }
-  #kioskoDrawer input[type="checkbox"]::after {
-    content: ""; position: absolute; top: 3px; left: 3px; width: 28px; height: 28px; border-radius: 50%;
-    background: #fff3da; transition: transform .2s;
-  }
-  #kioskoDrawer input[type="checkbox"]:checked { background: #e0a44d; }
-  #kioskoDrawer input[type="checkbox"]:checked::after { transform: translateX(24px); }
+  #kioskoDrawer .cj-tile svg { width: 26px; height: 26px; flex: none; }
+  #kioskoDrawer .cj-tile.on { background: #e0a44d; border-color: #e0a44d; color: #15100a; font-weight: 500; }
+  #kioskoDrawer .cj-tile .tacha { display: none; }
+  #kioskoDrawer .cj-tile.on .tacha { display: inline; }
   #kioskoDrawer .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   #kioskoDrawer .btns button {
     height: 44px; padding: 0 12px; border: 1.5px solid #5a4020; border-radius: 22px;
@@ -115,7 +113,10 @@
       if (window.KaitoTransicion && n.nivel && window.KaitoTransicion.esDeNoche()) brillo = Math.min(brillo, n.nivel);
       document.documentElement.style.setProperty("--atenua", String(Math.min(0.88, 1 - brillo / 100)));
     }
-    function pintaNoMolestar() { document.documentElement.classList.toggle("no-molestar", !!window.__noMolestar); }
+    function pintaNoMolestar() {
+      var noche = !!(window.KaitoTransicion && window.KaitoTransicion.esDeNoche());
+      document.documentElement.classList.toggle("no-molestar", !!window.__noMolestar || noche);
+    }
 
     // ── Fase 1: volver a la cara cuando Kaito se despierta ──────────────────
     // Solo en la pantalla del propio robot (localhost). Un móvil o PC en la LAN
@@ -123,7 +124,7 @@
     var ES_KIOSKO = {{ 'true' if es_kiosko else 'false' }};
     atenua();
     pintaNoMolestar();
-    setInterval(atenua, 20000); // la franja de la noche empieza y acaba sola
+    setInterval(function () { atenua(); pintaNoMolestar(); }, 20000); // la franja de la noche empieza y acaba sola
     // Con transición solo en el robot: está hecha para su pantalla redonda de 480 px
     function pasarACara(velocidad) {
       var ir = function () { location.replace("/"); };
@@ -218,10 +219,12 @@
         '<input type="range" id="kioskoVol" min="0" max="100" step="5" value="' +
         (cfg.volumen || 0) + '"></div>' +
         filaBrillo +
-        '<div class="cj-noche"><label for="kioskoNoche">Modo noche</label>' +
-        '<input type="checkbox" id="kioskoNoche"' + (window.KaitoTransicion && window.KaitoTransicion.esDeNoche() ? " checked" : "") + "></div>" +
-        '<div class="cj-noche"><label for="kioskoNoMolestarSw">No molestar<small>Solo responde al botón</small></label>' +
-        '<input type="checkbox" id="kioskoNoMolestarSw"' + (cfg.no_molestar ? " checked" : "") + "></div>" +
+        '<div class="cj-tiles">' +
+        '<button class="cj-tile" id="kioskoNoche" aria-label="Modo noche">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v11m0-4h18m0 4v-8a2 2 0 0 0-2-2h-8v6"/><circle cx="7" cy="10" r="1"/></svg>Noche</button>' +
+        '<button class="cj-tile" id="kioskoNoMolestarSw" aria-label="No molestar">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v4M8 21h8"/><path class="tacha" d="M3 3l18 18"/></svg>No molestar</button>' +
+        "</div>" +
         '<div class="btns">' +
         '<button data-go="/admin/ajustes">Ajustes</button>' +
         '<button data-go="/admin/ajustes#wifi">WiFi</button>' +
@@ -260,18 +263,30 @@
       // Modo noche: encender o apagar ahora. Se guarda con el estado de la franja, para que valga
       // hasta que la franja empiece o acabe (y entonces vuelva a mandar ella).
       var noche = dw.querySelector("#kioskoNoche");
-      noche.addEventListener("change", function () {
+      function pintaNoche() {
+        var on = !!(window.KaitoTransicion && window.KaitoTransicion.esDeNoche());
+        noche.classList.toggle("on", on);
+        noche.setAttribute("aria-pressed", on);
+      }
+      pintaNoche();
+      noche.addEventListener("click", function () {
         var franja = window.KaitoTransicion ? window.KaitoTransicion.franjaAhora() : false;
-        post("/kiosko/noche", { enabled: noche.checked ? 1 : 0, franja: franja ? 1 : 0 });
-        (window.__kioskoNoche = window.__kioskoNoche || {}).manual = { valor: noche.checked, franja: franja };
-        document.documentElement.classList.toggle("night", noche.checked);
-        atenua();
+        var nuevo = !noche.classList.contains("on");
+        post("/kiosko/noche", { enabled: nuevo ? 1 : 0, franja: franja ? 1 : 0 });
+        (window.__kioskoNoche = window.__kioskoNoche || {}).manual = { valor: nuevo, franja: franja };
+        document.documentElement.classList.toggle("night", nuevo);
+        pintaNoche(); atenua(); pintaNoMolestar();
       });
-      // No molestar: sin wakeword, solo responde al botón de la caja
+      // No molestar: sin wakeword, solo responde al botón de la caja (de noche también es así)
       var nm = dw.querySelector("#kioskoNoMolestarSw");
-      nm.addEventListener("change", function () {
-        post("/kiosko/no-molestar", { enabled: nm.checked ? 1 : 0 });
-        window.__noMolestar = nm.checked;
+      nm.classList.toggle("on", !!window.__noMolestar);
+      nm.setAttribute("aria-pressed", !!window.__noMolestar);
+      nm.addEventListener("click", function () {
+        var nuevo = !nm.classList.contains("on");
+        nm.classList.toggle("on", nuevo);
+        nm.setAttribute("aria-pressed", nuevo);
+        post("/kiosko/no-molestar", { enabled: nuevo ? 1 : 0 });
+        window.__noMolestar = nuevo;
         pintaNoMolestar();
       });
 

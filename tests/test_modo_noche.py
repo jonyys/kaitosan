@@ -59,7 +59,7 @@ def test_interruptor_manual_y_nivel(db):
     db.noche_manual_set("1", "0")
     assert db.noche_manual_get() == {"valor": True, "franja": False}
     est = db.noche_estado()
-    assert est["manual"] == {"valor": True, "franja": False} and est["nivel"] == 35 and est["enabled"] is False
+    assert est["manual"] == {"valor": True, "franja": False} and est["nivel"] == 40 and est["enabled"] is False
     db.noche_manual_set("0", "1")
     assert db.noche_manual_get() == {"valor": False, "franja": True}
 
@@ -75,3 +75,25 @@ def test_no_molestar_se_guarda(db):
     assert db.no_molestar_get() is False
     assert db.no_molestar_set("1")["activo"] is True and db.no_molestar_get() is True
     assert db.no_molestar_set("0")["activo"] is False and db.no_molestar_get() is False
+
+
+def test_de_noche_por_franja_y_por_interruptor(db):
+    from datetime import datetime
+    de_dia, de_noche = datetime(2026, 11, 9, 15, 0), datetime(2026, 11, 9, 2, 0)
+    assert db.noche_activa(de_noche) is False  # franja apagada
+    db.noche_set("1", "23:00", "07:00")
+    assert db.noche_activa(de_noche) is True and db.noche_activa(de_dia) is False
+    db.noche_manual_set("1", "0")              # encendido a mano de día
+    assert db.noche_activa(de_dia) is True
+    assert db.noche_activa(de_noche) is True   # la franja ya es otra: manda la franja
+    db.noche_manual_set("0", "1")              # apagado a mano dentro de la franja
+    assert db.noche_activa(de_noche) is False and db.noche_activa(de_dia) is False
+
+
+def test_silencio_si_es_de_noche_o_no_molestar(db):
+    from datetime import datetime
+    de_dia, de_noche = datetime(2026, 11, 9, 15, 0), datetime(2026, 11, 9, 2, 0)
+    db.noche_set("1", "23:00", "07:00")
+    assert db.silencio_activo(de_dia) is False and db.silencio_activo(de_noche) is True
+    db.no_molestar_set("1")
+    assert db.silencio_activo(de_dia) is True

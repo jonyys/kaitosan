@@ -1509,7 +1509,7 @@ def noche_set(enabled, start, end) -> dict:
 # La pantalla es HDMI y no tiene luz de fondo controlable (no hay /sys/class/backlight), así
 # que "atenuar" es una capa negra semitransparente sobre la página: `brillo_suave` es el
 # brillo de siempre y `nivel` el que se aplica de noche (el menor de los dos manda).
-_NOCHE_NIVEL_DEF = 35
+_NOCHE_NIVEL_DEF = 40
 
 
 def _pct(clave, defecto, minimo) -> int:
@@ -1534,6 +1534,30 @@ def noche_manual_set(valor, franja) -> dict:
     fr = str(franja).strip().lower() in _BOOL_TRUE
     settings_set("night_manual", f"{int(on)}:{int(fr)}")
     return {"ok": True, "valor": on}
+
+
+def _en_franja(n, ahora) -> bool:
+    """La franja horaria de `n` ({enabled, start, end}) a esa hora; cruza la medianoche si inicio > fin."""
+    if not n["enabled"]:
+        return False
+    sh, sm = (int(x) for x in n["start"].split(":"))
+    eh, em = (int(x) for x in n["end"].split(":"))
+    ya, ini, fin = ahora.hour * 60 + ahora.minute, sh * 60 + sm, eh * 60 + em
+    return ini <= ya < fin if ini <= fin else (ya >= ini or ya < fin)
+
+
+def noche_activa(ahora=None) -> bool:
+    """¿Es de noche ahora? La franja de Ajustes, salvo que el interruptor del cajón mande (lo mismo
+    que hace el front: el interruptor vale mientras la franja siga igual que al pulsarlo)."""
+    from datetime import datetime
+    franja = _en_franja(noche_get(), ahora or datetime.now())
+    m = noche_manual_get()
+    return m["valor"] if m and m["franja"] == franja else franja
+
+
+def silencio_activo(ahora=None) -> bool:
+    """Kaito no escucha el wakeword: con "no molestar" o de noche. El botón físico sigue valiendo."""
+    return no_molestar_get() or noche_activa(ahora)
 
 
 def noche_estado() -> dict:
