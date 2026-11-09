@@ -223,3 +223,7 @@ audio/*.wav
 # Data
 data/
 .vscode/settings.json
+
+# Herramientas de prueba de Claude Code (servidores de vista previa y registros del navegador)
+.claude/launch.json
+.playwright-mcp/
