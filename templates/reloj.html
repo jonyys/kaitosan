@@ -186,6 +186,11 @@
   </style>
 </head>
 <body>
+<script>
+  // Venimos de la cara: la réplica del reloj (última imagen de la transición) tiene que estar ya en el primer
+  // cuadro que se pinta; se funde y se quita cuando la página real ha terminado de cargar (al final).
+  if (/^https?:\/\/[^/]+\/(\?.*)?$/.test(document.referrer)) KaitoTransicion.cubrirReloj();
+</script>
 {% include 'partials/_iconos.html' %}
 <svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
   <symbol id="i-pausa" viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></symbol>
@@ -197,8 +202,19 @@
   <!-- 0 · RELOJ -->
   <section class="pagina">
     <div class="reloj-p">
-      <div id="hora">--:--:--</div>
+      <div id="hora"></div>
       <div id="fecha"></div>
+      <script>
+        // Puesta aquí mismo: si la página se pinta antes de que llegue el script grande, ya lleva la hora real
+        const DIAS = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+        function actualizarReloj() {
+          const ahora = new Date(), dos = (n) => String(n).padStart(2, '0');
+          document.getElementById('hora').textContent = `${dos(ahora.getHours())}:${dos(ahora.getMinutes())}:${dos(ahora.getSeconds())}`;
+          document.getElementById('fecha').textContent = `${DIAS[ahora.getDay()]}, ${dos(ahora.getDate())}/${dos(ahora.getMonth() + 1)}/${ahora.getFullYear()}`;
+          document.documentElement.classList.toggle('night', KaitoTransicion.esDeNoche());
+        }
+        actualizarReloj();
+      </script>
     </div>
   </section>
 
@@ -293,23 +309,8 @@
   let editandoId = null;   // null = alarma nueva
   let countdowns = {};     // id → intervalo de countdown
 
-  // ── RELOJ ───────────────────────────────────────────────────────────────
-  const DIAS = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
-
-  function actualizarReloj() {
-    const ahora = new Date();
-    const h = String(ahora.getHours()).padStart(2,'0');
-    const m = String(ahora.getMinutes()).padStart(2,'0');
-    const s = String(ahora.getSeconds()).padStart(2,'0');
-    const dd = String(ahora.getDate()).padStart(2,'0');
-    const mm = String(ahora.getMonth() + 1).padStart(2,'0');
-    document.getElementById('hora').textContent = `${h}:${m}:${s}`;
-    document.getElementById('fecha').textContent =
-      `${DIAS[ahora.getDay()]}, ${dd}/${mm}/${ahora.getFullYear()}`;
-    document.documentElement.classList.toggle('night', KaitoTransicion.esDeNoche());
-  }
-  actualizarReloj();
-  setInterval(actualizarReloj, 1000);
+  // Late justo al cambiar el segundo: así nunca va por detrás de la hora real (y casa con la réplica de la transición)
+  (function tic() { actualizarReloj(); setTimeout(tic, 1000 - (Date.now() % 1000) + 15); })();
   // Hay que pedirla: sin pintar nada, nadie la ha pedido y fonts.ready ya estaría resuelto
   document.fonts.load("200 76px 'M PLUS Rounded 1c'", "0123456789:").catch(() => {}).then(KaitoTransicion.guardarReloj);
 
@@ -979,7 +980,7 @@
 </script>
 {# Venimos de la cara: primera imagen = última de la transición, que se funde #}
 <script>
-  if (/^https?:\/\/[^/]+\/(\?.*)?$/.test(document.referrer)) { KaitoTransicion.cubrirReloj(); KaitoTransicion.quitar(); }
+  if (document.getElementById('kaitoTransicion')) KaitoTransicion.quitar();
 </script>
 <div id="paginaLista" hidden></div>
 </body>

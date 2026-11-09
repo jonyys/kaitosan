@@ -245,6 +245,14 @@
     const zetas = uno("zetas"), puntos = uno("puntos"), ojos = de("ojo"), cejas = de("ceja");
     const olas = de("ola"), trozos = de("trozo"), fecha = uno("fecha"), aviso = uno("aviso");
     const NB = BOCA.match(NUM).map(Number), NM = BOCA_MINI.match(NUM).map(Number);
+    // La hora de la réplica sigue a la real mientras esté en pantalla (si no, se queda en la del primer cuadro
+    // y al llegar el reloj de verdad "salta" los segundos que haya durado la transición o la carga)
+    const refrescaHora = () => {
+      const h = horaAhora();
+      trozos.forEach((t, i) => { if (t.textContent !== h.trozos[i]) t.textContent = h.trozos[i]; });
+      if (fecha.textContent !== h.fecha) fecha.textContent = h.fecha;
+    };
+    const relojVivo = setInterval(() => { if (capa.isConnected) refrescaHora(); else clearInterval(relojVivo); }, 50);
     fondo.setAttribute("fill", colores.fondo);
     const brillos = esDeNoche() ? null : document.documentElement.dataset.robot === "claro" ? BRILLOS.claro : BRILLOS.dia;
     if (brillos) {
