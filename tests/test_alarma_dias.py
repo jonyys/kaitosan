@@ -5,7 +5,7 @@ from datetime import datetime
 
 sys.modules.setdefault("sounddevice", types.ModuleType("sounddevice"))  # el audio no hace falta aquí
 
-from ai.skills.alarm import segundos_hasta, texto_dias
+from ai.skills.alarm import AlarmSkill, segundos_hasta, texto_dias
 
 LUNES_10H = datetime(2026, 11, 9, 10, 0, 0)  # 2026-11-09 es lunes
 
@@ -30,3 +30,15 @@ def test_texto_de_los_dias():
     assert texto_dias([0, 1, 2, 3, 4]) == "de lunes a viernes"
     assert texto_dias(list(range(7))) == "todos los días"
     assert texto_dias([0, 2]) == "lunes, miércoles"
+
+
+def test_el_interruptor_apaga_y_enciende_sin_borrar():
+    skill = AlarmSkill()
+    skill.poner_alarma("07:00", dias=[0])
+    alarma = skill.alarmas[0]
+    skill.activar_alarma(alarma["id"], False)
+    alarma["timer"].join(1)  # cancelar avisa al hilo, que tarda un instante en salir
+    assert alarma["activa"] is False and not alarma["timer"].is_alive()
+    skill.activar_alarma(alarma["id"], True)
+    assert alarma["activa"] is True and alarma["timer"].is_alive()
+    alarma["timer"].cancel()

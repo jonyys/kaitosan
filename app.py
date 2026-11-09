@@ -324,6 +324,12 @@ def reloj_alarma_modificar(alarma_id):
     resultado = brain.alarm.poner_alarma(nueva_hora, dias=data.get("dias"))
     return jsonify({"mensaje": resultado, **brain.alarm._estado_serializable()})
 
+@app.route("/reloj/alarmas/<int:alarma_id>/activa", methods=["PUT"])
+def reloj_alarma_activar(alarma_id):
+    data = request.get_json()
+    resultado = brain.alarm.activar_alarma(alarma_id, bool(data.get("activa")))
+    return jsonify({"mensaje": resultado, **brain.alarm._estado_serializable()})
+
 @app.route("/reloj/temporizadores", methods=["POST"])
 def reloj_temporizador_crear():
     data = request.get_json()
@@ -368,6 +374,27 @@ def reloj_recordatorio_crear():
     db.close()
     brain.reminder._emitir_estado()
     return jsonify({"mensaje": "Recordatorio creado", **brain.reminder._estado_serializable()})
+
+@app.route("/reloj/recordatorios/<int:rem_id>", methods=["PUT"])
+def reloj_recordatorio_modificar(rem_id):
+    data = request.get_json()
+    texto = data.get("texto", "").strip()
+    fecha_hora = data.get("fecha_hora", "").strip().replace("T", " ")[:16]
+    if not texto or not fecha_hora:
+        return jsonify({"error": "Faltan campos"}), 400
+    try:
+        from datetime import datetime as _dt
+        _dt.strptime(fecha_hora, "%Y-%m-%d %H:%M")
+    except ValueError:
+        return jsonify({"error": "Formato de fecha inválido (usa YYYY-MM-DDTHH:MM)"}), 400
+    db = brain.reminder._conectar()
+    cur = db.execute("UPDATE reminders SET texto = ?, fecha_hora = ?, completado = 0 WHERE id = ?", (texto, fecha_hora, rem_id))
+    db.commit()
+    db.close()
+    if not cur.rowcount:
+        return jsonify({"error": "Recordatorio no encontrado"}), 404
+    brain.reminder._emitir_estado()
+    return jsonify({"mensaje": "Recordatorio modificado", **brain.reminder._estado_serializable()})
 
 @app.route("/reloj/recordatorios/<int:rem_id>", methods=["DELETE"])
 def reloj_recordatorio_borrar(rem_id):

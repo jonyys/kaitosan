@@ -78,6 +78,15 @@
     .fila .texto { flex: 1; min-width: 0; font-size: 20px; font-weight: 300; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     .fila .texto small { display: block; font-size: 13px; font-weight: 400; color: var(--text-soft); margin-top: 3px; }
     .fila.hecho { opacity: .4; cursor: default; }
+    /* Alarmas: hora y días a la izquierda, interruptor a la derecha (como el del iPhone) */
+    .fila.alarma { height: 88px; padding: 0 4px 0 6px; align-items: center; }
+    .fila.alarma .col { display: flex; flex-direction: column; gap: 5px; }
+    .fila.alarma .etq { text-align: left; }
+    .fila.alarma.off .valor { color: var(--text-faint); }
+    .sw { flex: none; width: 58px; height: 34px; border-radius: 17px; border: 0; padding: 0; background: var(--border-fuerte); position: relative; cursor: pointer; transition: background .2s; }
+    .sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 28px; height: 28px; border-radius: 50%; background: #fff3da; transition: transform .2s; }
+    .sw[aria-checked="true"] { background: var(--rosa-accion); }
+    .sw[aria-checked="true"]::after { transform: translateX(24px); }
     .mas { position: absolute; left: 50%; top: 366px; width: 52px; height: 52px; margin-left: -26px; border-radius: 50%; border: 1.5px solid var(--border-fuerte); background: transparent; color: var(--rosa-accion); padding: 0; cursor: pointer; transition: top .35s cubic-bezier(.2, .8, .2, 1), width .35s, height .35s, margin-left .35s; }
     .mas i { position: absolute; left: 50%; top: 50%; background: currentColor; border-radius: 2px; transform: translate(-50%, -50%); }
     .mas i:first-child { width: 42%; height: 2px; }
@@ -213,7 +222,7 @@
 
 <!-- Recordatorio nuevo, paso 1: el texto con el teclado en pantalla -->
 <div class="modal-overlay" id="remTexto" data-no-tap>
-  <div class="hoja-titulo">Nuevo recordatorio</div>
+  <div class="hoja-titulo" id="rem-titulo">Nuevo recordatorio</div>
   <div class="caja-texto" id="rem-caja"></div>
   <div class="teclado" id="teclado"></div>
 </div>
@@ -228,6 +237,7 @@
     <button class="btn btn-yellow" onclick="abrirRecordatorio(true)">Atrás</button>
     <button class="btn btn-blue" onclick="guardarRecordatorio()">Guardar</button>
   </div>
+  <button class="eliminar" id="rem-eliminar" style="top:358px" onclick="eliminarDesdeHojaRem()">Eliminar recordatorio</button>
 </div>
 
 <!-- Toast -->
@@ -297,13 +307,29 @@
   // Tocar una fila la abre (data-accion + data-args: lo recoge el script de las páginas)
   function renderAlarmas() {
     const list = document.getElementById('alarmas-list');
-    const activas = alarmas.filter(a => a.activa);
-    list.parentNode.classList.toggle('vacia', !activas.length);
-    list.innerHTML = activas.map(a => `
-      <li class="fila" data-accion="abrirModal" data-args='${JSON.stringify([a.id, a.hora, a.dias || []])}'>
-        <div class="valor">${a.hora}</div><div class="etq">${etiquetaDias(a.dias)}</div>
+    list.parentNode.classList.toggle('vacia', !alarmas.length);
+    list.innerHTML = alarmas.map(a => `
+      <li class="fila alarma${a.activa ? '' : ' off'}" data-accion="abrirModal" data-args='${JSON.stringify([a.id, a.hora, a.dias || []])}'>
+        <div class="col"><div class="valor">${a.hora}</div><div class="etq">${etiquetaDias(a.dias)}</div></div>
+        <button class="sw" role="switch" aria-checked="${a.activa}" aria-label="Alarma de las ${a.hora}" onclick="alternarAlarma(${a.id})"></button>
       </li>
     `).join('');
+  }
+
+  // El interruptor: se mueve en el momento y el servidor lo confirma
+  async function alternarAlarma(id) {
+    const a = alarmas.find(x => x.id === id);
+    if (!a) return;
+    a.activa = !a.activa;
+    renderAlarmas();
+    try {
+      const res = await fetch(`/reloj/alarmas/${id}/activa`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({activa: a.activa})
+      });
+      aplicarEstado(await res.json());
+    } catch(e) { a.activa = !a.activa; renderAlarmas(); mostrarToast('No se pudo cambiar la alarma', 'err'); }
   }
 
   // ── RENDER TEMPORIZADORES ───────────────────────────────────────────────
@@ -580,7 +606,7 @@
     });
     list.parentNode.classList.toggle('vacia', !todos.length);
     list.innerHTML = todos.map(r => `
-      <li class="fila${r.completado ? ' hecho' : ''}" ${r.completado ? '' : `data-accion="eliminarRecordatorio" data-args='[${r.id}]'`}>
+      <li class="fila${r.completado ? ' hecho' : ''}" ${r.completado ? '' : `data-accion="editarRecordatorio" data-args='[${r.id}]'`}>
         <div class="texto">${esc(r.texto)}<small>${fmtFecha(r.fecha_hora)}${r.completado ? ' · completado' : ''}</small></div>
       </li>
     `).join('');
@@ -605,6 +631,7 @@
     const api = {
       texto: () => texto,
       reiniciar() { texto = ''; mayus = true; simbolos = false; pintar(); },
+      poner(t) { texto = t; mayus = false; simbolos = false; pintar(); },
       tecla(k) {
         if (k === '⇧') mayus = !mayus;
         else if (k === 'sim') simbolos = !simbolos;
@@ -649,10 +676,20 @@
   })();
 
   let ruedaRd, ruedaRh, ruedaRm, diasRem = [];
+  let editandoRem = null, remPreset = null; // al editar: id y "AAAA-MM-DD HH:MM" con que arrancan las ruedas
   function abrirRecordatorio(volver) {
-    if (!volver) teclado.reiniciar();
+    if (!volver) { editandoRem = null; remPreset = null; teclado.reiniciar(); }
+    document.getElementById('rem-titulo').textContent = editandoRem === null ? 'Nuevo recordatorio' : 'Editar recordatorio';
     abrirHoja('remTexto');
   }
+  function editarRecordatorio(id) {
+    const r = recordatorios.find(x => x.id === id);
+    if (!r) return;
+    editandoRem = id; remPreset = r.fecha_hora;
+    teclado.poner(r.texto);
+    abrirRecordatorio(true);
+  }
+  function eliminarDesdeHojaRem() { const id = editandoRem; cerrarModal(); if (id !== null) eliminarRecordatorio(id); }
   function remSiguiente() {
     if (!teclado.texto().trim()) { mostrarToast('Escribe qué hay que recordar', 'warn'); return; }
     // El día: hoy, mañana y los 120 siguientes, con su nombre
@@ -661,18 +698,28 @@
     const etiqueta = (d, i) => i === 0 ? 'Hoy' : i === 1 ? 'Mañana'
       : d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' }).replace(/[.,]/g, '');
     ['rueda-rd', 'rueda-rh', 'rueda-rm'].forEach(id => { document.getElementById(id).innerHTML = ''; });
-    const prox = new Date(hoy.getTime() + 3600e3);
-    ruedaRd = Rueda(document.getElementById('rueda-rd'), 120, i => etiqueta(diasRem[i], i), { ini: prox.getDate() === hoy.getDate() ? 0 : 1 });
-    ruedaRh = Rueda(document.getElementById('rueda-rh'), 24, dos, { loop: true, ini: prox.getHours() });
-    ruedaRm = Rueda(document.getElementById('rueda-rm'), 60, dos, { loop: true });
+    // Nuevo: dentro de una hora. Editando: la fecha que ya tenía (si ya pasó, en "Hoy")
+    let ini = { dia: 0, h: 0, m: 0 };
+    if (remPreset) {
+      const [f, hm] = remPreset.split(' '), [y, mo, d] = f.split('-').map(Number), [hh, mm] = (hm || '0:0').split(':').map(Number);
+      const dias = Math.round((new Date(y, mo - 1, d) - new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate())) / 864e5);
+      ini = { dia: Math.min(Math.max(dias, 0), 119), h: hh, m: mm };
+    } else {
+      const prox = new Date(hoy.getTime() + 3600e3);
+      ini = { dia: prox.getDate() === hoy.getDate() ? 0 : 1, h: prox.getHours(), m: 0 };
+    }
+    ruedaRd = Rueda(document.getElementById('rueda-rd'), 120, i => etiqueta(diasRem[i], i), { ini: ini.dia });
+    ruedaRh = Rueda(document.getElementById('rueda-rh'), 24, dos, { loop: true, ini: ini.h });
+    ruedaRm = Rueda(document.getElementById('rueda-rm'), 60, dos, { loop: true, ini: ini.m });
+    document.getElementById('rem-eliminar').classList.toggle('ver', editandoRem !== null);
     abrirHoja('remCuando');
   }
   async function guardarRecordatorio() {
     const d = diasRem[ruedaRd.valor()];
     const fecha = `${d.getFullYear()}-${dos(d.getMonth() + 1)}-${dos(d.getDate())}T${dos(ruedaRh.valor())}:${dos(ruedaRm.valor())}`;
     try {
-      const res = await fetch('/reloj/recordatorios', {
-        method: 'POST',
+      const res = await fetch(editandoRem === null ? '/reloj/recordatorios' : `/reloj/recordatorios/${editandoRem}`, {
+        method: editandoRem === null ? 'POST' : 'PUT',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({texto: teclado.texto().trim(), fecha_hora: fecha})
       });

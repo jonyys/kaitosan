@@ -115,6 +115,21 @@ class AlarmSkill:
             print(f"❌ Error programando alarma: {e}")
             return "No he podido programar la alarma. ¿Puedes repetir la hora?"
 
+    def activar_alarma(self, alarma_id: int, activa: bool) -> str:
+        """Enciende o apaga una alarma sin borrarla (el interruptor de la pantalla del reloj)."""
+        a = next((x for x in self.alarmas if x["id"] == alarma_id), None)
+        if not a:
+            return "No encontré esa alarma."
+        if activa and not a["activa"]:
+            h, m = (int(x) for x in a["hora"].split(":"))
+            a["timer"] = self._programar(h, m, a.get("dias", []), alarma_id)
+            a["activa"] = True
+        elif not activa:
+            a["timer"].cancel()
+            a["activa"] = False
+        self._emitir_estado()
+        return f"Alarma de las {a['hora']} {'activada' if activa else 'desactivada'}."
+
     def cancelar_alarma(self, hora: str = None, indice: int = None) -> str:
         activas = [a for a in self.alarmas if a["activa"]]
 
