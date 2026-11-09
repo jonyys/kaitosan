@@ -66,24 +66,24 @@
     #hora { font-size: 76px; font-weight: 200; letter-spacing: -2px; line-height: 1; color: var(--text); font-variant-numeric: tabular-nums; }
     #fecha { font-size: 20px; line-height: 1; color: var(--text-soft); margin-top: 12px; text-transform: capitalize; letter-spacing: 1px; }
 
-    /* Páginas 1-3: título, lista que se desliza dentro y botón de añadir.
-       Todo dentro del círculo: la lista mide 296 px y arranca a 104 px del borde de arriba. */
-    .titulo { position: absolute; left: 0; right: 0; top: 60px; text-align: center; font-size: 17px; color: var(--rosa-tinta); font-weight: 500; }
-    .titulo .ico { width: 18px; height: 18px; vertical-align: -3px; margin-right: 8px; }
-    .lista { position: absolute; left: 92px; width: 296px; top: 100px; height: 238px; overflow: hidden; list-style: none; }
-    .fila { display: flex; align-items: center; gap: 8px; height: 76px; border-bottom: 1px solid var(--border); }
-    .fila:last-child { border-bottom: none; }
-    .fila .valor { flex: 1; font-size: 54px; font-weight: 200; line-height: 1; letter-spacing: -1px; font-variant-numeric: tabular-nums; min-width: 0; }
-    .fila .valor small { display: block; font-size: 13px; font-weight: 400; letter-spacing: 0; color: var(--text-soft); margin-top: 4px; }
-    .fila .texto { flex: 1; min-width: 0; font-size: 19px; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    .fila .texto small { display: block; font-size: 13px; color: var(--text-soft); margin-top: 3px; }
-    .fila.hecho { opacity: .45; }
-    .ib { flex: none; width: 46px; height: 46px; border-radius: 50%; border: 1.5px solid var(--border-fuerte); background: var(--surface); color: var(--rosa-accion); display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; }
-    .ib .ico { width: 20px; height: 20px; }
-    .ib.peligro { color: var(--peligro-tinta); }
-    .vacio { position: absolute; left: 92px; width: 296px; top: 160px; text-align: center; color: var(--text-soft); font-size: 16px; font-style: italic; }
-    .nuevo { position: absolute; left: 50%; top: 352px; transform: translateX(-50%); height: 44px; padding: 0 22px; border-radius: 22px; border: 1.5px solid var(--border-fuerte); background: transparent; color: var(--rosa-accion); font: inherit; font-size: 16px; cursor: pointer; white-space: nowrap; }
-    .nuevo .ico { width: 18px; height: 18px; vertical-align: -3px; margin-right: 6px; }
+    /* Páginas 1-3: un título grande, la lista (que se desliza dentro) y un botón redondo de más.
+       Sin iconos ni cajas. Con la lista vacía, el más pasa al centro de la pantalla.
+       La lista mide 296 px de ancho: dentro del círculo. */
+    .titulo { position: absolute; left: 0; right: 0; top: 46px; text-align: center; font-size: 38px; line-height: 1; font-weight: 200; letter-spacing: -.5px; color: var(--text); }
+    .lista { position: absolute; left: 92px; width: 296px; top: 112px; height: 236px; overflow: hidden; list-style: none; }
+    .fila { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; height: 78px; padding: 10px 6px 0; border: 0; border-radius: 14px; cursor: pointer; }
+    .fila:active { background: var(--surface); }
+    .fila .valor { font-size: 52px; font-weight: 200; line-height: 1; letter-spacing: -1px; font-variant-numeric: tabular-nums; }
+    .fila .etq { font-size: 14px; color: var(--text-soft); text-align: right; white-space: nowrap; }
+    .fila .texto { flex: 1; min-width: 0; font-size: 20px; font-weight: 300; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .fila .texto small { display: block; font-size: 13px; font-weight: 400; color: var(--text-soft); margin-top: 3px; }
+    .fila.hecho { opacity: .4; cursor: default; }
+    .mas { position: absolute; left: 50%; top: 366px; width: 52px; height: 52px; margin-left: -26px; border-radius: 50%; border: 1.5px solid var(--border-fuerte); background: transparent; color: var(--rosa-accion); padding: 0; cursor: pointer; transition: top .35s cubic-bezier(.2, .8, .2, 1), width .35s, height .35s, margin-left .35s; }
+    .mas i { position: absolute; left: 50%; top: 50%; background: currentColor; border-radius: 2px; transform: translate(-50%, -50%); }
+    .mas i:first-child { width: 42%; height: 2px; }
+    .mas i:last-child { width: 2px; height: 42%; }
+    .pagina.vacia .mas { top: 190px; width: 96px; height: 96px; margin-left: -48px; }
+    .pagina.vacia .lista { display: none; }
 
     /* Puntos de página (los mide la transición: es #scrollHint) */
     #scrollHint { position: absolute; left: 0; right: 0; bottom: 24px; text-align: center; font-size: 14px; z-index: 5; }
@@ -111,6 +111,8 @@
     .chips button { height: 40px; white-space: nowrap; padding: 0 12px; border-radius: 20px; border: 1.5px solid var(--border-fuerte); background: transparent; color: var(--text); font: inherit; font-size: 15px; cursor: pointer; }
     .hoja-acciones { position: absolute; left: 0; right: 0; top: 356px; display: flex; gap: 12px; justify-content: center; }
     .hoja-acciones .btn { min-height: 44px; padding: 0 26px; border-radius: 22px; }
+    .eliminar { position: absolute; left: 50%; top: 410px; transform: translateX(-50%); display: none; background: none; border: 0; color: var(--peligro-tinta); font: inherit; font-size: 15px; padding: 6px 12px; cursor: pointer; }
+    .eliminar.ver { display: block; }
 
     /* Teclado en pantalla (la pantalla del robot no tiene teclado) */
     .caja-texto { position: absolute; left: 70px; right: 70px; top: 72px; height: 84px; border: 1.5px solid var(--border-fuerte); border-radius: 14px; background: var(--surface); padding: 8px 12px; font-size: 20px; line-height: 1.25; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; word-break: break-word; text-align: left; }
@@ -134,7 +136,6 @@
       opacity: 0; transition: opacity .3s, transform .3s; pointer-events: none;
     }
     #toast.show { opacity: 1; transform: translate(-50%, 0); }
-    #toast .ico { width: 18px; height: 18px; flex: none; }
     html dialog.flash-pop::backdrop { background: rgba(0, 0, 0, .75); }
   </style>
 </head>
@@ -152,27 +153,24 @@
   </section>
 
   <!-- 1 · ALARMAS -->
-  <section class="pagina">
-    <div class="titulo"><svg class="ico"><use href="#i-clock"/></svg>Alarmas</div>
+  <section class="pagina vacia">
+    <div class="titulo">Alarmas</div>
     <ul class="lista" id="alarmas-list"></ul>
-    <p class="vacio" id="alarmas-empty" style="display:none">No hay alarmas programadas</p>
-    <button class="nuevo" onclick="abrirAlarma()"><svg class="ico"><use href="#i-plus"/></svg>Alarma</button>
+    <button class="mas" onclick="abrirAlarma()" aria-label="Nueva alarma"><i></i><i></i></button>
   </section>
 
   <!-- 2 · TEMPORIZADORES -->
-  <section class="pagina">
-    <div class="titulo"><svg class="ico"><use href="#i-hourglass"/></svg>Temporizadores</div>
+  <section class="pagina vacia">
+    <div class="titulo">Temporizadores</div>
     <ul class="lista" id="timers-list"></ul>
-    <p class="vacio" id="timers-empty" style="display:none">No hay temporizadores activos</p>
-    <button class="nuevo" onclick="abrirTemporizador()"><svg class="ico"><use href="#i-plus"/></svg>Temporizador</button>
+    <button class="mas" onclick="abrirTemporizador()" aria-label="Nuevo temporizador"><i></i><i></i></button>
   </section>
 
   <!-- 3 · RECORDATORIOS -->
-  <section class="pagina">
-    <div class="titulo"><svg class="ico"><use href="#i-bell"/></svg>Recordatorios</div>
+  <section class="pagina vacia">
+    <div class="titulo">Recordatorios</div>
     <ul class="lista" id="rem-list"></ul>
-    <p class="vacio" id="rem-empty" style="display:none">No hay recordatorios pendientes</p>
-    <button class="nuevo" onclick="abrirRecordatorio()"><svg class="ico"><use href="#i-plus"/></svg>Recordatorio</button>
+    <button class="mas" onclick="abrirRecordatorio()" aria-label="Nuevo recordatorio"><i></i><i></i></button>
   </section>
 
 </div>
@@ -192,6 +190,7 @@
     <button class="btn btn-yellow" onclick="cerrarModal()">Cancelar</button>
     <button class="btn btn-blue" onclick="guardarAlarma()">Guardar</button>
   </div>
+  <button class="eliminar" id="edit-eliminar" onclick="eliminarDesdeHoja()">Eliminar alarma</button>
 </div>
 
 <!-- Temporizador nuevo: ruedas de minutos y segundos -->
@@ -295,23 +294,14 @@
   }
 
   // ── RENDER ALARMAS ──────────────────────────────────────────────────────
+  // Tocar una fila la abre (data-accion + data-args: lo recoge el script de las páginas)
   function renderAlarmas() {
     const list = document.getElementById('alarmas-list');
-    const empty = document.getElementById('alarmas-empty');
     const activas = alarmas.filter(a => a.activa);
-
-    if (!activas.length) {
-      list.innerHTML = '';
-      empty.style.display = '';
-      return;
-    }
-    empty.style.display = 'none';
-
+    list.parentNode.classList.toggle('vacia', !activas.length);
     list.innerHTML = activas.map(a => `
-      <li class="fila">
-        <div class="valor">${a.hora}<small>${etiquetaDias(a.dias)}</small></div>
-        <button class="ib" title="Modificar" onclick="abrirModal(${a.id}, '${a.hora}', ${JSON.stringify(a.dias || [])})">${ico('wrench')}</button>
-        <button class="ib peligro" title="Eliminar" onclick="eliminarAlarma(${a.id})">${ico('trash')}</button>
+      <li class="fila" data-accion="abrirModal" data-args='${JSON.stringify([a.id, a.hora, a.dias || []])}'>
+        <div class="valor">${a.hora}</div><div class="etq">${etiquetaDias(a.dias)}</div>
       </li>
     `).join('');
   }
@@ -319,24 +309,16 @@
   // ── RENDER TEMPORIZADORES ───────────────────────────────────────────────
   function renderTemporizadores() {
     const list = document.getElementById('timers-list');
-    const empty = document.getElementById('timers-empty');
     const activos = temporizadores.filter(t => t.activo);
+    list.parentNode.classList.toggle('vacia', !activos.length);
 
     // Limpiar countdowns anteriores
     Object.values(countdowns).forEach(clearInterval);
     countdowns = {};
 
-    if (!activos.length) {
-      list.innerHTML = '';
-      empty.style.display = '';
-      return;
-    }
-    empty.style.display = 'none';
-
     list.innerHTML = activos.map(t => `
-      <li class="fila" id="timer-item-${t.id}">
-        <div class="valor"><span id="timer-val-${t.id}">${formatTimer(t)}</span><small>de ${fmtDuracion(t.duracion_total)}</small></div>
-        <button class="ib peligro" title="Cancelar" onclick="eliminarTemporizador(${t.id})">${ico('trash')}</button>
+      <li class="fila" id="timer-item-${t.id}" data-accion="eliminarTemporizador" data-args='[${t.id}]'>
+        <div class="valor" id="timer-val-${t.id}">${formatTimer(t)}</div><div class="etq">de ${fmtDuracion(t.duracion_total)}</div>
       </li>
     `).join('');
 
@@ -479,8 +461,11 @@
   }
   function abrirHoja(id) { cerrarModal(); document.getElementById(id).classList.add('open'); }
 
+  function eliminarDesdeHoja() { const id = editandoId; cerrarModal(); if (id !== null) eliminarAlarma(id); }
+
   function abrirAlarma() {
     editandoId = null;
+    document.getElementById('edit-eliminar').classList.remove('ver');
     document.getElementById('edit-titulo').textContent = 'Nueva alarma';
     ruedaH.poner(7); ruedaM.poner(0);
     diasSel = []; pintarDias();
@@ -490,6 +475,7 @@
   function abrirModal(id, hora, dias) {
     abrirHoja('editModal');
     editandoId = id;
+    document.getElementById('edit-eliminar').classList.add('ver');
     document.getElementById('edit-titulo').textContent = 'Modificar alarma';
     const [h, m] = hora.split(':').map(Number);
     ruedaH.poner(h); ruedaM.poner(m);
@@ -558,9 +544,8 @@
   // ── TOAST ────────────────────────────────────────────────────────────────
   let toastTimer = null;
   function mostrarToast(msg, tipo) {
-    const iconos = { ok: 'check-circle', err: 'x-circle', warn: 'warn', sync: 'refresh' };
     const el = document.getElementById('toast');
-    el.innerHTML = ico(iconos[tipo] || 'check-circle') + '<span>' + esc(msg) + '</span>';
+    el.innerHTML = '<span>' + esc(msg) + '</span>';
     el.classList.add('show');
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
@@ -589,24 +574,14 @@
 
   function renderRecordatorios() {
     const list = document.getElementById('rem-list');
-    const empty = document.getElementById('rem-empty');
-
     const todos = recordatorios.slice().sort((a, b) => {
       if (a.completado !== b.completado) return a.completado ? 1 : -1;
       return a.fecha_hora.localeCompare(b.fecha_hora);
     });
-
-    if (!todos.length) {
-      list.innerHTML = '';
-      empty.style.display = '';
-      return;
-    }
-    empty.style.display = 'none';
-
+    list.parentNode.classList.toggle('vacia', !todos.length);
     list.innerHTML = todos.map(r => `
-      <li class="fila${r.completado ? ' hecho' : ''}">
+      <li class="fila${r.completado ? ' hecho' : ''}" ${r.completado ? '' : `data-accion="eliminarRecordatorio" data-args='[${r.id}]'`}>
         <div class="texto">${esc(r.texto)}<small>${fmtFecha(r.fecha_hora)}${r.completado ? ' · completado' : ''}</small></div>
-        ${!r.completado ? `<button class="ib peligro" title="Eliminar" onclick="eliminarRecordatorio(${r.id})">${ico('trash')}</button>` : ''}
       </li>
     `).join('');
   }
@@ -812,7 +787,11 @@
     document.addEventListener('pointerup', function (e) {
       if (!activo) return;
       activo = false;
-      if (!eje) return;
+      if (!eje) { // un toque, no un deslizamiento: si es en una fila, la abre
+        var f = e.target.closest('[data-accion]');
+        if (f && window[f.dataset.accion]) window[f.dataset.accion].apply(null, JSON.parse(f.dataset.args || '[]'));
+        return;
+      }
       var a = muestras[0], b = muestras[muestras.length - 1];
       var dt = b.t - a.t, fresco = e.timeStamp - b.t < 80;
       if (eje === 'h') {
