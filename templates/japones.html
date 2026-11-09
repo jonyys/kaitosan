@@ -318,11 +318,11 @@
                     {% if v.next_review <= today %}
                         <span class="due-badge">{{ v.next_review }}</span>
                     {% else %}
-                        <span style="color:#555;">{{ v.next_review }}</span>
+                        <span style="color:var(--text-soft);">{{ v.next_review }}</span>
                     {% endif %}
                 {% else %}—{% endif %}
             </td>
-            <td style="color:#888;">{{ v.times_correct or 0 }} / {{ v.errors or 0 }}</td>
+            <td style="color:var(--text-soft);">{{ v.times_correct or 0 }} / {{ v.errors or 0 }}</td>
             <td>
                 <details class="rowmenu">
                     <summary title="Acciones">⋯</summary>
@@ -402,11 +402,11 @@
                     {% if k.next_review <= today %}
                         <span class="due-badge">{{ k.next_review }}</span>
                     {% else %}
-                        <span style="color:#555;">{{ k.next_review }}</span>
+                        <span style="color:var(--text-soft);">{{ k.next_review }}</span>
                     {% endif %}
                 {% else %}—{% endif %}
             </td>
-            <td style="color:#888;">{{ k.times_correct or 0 }} / {{ k.errors or 0 }}</td>
+            <td style="color:var(--text-soft);">{{ k.times_correct or 0 }} / {{ k.errors or 0 }}</td>
             <td>
                 <details class="rowmenu">
                     <summary title="Acciones">⋯</summary>
@@ -490,11 +490,11 @@
                     {% if g.next_review <= today %}
                         <span class="due-badge">{{ g.next_review }}</span>
                     {% else %}
-                        <span style="color:#555;">{{ g.next_review }}</span>
+                        <span style="color:var(--text-soft);">{{ g.next_review }}</span>
                     {% endif %}
                 {% else %}—{% endif %}
             </td>
-            <td style="color:#888;">{{ g.times_correct or 0 }} / {{ g.errors or 0 }}</td>
+            <td style="color:var(--text-soft);">{{ g.times_correct or 0 }} / {{ g.errors or 0 }}</td>
             <td>
                 <details class="rowmenu">
                     <summary title="Acciones">⋯</summary>
@@ -551,12 +551,12 @@
         <tbody>
         {% for s in sessions %}
         <tr>
-            <td style="color:#555;">#{{ s.id }}</td>
+            <td style="color:var(--text-soft);">#{{ s.id }}</td>
             <td>{{ s.started_at }}</td>
             <td>{% if s.ended_at %}{{ s.ended_at }}{% else %}<span style="color:var(--ok-tinta);font-weight:700;">Activa</span>{% endif %}</td>
             <td>{{ s.words_learned or 0 }}</td>
-            <td style="color:#888;">{{ s.grammar_practiced or '—' }}</td>
-            <td style="font-size:12px;color:#888;min-width:220px;">
+            <td style="color:var(--text-soft);">{{ s.grammar_practiced or '—' }}</td>
+            <td style="font-size:12px;color:var(--text-soft);min-width:220px;">
                 {% if s.summary %}
                     {{ s.summary[:280] }}{% if s.summary|length > 280 %}…{% endif %}
                 {% else %}—{% endif %}

@@ -1,0 +1,76 @@
+<div class="card">
+    <h2><svg class="ico"><use href="#i-palette"/></svg> Apariencia</h2>
+    <p class="et" style="color:var(--text-soft); margin:0 0 14px">
+        Cómo se ve el panel en este móvil u ordenador. Se guarda aquí; la pantalla del robot no cambia.
+    </p>
+
+    <div class="temas">
+        <button type="button" class="tema-op" data-tema="cristal-oscuro" aria-pressed="false">
+            <span class="tema-vista" style="background: radial-gradient(70px 70px at 92% 0, rgba(224,164,77,.65), transparent 70%), radial-gradient(80px 80px at 0 100%, rgba(79,209,197,.4), transparent 70%), #0b0805">
+                <i style="background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.3)"><b style="background:#e0a44d"></b></i>
+                <i style="background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.22)"><b style="background:#4fd1c5"></b></i>
+            </span>
+            <span class="tema-txt"><strong>Cristal oscuro</strong><small>Cristal sobre negro con brillos ámbar</small></span>
+            <svg class="ico tema-ok"><use href="#i-check"/></svg>
+        </button>
+        <button type="button" class="tema-op" data-tema="cristal-claro" aria-pressed="false">
+            <span class="tema-vista" style="background: radial-gradient(70px 70px at 92% 0, rgba(240,176,80,.8), transparent 70%), radial-gradient(80px 80px at 0 100%, rgba(120,205,195,.6), transparent 70%), #f6eee3">
+                <i style="background: rgba(255,255,255,.7); border-color: rgba(255,255,255,.95)"><b style="background:#e0a44d"></b></i>
+                <i style="background: rgba(255,255,255,.55); border-color: rgba(255,255,255,.9)"><b style="background:#3dbdaf"></b></i>
+            </span>
+            <span class="tema-txt"><strong>Cristal claro</strong><small>Cristal sobre marfil cálido</small></span>
+            <svg class="ico tema-ok"><use href="#i-check"/></svg>
+        </button>
+        <button type="button" class="tema-op" data-tema="noche" aria-pressed="false">
+            <span class="tema-vista" style="background:#000">
+                <i style="background:#1c1c1e; border-color:#38383a"><b style="background:#e0a44d"></b></i>
+                <i style="background:#1c1c1e; border-color:#38383a"><b style="background:#3cc4b7"></b></i>
+            </span>
+            <span class="tema-txt"><strong>Modo noche</strong><small>Negro y listas agrupadas, acento ámbar</small></span>
+            <svg class="ico tema-ok"><use href="#i-check"/></svg>
+        </button>
+    </div>
+</div>
+
+<style>
+    .temas { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    .tema-op {
+        display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; cursor: pointer;
+        padding: 10px 14px 10px 10px; border: 1.5px solid var(--border); border-radius: var(--radio);
+        background: var(--surface-2); color: var(--text); font: inherit;
+    }
+    .tema-op[aria-pressed="true"] { border-color: var(--rosa-accion); box-shadow: 0 0 0 3px var(--foco); }
+    .tema-vista {
+        flex: none; width: 84px; height: 60px; border-radius: 12px; padding: 9px 10px; overflow: hidden;
+        display: flex; flex-direction: column; justify-content: center; gap: 6px;
+    }
+    .tema-vista i { display: flex; align-items: center; height: 18px; padding: 0 5px; border: 1px solid; border-radius: 6px; }
+    .tema-vista b { display: block; width: 10px; height: 10px; border-radius: 3px; }
+    .tema-txt { flex: 1; display: flex; flex-direction: column; gap: 2px; line-height: 1.25; }
+    .tema-txt strong { font-size: 16px; font-weight: 700; }
+    .tema-txt small { font-size: 13px; color: var(--text-soft); }
+    .tema-ok { width: 22px; height: 22px; color: var(--rosa-accion); visibility: hidden; flex: none; }
+    .tema-op[aria-pressed="true"] .tema-ok { visibility: visible; }
+    @media (min-width: 640px) { .temas { grid-template-columns: repeat(3, 1fr); } .tema-op { flex-direction: column; align-items: stretch; text-align: center; padding: 12px; } .tema-vista { width: 100%; height: 72px; } .tema-ok { align-self: center; } }
+</style>
+
+<script>
+    (function () {
+        var botones = document.querySelectorAll('.tema-op');
+        function marcar() {
+            var t = document.documentElement.getAttribute('data-tema');
+            botones.forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.tema === t ? 'true' : 'false'); });
+        }
+        botones.forEach(function (b) {
+            b.addEventListener('click', function () {
+                var t = b.dataset.tema;
+                try { localStorage.setItem('kaito.tema', t); } catch (e) {}
+                document.documentElement.setAttribute('data-tema', t);
+                var m = document.querySelector('meta[name="theme-color"]');
+                if (m && window.KAITO_TEMAS) m.content = window.KAITO_TEMAS[t];
+                marcar();
+            });
+        });
+        marcar();
+    })();
+</script>

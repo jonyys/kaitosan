@@ -2,6 +2,19 @@
 <link rel="apple-touch-icon" href="/static/icon-192.png">
 <link rel="manifest" href="/static/site.webmanifest">
 <meta name="theme-color" content="#9d3564">
+{# Tema del panel (móvil/PC): se elige en Ajustes > Apariencia y se guarda en este dispositivo.
+   Va antes de pintar nada para que no parpadee. El robot (es_kiosko) no usa temas. #}
+{% if not es_kiosko %}
+<script>
+  (function () {
+    var colores = { "cristal-oscuro": "#0b0805", "cristal-claro": "#f6eee3", "noche": "#000000" }, t = "cristal-oscuro";
+    try { var g = localStorage.getItem("kaito.tema"); if (colores[g]) t = g; } catch (e) {}
+    document.documentElement.setAttribute("data-tema", t);
+    var m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = colores[t];
+    window.KAITO_TEMAS = colores;
+  })();
+</script>
+{% endif %}
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700&display=swap">
@@ -52,6 +65,14 @@
         /* toque (§13.3.A: áreas ≥ 48px) */
         --toque:         48px;
         --fuente: 'M PLUS Rounded 1c', 'Nunito', 'Segoe UI', system-ui, sans-serif;
+
+        /* usados por los temas (más abajo); aquí, los valores del tema rosa original */
+        --on-acc:        #fff;                 /* texto sobre el color de acción */
+        --acc-boton:     var(--rosa-tinta);    /* fondo de los botones principales */
+        --peligro-fill:  var(--peligro-tinta); /* fondo del botón de confirmar un borrado */
+        --velo:          rgba(91, 58, 74, .45);
+        --foco:          rgba(217, 86, 140, .25);
+        --blobs:         none;
     }
 
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -153,9 +174,9 @@
 
     /* primario (btn-blue / btn-green): rosa-tinta sólido, blanco 700 → AA */
     .btn-blue, .btn-green {
-        background: var(--rosa-tinta);
+        background: var(--acc-boton);
         background-image: linear-gradient(135deg, rgba(255,255,255,.14), rgba(255,255,255,0));
-        color: #fff;
+        color: var(--on-acc);
     }
     /* secundario */
     .btn-yellow {
@@ -287,7 +308,7 @@
     input:focus, select:focus, textarea:focus {
         outline: none;
         border-color: var(--rosa-accion);
-        box-shadow: 0 0 0 3px rgba(217, 86, 140, .25);
+        box-shadow: 0 0 0 3px var(--foco);
     }
     input[type="range"] { accent-color: var(--rosa-accion); height: var(--toque); }
     input[type="checkbox"], input[type="radio"] { accent-color: var(--rosa-accion); width: 22px; height: 22px; }
@@ -474,7 +495,94 @@
         font-size: 13px; cursor: pointer;
     }
     .pager button.activa {
-        background: var(--rosa-tinta); border-color: var(--rosa-tinta); color: #fff;
+        background: var(--acc-boton); border-color: var(--acc-boton); color: var(--on-acc);
     }
+
+    /* ================================================================
+       Temas del panel — móvil y PC (no el robot). Se eligen en Ajustes > Apariencia;
+       <html data-tema="…"> lo pone el script del <head>. Cada tema solo redefine los
+       tokens de arriba, y los dos de cristal añaden desenfoque a las superficies.
+         cristal-oscuro  Liquid Glass sobre negro con brillos ámbar (el del robot)
+         cristal-claro   Liquid Glass claro, marfil y ámbar
+         noche           negro y listas agrupadas al estilo de iOS, acento ámbar
+       ================================================================ */
+    html[data-tema="cristal-oscuro"] {
+        color-scheme: dark;
+        --bg: #0b0805; --bg-alt: rgba(255,255,255,.07); --surface: rgba(255,255,255,.08); --surface-2: rgba(255,255,255,.07);
+        --border: rgba(255,255,255,.14); --border-fuerte: rgba(255,255,255,.26);
+        --text: #ffffff; --text-soft: rgba(255,255,255,.66); --text-faint: rgba(255,255,255,.4);
+        --rosa: rgba(224,164,77,.32); --rosa-medio: #e0a44d; --rosa-accion: #e0a44d; --rosa-tinta: #f6c063;
+        --lavanda: rgba(183,166,234,.3); --melocoton: rgba(240,150,120,.28); --menta: rgba(79,209,165,.28);
+        --ok: #4fd1a5; --ok-bg: rgba(79,209,165,.15); --ok-tinta: #86e5c4;
+        --aviso: #e0a44d; --aviso-bg: rgba(224,164,77,.16); --aviso-tinta: #f6c063;
+        --peligro: #e5645f; --peligro-bg: rgba(229,100,95,.16); --peligro-tinta: #ff9d98;
+        --sombra: 0 10px 32px rgba(0,0,0,.45); --sombra-sm: 0 2px 10px rgba(0,0,0,.35);
+        --on-acc: #1a1206; --acc-boton: #e0a44d; --peligro-fill: #c53a3a; --velo: rgba(0,0,0,.55); --foco: rgba(224,164,77,.4);
+        --brillo-borde: rgba(255,255,255,.14);
+        --ic1-bg: rgba(224,164,77,.28); --ic1-fg: #f6c063; --ic2-bg: rgba(79,209,197,.24); --ic2-fg: #7fe3d8;
+        --blobs: radial-gradient(420px 420px at 92% 4%, rgba(224,164,77,.5), transparent 70%),
+                 radial-gradient(480px 480px at 0% 58%, rgba(79,209,197,.26), transparent 70%),
+                 radial-gradient(420px 420px at 100% 100%, rgba(224,164,77,.28), transparent 70%);
+    }
+    html[data-tema="cristal-claro"] {
+        color-scheme: light;
+        --bg: #f6eee3; --bg-alt: rgba(255,255,255,.4); --surface: rgba(255,255,255,.58); --surface-2: rgba(255,255,255,.5);
+        --border: rgba(120,80,20,.16); --border-fuerte: rgba(120,80,20,.3);
+        --text: #2a1f12; --text-soft: rgba(42,31,18,.64); --text-faint: rgba(42,31,18,.4);
+        --rosa: rgba(224,164,77,.35); --rosa-medio: #e0a44d; --rosa-accion: #c47a10; --rosa-tinta: #a8620a;
+        --lavanda: rgba(183,166,234,.4); --melocoton: rgba(255,190,150,.5); --menta: rgba(120,205,170,.4);
+        --ok: #1c9a7a; --ok-bg: rgba(28,154,122,.14); --ok-tinta: #126b53;
+        --aviso: #b8700f; --aviso-bg: rgba(224,164,77,.2); --aviso-tinta: #8a540a;
+        --peligro: #d24b46; --peligro-bg: rgba(210,75,70,.12); --peligro-tinta: #a8302b;
+        --sombra: 0 8px 26px rgba(120,80,20,.13); --sombra-sm: 0 2px 8px rgba(120,80,20,.1);
+        --on-acc: #2a1a06; --acc-boton: #e0a44d; --peligro-fill: #c53a3a; --velo: rgba(42,31,18,.35); --foco: rgba(196,122,16,.3);
+        --brillo-borde: rgba(255,255,255,.85);
+        --ic1-bg: #e0a44d; --ic1-fg: #ffffff; --ic2-bg: #3dbdaf; --ic2-fg: #ffffff;
+        --blobs: radial-gradient(440px 440px at 92% 4%, rgba(240,176,80,.6), transparent 70%),
+                 radial-gradient(480px 480px at 0% 58%, rgba(120,205,195,.45), transparent 70%),
+                 radial-gradient(420px 420px at 100% 100%, rgba(255,190,120,.5), transparent 70%);
+    }
+    html[data-tema="noche"] {
+        color-scheme: dark;
+        --bg: #000000; --bg-alt: #1c1c1e; --surface: #1c1c1e; --surface-2: #2c2c2e;
+        --border: #38383a; --border-fuerte: #48484a;
+        --text: #ffffff; --text-soft: #8e8e93; --text-faint: #5a5a5e;
+        --rosa: #5a4020; --rosa-medio: #b98536; --rosa-accion: #e0a44d; --rosa-tinta: #f6c063;
+        --lavanda: #3a3350; --melocoton: #4a2f22; --menta: #1f3b30;
+        --ok: #4fd1a5; --ok-bg: #12261e; --ok-tinta: #86e5c4;
+        --aviso: #e0a44d; --aviso-bg: #2a1f0c; --aviso-tinta: #f6c063;
+        --peligro: #e5645f; --peligro-bg: #2a1414; --peligro-tinta: #ff9d98;
+        --sombra: none; --sombra-sm: none;
+        --on-acc: #1a1206; --acc-boton: #e0a44d; --peligro-fill: #c53a3a; --velo: rgba(0,0,0,.6); --foco: rgba(224,164,77,.4);
+        --brillo-borde: transparent;
+        --ic1-bg: #e0a44d; --ic1-fg: #1a1206; --ic2-bg: #3cc4b7; --ic2-fg: #06201d;
+    }
+
+    /* Común a los tres: fondo, títulos en blanco (o tinta) con los iconos en ámbar, y filas con icono en pastilla
+       que alternan dos colores */
+    html[data-tema] body::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; background: var(--blobs); }
+    html[data-tema] h1 { color: var(--text); }
+    html[data-tema] h1 .ico { color: var(--rosa-tinta); }
+    html[data-tema] h1 :is(.btn, button) .ico { color: inherit; }  /* el icono de un botón dentro del título lleva el color del botón */
+    html[data-tema] details.acc > summary { color: var(--text); }
+    html[data-tema] details.acc > summary::after { color: var(--text-soft); }
+    html[data-tema] details.acc > summary > .ico {
+        box-sizing: content-box; width: 20px; height: 20px; padding: 7px; border-radius: 10px; margin-right: 2px;
+        background: var(--ic1-bg); color: var(--ic1-fg);
+    }
+    html[data-tema] details.acc:nth-of-type(even) > summary > .ico { background: var(--ic2-bg); color: var(--ic2-fg); }
+    html[data-tema] details.acc > summary[style] { color: var(--peligro-tinta) !important; }
+    html[data-tema] details.acc > summary[style] > .ico { background: var(--peligro-bg); color: var(--peligro-tinta); }
+    html[data-tema] dialog.flash-pop::backdrop { background: var(--velo); }
+
+    /* Cristal: desenfoque tras las superficies y un reflejo fino en el borde de arriba */
+    html[data-tema^="cristal"] :is(.card, details.acc > summary, .navmenu-panel, .navmenu > summary, dialog.flash-pop, .pager button, .btn-yellow, .btn-ghost, .alert) {
+        -webkit-backdrop-filter: blur(22px) saturate(170%); backdrop-filter: blur(22px) saturate(170%);
+    }
+    html[data-tema^="cristal"] :is(.card, details.acc > summary, .navmenu-panel) {
+        box-shadow: var(--sombra), inset 0 1px 0 var(--brillo-borde);
+    }
+    html[data-tema^="cristal"] dialog.flash-pop::backdrop { -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+    html[data-tema="cristal-claro"] input[type="range"] { accent-color: #c47a10; }
 </style>
 {% include 'partials/_kiosko.html' %}

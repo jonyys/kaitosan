@@ -133,6 +133,11 @@
         <details class="acc"><summary><svg class="ico"><use href="#i-sun"/></svg> Pantalla</summary>
             {% include 'partials/ajustes/_pantalla.html' %}
         </details>
+        {% if not es_kiosko %}
+        <details class="acc" id="apariencia"><summary><svg class="ico"><use href="#i-palette"/></svg> Apariencia</summary>
+            {% include 'partials/ajustes/_apariencia.html' %}
+        </details>
+        {% endif %}
         <details class="acc"><summary><svg class="ico"><use href="#i-chip"/></svg> Modelos de IA</summary>
             {% include 'partials/ajustes/_modelos.html' %}
         </details>

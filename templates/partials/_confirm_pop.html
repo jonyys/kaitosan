@@ -12,7 +12,7 @@
         color: var(--text);
         box-shadow: var(--sombra);
     }
-    dialog.flash-pop::backdrop { background: rgba(91, 58, 74, .45); }
+    dialog.flash-pop::backdrop { background: var(--velo); }
     /* animación común a todos los pop-ups (dialog) al abrirse */
     dialog[open] { animation: fp-in .22s cubic-bezier(.17, .89, .32, 1.28); }
     dialog[open]::backdrop { animation: fp-bg .2s ease-out; }
@@ -26,7 +26,7 @@
         font: inherit; font-weight: 700; cursor: pointer;
         animation: cp-pop .35s cubic-bezier(.17, .89, .32, 1.28);
     }
-    #confirm-pop .cp-yes { background: var(--peligro-tinta); color: #fff; }
+    #confirm-pop .cp-yes { background: var(--peligro-fill); color: #fff; }
     #confirm-pop .cp-no  { background: var(--surface-2); color: var(--text); }
     #confirm-pop .cp-done p { margin: 0; font-weight: 700; font-size: 16px; color: var(--ok-tinta); }
     #confirm-pop .cp-ask, #confirm-pop .cp-done { animation: cp-fade .18s ease-out; }
