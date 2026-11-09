@@ -21,16 +21,92 @@
             .ajustes-wrap { max-width: 340px; }
         }
     </style>
+    {% if es_kiosko %}
+    <style>
+        /* ── Ajustes en la pantalla del robot (480×480, redonda, solo táctil) ────────────────
+           Mismos tonos que la cara, el reloj y el cajón. Nueve botones grandes en una
+           rejilla y, al tocar uno, esa sección a pantalla completa con su botón de volver.
+           Sin barras ni selección de texto: el desplazamiento lo hace el script del final
+           con eventos de puntero (como el reloj), porque esta pantalla no manda eventos táctiles. ── */
+        :root {
+            color-scheme: dark;
+            --bg: #15100a; --bg-alt: #1d160d; --surface: #1d160d; --surface-2: #261c10;
+            --border: #3a2a14; --border-fuerte: #5a4020;
+            --text: #fff3da; --text-soft: #b99a68; --text-faint: #6e5a3c;
+            --rosa: #7a5220; --rosa-medio: #b98536; --rosa-accion: #e0a44d; --rosa-tinta: #f6c063;
+            --ok-bg: #16261e; --ok-tinta: #7fd1ac;
+            --aviso-bg: #2a1f0c; --aviso-tinta: #f0b45a;
+            --peligro-bg: #2a1414; --peligro-tinta: #e88a8a;
+            --sombra: 0 8px 24px rgba(0, 0, 0, .5); --sombra-sm: 0 2px 8px rgba(0, 0, 0, .4);
+            --ancho: 480px;
+        }
+        * { cursor: none !important; -webkit-tap-highlight-color: transparent; }
+        html { overflow: hidden; scrollbar-gutter: auto; background: var(--bg); }
+        body {
+            padding: 0; width: var(--ancho); height: 100vh; overflow: hidden; position: relative; font-size: 15px;
+            -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: none;
+        }
+        input, textarea, select, [contenteditable] { -webkit-user-select: text; user-select: text; }
+        input[type="range"] { touch-action: none; }
+        .btn-blue, .btn-green { background: #8a5a1e; background-image: none; color: #fff3da; }
+
+        /* Inicio: rejilla de 3×3 dentro del cuadrado central seguro de la pantalla redonda */
+        .ajustes-wrap { max-width: none; margin: 0; height: 100%; display: flex; align-items: center; justify-content: center; }
+        .acc-list { display: grid; grid-template-columns: repeat(3, 100px); gap: 6px; max-width: none; margin: 0 0 20px; }
+        details.acc { margin: 0; }
+        details.acc > summary {
+            flex-direction: column; justify-content: center; gap: 6px; width: 100px; height: 100px; min-height: 0;
+            padding: 6px; border-radius: 26px; text-align: center; font-size: 12px; line-height: 1.15;
+            box-shadow: none; transition: background .15s ease, transform .1s ease;
+        }
+        details.acc > summary .ico { width: 32px; height: 32px; }
+        details.acc > summary::after { display: none; }
+        details.acc > summary:hover { background: var(--surface); }
+        details.acc > summary:active { background: var(--border); transform: scale(.96); }
+
+        /* Una sección abierta ocupa toda la pantalla; ella misma hace de zona de desplazamiento */
+        details.acc[open] {
+            position: fixed; left: 0; top: 0; width: var(--ancho); height: 100vh; z-index: 50;
+            overflow: hidden; background: var(--bg); padding: 58px 70px 110px;
+        }
+        details.acc[open] > summary { display: none; }
+        details.acc > .card { background: transparent; border: 0; box-shadow: none; padding: 0; overflow: visible; }
+        .rb-tit { display: none; }
+        details.acc[open] > .rb-tit {
+            display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0 0 16px;
+            color: var(--rosa-tinta); font-weight: 700; font-size: 17px;
+        }
+        .rb-tit .ico { width: 22px; height: 22px; }
+        .fila { min-height: 0; }
+
+        /* Botón de volver (sección → inicio, inicio → cara) y difuminado bajo el contenido */
+        #rbAtras {
+            position: fixed; bottom: 22px; left: 50%; margin-left: -26px; z-index: 60; width: 52px; height: 52px;
+            padding: 0; display: flex; align-items: center; justify-content: center;
+            border: 1.5px solid var(--border-fuerte); border-radius: 50%; background: var(--surface-2);
+            color: var(--rosa-tinta); cursor: pointer;
+        }
+        #rbAtras svg { width: 24px; height: 24px; }
+        #rbAtras:active { background: var(--border); }
+        #rbFade {
+            display: none; position: fixed; left: 0; bottom: 0; width: var(--ancho); height: 100px; z-index: 55;
+            pointer-events: none; background: linear-gradient(to bottom, transparent, var(--bg) 70%);
+        }
+        body:has(details.acc[open]) #rbFade { display: block; }
+    </style>
+    {% endif %}
 </head>
 <body>
 {% include 'partials/_iconos.html' %}
 
 <div class="ajustes-wrap">
 
+    {% if not es_kiosko %}
     <h1>
         <span><svg class="ico"><use href="#i-gear"/></svg> Kaito — Ajustes</span>
         <a href="/admin"><button class="btn btn-yellow" style="font-size:13px"><svg class="ico"><use href="#i-home"/></svg></button></a>
     </h1>
+    {% endif %}
 
     <div class="acc-list">
         <details class="acc" id="wifi"><summary><svg class="ico"><use href="#i-wifi"/></svg> WiFi</summary>
@@ -74,6 +150,64 @@
     if (d && d.tagName === "DETAILS") { d.open = true; d.scrollIntoView(); }
   })();
 </script>
+
+{% if es_kiosko %}
+<button id="rbAtras" aria-label="Volver"><svg class="ico" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-arrow-left"/></svg></button>
+<div id="rbFade"></div>
+<script>
+  // Pantalla del robot: título dentro de cada sección, botón de volver y desplazamiento a mano.
+  (function () {
+    document.querySelectorAll('details.acc').forEach(function (d) {
+      var t = document.createElement('div');
+      t.className = 'rb-tit';
+      t.innerHTML = d.querySelector(':scope > summary').innerHTML;
+      d.insertBefore(t, d.querySelector(':scope > summary').nextSibling);
+    });
+    document.getElementById('rbAtras').addEventListener('click', function () {
+      var d = document.querySelector('details.acc[open]');
+      if (d) d.querySelector(':scope > summary').click(); else location.replace('/');
+    });
+    document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+
+    // Arrastrar para desplazar la sección abierta; lo que se arrastra no cuenta como toque.
+    var NO_ARRASTRA = 'select,textarea,dialog,input[type="range"],input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"])';
+    var y0 = null, sc0 = 0, el = null, mov = false, muestras = [], anim;
+    document.addEventListener('pointerdown', function (e) {
+      cancelAnimationFrame(anim);
+      el = document.querySelector('details.acc[open]');
+      if (!el || e.target.closest(NO_ARRASTRA)) { y0 = null; return; }
+      y0 = e.clientY; sc0 = el.scrollTop; mov = false; muestras = [{ t: e.timeStamp, y: e.clientY }];
+    }, { passive: true });
+    document.addEventListener('pointermove', function (e) {
+      if (y0 === null) return;
+      var dy = e.clientY - y0;
+      if (!mov && Math.abs(dy) < 8) return;
+      mov = true;
+      el.scrollTop = sc0 - dy;
+      muestras.push({ t: e.timeStamp, y: e.clientY });
+      while (muestras.length > 2 && e.timeStamp - muestras[0].t > 100) muestras.shift();
+    }, { passive: true });
+    document.addEventListener('pointerup', function (e) {
+      if (y0 === null) return;
+      y0 = null;
+      if (!mov) return;
+      var tragar = function (ev) { ev.stopPropagation(); ev.preventDefault(); };
+      document.addEventListener('click', tragar, { capture: true, once: true });
+      setTimeout(function () { document.removeEventListener('click', tragar, true); }, 80);
+      var a = muestras[0], b = muestras[muestras.length - 1];
+      if (b.t <= a.t || e.timeStamp - b.t > 80) return;
+      var vy = -(b.y - a.y) / (b.t - a.t), t0 = performance.now(), l = el;  // px/ms, sigue y frena
+      (function paso(ahora) {
+        var d = Math.min(ahora - t0, 50); t0 = ahora;
+        vy *= Math.pow(0.94, d / 16.7);
+        l.scrollTop += vy * d;
+        if (Math.abs(vy) > 0.02) anim = requestAnimationFrame(paso);
+      })(t0);
+    }, { passive: true });
+    document.addEventListener('pointercancel', function () { y0 = null; }, { passive: true });
+  })();
+</script>
+{% endif %}
 
 </body>
 </html>
