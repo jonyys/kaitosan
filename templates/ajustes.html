@@ -49,6 +49,12 @@
         input, textarea, select, [contenteditable] { -webkit-user-select: text; user-select: text; }
         input[type="range"] { touch-action: none; }
         .btn-blue, .btn-green { background: #8a5a1e; background-image: none; color: #ffffff; }
+        /* Letras blancas e iconos ámbar: que no sean todo del mismo color */
+        .btn-yellow, .btn-ghost { color: var(--text); }
+        .btn-yellow .ico, .btn-ghost .ico { color: var(--rosa-tinta); }
+        /* Botones de los pop-ups: aceptar un borrado en rojo, y el OK con letra oscura sobre el ámbar */
+        dialog#confirm-pop .cp-yes { background: #c53a3a; color: #fff; }
+        dialog.flash-pop form button { color: #15100a; }
 
         /* Inicio: rejilla de 3×3 dentro del cuadrado central seguro de la pantalla redonda */
         .ajustes-wrap { max-width: none; margin: 0; height: 100%; display: flex; align-items: center; justify-content: center; }
@@ -59,7 +65,10 @@
             padding: 6px; border-radius: 26px; text-align: center; font-size: 12px; line-height: 1.15;
             box-shadow: none; transition: background .15s ease, transform .1s ease;
         }
-        details.acc > summary .ico { width: 32px; height: 32px; }
+        details.acc > summary { color: var(--text); }
+        details.acc > summary .ico { width: 32px; height: 32px; color: var(--rosa-tinta); }
+        details.acc > summary[style] { color: var(--peligro-tinta) !important; }
+        details.acc > summary[style] .ico { color: var(--peligro-tinta); }
         details.acc > summary::after { display: none; }
         details.acc > summary:hover { background: var(--surface); }
         details.acc > summary:active { background: var(--border); transform: scale(.96); }
@@ -74,9 +83,9 @@
         .rb-tit { display: none; }
         details.acc[open] > .rb-tit {
             display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0 0 16px;
-            color: var(--rosa-tinta); font-weight: 700; font-size: 17px;
+            color: var(--text); font-weight: 700; font-size: 17px;
         }
-        .rb-tit .ico { width: 22px; height: 22px; }
+        .rb-tit .ico { width: 22px; height: 22px; color: var(--rosa-tinta); }
         .fila { min-height: 0; }
 
         /* Botón de volver (sección → inicio, inicio → cara) y difuminado bajo el contenido */
