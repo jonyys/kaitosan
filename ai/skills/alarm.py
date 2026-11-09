@@ -38,6 +38,7 @@ class AlarmSkill:
         self.temporizadores = []
         self.socketio = socketio
         self._next_id = 1
+        self.pospuestas = []         # alarmas pospuestas esperando a volver a sonar: {"id", "hora", "origen", "timer"}
         self.sonando = None          # {"tipo": "alarma"|"temporizador", "texto": ...} mientras suena
         self._parar = threading.Event()
 
@@ -55,6 +56,7 @@ class AlarmSkill:
 
     def _estado_serializable(self):
         return {
+            "pospuestas": [{"id": p["id"], "hora": p["hora"], "origen": p["origen"]} for p in self.pospuestas],
             "alarmas": [
                 {"id": a["id"], "hora": a["hora"], "activa": a["activa"], "dias": a.get("dias", [])}
                 for a in self.alarmas
@@ -132,13 +134,36 @@ class AlarmSkill:
             self._emitir_sonando()
 
     def posponer(self, minutos=POSPONER_MIN):
-        """Apaga la alarma que suena y la vuelve a sonar dentro de `minutos`."""
+        """Apaga la alarma que suena y la vuelve a sonar dentro de `minutos` (se ve y se puede
+        cancelar con cancelar_pospuesta)."""
         info = self.sonando
         self.parar()
-        if info and info["tipo"] == "alarma":
-            timer = threading.Timer(minutos * 60, self._empezar_a_sonar, args=[dict(info)])
-            timer.daemon = True
-            timer.start()
+        if not info or info["tipo"] != "alarma":
+            return
+        pid = self._siguiente_id()
+        timer = threading.Timer(minutos * 60, self._sonar_pospuesta, args=[pid, dict(info)])
+        timer.daemon = True
+        timer.start()
+        self.pospuestas.append({
+            "id": pid, "origen": info["texto"], "timer": timer,
+            "hora": (datetime.now() + timedelta(minutes=minutos)).strftime("%H:%M"),
+        })
+        self._emitir_estado()
+
+    def _sonar_pospuesta(self, pid, info):
+        self.pospuestas = [p for p in self.pospuestas if p["id"] != pid]
+        self._emitir_estado()
+        self._empezar_a_sonar(info)
+
+    def cancelar_pospuesta(self, pid):
+        """Anula una alarma pospuesta. True si existía."""
+        p = next((x for x in self.pospuestas if x["id"] == pid), None)
+        if not p:
+            return False
+        p["timer"].cancel()
+        self.pospuestas.remove(p)
+        self._emitir_estado()
+        return True
 
     def _alarma_sonar(self, hora_str: str, alarma_id: int):
         print(f"⏰ ¡Alarma! Son las {hora_str}")

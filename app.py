@@ -397,6 +397,12 @@ def reloj_sonando_posponer():
     brain.alarm.posponer()
     return jsonify({"ok": True})
 
+@app.route("/reloj/pospuestas/<int:pid>", methods=["DELETE"])
+def reloj_pospuesta_cancelar(pid):
+    if not brain.alarm.cancelar_pospuesta(pid):
+        return jsonify({"error": "Alarma pospuesta no encontrada"}), 404
+    return jsonify({"mensaje": "Alarma pospuesta cancelada", **brain.alarm._estado_serializable()})
+
 @app.route("/reloj/temporizadores", methods=["POST"])
 def reloj_temporizador_crear():
     data = request.get_json()

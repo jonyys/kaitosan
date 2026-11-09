@@ -267,6 +267,7 @@
 <script>
   // ── ESTADO LOCAL ────────────────────────────────────────────────────────
   let alarmas = [];
+  let pospuestas = [];
   let temporizadores = [];
   let editandoId = null;   // null = alarma nueva
   let countdowns = {};     // id → intervalo de countdown
@@ -317,6 +318,7 @@
 
   function aplicarEstado(data) {
     alarmas = data.alarmas || [];
+    pospuestas = data.pospuestas || [];
     temporizadores = data.temporizadores || [];
     renderAlarmas();
     renderTemporizadores();
@@ -326,13 +328,28 @@
   // Tocar una fila la abre (data-accion + data-args: lo recoge el script de las páginas)
   function renderAlarmas() {
     const list = document.getElementById('alarmas-list');
-    list.parentNode.classList.toggle('vacia', !alarmas.length);
-    list.innerHTML = alarmas.map(a => `
+    list.parentNode.classList.toggle('vacia', !alarmas.length && !pospuestas.length);
+    // Una alarma pospuesta aparece arriba con su hora nueva y un botón para anularla
+    const pos = pospuestas.map(p => `
+      <li class="fila alarma temp">
+        <div class="col"><div class="valor">${p.hora}</div><div class="etq">Pospuesta · era de las ${p.origen}</div></div>
+        <div class="acc"><button class="ib peligro" aria-label="Cancelar la alarma pospuesta" onclick="cancelarPospuesta(${p.id})"><svg class="ico solido"><use href="#i-stop"/></svg></button></div>
+      </li>
+    `).join('');
+    list.innerHTML = pos + alarmas.map(a => `
       <li class="fila alarma temp${a.activa ? '' : ' off'}" data-accion="abrirModal" data-args='${JSON.stringify([a.id, a.hora, a.dias || []])}'>
         <div class="col"><div class="valor">${a.hora}</div><div class="etq">${etiquetaDias(a.dias)}</div></div>
         <button class="sw" role="switch" aria-checked="${a.activa}" aria-label="Alarma de las ${a.hora}" onclick="alternarAlarma(${a.id})"></button>
       </li>
     `).join('');
+  }
+
+  async function cancelarPospuesta(id) {
+    try {
+      const res = await fetch(`/reloj/pospuestas/${id}`, {method: 'DELETE'});
+      aplicarEstado(await res.json());
+      mostrarToast('Alarma pospuesta cancelada', 'ok');
+    } catch(e) { mostrarToast('No se pudo cancelar', 'err'); }
   }
 
   // El interruptor: se mueve en el momento y el servidor lo confirma

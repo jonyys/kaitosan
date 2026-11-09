@@ -72,7 +72,10 @@ def test_suena_hasta_que_la_paran_y_la_alarma_se_pospone():
     skill.posponer(minutos=60)  # no hay que esperar: solo se comprueba que apaga y reprograma
     hilo.join(1)
     assert skill.sonando is None and not hilo.is_alive()
-    pospuesta = [t for t in threading.enumerate() if isinstance(t, threading.Timer)]
-    assert pospuesta
-    for t in pospuesta:
-        t.cancel()
+    assert len(skill.pospuestas) == 1 and skill._estado_serializable()["pospuestas"][0]["origen"] == "07:00"
+    pid = skill.pospuestas[0]["id"]
+    timer = skill.pospuestas[0]["timer"]
+    assert skill.cancelar_pospuesta(pid) and not skill.pospuestas
+    timer.join(1)
+    assert not timer.is_alive()          # anulada: ya no volverá a sonar
+    assert not skill.cancelar_pospuesta(pid)
