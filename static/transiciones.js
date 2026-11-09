@@ -25,7 +25,7 @@
   const FONDO_CARA = "#15100a";
   const DIAS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
   const COLORES = {
-    dia: { fondo: "#15100a", texto: "#fff3da", suave: "#b99a68" },
+    dia: { fondo: "#15100a", texto: "#ffffff", suave: "#b99a68" },
     noche: { fondo: "#000000", texto: "#d9a35a", suave: "#8a6a3a" },
   };
   const RELOJ_GUARDADO = "kaito.reloj2"; // el 2: la distribución del reloj cambió con las páginas
