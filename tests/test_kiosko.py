@@ -88,3 +88,14 @@ def test_escritura_remota_403(cli):
 def test_config_es_publico(cli):
     r = cli.get("/kiosko/config", environ_overrides={"REMOTE_ADDR": "192.168.1.55"})
     assert r.status_code == 200
+
+
+def test_volumen_software(monkeypatch):
+    from core import system_settings as s
+    store = {}
+    monkeypatch.setattr(s, "_simulado", lambda: False)
+    monkeypatch.setattr(s, "settings_get", lambda k, d=None: store.get(k, d))
+    monkeypatch.setattr(s, "settings_set", store.__setitem__)
+    assert s.volumen_get() == 100 and s.volumen_factor() == 1
+    assert s.volumen_set("40")["valor"] == 40 and abs(s.volumen_factor() - 0.16) < 1e-9
+    assert not s.volumen_set("x")["ok"]

@@ -529,48 +529,28 @@ def zona_auto(on: bool) -> dict:
 # Sonido
 # --------------------------------------------------------------------------- #
 def volumen_get() -> int:
-    """Volumen de la tarjeta de salida, 0..100. 50 si no se puede leer."""
+    """Volumen de la voz, 0..100 (100 si nunca se ha tocado)."""
     if _simulado():
         return 65
-
-    forzado = os.getenv("AJUSTES_MIXER_CONTROL", "").strip()
-    controles = [forzado] if forzado else [
-        "Master", "PCM", "Speaker", "Playback", "Digital", "Headphone",
-    ]
-    try:
-        for control in controles:
-            salida = _cmd(["amixer", "-M", "sget", control])
-            if not salida:
-                continue
-            m = re.search(r"\[(\d{1,3})%\]", salida)
-            if m:
-                return max(0, min(100, int(m.group(1))))
-    except Exception:  # noqa: BLE001
-        pass
-    return 50
+    n = _clamp_pct(settings_get("volumen_sw", "100"))
+    return 100 if n is None else n
 
 
 def volumen_set(pct) -> dict:
-    """Fija el volumen de la tarjeta de salida (0..100) con `amixer -M sset`."""
+    """Guarda el volumen (0..100). Es por software: el DAC HifiBerry no tiene
+    mezclador ALSA, así que cada reproducción multiplica por `volumen_factor()`."""
     n = _clamp_pct(pct)
     if n is None:
         return {"ok": False, "error": "valor de volumen no válido"}
     if _simulado():
         return {"ok": True, "simulado": True, "valor": n}
+    settings_set("volumen_sw", str(n))
+    return {"ok": True, "valor": n}
 
-    forzado = os.getenv("AJUSTES_MIXER_CONTROL", "").strip()
-    controles = [forzado] if forzado else [
-        "Master", "PCM", "Speaker", "Playback", "Digital", "Headphone",
-    ]
-    try:
-        for control in controles:
-            if _cmd(["amixer", "-M", "sget", control]) is None:
-                continue
-            if _cmd(["amixer", "-M", "sset", control, f"{n}%"]) is not None:
-                return {"ok": True, "valor": n}
-    except Exception:  # noqa: BLE001
-        pass
-    return {"ok": False, "error": "no se encontró un control de volumen"}
+
+def volumen_factor() -> float:
+    """Multiplicador de amplitud 0..1 (curva cuadrática: el oído es logarítmico)."""
+    return (volumen_get() / 100) ** 2
 
 
 # --------------------------------------------------------------------------- #
@@ -898,7 +878,7 @@ def audio_probar_salida() -> dict:
         mono = (0.35 * np.sin(2 * np.pi * 660 * t)).astype("float32")
         # Estéreo: los DAC I2S (HifiBerry / PCM5102A) suelen exigir 2 canales;
         # con 1 canal el `hw:` no reproduce nada aunque no dé error.
-        tono = np.column_stack([mono, mono])
+        tono = np.column_stack([mono, mono]) * volumen_factor()
         sd.play(tono, sr, device=dev)
         sd.wait()
     except Exception as e:  # noqa: BLE001

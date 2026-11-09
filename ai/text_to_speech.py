@@ -280,6 +280,8 @@ class TextToSpeech:
         hilo deja PortAudio bloqueado para siempre (reproducido con stop y con abort).
         Al callar, el propio callback termina el stream, igual que al acabarse el audio.
         """
+        from core.system_settings import volumen_factor
+        data = data * volumen_factor()
         pos = 0
         terminado = threading.Event()
 

@@ -66,7 +66,8 @@ class AlarmSkill:
 
     def _generar_sonido(self, duracion=0.5, frecuencia=880):
         t = np.linspace(0, duracion, int(self.sample_rate * duracion), False)
-        onda = 0.3 * np.sin(2 * np.pi * frecuencia * t)
+        from core.system_settings import volumen_factor
+        onda = 0.3 * np.sin(2 * np.pi * frecuencia * t) * volumen_factor()
         sd.play(onda, samplerate=self.sample_rate)
         sd.wait()
 
