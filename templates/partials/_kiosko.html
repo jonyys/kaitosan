@@ -20,7 +20,7 @@
   ::view-transition-group(root), ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
   {% endif %}
   /* Cajón de ajustes: pensado para la pantalla redonda de 480 px, así que todo va en una columna
-     de 300 px centrada y a partir de 54 px del borde (arriba el círculo es muy estrecho).
+     de 300 px centrada y a partir de 78 px del borde (arriba el círculo es muy estrecho).
      Mismos tonos que la cara y el reloj; los colores van literales porque la cara no tiene los tokens. */
   #kioskoBackdrop {
     position: fixed; inset: 0; z-index: 9998;
@@ -31,7 +31,7 @@
   #kioskoDrawer {
     position: fixed; top: 0; left: 0; z-index: 9999;
     width: var(--cara-ancho, var(--ancho, 100%));
-    box-sizing: border-box; padding: 54px 0 30px;
+    box-sizing: border-box; padding: 78px 0 30px;
     transform: translateY(-106%); transition: transform .28s ease;
     background: #15100a; color: #fff3da;
     border-radius: 0 0 40px 40px; border-bottom: 1.5px solid #3a2a14;
@@ -82,7 +82,6 @@
     background: #1d160d; color: #fff3da; font: inherit; font-size: 16px; cursor: pointer;
   }
   #kioskoDrawer .btns button:active { background: #3a2a14; }
-  #kioskoDrawer .btns button.actual { border-color: #e0a44d; color: #f6c063; }
   #kioskoDrawer .btns button[data-salir] { grid-column: 1 / -1; width: 150px; justify-self: center; border-color: #3a2a14; color: #e88a8a; }
 </style>
 <script>
@@ -187,14 +186,10 @@
         '<input type="checkbox" id="kioskoNoche"' +
         (cfg.noche && cfg.noche.enabled ? " checked" : "") + "></div>" +
         '<div class="btns">' +
-        '<button data-go="/">Cara</button>' +
-        '<button data-go="/reloj">Reloj</button>' +
         '<button data-go="/admin/ajustes">Ajustes</button>' +
         '<button data-go="/admin/ajustes#wifi">WiFi</button>' +
         '<button data-salir>Salir</button>' +
         "</div></div>";
-      var aqui = dw.querySelector('.btns button[data-go="' + ruta + '"]');
-      if (aqui) aqui.classList.add("actual");
 
       document.body.appendChild(bd);
       document.body.appendChild(dw);
