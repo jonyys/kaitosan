@@ -180,6 +180,22 @@
     {% include 'partials/_panel_scripts.html' %}
 
     <script>
+      // El desplegable de Servicio se abre hacia donde le cabe: si el botón queda pegado a la
+      // izquierda (en el móvil los botones bajan de línea), se despliega hacia la derecha.
+      (function () {
+        var d = document.querySelector("details.hdr-menu");
+        if (!d) return;
+        d.addEventListener("toggle", function () {
+          if (!d.open) return;
+          var p = d.querySelector(".hdr-menu-panel"), r = d.getBoundingClientRect();
+          var cabeAIzquierda = r.right - p.offsetWidth >= 8;
+          p.style.left = cabeAIzquierda ? "auto" : "0";
+          p.style.right = cabeAIzquierda ? "0" : "auto";
+          p.style.maxWidth = "calc(100vw - 16px)";
+        });
+      })();
+    </script>
+    <script>
       function _pedirConfirmacion(mensaje) {
         return window.confirmar
           ? window.confirmar(mensaje, { ok: "Sí" })
