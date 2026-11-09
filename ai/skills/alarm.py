@@ -1,7 +1,27 @@
 import threading
 import time
+from datetime import datetime, timedelta
 import numpy as np
 import sounddevice as sd
+
+DIAS_SEMANA = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
+
+
+def segundos_hasta(h, m, dias=None, ahora=None):
+    """Segundos hasta la próxima vez que son las h:m (en uno de `dias`, 0 = lunes, si hay)."""
+    ahora = ahora or datetime.now()
+    for d in range(8):
+        c = (ahora + timedelta(days=d)).replace(hour=h, minute=m, second=0, microsecond=0)
+        if c > ahora and (not dias or c.weekday() in dias):
+            return (c - ahora).total_seconds()
+
+
+def texto_dias(dias):
+    if not dias or len(dias) == 7:
+        return "todos los días" if dias else ""
+    if dias == [0, 1, 2, 3, 4]:
+        return "de lunes a viernes"
+    return ", ".join(DIAS_SEMANA[d] for d in dias)
 
 class AlarmSkill:
     def __init__(self, sample_rate=48000, socketio=None):
@@ -26,7 +46,7 @@ class AlarmSkill:
     def _estado_serializable(self):
         return {
             "alarmas": [
-                {"id": a["id"], "hora": a["hora"], "activa": a["activa"]}
+                {"id": a["id"], "hora": a["hora"], "activa": a["activa"], "dias": a.get("dias", [])}
                 for a in self.alarmas
             ],
             "temporizadores": [
@@ -53,43 +73,43 @@ class AlarmSkill:
         for _ in range(3):
             self._generar_sonido(0.3, 880)
             time.sleep(0.2)
-        # Marcar como inactiva y emitir actualización
+        # Sin días es de una sola vez: queda inactiva. Con días, se vuelve a programar para el siguiente
         for a in self.alarmas:
             if a["id"] == alarma_id:
-                a["activa"] = False
+                if a.get("dias"):
+                    h, m = (int(x) for x in a["hora"].split(":"))
+                    a["timer"] = self._programar(h, m, a["dias"], alarma_id)
+                else:
+                    a["activa"] = False
                 break
         self._emitir_estado()
 
-    def poner_alarma(self, hora: str, minuto: int = 0) -> str:
+    def _programar(self, h, m, dias, alarma_id):
+        timer = threading.Timer(segundos_hasta(h, m, dias), self._alarma_sonar, args=[f"{h:02d}:{m:02d}", alarma_id])
+        timer.daemon = True
+        timer.start()
+        return timer
+
+    def poner_alarma(self, hora: str, minuto: int = 0, dias=None) -> str:
         try:
             partes = hora.replace(".", ":").split(":")
             h = int(partes[0])
             m = int(partes[1]) if len(partes) > 1 else minuto
+            dias = sorted({int(d) for d in (dias or []) if 0 <= int(d) <= 6})
 
-            ahora = time.localtime()
-            hora_actual = ahora.tm_hour * 3600 + ahora.tm_min * 60 + ahora.tm_sec
-            hora_alarma = h * 3600 + m * 60
-
-            if hora_alarma <= hora_actual:
-                hora_alarma += 24 * 3600
-
-            retraso = hora_alarma - hora_actual
             alarma_id = self._siguiente_id()
-
-            timer = threading.Timer(retraso, self._alarma_sonar, args=[f"{h:02d}:{m:02d}", alarma_id])
-            timer.daemon = True
-            timer.start()
-
             alarma_info = {
                 "id": alarma_id,
                 "hora": f"{h:02d}:{m:02d}",
-                "timer": timer,
-                "activa": True
+                "timer": self._programar(h, m, dias, alarma_id),
+                "activa": True,
+                "dias": dias,
             }
             self.alarmas.append(alarma_info)
             self._emitir_estado()
 
-            return f"Alarma puesta para las {h:02d}:{m:02d}."
+            cuando = f" {texto_dias(dias)}" if dias else ""
+            return f"Alarma puesta para las {h:02d}:{m:02d}{cuando}."
 
         except Exception as e:
             print(f"❌ Error programando alarma: {e}")
@@ -134,9 +154,11 @@ class AlarmSkill:
         return f"¿Cuál alarma quieres cancelar? Hay varias: {lista}"
 
     def modificar_alarma(self, hora_actual: str, nueva_hora: str) -> str:
+        previa = next((a for a in self.alarmas if a["hora"] == hora_actual.replace(".", ":").strip() and a["activa"]), None)
+        dias = previa.get("dias") if previa else None
         resultado_cancelar = self.cancelar_alarma(hora=hora_actual)
         if "cancelada" in resultado_cancelar:
-            return self.poner_alarma(nueva_hora)
+            return self.poner_alarma(nueva_hora, dias=dias)
         return resultado_cancelar
 
     def listar_alarmas(self) -> str:

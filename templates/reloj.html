@@ -88,20 +88,42 @@
     /* Puntos de página (los mide la transición: es #scrollHint) */
     #scrollHint { position: absolute; left: 0; right: 0; bottom: 24px; text-align: center; font-size: 14px; z-index: 5; }
 
-    /* Ventanas de nueva alarma, editar alarma y nuevo temporizador */
-    .modal-overlay { display: none; position: absolute; inset: 0; z-index: 100; background: rgba(10, 7, 3, .94); align-items: center; justify-content: center; }
-    .modal-overlay.open { display: flex; }
-    .modal { width: 320px; text-align: center; padding: 20px; }
-    .modal h3 { font-size: 17px; font-weight: 500; color: var(--rosa-tinta); margin-bottom: 14px; }
-    .modal input[type="time"] { font-size: 40px; font-weight: 200; width: 200px; text-align: center; padding: 6px; margin: 0 auto; display: block; }
-    .modal-actions { display: flex; gap: 12px; margin-top: 18px; justify-content: center; }
-    .modal-actions .btn { min-height: 46px; padding: 0 24px; border-radius: 23px; }
-    .tiempo { font-size: 72px; font-weight: 200; line-height: 1; font-variant-numeric: tabular-nums; margin: 4px 0 10px; }
-    .tiempo small { font-size: 20px; color: var(--text-soft); margin-left: 6px; }
-    .ajuste { display: flex; justify-content: center; gap: 14px; align-items: center; margin-bottom: 12px; }
-    .ajuste .ib { width: 56px; height: 56px; font-size: 26px; }
-    .chips { display: flex; justify-content: center; gap: 8px; }
+    /* Pantallas de nueva alarma, temporizador y recordatorio: ocupan toda la pantalla y suben desde abajo */
+    .modal-overlay { display: none; position: absolute; inset: 0; z-index: 100; background: var(--bg); }
+    .modal-overlay.open { display: block; animation: sube .28s cubic-bezier(.2, .8, .2, 1); }
+    @keyframes sube { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+    .hoja-titulo { position: absolute; left: 0; right: 0; top: 34px; text-align: center; font-size: 17px; font-weight: 500; color: var(--rosa-tinta); }
+    .ruedas { position: absolute; left: 0; right: 0; top: 66px; height: 190px; display: flex; justify-content: center; align-items: flex-start; }
+    .banda { position: absolute; left: 110px; right: 110px; top: 76px; height: 38px; border-radius: 12px; background: var(--surface-2); }
+    .rueda { position: relative; height: 190px; overflow: hidden; cursor: grab;
+      -webkit-mask-image: linear-gradient(to bottom, transparent, #000 32%, #000 68%, transparent);
+      mask-image: linear-gradient(to bottom, transparent, #000 32%, #000 68%, transparent); }
+    .rueda-lista { position: absolute; left: 0; right: 0; top: 0; will-change: transform; }
+    .rueda-item { height: 38px; line-height: 38px; text-align: center; font-size: 28px; font-weight: 300; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .rueda.ancha .rueda-item { font-size: 21px; }
+    .sep { align-self: flex-start; margin-top: 76px; line-height: 38px; height: 38px; font-size: 28px; font-weight: 300; padding: 0 4px; position: relative; z-index: 1; }
+    .unidad { align-self: flex-start; margin-top: 76px; line-height: 38px; height: 38px; font-size: 14px; color: var(--text-soft); padding: 0 8px 0 4px; position: relative; z-index: 1; }
+    .dias { position: absolute; left: 0; right: 0; top: 270px; display: flex; justify-content: center; gap: 6px; }
+    .dia { width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid var(--border-fuerte); background: transparent; color: var(--text-soft); font: inherit; font-size: 15px; padding: 0; cursor: pointer; }
+    .dia.on { background: var(--rosa-accion); border-color: var(--rosa-accion); color: #15100a; font-weight: 500; }
+    .dias-txt { position: absolute; left: 0; right: 0; top: 318px; text-align: center; font-size: 13px; color: var(--text-soft); }
+    .chips { position: absolute; left: 0; right: 0; top: 274px; display: flex; justify-content: center; gap: 8px; }
     .chips button { height: 40px; white-space: nowrap; padding: 0 12px; border-radius: 20px; border: 1.5px solid var(--border-fuerte); background: transparent; color: var(--text); font: inherit; font-size: 15px; cursor: pointer; }
+    .hoja-acciones { position: absolute; left: 0; right: 0; top: 356px; display: flex; gap: 12px; justify-content: center; }
+    .hoja-acciones .btn { min-height: 44px; padding: 0 26px; border-radius: 22px; }
+
+    /* Teclado en pantalla (la pantalla del robot no tiene teclado) */
+    .caja-texto { position: absolute; left: 70px; right: 70px; top: 72px; height: 84px; border: 1.5px solid var(--border-fuerte); border-radius: 14px; background: var(--surface); padding: 8px 12px; font-size: 20px; line-height: 1.25; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; word-break: break-word; text-align: left; }
+    .caja-texto .ph { color: var(--text-faint); }
+    .caja-texto .cursor { display: inline-block; width: 2px; height: 1.05em; background: var(--rosa-accion); vertical-align: -3px; animation: parpadeo 1s steps(1) infinite; }
+    @keyframes parpadeo { 50% { opacity: 0; } }
+    .teclado { position: absolute; left: 0; right: 0; top: 168px; }
+    .tecla-fila { display: flex; justify-content: center; gap: 4px; margin-bottom: 4px; }
+    .tecla { height: 40px; min-width: 40px; padding: 0 6px; border-radius: 9px; border: 0; background: var(--surface-2); color: var(--text); font: inherit; font-size: 19px; cursor: pointer; flex: none; }
+    .tecla.accion { background: var(--surface); color: var(--rosa-accion); font-size: 15px; }
+    .tecla.on { background: var(--rosa-accion); color: #15100a; }
+    .tecla.listo { background: #8a5a1e; color: #fff3da; font-weight: 500; font-size: 16px; }
+    .tecla:active { filter: brightness(1.4); }
 
     /* Aviso de feedback, centrado abajo: la pantalla es redonda */
     #toast {
@@ -145,11 +167,12 @@
     <button class="nuevo" onclick="abrirTemporizador()"><svg class="ico"><use href="#i-plus"/></svg>Temporizador</button>
   </section>
 
-  <!-- 3 · RECORDATORIOS (se crean por voz: la pantalla no tiene teclado) -->
+  <!-- 3 · RECORDATORIOS -->
   <section class="pagina">
     <div class="titulo"><svg class="ico"><use href="#i-bell"/></svg>Recordatorios</div>
     <ul class="lista" id="rem-list"></ul>
     <p class="vacio" id="rem-empty" style="display:none">No hay recordatorios pendientes</p>
+    <button class="nuevo" onclick="abrirRecordatorio()"><svg class="ico"><use href="#i-plus"/></svg>Recordatorio</button>
   </section>
 
 </div>
@@ -157,37 +180,54 @@
 <!-- Puntos de página: estilos en línea y ya puestos al cargar, porque la transición mide y copia este bloque tal cual -->
 <div id="scrollHint" data-no-tap><span data-ir="0" style="display:inline-block;width:12px;height:12px;border-radius:50%;margin:12px 7px;vertical-align:middle;background:#f6c063"></span><span data-ir="1" style="display:inline-block;width:8px;height:8px;border-radius:50%;margin:12px 7px;vertical-align:middle;background:#5a4020"></span><span data-ir="2" style="display:inline-block;width:8px;height:8px;border-radius:50%;margin:12px 7px;vertical-align:middle;background:#5a4020"></span><span data-ir="3" style="display:inline-block;width:8px;height:8px;border-radius:50%;margin:12px 7px;vertical-align:middle;background:#5a4020"></span></div>
 
-<!-- Alarma nueva / modificar -->
-<div class="modal-overlay" id="editModal">
-  <div class="modal">
-    <h3 id="edit-titulo">Nueva alarma</h3>
-    <input type="time" id="edit-hora" value="07:00">
-    <div class="modal-actions">
-      <button class="btn btn-yellow" onclick="cerrarModal()">Cancelar</button>
-      <button class="btn btn-blue" onclick="guardarAlarma()">Guardar</button>
-    </div>
+<!-- Alarma nueva / modificar: ruedas de hora y minutos y días de la semana -->
+<div class="modal-overlay" id="editModal" data-no-tap>
+  <div class="hoja-titulo" id="edit-titulo">Nueva alarma</div>
+  <div class="ruedas"><div class="banda"></div>
+    <div class="rueda" id="rueda-h" style="width:84px"></div><span class="sep">:</span><div class="rueda" id="rueda-m" style="width:84px"></div>
+  </div>
+  <div class="dias" id="dias-alarma"></div>
+  <div class="dias-txt" id="dias-txt">Solo una vez</div>
+  <div class="hoja-acciones">
+    <button class="btn btn-yellow" onclick="cerrarModal()">Cancelar</button>
+    <button class="btn btn-blue" onclick="guardarAlarma()">Guardar</button>
   </div>
 </div>
 
-<!-- Temporizador nuevo -->
-<div class="modal-overlay" id="timerModal">
-  <div class="modal">
-    <h3>Nuevo temporizador</h3>
-    <div class="tiempo"><span id="timer-valor">05:00</span></div>
-    <div class="ajuste">
-      <button class="ib" onclick="ajustarTemporizador(-1)" aria-label="Un minuto menos">−</button>
-      <button class="ib" onclick="ajustarTemporizador(1)" aria-label="Un minuto más">+</button>
-    </div>
-    <div class="chips">
-      <button onclick="fijarTemporizador(1)">1 min</button>
-      <button onclick="fijarTemporizador(5)">5 min</button>
-      <button onclick="fijarTemporizador(10)">10 min</button>
-      <button onclick="fijarTemporizador(15)">15 min</button>
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-yellow" onclick="cerrarModal()">Cancelar</button>
-      <button class="btn btn-blue" onclick="iniciarTemporizador()">Iniciar</button>
-    </div>
+<!-- Temporizador nuevo: ruedas de minutos y segundos -->
+<div class="modal-overlay" id="timerModal" data-no-tap>
+  <div class="hoja-titulo">Nuevo temporizador</div>
+  <div class="ruedas"><div class="banda"></div>
+    <div class="rueda" id="rueda-tm" style="width:80px"></div><span class="unidad">min</span><div class="rueda" id="rueda-ts" style="width:80px"></div><span class="unidad">seg</span>
+  </div>
+  <div class="chips">
+    <button onclick="fijarTemporizador(1)">1 min</button>
+    <button onclick="fijarTemporizador(5)">5 min</button>
+    <button onclick="fijarTemporizador(10)">10 min</button>
+    <button onclick="fijarTemporizador(15)">15 min</button>
+  </div>
+  <div class="hoja-acciones">
+    <button class="btn btn-yellow" onclick="cerrarModal()">Cancelar</button>
+    <button class="btn btn-blue" onclick="iniciarTemporizador()">Iniciar</button>
+  </div>
+</div>
+
+<!-- Recordatorio nuevo, paso 1: el texto con el teclado en pantalla -->
+<div class="modal-overlay" id="remTexto" data-no-tap>
+  <div class="hoja-titulo">Nuevo recordatorio</div>
+  <div class="caja-texto" id="rem-caja"></div>
+  <div class="teclado" id="teclado"></div>
+</div>
+
+<!-- Recordatorio nuevo, paso 2: cuándo -->
+<div class="modal-overlay" id="remCuando" data-no-tap>
+  <div class="hoja-titulo">¿Cuándo?</div>
+  <div class="ruedas"><div class="banda" style="left:70px;right:70px"></div>
+    <div class="rueda ancha" id="rueda-rd" style="width:150px"></div><div class="rueda" id="rueda-rh" style="width:66px"></div><span class="sep">:</span><div class="rueda" id="rueda-rm" style="width:66px"></div>
+  </div>
+  <div class="hoja-acciones" style="top:300px">
+    <button class="btn btn-yellow" onclick="abrirRecordatorio(true)">Atrás</button>
+    <button class="btn btn-blue" onclick="guardarRecordatorio()">Guardar</button>
   </div>
 </div>
 
@@ -202,7 +242,6 @@
   let temporizadores = [];
   let editandoId = null;   // null = alarma nueva
   let countdowns = {};     // id → intervalo de countdown
-  let timerMin = 5;
 
   // ── RELOJ ───────────────────────────────────────────────────────────────
   const DIAS = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
@@ -270,8 +309,8 @@
 
     list.innerHTML = activas.map(a => `
       <li class="fila">
-        <div class="valor">${a.hora}</div>
-        <button class="ib" title="Modificar" onclick="abrirModal(${a.id}, '${a.hora}')">${ico('wrench')}</button>
+        <div class="valor">${a.hora}<small>${etiquetaDias(a.dias)}</small></div>
+        <button class="ib" title="Modificar" onclick="abrirModal(${a.id}, '${a.hora}', ${JSON.stringify(a.dias || [])})">${ico('wrench')}</button>
         <button class="ib peligro" title="Eliminar" onclick="eliminarAlarma(${a.id})">${ico('trash')}</button>
       </li>
     `).join('');
@@ -337,36 +376,134 @@
     return `${s}s`;
   }
 
-  // ── ACCIONES ALARMAS ────────────────────────────────────────────────────
-  function abrirAlarma() {
-    editandoId = null;
-    document.getElementById('edit-titulo').textContent = 'Nueva alarma';
-    document.getElementById('edit-hora').value = '07:00';
-    document.getElementById('editModal').classList.add('open');
+  // ── RUEDAS (al estilo del iPhone) ───────────────────────────────────────
+  // La pantalla del robot solo dispara Pointer Events, así que la rueda se mueve a mano:
+  // arrastrar, soltar con inercia y encajar en la fila más cercana. loop = da la vuelta (horas, minutos).
+  function Rueda(el, n, fmt, o) {
+    o = o || {};
+    var H = 38, ALTO = 190, C = (ALTO - H) / 2, loop = !!o.loop, base = loop ? n * 2 : 0;
+    var lista = document.createElement('div');
+    lista.className = 'rueda-lista';
+    var h = '';
+    for (var i = 0; i < n * (loop ? 5 : 1); i++) h += '<div class="rueda-item">' + fmt(i % n) + '</div>';
+    lista.innerHTML = h;
+    el.appendChild(lista);
+    var pos = 0, anim = 0, y0 = null, pos0 = 0, muestras = [], mov = false;
+    function aPos(i) { return C - (base + i) * H; }
+    function pon(p) { pos = p; lista.style.transform = 'translateY(' + p + 'px)'; }
+    function absoluto() { return Math.round((C - pos) / H) - base; }
+    function valor() { return ((absoluto() % n) + n) % n; }
+    function limite(p) {
+      if (loop) return p;
+      var min = aPos(n - 1), max = aPos(0);
+      return p > max ? max + (p - max) * 0.3 : p < min ? min + (p - min) * 0.3 : p;
+    }
+    function animar(i, ms) {
+      cancelAnimationFrame(anim);
+      if (!loop) i = Math.min(Math.max(i, 0), n - 1);
+      var ini = pos, fin = aPos(i), t0 = performance.now();
+      (function paso(t) {
+        var k = Math.min((t - t0) / ms, 1);
+        pon(ini + (fin - ini) * (1 - Math.pow(1 - k, 3)));
+        if (k < 1) anim = requestAnimationFrame(paso);
+        else if (loop) pon(aPos(valor())); // vuelve a la copia del medio: sin saltos
+      })(t0);
+    }
+    el.addEventListener('pointerdown', function (e) {
+      cancelAnimationFrame(anim);
+      y0 = e.clientY; pos0 = pos; mov = false;
+      muestras = [{ t: e.timeStamp, y: e.clientY }];
+      el.setPointerCapture(e.pointerId);
+    });
+    el.addEventListener('pointermove', function (e) {
+      if (y0 === null) return;
+      var dy = e.clientY - y0;
+      if (!mov && Math.abs(dy) < 5) return;
+      mov = true;
+      pon(limite(pos0 + dy));
+      muestras.push({ t: e.timeStamp, y: e.clientY });
+      while (muestras.length > 2 && e.timeStamp - muestras[0].t > 100) muestras.shift();
+    });
+    el.addEventListener('pointerup', function (e) {
+      if (y0 === null) return;
+      y0 = null;
+      if (!mov) { // un toque: va a la fila tocada
+        var fila = Math.floor((e.clientY - el.getBoundingClientRect().top - pos) / H);
+        return animar(fila - base, 160);
+      }
+      var a = muestras[0], b = muestras[muestras.length - 1];
+      var v = b.t > a.t && e.timeStamp - b.t < 80 ? (b.y - a.y) / (b.t - a.t) : 0; // px/ms
+      animar(Math.round((C - (pos + v * 220)) / H) - base, 220 + Math.min(Math.abs(v) * 200, 300));
+    });
+    el.addEventListener('pointercancel', function () { y0 = null; animar(absoluto(), 120); });
+    pon(aPos(o.ini || 0));
+    return {
+      valor: valor,
+      poner: function (i) { cancelAnimationFrame(anim); pon(aPos(i)); },
+      suave: function (i) { animar(i, 260); },
+    };
   }
+  const dos = (n) => String(n).padStart(2, '0');
 
-  function abrirModal(id, hora) {
-    editandoId = id;
-    document.getElementById('edit-titulo').textContent = 'Modificar alarma';
-    document.getElementById('edit-hora').value = hora;
-    document.getElementById('editModal').classList.add('open');
+  // ── ACCIONES ALARMAS ────────────────────────────────────────────────────
+  // dias: 0 = lunes … 6 = domingo. Vacío = suena una sola vez
+  const NOMBRES_DIA = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+  function etiquetaDias(dias) {
+    dias = dias || [];
+    if (!dias.length) return 'Una vez';
+    if (dias.length === 7) return 'Todos los días';
+    if (dias.join() === '0,1,2,3,4') return 'Lun a vie';
+    if (dias.join() === '5,6') return 'Fin de semana';
+    return dias.map(d => NOMBRES_DIA[d]).join(' · ');
   }
+  let ruedaH, ruedaM, ruedaTm, ruedaTs;
+  let diasSel = [];
+  function pintarDias() {
+    document.querySelectorAll('#dias-alarma .dia').forEach((b, i) => b.classList.toggle('on', diasSel.includes(i)));
+    document.getElementById('dias-txt').textContent = etiquetaDias(diasSel);
+  }
+  document.getElementById('dias-alarma').innerHTML = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
+    .map((l, i) => `<button class="dia" aria-label="${NOMBRES_DIA[i]}" onclick="alternarDia(${i})">${l}</button>`).join('');
+  function alternarDia(i) {
+    diasSel = diasSel.includes(i) ? diasSel.filter(d => d !== i) : diasSel.concat(i).sort();
+    pintarDias();
+  }
+  ruedaH = Rueda(document.getElementById('rueda-h'), 24, dos, { loop: true, ini: 7 });
+  ruedaM = Rueda(document.getElementById('rueda-m'), 60, dos, { loop: true });
+  ruedaTm = Rueda(document.getElementById('rueda-tm'), 100, dos, { ini: 5 });
+  ruedaTs = Rueda(document.getElementById('rueda-ts'), 60, dos, { loop: true });
 
   function cerrarModal() {
     editandoId = null;
-    document.getElementById('editModal').classList.remove('open');
-    document.getElementById('timerModal').classList.remove('open');
+    document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('open'));
+  }
+  function abrirHoja(id) { cerrarModal(); document.getElementById(id).classList.add('open'); }
+
+  function abrirAlarma() {
+    editandoId = null;
+    document.getElementById('edit-titulo').textContent = 'Nueva alarma';
+    ruedaH.poner(7); ruedaM.poner(0);
+    diasSel = []; pintarDias();
+    abrirHoja('editModal');
+  }
+
+  function abrirModal(id, hora, dias) {
+    abrirHoja('editModal');
+    editandoId = id;
+    document.getElementById('edit-titulo').textContent = 'Modificar alarma';
+    const [h, m] = hora.split(':').map(Number);
+    ruedaH.poner(h); ruedaM.poner(m);
+    diasSel = (dias || []).slice(); pintarDias();
   }
 
   async function guardarAlarma() {
-    const hora = document.getElementById('edit-hora').value;
-    if (!hora) return;
+    const hora = dos(ruedaH.valor()) + ':' + dos(ruedaM.valor());
     const nueva = editandoId === null;
     try {
       const res = await fetch(nueva ? '/reloj/alarmas' : `/reloj/alarmas/${editandoId}`, {
         method: nueva ? 'POST' : 'PUT',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({hora})
+        body: JSON.stringify({hora, dias: diasSel})
       });
       const data = await res.json();
       aplicarEstado(data);
@@ -386,23 +523,20 @@
   }
 
   // ── ACCIONES TEMPORIZADORES ─────────────────────────────────────────────
-  function pintarTemporizador() {
-    document.getElementById('timer-valor').textContent = String(timerMin).padStart(2, '0') + ':00';
-  }
   function abrirTemporizador() {
-    timerMin = 5;
-    pintarTemporizador();
-    document.getElementById('timerModal').classList.add('open');
+    ruedaTm.poner(5); ruedaTs.poner(0);
+    abrirHoja('timerModal');
   }
-  function ajustarTemporizador(d) { timerMin = Math.min(Math.max(timerMin + d, 1), 999); pintarTemporizador(); }
-  function fijarTemporizador(m) { timerMin = m; pintarTemporizador(); }
+  function fijarTemporizador(m) { ruedaTm.suave(m); ruedaTs.suave(0); }
 
   async function iniciarTemporizador() {
+    const minutos = ruedaTm.valor(), segundos = ruedaTs.valor();
+    if (minutos === 0 && segundos === 0) { mostrarToast('Elige un tiempo mayor que cero', 'warn'); return; }
     try {
       const res = await fetch('/reloj/temporizadores', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({minutos: timerMin, segundos: 0})
+        body: JSON.stringify({minutos, segundos})
       });
       const data = await res.json();
       aplicarEstado(data);
@@ -436,9 +570,6 @@
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') cerrarModal();
   });
-  document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('click', e => {
-    if (e.target === e.currentTarget) cerrarModal();
-  }));
 
   // ── RECORDATORIOS ────────────────────────────────────────────────────────
   let recordatorios = [];
@@ -486,6 +617,96 @@
     if (!fecha) return s;
     const [y, m, d] = fecha.split('-');
     return `${d}/${m}/${y} ${hora || ''}`.trim();
+  }
+
+  // Texto con el teclado en pantalla y, después, día y hora con ruedas
+  const FILAS = {
+    letras: ['qwertyuiop', 'asdfghjklñ', '⇧zxcvbnm⌫', 'áéíóúü¿¡'],
+    simbolos: ['1234567890', '-/:;()€&@"', '#%+=*_<>⌫', 'áéíóúü¿¡'],
+  };
+  const teclado = (function () {
+    const cont = document.getElementById('teclado'), caja = document.getElementById('rem-caja');
+    let texto = '', mayus = true, simbolos = false;
+    const api = {
+      texto: () => texto,
+      reiniciar() { texto = ''; mayus = true; simbolos = false; pintar(); },
+      tecla(k) {
+        if (k === '⇧') mayus = !mayus;
+        else if (k === 'sim') simbolos = !simbolos;
+        else if (k === '⌫') { texto = texto.slice(0, -1); mayus = texto === '' || /[.!?¿¡]\s$/.test(texto); }
+        else if (k === 'esp') { texto += ' '; mayus = /[.!?]\s$/.test(texto); }
+        else if (k === 'listo') return remSiguiente();
+        else if (k === 'cancelar') return cerrarModal();
+        else if (texto.length < 140) { texto += mayus ? k.toUpperCase() : k; mayus = false; }
+        pintar();
+      },
+    };
+    function fila(ks, extra) {
+      return '<div class="tecla-fila">' + ks.map(k => {
+        const esp = k === '⇧' || k === '⌫';
+        const w = esp ? 'style="min-width:54px"' : '';
+        const txt = k === '⇧' ? '⇧' : (mayus && !esp ? k.toUpperCase() : k);
+        return `<button class="tecla${esp ? ' accion' : ''}${k === '⇧' && mayus ? ' on' : ''}" data-k="${k}" ${w}>${txt}</button>`;
+      }).join('') + (extra || '') + '</div>';
+    }
+    function pintar() {
+      const filas = FILAS[simbolos ? 'simbolos' : 'letras'];
+      cont.innerHTML = filas.map(f => fila(f.split(''))).join('') +
+        '<div class="tecla-fila">' +
+        '<button class="tecla accion" data-k="cancelar" style="min-width:44px" aria-label="Cancelar">✕</button>' +
+        `<button class="tecla accion" data-k="sim" style="min-width:56px">${simbolos ? 'ABC' : '123'}</button>` +
+        '<button class="tecla" data-k="esp" style="min-width:140px">espacio</button>' +
+        '<button class="tecla" data-k="." style="min-width:40px">.</button>' +
+        '<button class="tecla listo" data-k="listo" style="min-width:72px">Listo</button></div>';
+      caja.innerHTML = '<div>' + (texto ? esc(texto) + '<span class="cursor"></span>' : '<span class="ph">¿Qué hay que recordar?</span>') + '</div>';
+    }
+    cont.addEventListener('click', e => { const b = e.target.closest('[data-k]'); if (b) api.tecla(b.dataset.k); });
+    // También con un teclado de verdad (para probar en el ordenador)
+    document.addEventListener('keydown', e => {
+      if (!document.getElementById('remTexto').classList.contains('open') || e.ctrlKey || e.metaKey) return;
+      if (e.key === 'Enter') api.tecla('listo');
+      else if (e.key === 'Backspace') api.tecla('⌫');
+      else if (e.key === ' ') { e.preventDefault(); api.tecla('esp'); }
+      else if (e.key.length === 1) { mayus = false; texto.length < 140 && (texto += e.key); pintar(); }
+    });
+    pintar();
+    return api;
+  })();
+
+  let ruedaRd, ruedaRh, ruedaRm, diasRem = [];
+  function abrirRecordatorio(volver) {
+    if (!volver) teclado.reiniciar();
+    abrirHoja('remTexto');
+  }
+  function remSiguiente() {
+    if (!teclado.texto().trim()) { mostrarToast('Escribe qué hay que recordar', 'warn'); return; }
+    // El día: hoy, mañana y los 120 siguientes, con su nombre
+    const hoy = new Date();
+    diasRem = Array.from({ length: 120 }, (_, i) => { const d = new Date(hoy); d.setDate(hoy.getDate() + i); return d; });
+    const etiqueta = (d, i) => i === 0 ? 'Hoy' : i === 1 ? 'Mañana'
+      : d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' }).replace(/[.,]/g, '');
+    ['rueda-rd', 'rueda-rh', 'rueda-rm'].forEach(id => { document.getElementById(id).innerHTML = ''; });
+    const prox = new Date(hoy.getTime() + 3600e3);
+    ruedaRd = Rueda(document.getElementById('rueda-rd'), 120, i => etiqueta(diasRem[i], i), { ini: prox.getDate() === hoy.getDate() ? 0 : 1 });
+    ruedaRh = Rueda(document.getElementById('rueda-rh'), 24, dos, { loop: true, ini: prox.getHours() });
+    ruedaRm = Rueda(document.getElementById('rueda-rm'), 60, dos, { loop: true });
+    abrirHoja('remCuando');
+  }
+  async function guardarRecordatorio() {
+    const d = diasRem[ruedaRd.valor()];
+    const fecha = `${d.getFullYear()}-${dos(d.getMonth() + 1)}-${dos(d.getDate())}T${dos(ruedaRh.valor())}:${dos(ruedaRm.valor())}`;
+    try {
+      const res = await fetch('/reloj/recordatorios', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({texto: teclado.texto().trim(), fecha_hora: fecha})
+      });
+      const data = await res.json();
+      if (data.error) { mostrarToast(data.error, 'err'); return; }
+      aplicarEstadoRecordatorios(data);
+      mostrarToast('Recordatorio guardado', 'ok');
+      cerrarModal();
+    } catch(e) { mostrarToast('Error al crear el recordatorio', 'err'); }
   }
 
   async function eliminarRecordatorio(id) {

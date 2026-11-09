@@ -297,7 +297,7 @@ def reloj_alarma_crear():
     hora = data.get("hora", "")
     if not hora:
         return jsonify({"error": "Falta la hora"}), 400
-    resultado = brain.alarm.poner_alarma(hora)
+    resultado = brain.alarm.poner_alarma(hora, dias=data.get("dias"))
     return jsonify({"mensaje": resultado, **brain.alarm._estado_serializable()})
 
 @app.route("/reloj/alarmas/<int:alarma_id>", methods=["DELETE"])
@@ -321,7 +321,7 @@ def reloj_alarma_modificar(alarma_id):
         return jsonify({"error": "Alarma no encontrada"}), 404
     alarma["timer"].cancel()
     brain.alarm.alarmas.remove(alarma)
-    resultado = brain.alarm.poner_alarma(nueva_hora)
+    resultado = brain.alarm.poner_alarma(nueva_hora, dias=data.get("dias"))
     return jsonify({"mensaje": resultado, **brain.alarm._estado_serializable()})
 
 @app.route("/reloj/temporizadores", methods=["POST"])
