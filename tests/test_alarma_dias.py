@@ -1,5 +1,7 @@
 """Alarmas con días de la semana: cuándo es la próxima vez que suenan."""
 import sys
+import threading
+import time
 import types
 from datetime import datetime
 
@@ -55,3 +57,22 @@ def test_temporizador_pausa_reanuda_y_se_detiene():
     skill.estado_temporizador(t["id"], "detener")
     assert t["pausado"] and t["restante"] == 10  # parado y con la duración entera
     t["timer"].cancel()
+
+
+def test_suena_hasta_que_la_paran_y_la_alarma_se_pospone():
+    skill = AlarmSkill()
+    skill._sonar = lambda: skill._parar.wait(5)  # el bucle de audio de verdad necesita altavoz
+    hilo = threading.Thread(target=skill._empezar_a_sonar, args=[{"tipo": "alarma", "texto": "07:00"}])
+    hilo.start()
+    for _ in range(50):
+        if skill.sonando:
+            break
+        time.sleep(0.02)
+    assert skill.sonando["tipo"] == "alarma"
+    skill.posponer(minutos=60)  # no hay que esperar: solo se comprueba que apaga y reprograma
+    hilo.join(1)
+    assert skill.sonando is None and not hilo.is_alive()
+    pospuesta = [t for t in threading.enumerate() if isinstance(t, threading.Timer)]
+    assert pospuesta
+    for t in pospuesta:
+        t.cancel()

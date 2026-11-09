@@ -1,11 +1,16 @@
 import threading
 import time
 from datetime import datetime, timedelta
+import numpy as np
 import os
 import sounddevice as sd
 import soundfile as sf
 
 RUTA_ALARMA = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "audio", "alarma.flac")
+
+# Suena en bucle hasta que lo paren; por si nadie está, se calla solo pasado este tiempo.
+MAX_SONANDO_SEG = 300
+POSPONER_MIN = 5
 
 DIAS_SEMANA = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
 
@@ -33,6 +38,8 @@ class AlarmSkill:
         self.temporizadores = []
         self.socketio = socketio
         self._next_id = 1
+        self.sonando = None          # {"tipo": "alarma"|"temporizador", "texto": ...} mientras suena
+        self._parar = threading.Event()
 
     def _siguiente_id(self):
         id_actual = self._next_id
@@ -68,16 +75,73 @@ class AlarmSkill:
         }
 
     def _sonar(self):
-        """Reproduce audio/alarma.flac (48 kHz estéreo) por el altavoz, con el volumen de Kaito."""
+        """Reproduce audio/alarma.flac (48 kHz estéreo) en bucle por el altavoz, con el volumen de
+        Kaito, hasta parar() o MAX_SONANDO_SEG. Se corta desde el propio callback, no con sd.stop():
+        parar un stream desde otro hilo bloquea PortAudio en la Pi (ver TextToSpeech._sonar)."""
         from ai.text_to_speech import buscar_altavoz
         from core.system_settings import volumen_factor
         data, sr = sf.read(RUTA_ALARMA, dtype="float32")
-        sd.play(data * volumen_factor(), sr, device=buscar_altavoz())
-        sd.wait()
+        data = data * volumen_factor()
+        pos = 0
+        limite = time.monotonic() + MAX_SONANDO_SEG
+        terminado = threading.Event()
+
+        def rellenar(salida, frames, _tiempo, _estado):
+            nonlocal pos
+            if self._parar.is_set() or time.monotonic() > limite:
+                raise sd.CallbackStop
+            salida[:] = data[(pos + np.arange(frames)) % len(data)]
+            pos = (pos + frames) % len(data)
+
+        stream = sd.OutputStream(
+            samplerate=sr, device=buscar_altavoz(), channels=data.shape[1],
+            dtype="float32", callback=rellenar, finished_callback=terminado.set,
+        )
+        stream.start()
+        terminado.wait()
+        stream.close()
+
+    def _emitir_sonando(self):
+        if self.socketio:
+            try:
+                self.socketio.emit("sonando", self.sonando or {"tipo": None})
+            except Exception as e:
+                print(f"⚠️ Error emitiendo sonando: {e}")
+
+    def _empezar_a_sonar(self, info):
+        # ponytail: si ya suena otra cosa, esta se pierde (alarma y temporizador a la vez, caso raro)
+        if self.sonando:
+            return
+        self._parar.clear()
+        self.sonando = info
+        self._emitir_sonando()
+        try:
+            self._sonar()
+        except Exception as e:  # noqa: BLE001
+            print(f"⚠️ Error sonando: {e}")
+        finally:
+            if self.sonando is info:  # si parar() ya lo quitó, no se avisa dos veces
+                self.sonando = None
+                self._emitir_sonando()
+
+    def parar(self):
+        """Apaga lo que suena (alarma o temporizador)."""
+        self._parar.set()
+        if self.sonando:
+            self.sonando = None
+            self._emitir_sonando()
+
+    def posponer(self, minutos=POSPONER_MIN):
+        """Apaga la alarma que suena y la vuelve a sonar dentro de `minutos`."""
+        info = self.sonando
+        self.parar()
+        if info and info["tipo"] == "alarma":
+            timer = threading.Timer(minutos * 60, self._empezar_a_sonar, args=[dict(info)])
+            timer.daemon = True
+            timer.start()
 
     def _alarma_sonar(self, hora_str: str, alarma_id: int):
         print(f"⏰ ¡Alarma! Son las {hora_str}")
-        self._sonar()
         # Sin días es de una sola vez: queda inactiva. Con días, se vuelve a programar para el siguiente
         for a in self.alarmas:
             if a["id"] == alarma_id:
@@ -88,6 +152,7 @@ class AlarmSkill:
                     a["activa"] = False
                 break
         self._emitir_estado()
+        self._empezar_a_sonar({"tipo": "alarma", "texto": hora_str})
 
     def _programar(self, h, m, dias, alarma_id):
         timer = threading.Timer(segundos_hasta(h, m, dias), self._alarma_sonar, args=[f"{h:02d}:{m:02d}", alarma_id])
@@ -199,9 +264,11 @@ class AlarmSkill:
         if not t:
             return
         print(f"⏲️ ¡Temporizador! Han pasado {t['minutos']}m {t['segundos']}s")
-        self._sonar()
         t["activo"] = False
         self._emitir_estado()
+        duracion = " ".join(x for x in (f"{t['minutos']} min" if t["minutos"] else "",
+                                         f"{t['segundos']} s" if t["segundos"] else "") if x)
+        self._empezar_a_sonar({"tipo": "temporizador", "texto": duracion})
 
     def poner_temporizador(self, minutos: int = 0, segundos: int = 0) -> str:
         retraso = minutos * 60 + segundos

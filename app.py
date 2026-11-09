@@ -383,6 +383,20 @@ def reloj_alarma_activar(alarma_id):
     resultado = brain.alarm.activar_alarma(alarma_id, bool(data.get("activa")))
     return jsonify({"mensaje": resultado, **brain.alarm._estado_serializable()})
 
+@app.route("/reloj/sonando", methods=["GET"])
+def reloj_sonando():
+    return jsonify(brain.alarm.sonando or {"tipo": None})
+
+@app.route("/reloj/sonando/parar", methods=["POST"])
+def reloj_sonando_parar():
+    brain.alarm.parar()
+    return jsonify({"ok": True})
+
+@app.route("/reloj/sonando/posponer", methods=["POST"])
+def reloj_sonando_posponer():
+    brain.alarm.posponer()
+    return jsonify({"ok": True})
+
 @app.route("/reloj/temporizadores", methods=["POST"])
 def reloj_temporizador_crear():
     data = request.get_json()

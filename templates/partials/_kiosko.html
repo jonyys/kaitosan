@@ -93,6 +93,33 @@
   }
   #kioskoDrawer .btns button:active { background: #3a2a14; }
   #kioskoDrawer .btns button[data-salir] { grid-column: 1 / -1; width: 150px; justify-self: center; border-color: #3a2a14; color: #e88a8a; }
+  /* Alarma o temporizador sonando: pantalla completa, como la del iPhone */
+  #kioskoSonando {
+    position: fixed; inset: 0; z-index: 10000; display: none; flex-direction: column;
+    align-items: center; justify-content: center; text-align: center; gap: 0;
+    background: #15100a; color: #fff3da;
+    font: 500 16px/1.2 'M PLUS Rounded 1c', 'Nunito', 'Segoe UI', system-ui, sans-serif;
+    -webkit-user-select: none; user-select: none;
+  }
+  #kioskoSonando.abierto { display: flex; }
+  #kioskoSonando .son-ico { width: 44px; height: 44px; color: #e0a44d; animation: kioskoTimbre .9s ease-in-out infinite; }
+  #kioskoSonando .son-tit { margin: 8px 0 4px; font-size: 17px; letter-spacing: .08em; text-transform: uppercase; color: #e0a44d; }
+  #kioskoSonando .son-hora { font-size: 88px; font-weight: 200; line-height: 1; font-variant-numeric: tabular-nums; }
+  #kioskoSonando .son-hora.txt { font-size: 56px; font-weight: 400; }
+  #kioskoSonando .son-sub { margin-top: 6px; min-height: 20px; font-size: 16px; color: #b99a68; }
+  #kioskoSonando .son-btns { display: flex; flex-direction: column; gap: 12px; margin-top: 26px; width: 250px; }
+  #kioskoSonando button {
+    height: 56px; border-radius: 28px; border: 1.5px solid #5a4020; background: #1d160d; color: #fff3da;
+    font: inherit; font-size: 18px; cursor: pointer;
+  }
+  #kioskoSonando button.parar {
+    width: 76px; height: 76px; padding: 0; border-radius: 50%; align-self: center; margin-top: 4px;
+    display: flex; align-items: center; justify-content: center;
+    background: #e0a44d; border-color: #e0a44d; color: #15100a;
+  }
+  #kioskoSonando button.parar svg { width: 30px; height: 30px; }
+  #kioskoSonando button:active { filter: brightness(.85); }
+  @keyframes kioskoTimbre { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(14deg); } 40% { transform: rotate(-14deg); } 60% { transform: rotate(8deg); } 80% { transform: rotate(-8deg); } }
 </style>
 <script>
   (function () {
@@ -160,7 +187,41 @@
     conSocket(function (s) {
       s.on("estado", irACara);
       s.on("no_molestar", function (d) { window.__noMolestar = !!d.activo; pintaNoMolestar(); });
+      s.on("sonando", pintaSonando);
     });
+
+    // ── Alarma o temporizador sonando: pantalla para pararlo (o posponer la alarma) ──────────
+    // Solo en el robot. El servidor avisa por socket ("sonando") y, al cargar una página, se le
+    // pregunta por si ya estaba sonando (la pantalla cambia de página sola).
+    var sonandoEl = null;
+    function pintaSonando(d) {
+      if (!ES_KIOSKO) return;
+      if (!d || !d.tipo) { if (sonandoEl) sonandoEl.classList.remove("abierto"); return; }
+      if (!sonandoEl) {
+        sonandoEl = document.createElement("div");
+        sonandoEl.id = "kioskoSonando";
+        document.documentElement.appendChild(sonandoEl);
+        sonandoEl.addEventListener("click", function (e) {
+          var b = e.target.closest("button");
+          if (!b) return;
+          sonandoEl.classList.remove("abierto");
+          fetch("/reloj/sonando/" + b.getAttribute("data-acc"), { method: "POST" });
+        });
+      }
+      var alarma = d.tipo === "alarma";
+      sonandoEl.innerHTML =
+        '<svg class="son-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>' +
+        '<div class="son-tit">' + (alarma ? "Alarma" : "Temporizador") + "</div>" +
+        '<div class="son-hora' + (alarma ? "" : " txt") + '">' + (alarma ? d.texto : "¡Tiempo!") + "</div>" +
+        '<div class="son-sub">' + (alarma ? "" : (d.texto || "")) + "</div>" +
+        '<div class="son-btns">' +
+        (alarma ? '<button data-acc="posponer">Posponer 5 min</button>' : "") +
+        '<button class="parar" data-acc="parar" aria-label="Parar"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="3"/></svg></button></div>';
+      sonandoEl.classList.add("abierto");
+    }
+    if (ES_KIOSKO) {
+      fetch("/reloj/sonando").then(function (r) { return r.json(); }).then(pintaSonando).catch(function () {});
+    }
     // Icono de "no molestar" arriba, en el centro, solo en el robot
     if (ES_KIOSKO) {
       var ic = document.createElement("div");
@@ -325,7 +386,7 @@
       // doble toque en el fondo -> alterna cara <-> reloj
       var SEL_INTERACTIVO =
         "button,a,input,select,textarea,label,dialog,summary," +
-        "#kioskoDrawer,[data-no-tap],.kanji-card,.voc-card,.item-actions";
+        "#kioskoDrawer,#kioskoSonando,[data-no-tap],.kanji-card,.voc-card,.item-actions";
       var ultimoTap = 0;
       var bajada = { t: 0, x: 0, y: 0 };
       document.addEventListener("pointerdown", function (e) {
