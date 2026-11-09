@@ -1,8 +1,11 @@
 import threading
 import time
 from datetime import datetime, timedelta
-import numpy as np
+import os
 import sounddevice as sd
+import soundfile as sf
+
+RUTA_ALARMA = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "audio", "alarma.flac")
 
 DIAS_SEMANA = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
 
@@ -64,18 +67,17 @@ class AlarmSkill:
             ]
         }
 
-    def _generar_sonido(self, duracion=0.5, frecuencia=880):
-        t = np.linspace(0, duracion, int(self.sample_rate * duracion), False)
+    def _sonar(self):
+        """Reproduce audio/alarma.flac (48 kHz estéreo) por el altavoz, con el volumen de Kaito."""
+        from ai.text_to_speech import buscar_altavoz
         from core.system_settings import volumen_factor
-        onda = 0.3 * np.sin(2 * np.pi * frecuencia * t) * volumen_factor()
-        sd.play(onda, samplerate=self.sample_rate)
+        data, sr = sf.read(RUTA_ALARMA, dtype="float32")
+        sd.play(data * volumen_factor(), sr, device=buscar_altavoz())
         sd.wait()
 
     def _alarma_sonar(self, hora_str: str, alarma_id: int):
         print(f"⏰ ¡Alarma! Son las {hora_str}")
-        for _ in range(3):
-            self._generar_sonido(0.3, 880)
-            time.sleep(0.2)
+        self._sonar()
         # Sin días es de una sola vez: queda inactiva. Con días, se vuelve a programar para el siguiente
         for a in self.alarmas:
             if a["id"] == alarma_id:
@@ -197,9 +199,7 @@ class AlarmSkill:
         if not t:
             return
         print(f"⏲️ ¡Temporizador! Han pasado {t['minutos']}m {t['segundos']}s")
-        for _ in range(2):
-            self._generar_sonido(0.5, 440)
-            time.sleep(0.3)
+        self._sonar()
         t["activo"] = False
         self._emitir_estado()
 
