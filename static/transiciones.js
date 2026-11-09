@@ -28,15 +28,16 @@
     dia: { fondo: "#15100a", texto: "#fff3da", suave: "#b99a68" },
     noche: { fondo: "#000000", texto: "#d0d0d0", suave: "#7c7c7c" },
   };
-  const RELOJ_GUARDADO = "kaito.reloj";
+  const RELOJ_GUARDADO = "kaito.reloj2"; // el 2: la distribución del reloj cambió con las páginas
   // ponytail: medidas de la pantalla de 480 px para el primer paso tras arrancar,
   // antes de haber visto el reloj; si la cara no encaja, ajustar aquí viéndolo en la Pi.
   const RELOJ_POR_DEFECTO = {
     familia: "'M PLUS Rounded 1c', 'Nunito', 'Segoe UI', system-ui, sans-serif",
-    peso: "200", tam: 64, espacio: "-2px", arriba: 177.7, alto: 89,
-    trozos: [[105.7, 75.4], [181, 21.3], [202.3, 75.4], [277.7, 21.3], [299, 75.4]],
-    fecha: { izq: 105.7, ancho: 268.5, arriba: 262.7, tam: "16px", espacio: "1px", familia: "'M PLUS Rounded 1c', 'Nunito', 'Segoe UI', system-ui, sans-serif" },
-    aviso: { izq: 0, arriba: 411.6, ancho: 480, tam: "14px", html: "Desliza para ver alarmas y recordatorios" },
+    peso: "200", tam: 76, espacio: "-2px", arriba: 157, alto: 106,
+    trozos: [[79, 90.3], [169.2, 25.7], [194.9, 90.3], [285.1, 25.7], [310.8, 90.3]],
+    fecha: { izq: 139.9, ancho: 200.3, arriba: 260, tam: "20px", espacio: "1px", familia: "'M PLUS Rounded 1c', 'Nunito', 'Segoe UI', system-ui, sans-serif" },
+    aviso: { izq: 0, arriba: 420, ancho: 480, tam: "14px", html: '<span data-ir="0" style="display:inline-block;width:12px;height:12px;border-radius:50%;margin:12px 7px;vertical-align:middle;background:#f6c063"></span><span data-ir="1" style="display:inline-block;width:8px;height:8px;border-radius:50%;margin:12px 7px;vertical-align:middle;background:#5a4020"></span><span data-ir="2" style="display:inline-block;width:8px;height:8px;border-radius:50%;margin:12px 7px;vertical-align:middle;background:#5a4020"></span><span data-ir="3" style="display:inline-block;width:8px;height:8px;border-radius:50%;margin:12px 7px;vertical-align:middle;background:#5a4020"></span>' },
+    baja: 8.9, punto: { r: 4.5, sep: 14.8, dx: 13.8 },
   };
 
   let enCurso = false;
@@ -95,7 +96,8 @@
     const fecha = document.getElementById("fecha");
     const aviso = document.getElementById("scrollHint");
     const texto = hora && hora.firstChild;
-    if (!texto || texto.length !== 8 || window.scrollY !== 0) return null;
+    // El reloj solo se mide estando en su página (la 0 de la fila de páginas)
+    if (!texto || texto.length !== 8 || window.scrollY !== 0 || window.__paginaReloj) return null;
     const estilo = getComputedStyle(hora);
     const cajaDe = (a, b) => {
       const r = document.createRange();
