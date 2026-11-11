@@ -20,7 +20,7 @@ def _profesor(jap=None):
 
 
 def test_prompt_sin_dial_de_registro():
-    prompt = cargar_prompt("profesor_japones")
+    prompt = cargar_prompt("sensei_clase")
     assert "{REGISTRO}" not in prompt
     # los tres registros viejos ya no se nombran como modos
     assert "registro clase" not in prompt
@@ -33,14 +33,14 @@ def test_el_prompt_llega_al_sistema_sin_placeholders():
     prof.provider.completar.return_value = "vale 【はい】"
     prof.responder_turno("hola")
     sistema = prof.provider.completar.call_args[0][0][0]["content"]
-    assert "{REGISTRO}" not in sistema and "{NIVEL_INMERSION}" not in sistema
+    assert "{" not in sistema, sistema  # ningún placeholder sin rellenar
     # modo_conv sigue existiendo para el enrutado de STT, y es siempre False
     assert prof.modo_conv is False
 
 
 def test_explicar_no_esta_vetado():
-    prompt = cargar_prompt("profesor_japones")
-    assert "Nunca tienes prohibido explicar" in prompt
+    prompt = cargar_prompt("sensei_clase")
+    assert "Si Laura te pregunta algo, contéstale" in prompt
 
 
 def test_lo_que_no_se_corrige_vuelve_en_la_sesion_siguiente():
@@ -55,7 +55,7 @@ def test_lo_que_no_se_corrige_vuelve_en_la_sesion_siguiente():
     prof._ejecutar_extraccion(prof.session_id)
 
     prof.entrar()  # sesión nueva
-    recuerdas = prof._montar_estado()[0]
+    recuerdas = prof._recuerdas()
     assert "Quedó sin corregir: separó は de わたし" in recuerdas
 
 

@@ -137,13 +137,13 @@ def grabar():
             state.cambiar("error")
             return jsonify({"error": "Error grabando"}), 500
 
-        # Transcribe. En modo sensei estructurado se usa Azure (pronunciación);
-        # en charla y fuera de sensei, Groq Whisper.
+        # Transcribe. En sensei, si Kaito espera japonés, Azure (pronunciación);
+        # si no, y fuera de sensei, Groq Whisper.
         texto, pron_ctx = transcribir_para_turno(
             stt, archivo,
             sensei_activo=brain.profesor.esta_activo(),
             modo_conv=brain.profesor.modo_conv,
-            referencia=getattr(brain.profesor, "ultima_frase_objetivo", None),
+            espera_japones=brain.profesor.espera_japones,
             segundos_desde_turno=time.monotonic() - brain.ultimo_turno_ts,
         )
 

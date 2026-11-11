@@ -43,7 +43,7 @@ def test_kaito_saca_lo_personal_sin_que_se_lo_recuerden():
     prof._ejecutar_extraccion(prof.session_id)
 
     prof.entrar()  # sesión nueva, sin que nadie se lo recuerde
-    recuerdas = prof._montar_estado()[0]
+    recuerdas = prof._recuerdas()
     assert "fue al médico por el hombro" in recuerdas
     assert "dice que le encanta el ramen" in recuerdas
 

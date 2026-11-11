@@ -11,7 +11,6 @@ except Exception:
     pass
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from ai.prompts import cargar_prompt
 from core.japanese_memory import JapaneseMemory
 from ai.sensei.profesor import ProfesorJapones
 
@@ -54,13 +53,13 @@ def test_nota_profe():
     assert fila[0] == nota, fila
 
 
-def test_montar_estado_incluye_notas_bajo_como_va_laura():
+def test_recuerdas_incluye_notas_bajo_como_va_laura():
     jap = JapaneseMemory(os.path.join(tempfile.mkdtemp(), "t.db"))
     _sembrar_sesion(jap, "Viene con energía y arranca ella los temas.")
     _sembrar_sesion(jap, "Hoy cansada, cuesta que suelte frases largas.")
 
     prof = _profesor(jap)
-    recuerdas = prof._montar_estado()[0]
+    recuerdas = prof._recuerdas()
     assert "Cómo va Laura" in recuerdas
     assert "Viene con energía y arranca ella los temas." in recuerdas
     assert "Hoy cansada, cuesta que suelte frases largas." in recuerdas
@@ -88,92 +87,8 @@ def test_extractor_sin_nota_profe_no_rompe_y_guarda_vacia():
     assert jap.resumen_perfil()["notas_profe"] == []
 
 
-# ── Fase 17 — Arco de sesión ────────────────────────────────────────────────
-
-def _par(u, a="ok"):
-    return [{"role": "user", "content": u}, {"role": "assistant", "content": a}]
-
-
-def test_arco():
-    jap = JapaneseMemory(os.path.join(tempfile.mkdtemp(), "t.db"))
-    prof = _profesor(jap)
-    prof.entrar()
-    if prof.timer:
-        prof.timer.cancel()
-
-    # Turno 1 (sin pares cerrados) → entrada: saluda pero engancha ya el can-do.
-    prof.mensajes = []
-    foco = prof._montar_estado()[1]
-    assert "FASE DE LA SESIÓN: entrada" in foco
-
-    # Turno 2 en adelante → foco.
-    for pares in (1, 2, 3):
-        prof.mensajes = _par("sigo") * pares
-        foco = prof._montar_estado()[1]
-        assert "FASE DE LA SESIÓN: foco" in foco
-
-    # Laura se despide → cierre (gana a la cuenta de turno).
-    prof.mensajes = _par("vale, lo dejamos por hoy, hasta la semana")
-    foco = prof._montar_estado()[1]
-    assert "FASE DE LA SESIÓN: cierre" in foco
-
-
-# ── Follow-up — marca intra-sesión [trabajándose hoy] ───────────────────────
-
-def _linea_de(foco, jp):
-    """La línea del ítem en la lista del FOCO (prefijo '  - 【jp】...' de
-    _lineas_foco) — no cualquier línea que mencione 【jp】, que desde el
-    listado "ya has dicho esto" (ver UMBRAL_FRENO_NUEVOS) también lo cita."""
-    return next(l for l in foco.splitlines() if l.startswith(f"  - 【{jp}】"))
-
-
-def test_marca_trabajandose_hoy():
-    jap = JapaneseMemory(os.path.join(tempfile.mkdtemp(), "t.db"))
-    prof = _profesor(jap)
-    prof.entrar()
-    if prof.timer:
-        prof.timer.cancel()
-
-    jp_nuevo, jp_sabido = "メニュー", "みず"
-    with jap._conectar() as conn:
-        conn.execute(
-            "INSERT INTO japanese_vocabulary (word, status, reps) VALUES (?, 'learned', 2)",
-            (jp_sabido,),
-        )
-    prof._foco_unidad = {
-        "nombre": "U-test",
-        "can_dos": [{"id": "cd_test", "texto": "Puedo pedir en un restaurante"}],
-        "items": [
-            {"kind": "vocabulario", "jp": jp_nuevo, "meaning": "la carta"},
-            {"kind": "vocabulario", "jp": jp_sabido, "meaning": "agua"},
-        ],
-    }
-    prof._foco_nuevos = []
-
-    # Kaito aún no lo ha dicho → [nueva].
-    foco = prof._montar_estado()[1]
-    assert "[nueva]" in _linea_de(foco, jp_nuevo), foco
-    assert "[trabajándose hoy]" not in foco, foco
-    assert "[sabida]" in _linea_de(foco, jp_sabido), foco
-
-    # Kaito ya explicó 【メニュー】 este turno → [trabajándose hoy], sin salir del FOCO.
-    prof.mensajes = [
-        {"role": "user", "content": "¿qué es メニュー?"},
-        {"role": "assistant", "content": "【メニュー】 significa 'la carta'."},
-    ]
-    foco = prof._montar_estado()[1]
-    assert "[trabajándose hoy]" in _linea_de(foco, jp_nuevo), foco
-    assert f"【{jp_nuevo}】" in foco, foco  # sigue listado en el FOCO
-    assert "[sabida]" in _linea_de(foco, jp_sabido), foco  # 'sabido' intacto
-
-    # El prompt describe el cuarto estado.
-    assert "[trabajándose hoy]" in cargar_prompt("profesor_japones")
-
-
 if __name__ == "__main__":
     test_nota_profe()
-    test_montar_estado_incluye_notas_bajo_como_va_laura()
+    test_recuerdas_incluye_notas_bajo_como_va_laura()
     test_extractor_sin_nota_profe_no_rompe_y_guarda_vacia()
-    test_arco()
-    test_marca_trabajandose_hoy()
     print("OK")

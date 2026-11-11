@@ -1,0 +1,1303 @@
+{
+ "saludos_saludar": {
+  "items": [
+   "おはようございます",
+   "こんにちは",
+   "こんばんは",
+   "おやすみなさい",
+   "さようなら"
+  ],
+  "explicacion": "El saludo depende de la hora. Por la mañana: おはようございます (con amigos, おはよう). De día: こんにちは. Al encontrarte con alguien ya de noche: こんばんは. おやすみなさい solo se dice a quien se va a dormir, no sirve como saludo. さようなら es una despedida con peso, de 'no nos vemos en un tiempo'; en el día a día se dice じゃあね o また あした. Recuerda que こんにちは y こんばんは no son despedidas.",
+  "tarea": "Situación: Kaito finge que son las nueve de la mañana, luego que os cruzáis por la calle de noche, y al final que se va a dormir. Laura tiene que: saludar en cada momento y despedirse de él."
+ },
+ "saludos_gracias": {
+  "items": [
+   "ありがとう",
+   "どうも",
+   "いいえ",
+   "どうぞ"
+  ],
+  "explicacion": "Con amigos basta ありがとう; con desconocidos o gente mayor se dice ありがとうございます. どうも es un 'gracias' rápido e informal. すみません también agradece cuando alguien se ha molestado por ti. Para responder se dice どういたしまして ('de nada'), o simplemente いいえ. Ejemplo: ありがとうございます。 / いいえ、どういたしまして。",
+  "tarea": "Situación: Kaito te hace un favor con las maletas y luego te da un regalo, como si fuera una persona mayor que no conoces. Laura tiene que: darle las gracias con educación en cada caso."
+ },
+ "saludos_disculpa": {
+  "items": [
+   "すみません",
+   "大丈夫",
+   "いいえ"
+  ],
+  "explicacion": "Para disculparte por una molestia usa すみません (o すみませんでした si ya pasó). Quien recibe la disculpa le quita importancia con 大丈夫です, 'no pasa nada', o con いいえ、だいじょうぶです. Entre amigos también ごめんなさい o ごめん. Ejemplo: すみません、おくれました。 / だいじょうぶです。 Ojo: 大丈夫です también puede ser un 'no, gracias' amable cuando te ofrecen algo.",
+  "tarea": "Situación: Kaito te pisa sin querer en un tren lleno y se disculpa; después te pide que hagas de alguien que llega tarde a una cita. Laura tiene que: quitarle importancia a su disculpa y, en tu papel, pedir perdón por llegar tarde."
+ },
+ "saludos_noentiendo": {
+  "items": [
+   "わかりません",
+   "もう一度",
+   "ゆっくり",
+   "わかりました"
+  ],
+  "explicacion": "Cuando no entiendes, di わかりません ('no entiendo'), siempre en presente. Para pedir que lo repitan: もう一度 おねがいします. Para que hable más despacio: ゆっくり おねがいします; ゆっくり es adverbio y va delante del verbo. Cuando ya lo has captado, わかりました (en pasado). Ejemplo: すみません、わかりません。もう一度 おねがいします。",
+  "tarea": "Situación: Kaito te suelta una frase larga en japonés a toda velocidad y luego te la repite despacio. Laura tiene que: decirle que no la has entendido, pedirle que la repita más despacio y confirmarle cuando ya la entiendas."
+ },
+ "num_contar": {
+  "items": [
+   "十",
+   "百",
+   "千",
+   "四",
+   "七",
+   "九",
+   "八",
+   "六"
+  ],
+  "explicacion": "1 いち, 2 に, 3 さん, 4 し/よん, 5 ご, 6 ろく, 7 しち/なな, 8 はち, 9 きゅう, 10 じゅう. 11 es じゅういち y 20 にじゅう. Para 100, ひゃく: 200 にひゃく, 300 さんびゃく, 600 ろっぴゃく, 800 はっぴゃく. Para 1000, せん: 2000 にせん, 3000 さんぜん, 8000 はっせん. Ejemplo: 345 es さんびゃく よんじゅう ご.",
+  "tarea": "Situación: Kaito te pide que cuentes del uno al diez y luego te da cuatro números escritos en cifras: 25, 300, 678 y 2.000. Laura tiene que: contar hasta diez y decir esos cuatro números en japonés."
+ },
+ "num_precio": {
+  "items": [
+   "～円",
+   "百",
+   "千",
+   "万",
+   "安い",
+   "お金"
+  ],
+  "explicacion": "El precio es el número seguido de えん: 300円 さんびゃくえん, 1500円 せんごひゃくえん, 4円 よえん. Con 万 (diez mil) siempre se dice el número delante: 30000円 es さんまんえん. Se pregunta いくらですか. Ejemplo: これは ごひゃくえんです。 Si algo cuesta poco, es やすいです. Atención a las alteraciones: 300 さんびゃく, 600 ろっぴゃく, 800 はっぴゃく, 3000 さんぜん.",
+  "tarea": "Situación: Kaito hace de cajero: te dice un precio de varias cifras (1.480 yenes) y luego te pregunta cuánto pagarías por algo que cuesta 350 yenes. Laura tiene que: repetirle el primer precio en japonés y decirle el segundo."
+ },
+ "num_edad": {
+  "items": [
+   "～歳",
+   "いくつ",
+   "一",
+   "八",
+   "十"
+  ],
+  "explicacion": "La edad es el número más さい: 25 años, にじゅうごさい; 4, よんさい; 7, ななさい. Cambian 1 いっさい, 8 はっさい y 10 じゅっさい; 20 años es はたち. Se pregunta おいくつですか (educado) o なんさいですか. Ejemplo: わたしは にじゅうごさいです。 Preguntar la edad a alguien mayor es delicado; con お delante, おいくつ, suena más cortés.",
+  "tarea": "Situación: Kaito te pregunta cuántos años tienes y luego te dice que tiene 18 o 20 años para ver si lo entiendes. Laura tiene que: contestarle tu edad, preguntarle tú la suya con educación y decirle cuál has entendido."
+ },
+ "num_cantidad": {
+  "items": [
+   "いくつ",
+   "一つ",
+   "二つ",
+   "三つ",
+   "四つ",
+   "五つ",
+   "六つ",
+   "七つ"
+  ],
+  "explicacion": "Para cosas sin contador concreto, se usa la serie ひとつ, ふたつ, みっつ, よっつ, いつつ, むっつ, ななつ, やっつ, ここのつ, とお (10). Se pregunta いくつですか, '¿cuántos?'. Se responde con la serie: りんごを みっつ ください。 Para pedir una sola cosa, ひとつ ください suena suave: 'uno, por favor'. Ejemplo: みかんは いくつ ありますか。 / よっつ あります。",
+  "tarea": "Situación: Kaito te pregunta cuántas manzanas quieres para una tarta y luego te enseña un cesto con 6 naranjas. Laura tiene que: decirle que quieres 3 manzanas y preguntarle cuántas naranjas hay, entendiendo su respuesta."
+ },
+ "num_telefono": {
+  "items": [
+   "番号",
+   "ゼロ",
+   "零",
+   "四",
+   "七",
+   "九",
+   "二",
+   "五"
+  ],
+  "explicacion": "Un número de teléfono se dice cifra a cifra, y se pide con ばんごう: でんわばんごうは なんばんですか. El 0 es ゼロ o れい; el 4, よん; el 7, なな; el 9, きゅう; el 2, に; el 5, ご. Se separan los grupos con の. Ejemplo: 090の1234の5678 es ゼロ きゅう ゼロ の いち に さん よん の ご ろく なな はち. Evita し y しち para no confundir.",
+  "tarea": "Situación: Kaito te pide tu número de móvil (inventado) y luego te dicta él uno de ocho cifras. Laura tiene que: dictarle tu número cifra a cifra y repetirle el suyo para comprobar que lo has anotado bien."
+ },
+ "adj_describir_cosas": {
+  "items": [
+   "大きい",
+   "小さい",
+   "新しい",
+   "古い",
+   "長い",
+   "短い",
+   "重い",
+   "軽い"
+  ],
+  "explicacion": "Los adjetivos en い van pegados delante del nombre: ふるい くるま, 'un coche viejo'. Para predicar se añade です: この くるまは ふるいです. Negativo: い pasa a くない: ふるくないです. Pasado: ふるかったです. 大きい y 小さい tienen también 大きな y 小さな, solo delante del nombre. Ejemplo: あたらしい かばんは かるいです。",
+  "tarea": "Situación: Kaito te pregunta cómo es la mochila o el móvil que llevas y luego te dice que su casa no es ni vieja ni pequeña. Laura tiene que: describir tu objeto con dos o tres adjetivos y preguntarle cómo es su casa."
+ },
+ "adj_opinar": {
+  "items": [
+   "面白い",
+   "つまらない",
+   "楽しい",
+   "難しい",
+   "易しい"
+  ],
+  "explicacion": "Para opinar sobre una película, un libro o una clase: おもしろいです ('interesante, divertido') o つまらないです ('aburrido'). Se usan con una frase: この えいがは おもしろいです. Negativo: おもしろくないです. Pasado: おもしろかったです / つまらなかったです. 楽しい es 'divertido' cuando lo pasas bien. Añade ね para buscar acuerdo: おもしろいですね。",
+  "tarea": "Situación: Kaito te pregunta qué te pareció la última película o serie que viste y si el japonés te parece difícil. Laura tiene que: darle tu opinión sobre las dos cosas."
+ },
+ "adj_na": {
+  "items": [
+   "静か",
+   "にぎやか",
+   "有名",
+   "綺麗",
+   "りっぱ",
+   "丈夫"
+  ],
+  "explicacion": "Los adjetivos な necesitan な delante del nombre: しずかな まち, 'una ciudad tranquila'. Para predicar: まちは しずかです. Negativo: しずかじゃ ありません. Pasado: しずかでした. 綺麗 (きれい) parece un adjetivo い pero es な: きれいな ひとです。 Ejemplo: ここは にぎやかで ゆうめいな まちです。 Con amigos se dice también しずかじゃ ない.",
+  "tarea": "Situación: Kaito te pregunta cómo es el barrio o la ciudad donde vives y cómo es la persona más famosa que conoces. Laura tiene que: describirlos con adjetivos de tipo な."
+ },
+ "adj_valorar": {
+  "items": [
+   "いい; よい",
+   "悪い",
+   "汚い",
+   "危ない"
+  ],
+  "explicacion": "いい significa 'bueno, bien' pero solo en presente afirmativo: てんきが いいです. Para lo demás se usa よい: negativo よくないです, pasado よかったです. 悪い (わるい) es 'malo': わるくないです, わるかったです. Ejemplo: きょうは てんきが よくないです。 Para cosas peligrosas, あぶない; para sucias, きたない. Con amigos se corta: いいね, よくない.",
+  "tarea": "Situación: Kaito te pregunta qué tal te fue el fin de semana y qué tiempo hace hoy, y luego dice que cierto lugar está mal. Laura tiene que: contestar con «bien» o «mal» y preguntarle por qué está mal ese lugar."
+ },
+ "ropa_color": {
+  "items": [
+   "色",
+   "赤",
+   "青",
+   "白",
+   "黒",
+   "黄色",
+   "緑",
+   "茶色"
+  ],
+  "explicacion": "Se pregunta なにいろですか. Las respuestas son sustantivos: あか, あお, しろ, くろ, きいろ, みどり, ちゃいろ. Casi todos tienen forma en い y van delante del nombre: あかい くるま, あおい そら, しろい シャツ, くろい かばん, きいろい かさ, ちゃいろい くつ. みどり no la tiene y va con の: みどりの ふく. Ejemplo: トマトは なにいろですか。 / あかです。",
+  "tarea": "Situación: Kaito te pregunta de qué color es un tomate, un plátano, el cielo y un café solo. Laura tiene que: decirle el color de cada cosa en japonés."
+ },
+ "ropa_prendas": {
+  "items": [
+   "シャツ",
+   "ズボン",
+   "帽子",
+   "靴",
+   "スカート",
+   "セーター",
+   "コート",
+   "靴下"
+  ],
+  "explicacion": "Vocabulario de ropa: シャツ camisa o camiseta, ズボン pantalón, スカート falda, セーター jersey, コート abrigo, ぼうし sombrero o gorra, くつ zapatos, くつした calcetines. Las palabras con katakana van tal cual. Se combinan con colores: あかい セーター, くろい ズボン. Ejemplo: しろい シャツと くろい ズボンです。",
+  "tarea": "Situación: Kaito te propone un viaje a la nieve y te pide cuatro prendas para la maleta. Laura tiene que: nombrar cuatro prendas y decir de qué color es cada una."
+ },
+ "ropa_llevar_quitar": {
+  "items": [
+   "脱ぐ",
+   "シャツ",
+   "ズボン",
+   "帽子",
+   "靴",
+   "ネクタイ",
+   "締める",
+   "靴下"
+  ],
+  "explicacion": "El verbo depende de la prenda. きる para lo de arriba: シャツを きます. はく para lo de abajo y los pies: ズボン, くつ, くつした. かぶる para la cabeza: ぼうしを かぶります. ネクタイは しめます. Para quitarse cualquier prenda: ぬぎます. Lo que llevas puesto: きて います, はいて います. Ejemplo: いえで くつを ぬぎます。",
+  "tarea": "Situación: Kaito te pregunta qué llevas puesto ahora y qué haces con los zapatos al entrar en una casa japonesa. Laura tiene que: contarle qué llevas puesto y decirle qué haces con los zapatos."
+ },
+ "ropa_probar": {
+  "items": [
+   "シャツ",
+   "セーター",
+   "コート",
+   "スカート",
+   "ズボン",
+   "靴"
+  ],
+  "explicacion": "Para probarte algo: きてみても いいですか, forma て + みる ('probar a hacerlo') + てもいいですか (permiso). Con los zapatos o pantalones, はいてみても いいですか. Para decir cómo te queda: ちょっと おおきいです, ちょっと ちいさいです. Ejemplo: このシャツ、きてみても いいですか。 Ya probado: すこし ちいさいです。 Se dice al dependiente con すみません delante.",
+  "tarea": "Situación: Kaito hace de dependiente en una tienda de ropa. Laura tiene que: pedirle probarte una camisa y, al volver del probador, decirle que te queda pequeña."
+ },
+ "negcond_deseo": {
+  "items": [
+   "〜たいです",
+   "〜たくないです",
+   "〜たがっています"
+  ],
+  "explicacion": "Para decir lo que quieres hacer, raíz de ます + たいです: いきたいです, 'quiero ir'. Negativo: たくないです: いきたくないです. Se usa solo para ti mismo; de otra persona se dice たがっています. Lo que quieres hacer puede llevar を o が: すしを(が) たべたいです. Ejemplo: あした うみに いきたいです。 / びょういんには いきたくないです。",
+  "tarea": "Situación: Kaito te propone planes para el fin de semana, como ir al karaoke o al museo, y te cuenta que su hermano no quiere hacer alguno. Laura tiene que: decir cuál quieres hacer y cuál no, y contarle qué no quiere hacer su hermano."
+ },
+ "negcond_condicion": {
+  "items": [
+   "〜たら",
+   "〜ば",
+   "〜なら",
+   "と（条件）"
+  ],
+  "explicacion": "〜たら: verbo en pasado llano + ら, 'si ocurre / cuando ocurre': あした あめが ふったら、いえに います. Con adjetivos: やすかったら かいます. 〜ば: うみに いけば, 'si vas al mar'; adjetivo い: やすければ. Con nombre, ひまだったら. Ejemplo: ひまだったら、いっしょに いきませんか。 〜なら toma el tema que dice el otro: にほんなら、きょうとが いいです。",
+  "tarea": "Situación: Kaito te dice que quiere salir mañana pero no sabe si lloverá. Laura tiene que: proponerle un plan con condición: qué hacéis si llueve y qué hacéis si no."
+ },
+ "negcond_motivo": {
+  "items": [
+   "〜から（理由）",
+   "〜ので"
+  ],
+  "explicacion": "Para dar el motivo: la razón + から o ので. 〜から va después de forma llana o cortés: つかれましたから、かえります. 〜ので es más suave y se usa mucho en excusas o peticiones; antes lleva forma llana, y con な-adjetivo o nombre, なので: ひまなので、いけます. Ejemplo: ねつが あるので、やすみます。",
+  "tarea": "Situación: Kaito te invita a salir esta noche. Laura tiene que: decirle que no puedes y darle un motivo con educación, por ejemplo que estás cansada o que tienes tarea."
+ },
+ "negcond_secuencia": {
+  "items": [
+   "〜まえに",
+   "〜たあとで",
+   "〜ながら"
+  ],
+  "explicacion": "〜まえに, 'antes de': verbo en presente llano: ねるまえに、はを みがきます. 〜たあとで, 'después de': verbo en pasado llano: ごはんを たべたあとで、さんぽします. 〜ながら, 'mientras': raíz de ます + ながら, y la acción principal va al final: おんがくを ききながら べんきょうします. Con ながら las dos acciones las hace la misma persona.",
+  "tarea": "Situación: Kaito te cuenta que tiene que madrugar mañana y te pregunta cómo es tu mañana. Laura tiene que: contarle en orden qué haces antes de salir, después de desayunar y mientras vas al trabajo."
+ },
+ "negcond_opinion": {
+  "items": [
+   "〜と思います"
+  ],
+  "explicacion": "Para dar tu opinión, forma llana + と おもいます, 'creo que'. あしたは あめが ふると おもいます. Con adjetivo い: おいしいと おもいます. Con nombre o adjetivo な: だと おもいます: しずかだと おもいます. Si piensas que no, la negación va dentro: ふらないと おもいます. Es una opinión educada, sin imponerla.",
+  "tarea": "Situación: Kaito te pregunta qué piensas de la comida japonesa y si crees que mañana hará buen tiempo. Laura tiene que: darle tu opinión sobre las dos cosas con «creo que»."
+ },
+ "comp_comparar": {
+  "items": [
+   "〜より",
+   "〜のほうが",
+   "〜ほど〜ない",
+   "もっと",
+   "同じ"
+  ],
+  "explicacion": "AはBより + adjetivo: 'A es más ~ que B': ねこは いぬより ちいさいです. Con のほうが se subraya A: ねこの ほうが ちいさいです. Se pregunta AとBと どちらが ~ですか. En negativo: AはBほど ~ないです, 'A no es tan ~ como B'. もっと es 'todavía más'. Ejemplo: この シャツは あの シャツより やすいです。",
+  "tarea": "Situación: Kaito te pide que compares dos ciudades o dos comidas. Laura tiene que: decir cuál es más cara, cuál es más grande y cuál no es tan buena como la otra."
+ },
+ "comp_preferir": {
+  "items": [
+   "一番",
+   "〜のほうが",
+   "〜が好きです"
+  ],
+  "explicacion": "Para elegir entre dos se pregunta どちらが すきですか (informal, どっち) y se responde con el elegido + のほうが: おちゃの ほうが すきです. Entre varios, いちばん ('el más'): すしが いちばん すきです; いちばん たかいです, 'el más caro'. 一番 va delante del adjetivo. Ejemplo: コーヒーと おちゃと どちらが すきですか。 / おちゃの ほうが すきです。",
+  "tarea": "Situación: Kaito te pregunta si prefieres el té o el café y luego cuál es tu comida favorita de todas. Laura tiene que: decirle qué prefieres y cuál es la que más te gusta."
+ },
+ "comp_gustos": {
+  "items": [
+   "〜が好きです",
+   "〜が嫌いです",
+   "〜がほしいです",
+   "大好き",
+   "好き",
+   "嫌い",
+   "欲しい"
+  ],
+  "explicacion": "好き, 嫌い y ほしい llevan が, no を, porque 好き es adjetivo な: ねこが すきです. Fuerte: だいすきです; negativo: あまり すきじゃ ないです. きらい suena fuerte, como 'odio'. ほしい es querer una cosa: くるまが ほしいです; para acciones, 〜たい. Ejemplo: やさいが きらいです。 Con amigos, すき sin です.",
+  "tarea": "Situación: Kaito te pregunta qué deporte o comida te gusta mucho, cuál no soportas y qué te gustaría que te regalaran por tu cumpleaños. Laura tiene que: contestarle las tres cosas."
+ },
+ "comp_habilidad": {
+  "items": [
+   "〜が上手です",
+   "〜が下手です",
+   "〜がわかります"
+  ],
+  "explicacion": "Se dice de otros: りょうりが じょうずです. De uno mismo suena a fanfarronada; mejor できます o あまり じょうずじゃ ないです. へたです se dice de ti por modestia, jamás a otro a la cara. Lo que se hace lleva が. Ejemplo: にほんごが じょうずですね。 / いいえ、まだ へたです。 わかります también lleva が.",
+  "tarea": "Situación: Kaito te pregunta qué se te da bien y qué se te da mal, y luego te habla en español. Laura tiene que: decirle qué se te da bien y mal y halagarle lo bien que habla español."
+ },
+ "comp_suavizar": {
+  "items": [
+   "〜でしょう",
+   "〜かもしれません",
+   "〜そうです"
+  ],
+  "explicacion": "Para no afirmar del todo: forma llana + でしょう, 'probablemente': あしたは あめでしょう. 〜かもしれません, 'puede que', es menos seguro: あめかもしれません (con nombre no se pone だ). 〜そうです tras la raíz del adjetivo: おいしそうです, 'tiene buena pinta'. Se usan para opinar sin imponer.",
+  "tarea": "Situación: Kaito te pregunta qué tiempo hará mañana y si el restaurante nuevo será bueno. Laura tiene que: contestar sin afirmarlo del todo, mostrando que no estás segura."
+ },
+ "desumasu_presentar": {
+  "items": [
+   "です",
+   "名前",
+   "私"
+  ],
+  "explicacion": "Para presentarte dices tu nombre y です: 「わたしは ラウラです」 (soy Laura). La partícula は marca el tema y se lee «wa». El pronombre わたし se omite muy a menudo: 「ラウラです」 basta. Antes se suele decir はじめまして (solo la primera vez que ves a alguien) y después どうぞよろしく. Para preguntar el nombre ajeno: 「おなまえは なんですか」. です hace la frase educada y neutra, válida con casi cualquiera.",
+  "tarea": "Situación: Kaito hace de profesor nuevo que acabas de conocer en tu primer día de clase. Laura tiene que: presentarte a él diciendo tu nombre y cerrando bien la presentación."
+ },
+ "desumasu_afirmar_negar": {
+  "items": [
+   "です",
+   "じゃありません",
+   "ではありません"
+  ],
+  "explicacion": "Afirmas con 「AはBです」 (A es B) y niegas con 「AはBじゃありません」 (A no es B). Ejemplos: 「わたしは がくせいです」, 「わたしは せんせいじゃありません」. Al hablar se usa じゃありません; ではありません es la versión más formal, de discurso o escrito, y じゃないです es aún más coloquial. Para preguntar se añade か: 「がくせいですか」. Responde 「はい、そうです」 o 「いいえ、ちがいます」.",
+  "tarea": "Situación: Kaito te pregunta si eres japonesa y luego si eres profesora. Laura tiene que: contestar que sí a una cosa y que no a la otra, con tus datos reales."
+ },
+ "desumasu_rutina": {
+  "items": [
+   "〜ます",
+   "〜ません"
+  ],
+  "explicacion": "El verbo formal termina en 〜ます (afirmativo) y 〜ません (negativo), y vale para presente habitual y futuro. Complemento con を, lugar con で, destino con へ/に: 「まいにち コーヒーを のみます」 (bebo café cada día), 「にくは たべません」 (no como carne). 「あした がっこうへ いきます」 es futuro; lo decide el contexto. Para preguntar, añade か: 「なにを しますか」. Es el registro correcto con desconocidos y en clase.",
+  "tarea": "Situación: Kaito te cuenta dos o tres cosas que hace cada día y una que nunca hace, y te pregunta lo mismo a ti. Laura tiene que: contarle tus cosas de cada día y una que nunca haces."
+ },
+ "desumasu_pasado": {
+  "items": [
+   "〜ました",
+   "〜ませんでした",
+   "でした",
+   "ではありませんでした"
+  ],
+  "explicacion": "Con verbos, el pasado formal es 〜ました y el negativo 〜ませんでした: 「きのう えいがを みました」 (ayer vi una película), 「しゅくだいを しませんでした」. Con sustantivos, 「きのうは あめでした」 (ayer fue lluvia) y negativo 「あめじゃありませんでした」; ではありませんでした es la versión muy formal. Con adjetivos-い no se usa でした: 「おいしかったです」, nunca おいしいでした.",
+  "tarea": "Situación: Kaito te pregunta qué hiciste ayer, qué no hiciste y cómo estuvo el tiempo. Laura tiene que: contárselo en pasado."
+ },
+ "desumasu_proponer": {
+  "items": [
+   "〜ましょう",
+   "〜ましょうか"
+  ],
+  "explicacion": "Para proponer algo conjunto se usa la raíz del verbo con 〜ましょう: 「いっしょに たべましょう」 (comamos juntos). Da por hecho que el otro acepta. Con か, 〜ましょうか, tanteas y dejas decidir: 「コーヒーを のみましょうか」 (¿tomamos un café?), y también sirve para ofrecer ayuda: 「てつだいましょうか」 (¿te ayudo?). Se responde 「はい、そうしましょう」 o 「ちょっと…」 si no te va bien.",
+  "tarea": "Situación: Kaito dice que se aburre y luego finge que va cargado con muchas bolsas. Laura tiene que: proponerle hacer algo juntos y ofrecerle ayuda con las bolsas."
+ },
+ "cont_personas": {
+  "items": [
+   "一人",
+   "二人",
+   "～人"
+  ],
+  "explicacion": "Para personas se usa ～人 (にん), pero uno y dos son irregulares: 一人 ひとり, 二人 ふたり. Desde tres: さんにん, よにん (cuatro, no よんにん), ごにん, ろくにん… Ejemplos: 「ふたりです」 (somos dos), 「ごにんかぞくです」 (somos cinco en la familia). En un restaurante, 「さんにんです」. 一人で significa «solo, sin compañía»: 「ひとりで いきます」. Para preguntar cuántos: 「なんにんですか」.",
+  "tarea": "Situación: Kaito hace de camarero que te recibe en la puerta del restaurante y te pregunta cuántas personas sois. Laura tiene que: decirle el número de tu grupo imaginario."
+ },
+ "cont_objetos": {
+  "items": [
+   "～個",
+   "～本",
+   "～枚",
+   "～冊",
+   "～杯"
+  ],
+  "explicacion": "En japonés el contador depende de la forma del objeto: ～個 (こ) para cosas pequeñas y compactas, ～本 (ほん) para cosas largas y finas, ～枚 (まい) para planas, ～冊 (さつ) para libros y ～杯 (はい) para vasos o tazas. La estructura es objeto + を + cantidad + verbo: 「ペンを にほん かいました」, 「きっぷを にまい ください」, 「コーヒーを いっぱい おねがいします」. Ojo a los sonidos: いっぽん, さんぼん, ろっぽん, いっさつ.",
+  "tarea": "Situación: Kaito te pregunta qué compraste en la tienda. Laura tiene que: decirle, con la cantidad, un libro, unos bolígrafos, unas hojas y alguna fruta."
+ },
+ "cont_animales_vehiculos": {
+  "items": [
+   "～匹",
+   "～台"
+  ],
+  "explicacion": "Los animales pequeños (gatos, perros pequeños, peces) se cuentan con ～匹 y los vehículos y aparatos (coches, bicis, ordenadores, neveras) con ～台. Se coloca la cantidad tras el sustantivo y la partícula: 「ねこが にひき います」 (hay dos gatos), 「くるまが いちだい あります」 (hay un coche). Sonidos irregulares de 匹: いっぴき, にひき, さんびき, ろっぴき. Recuerda: seres vivos con います, cosas con あります.",
+  "tarea": "Situación: Kaito te pregunta qué tienes en casa. Laura tiene que: contarle cuántos animales y cuántos aparatos o vehículos hay, aunque sean inventados."
+ },
+ "cont_veces": {
+  "items": [
+   "～回",
+   "～度"
+  ],
+  "explicacion": "Para decir cuántas veces haces algo se usa el número + 回 (かい): いっかい, にかい, さんかい. Con un periodo delante, indica frecuencia: 「しゅうに さんかい プールへ いきます」 (voy a la piscina tres veces por semana). 「にほんへ いっかい いきました」. 度 (いちど, «una vez») es parecido, pero subraya la ocasión concreta. Para preguntar: 「なんかいですか」.",
+  "tarea": "Situación: Kaito te pregunta cuántas veces por semana haces deporte o estudias japonés. Laura tiene que: contestarle con un número concreto de veces."
+ },
+ "conjadj_cambio": {
+  "items": [
+   "〜くなります",
+   "〜になります"
+  ],
+  "explicacion": "Para decir que algo cambia de estado: con adjetivos-い, quita い y pon くなる; con adjetivos-な y sustantivos, pon になる. Ejemplos: 「さむくなります」 (hace más frío), 「げんきに なりました」 (me he puesto bien), 「はるに なりました」 (ha llegado la primavera). Es un cambio que ocurre solo, sin que nadie lo provoque. Atención al irregular いい: よくなります. Con だんだん suena a cambio gradual: 「だんだん あつくなります」.",
+  "tarea": "Situación: Kaito te pregunta cómo has estado esta semana y comenta que el tiempo está cambiando. Laura tiene que: contarle que estabas mal pero ya te has puesto mejor, y que el tiempo está cambiando."
+ },
+ "conjadj_enlazar": {
+  "items": [
+   "〜くて",
+   "〜で（な形容詞）"
+  ],
+  "explicacion": "Para encadenar cualidades o dar un motivo, el adjetivo-い cambia い por くて: 「このへやは ひろくて あかるいです」 (esta habitación es amplia y luminosa), 「あたまが いたくて ねました」 (me dolía la cabeza y me acosté). El adjetivo-な y el sustantivo toman で: 「げんきで しんせつな ひとです」, 「あのひとは せんせいで ともだちです」. El adjetivo final lleva el tiempo: 「やすくて おいしかったです」. Con いい: よくて.",
+  "tarea": "Situación: Kaito te pregunta cómo es tu casa o tu ciudad. Laura tiene que: describirla con al menos dos cualidades unidas en una sola frase."
+ },
+ "conjadj_facil_dificil": {
+  "items": [
+   "〜やすいです",
+   "〜にくいです"
+  ],
+  "explicacion": "Se toma la raíz de 〜ます del verbo, quitando ます, y se añade やすい (fácil de) o にくい (difícil de). Ejemplos: 「このペンは かきやすいです」 (este bolígrafo escribe cómodo), 「にほんごは おぼえにくいです」 (el japonés cuesta de memorizar). Se conjugan como adjetivos-い: 「たべにくかったです」. Indican comodidad o dificultad, no capacidad: para «no puedo» se usa otra forma. Opuesto práctico: ～やすい ↔ ～にくい.",
+  "tarea": "Situación: Kaito te pregunta qué tal te parece el japonés o los zapatos que llevas. Laura tiene que: decirle si algo es fácil o difícil, cómodo o incómodo de usar y por qué."
+ },
+ "conjadj_provocar_cambio": {
+  "items": [
+   "〜くします",
+   "〜にします"
+  ],
+  "explicacion": "Cuando alguien cambia algo a propósito se usa する en vez de なる. Con adjetivos-い, quita い y pon くします: 「おとを おおきく します」 (subo el volumen), 「へやを あかるく します」. Con adjetivos-な y sustantivos, にします: 「しずかに してください」 (haz silencio), «dejarlo así». También sirve para elegir al pedir: 「わたしは コーヒーに します」 (yo tomaré café). Frente a くなる, aquí hay alguien que decide.",
+  "tarea": "Situación: Kaito te acompaña a un café y te pregunta qué vas a pedir. Laura tiene que: decirle qué pides y pedirle que baje la música o suba la luz."
+ },
+ "clima_tiempo_hoy": {
+  "items": [
+   "天気",
+   "晴れ",
+   "曇り",
+   "雨",
+   "降る",
+   "晴れる"
+  ],
+  "explicacion": "Para el tiempo de hoy: 「きょうは はれです」 (hoy hace sol), 「くもりです」 (está nublado), 「あめです」 (llueve). Para preguntar: 「きょうの てんきは どうですか」. Con verbos: 「あめが ふります」 (llueve; lo que cae lleva が), «hace sol ahora» es 「はれています」, y 「はれます」 es «se despejará». Cuando hay un comentario general se añade ね: 「いい てんきですね」. Nieve: ゆきが ふります.",
+  "tarea": "Situación: Kaito te pregunta qué tiempo hace hoy y qué tiempo hizo ayer en tu ciudad. Laura tiene que: contárselo."
+ },
+ "clima_sensacion": {
+  "items": [
+   "暑い",
+   "寒い",
+   "暖かい",
+   "涼しい",
+   "冷たい"
+  ],
+  "explicacion": "Los cuatro adjetivos-い del tiempo: あつい (calor), さむい (frío), あたたかい (templado) y すずしい (fresco agradable). Se usan con です: 「きょうは あついですね」, 「ふゆは さむいです」. Para el pasado: 「きのうは さむかったです」. Ojo: つめたい es frío de las cosas (agua, bebida), no del ambiente. Y あたたかい se aplica al clima suave de primavera, mientras que すずしい es ese fresquito de otoño.",
+  "tarea": "Situación: Kaito dice que sale fuera y te pregunta qué tal hace. Laura tiene que: contarle el tiempo que hace ahora donde estás y cómo estaba ayer."
+ },
+ "clima_estaciones": {
+  "items": [
+   "春",
+   "夏",
+   "秋",
+   "冬"
+  ],
+  "explicacion": "Las cuatro estaciones son はる (primavera), なつ (verano), あき (otoño) y ふゆ (invierno), en ese orden. Para decir cuál te gusta: 「わたしは なつが すきです」. Para preguntar: 「どの きせつが すきですか」. Como época del año llevan に: 「なつに うみへ いきます」. Para razonar se puede añadir un adjetivo: 「ふゆは さむいです」. Las vacaciones largas son なつやすみ.",
+  "tarea": "Situación: Kaito te pregunta cuál es tu estación favorita y qué sueles hacer en esa época. Laura tiene que: contestarle las dos cosas, con el porqué."
+ },
+ "clima_prevision": {
+  "items": [
+   "雨",
+   "降る",
+   "傘",
+   "空",
+   "曇り"
+  ],
+  "explicacion": "Para decir que parece que va a llover, toma la raíz del verbo y añade そうです: 「あめが ふりそうです」. Es una impresión basada en lo que ves, por ejemplo el cielo gris: 「そらが くもって います」. Puedes completar con un consejo: 「かさを もって いきましょう」 (llevemos paraguas). La raíz de ふります es ふり.",
+  "tarea": "Situación: Kaito te ve mirando por la ventana un cielo muy oscuro y te pregunta qué crees que va a pasar. Laura tiene que: decirle qué va a pasar y aconsejarle qué llevar para salir."
+ },
+ "advcant_intensidad": {
+  "items": [
+   "とても",
+   "ちょっと",
+   "余り",
+   "少し"
+  ],
+  "explicacion": "Los adverbios van justo antes del adjetivo. とても es «muy»: 「とても おいしいです」. ちょっと o すこし, «un poco»: 「ちょっと さむいです」. あまり exige un verbo o adjetivo negativo y significa «no mucho»: 「あまり たかくないです」 (no es muy caro). Con あまり, el adjetivo-い se niega con くない; la cópula con じゃありません: 「あまり しずかじゃありません」.",
+  "tarea": "Situación: Kaito te pregunta qué te parece la comida japonesa y el clima de tu ciudad. Laura tiene que: responder matizando: mucho, un poco o no mucho."
+ },
+ "advcant_frecuencia": {
+  "items": [
+   "いつも",
+   "よく",
+   "時々"
+  ],
+  "explicacion": "Para la frecuencia, de más a menos: いつも (siempre), よく (a menudo), ときどき (a veces). Van antes del verbo: 「いつも コーヒーを のみます」, 「よく えいがを みます」, 「ときどき ともだちと あいます」. Para negar, combina con ません: 「あまり のみません」 (casi no bebo), no con いつも. Para preguntar: 「よく えいがを みますか」. Responde con 「はい、よく みます」.",
+  "tarea": "Situación: Kaito te pregunta cada cuánto haces deporte, ves la tele o cocinas. Laura tiene que: contestar con una frecuencia distinta en cada caso."
+ },
+ "advcant_cantidad": {
+  "items": [
+   "沢山",
+   "少し",
+   "全部",
+   "少ない",
+   "多い"
+  ],
+  "explicacion": "Mucho: たくさん; un poco: すこし; todo: ぜんぶ. Se colocan antes del verbo: 「たくさん たべました」, 「すこし のみました」, 「ぜんぶ たべました」. También con を: 「ほんを たくさん よみます」. Como adjetivos, おおい (hay mucho) y すくない (hay poco) se usan con が: 「ひとが おおいです」, 「みずが すくないです」. たくさん admite personas y cosas.",
+  "tarea": "Situación: Kaito te pregunta qué tal la fiesta de ayer. Laura tiene que: contarle que había mucha gente y mucha comida, que comiste un poco y que se acabó todo."
+ },
+ "advcant_estado": {
+  "items": [
+   "もう",
+   "まだ"
+  ],
+  "explicacion": "もう es «ya» y まだ «todavía». Pregunta: 「もう たべましたか」 (¿has comido ya?). Respuesta afirmativa: 「はい、もう たべました」; negativa: 「いいえ、まだです」 o 「まだ たべていません」. Atención: la respuesta negativa no es もう… ません, que significa «ya no…». Con もう y un verbo en pasado se afirma que algo ya ha pasado; con まだ expresas que todavía no.",
+  "tarea": "Situación: Kaito te pregunta si ya has hecho los deberes y si ya has comido. Laura tiene que: contestar que una cosa sí y la otra todavía no."
+ },
+ "extra_andamiaje": {
+  "items": [
+   "意味",
+   "言葉",
+   "質問",
+   "答える"
+  ],
+  "explicacion": "Para preguntar por una palabra: 「これは どういう いみですか」 (¿qué significa esto?), 「にほんごで なんと いいますか」 (¿cómo se dice en japonés?). Para pedir que repitan: 「もういちど おねがいします」 y 「ゆっくり おねがいします」 (más despacio). Si tienes una duda, 「しつもんが あります」. Pregunta nombrando la palabra: 「『かさ』は どういう いみですか」. También sirve 「すみません、わかりません」.",
+  "tarea": "Situación: Kaito usa una palabra que no conoces y luego te deja pedirle ayuda con otra. Laura tiene que: preguntarle qué significa, pedirle cómo se dice «paraguas» en japonés y que lo repita más despacio."
+ },
+ "extra_escuela": {
+  "items": [
+   "授業",
+   "宿題",
+   "テスト",
+   "教室",
+   "習う",
+   "覚える"
+  ],
+  "explicacion": "Vocabulario de clase: じゅぎょう (clase), しゅくだい (deberes), テスト (examen), きょうしつ (aula). Ejemplos: 「あしたは テストが あります」 (mañana hay examen), 「しゅくだいを しました」, 「じゅぎょうは きょうしつで あります」. Con verbos: 「にほんごを ならいます」 (aprendo japonés en clase), 「ことばを おぼえます」 (memorizo). El examen o la clase que existe lleva が con あります.",
+  "tarea": "Situación: Kaito te pregunta cómo va tu semana de estudio. Laura tiene que: contarle qué tienes mañana, qué has hecho de deberes y cómo aprendes palabras nuevas."
+ },
+ "extra_ocio": {
+  "items": [
+   "本",
+   "映画",
+   "音楽",
+   "歌",
+   "歌う"
+  ],
+  "explicacion": "Para hablar de ocio: ほん (libro), えいが (película), おんがく (música), うた (canción). Con verbos: 「ほんを よみます」, 「えいがを みます」, 「おんがくを ききます」, 「うたを うたいます」. Para gustos: 「えいがが すきです」. Pregunta: 「どんな おんがくが すきですか」. Combina con よく o ときどき para decir la frecuencia: 「ときどき えいがを みます」.",
+  "tarea": "Situación: Kaito te pregunta qué sueles hacer en tu tiempo libre y qué música o películas te gustan. Laura tiene que: contárselo con tus gustos."
+ },
+ "extra_animales_paises": {
+  "items": [
+   "犬",
+   "猫",
+   "鳥",
+   "国",
+   "外国",
+   "動物"
+  ],
+  "explicacion": "Animales: いぬ (perro), ねこ (gato), とり (pájaro), どうぶつ (animal). Países: くに (país), がいこく (extranjero). Frases: 「いぬが すきです」, 「ねこが います」 (hay un gato; seres vivos con います), 「わたしの くには スペインです」 (mi país es España). 「がいこくへ いきたいです」 sería «quiero ir al extranjero». Para preguntar: 「どこの くにですか」. El nombre de tu país suele escribirse en katakana: スペイン.",
+  "tarea": "Situación: Kaito te pregunta de qué país eres y si tienes mascota. Laura tiene que: decirle el nombre de tu país y qué animal te gusta o tienes en casa."
+ },
+ "extra_pedir_prestar": {
+  "items": [
+   "借りる",
+   "貸す",
+   "返す"
+  ],
+  "explicacion": "かりる es pedir prestado y かす es prestar; la persona de quien lo tomas lleva に o から. 「ともだちに ほんを かりました」 (le pedí un libro a un amigo), 「ペンを かしてください」 (préstame el bolígrafo), y para pedir permiso: 「かりても いいですか」. Después se devuelve: かえす, 「あした かえします」. Ojo: quien presta usa かす, quien recibe usa かりる, aunque la cosa sea la misma.",
+  "tarea": "Situación: Kaito te dice que no tiene bolígrafo y luego te deja pedirle algo a él. Laura tiene que: prestarle tu bolígrafo, pedirle prestado un diccionario y decirle cuándo lo devolverás."
+ },
+ "demo_senalar": {
+  "items": [
+   "これ",
+   "それ",
+   "あれ",
+   "この",
+   "その",
+   "あの"
+  ],
+  "explicacion": "Los tres demostrativos dependen de la distancia respecto a los dos que hablan: これ es lo que está cerca de mí, それ lo que está cerca de ti (o lo que acabas de mencionar) y あれ lo que está lejos de los dos. Van solos como pronombre: これはペンです。 それはほんですか。 Delante de un nombre se usan この・その・あの: このペン, そのほん, あのくるま. Nunca se dice これペン: este grupo no puede ir pegado a un nombre.",
+  "tarea": "Situación: Kaito te señala tres objetos imaginarios: uno cerca de él, uno cerca de ti y uno lejos de los dos. Laura tiene que: nombrarlos con la palabra correcta para cada distancia."
+ },
+ "demo_preguntar_que": {
+  "items": [
+   "何",
+   "誰",
+   "どなた",
+   "これ"
+  ],
+  "explicacion": "Para preguntar qué es algo: これはなんですか。 Para preguntar quién es alguien: あのひとはだれですか。 La respuesta repite la estructura: それはほんです。 あのひとはたなかさんです。 La palabra 何 se lee なん delante de です (なんですか). どなた es el 'quién' cortés, para hablar con desconocidos o superiores: どなたですか。 No hace falta cambiar el orden de la frase, solo sustituir la respuesta por la palabra interrogativa.",
+  "tarea": "Situación: Kaito te enseña un objeto raro que no reconoces y una foto de una persona. Laura tiene que: preguntarle qué es el objeto y quién es la persona."
+ },
+ "demo_lugar": {
+  "items": [
+   "ここ",
+   "そこ",
+   "あそこ",
+   "どこ",
+   "こちら",
+   "あちら"
+  ],
+  "explicacion": "Los lugares siguen la misma lógica que これ・それ・あれ: ここ es el sitio del que habla, そこ el del oyente y あそこ el lejano; どこ pregunta dónde. El patrón es: lugar + は + どこですか。 トイレはどこですか。 Respuesta: あそこです。 Para señalar con cortesía se usan こちら・そちら・あちら: こちらです('por aquí'). Con amigos se oye こっち・あっち. No uses あっち con un cliente o un jefe.",
+  "tarea": "Situación: Kaito hace de cliente de un restaurante y te pregunta dónde está el baño. Laura tiene que: indicárselo y entender lo que te responde."
+ },
+ "demo_elegir": {
+  "items": [
+   "どれ",
+   "どの",
+   "どっち",
+   "どちら"
+  ],
+  "explicacion": "Para elegir entre tres o más cosas se usa どれ: どれがいいですか。 Con un nombre detrás es どの: どのかばんですか。 Para elegir entre solo dos opciones se usa どっち, o どちら en tono cortés: コーヒーとおちゃ、どちらがいいですか。 Respuesta: こっちです / これです / どちらでもいいです. どの siempre necesita un nombre detrás; どれ va solo.",
+  "tarea": "Situación: Kaito te enseña tres bolsos y te pregunta cuál prefieres; luego te pone a elegir entre solo dos cafeterías. Laura tiene que: decirle cuál de los tres bolsos prefieres y cuál de las dos cafeterías eliges."
+ },
+ "demo_indefinido": {
+  "items": [
+   "誰か",
+   "疑問詞+か",
+   "疑問詞+も"
+  ],
+  "explicacion": "Si añades か a un interrogativo, deja de ser pregunta y pasa a significar 'alguien', 'algo' o 'algún sitio': だれかいますか。 ('¿hay alguien?'). Si añades も y acabas con un verbo en negativo, significa 'nadie', 'nada' o 'ningún sitio': だれもいません。 Fíjate: 誰か lleva verbo afirmativo en la pregunta, y 誰も exige que el verbo vaya en negativo. Ejemplo con lugar: どこかへいきますか。 ―いいえ、どこへもいきません。",
+  "tarea": "Situación: Kaito finge que estáis en una habitación vacía y te pregunta si hay alguien. Laura tiene que: decirle que no hay nadie."
+ },
+ "hora_hora": {
+  "items": [
+   "～時",
+   "～分",
+   "半",
+   "午前",
+   "午後"
+  ],
+  "explicacion": "La hora en punto es número + じ: さんじ. Se pregunta なんじですか. Ojo a tres lecturas: よじ (4), しちじ (7), くじ (9). Los minutos son número + ふん/ぷん: ごふん, じゅっぷん, じゅうごふん. Para la media hora se usa はん: さんじはんです ('son las tres y media'). Para precisar mañana o tarde se antepone 午前 (ごぜん) o 午後 (ごご): ごごさんじです。",
+  "tarea": "Situación: Kaito te pregunta qué hora es ahora y luego te dice que su tren sale a las cinco y cuarto de la tarde. Laura tiene que: decirle la hora y repetirle la hora de su tren en japonés."
+ },
+ "hora_diasemana": {
+  "items": [
+   "月曜日",
+   "火曜日",
+   "水曜日",
+   "木曜日",
+   "金曜日",
+   "土曜日",
+   "日曜日",
+   "今日"
+  ],
+  "explicacion": "Los días son げつようび (lunes), かようび, すいようび, もくようび, きんようび, どようび y にちようび (domingo). Cada uno es un elemento de la naturaleza más ようび: luna, fuego, agua, madera, oro, tierra, sol. Para preguntar: なんようびですか。 Respuesta: きょうはげつようびです。 Para decir que algo ocurre en un día concreto se añade に: どようびにあいます。 Con きょう, あした y きのう no se usa に.",
+  "tarea": "Situación: Kaito te pregunta qué día de la semana es hoy y qué día es mañana. Laura tiene que: contestarle las dos cosas."
+ },
+ "hora_fecha": {
+  "items": [
+   "～月",
+   "～日",
+   "一日",
+   "二日",
+   "三日",
+   "二十日",
+   "誕生日"
+  ],
+  "explicacion": "El mes es número + がつ: いちがつ, じゅういちがつ. Ojo: しがつ (abril), しちがつ (julio), くがつ (septiembre). Los días 1 a 10 tienen lectura propia: ついたち, ふつか, みっか, よっか, いつか, むいか, なのか, ようか, ここのか, とおか; el 20 es はつか y a partir del 11 es número + にち, salvo el 14 じゅうよっか y el 24 にじゅうよっか. Preguntar: なんがつなんにちですか。 Ejemplo: たんじょうびはじゅういちがつみっかです。",
+  "tarea": "Situación: Kaito te pregunta cuándo es tu cumpleaños y qué fecha es hoy. Laura tiene que: decirle el mes y el día de tu cumpleaños y la fecha de hoy."
+ },
+ "hora_referencias": {
+  "items": [
+   "今日",
+   "昨日",
+   "明日",
+   "今週",
+   "来週",
+   "先週",
+   "今月",
+   "来月"
+  ],
+  "explicacion": "Estas palabras sitúan algo en el tiempo: きのう (ayer), きょう (hoy), あした (mañana); せんしゅう (la semana pasada), こんしゅう (esta semana), らいしゅう (la que viene); igual con げつ: せんげつ, こんげつ, らいげつ. Estas palabras relativas normalmente no llevan に: あしたはやすみです。 らいしゅうはいそがしいです。 Con días concretos sí: にちようびに.",
+  "tarea": "Situación: Kaito te pregunta si trabajas o descansas mañana y cuándo vas a estar libre la semana que viene. Laura tiene que: contestarle las dos cosas."
+ },
+ "hora_cita": {
+  "items": [
+   "いつ",
+   "～ころ; ～ごろ",
+   "～時",
+   "半",
+   "午前",
+   "午後"
+  ],
+  "explicacion": "いつ significa 'cuándo' y se usa para proponer citas: いつがいいですか。 Para dar una hora aproximada se pone ごろ detrás del momento: さんじごろ ('hacia las tres'). Ejemplo: あしたのごごさんじごろはどうですか。 ごろ se usa con puntos del tiempo (una hora, un día); para duraciones (unas tres horas) se usa ぐらい, no ごろ. Para algo más seguro basta con la hora exacta: さんじはんです。",
+  "tarea": "Situación: Kaito te propone quedar para tomar un café. Laura tiene que: preguntarle cuándo le va bien y proponerle una hora aproximada."
+ },
+ "familia_mi_familia": {
+  "items": [
+   "家族",
+   "父",
+   "母",
+   "兄",
+   "姉",
+   "弟",
+   "妹",
+   "両親"
+  ],
+  "explicacion": "Al hablar de tu propia familia con otros usas ちち (padre), はは (madre), あに (hermano mayor), あね (hermana mayor), おとうと (hermano menor) e いもうと (hermana menor). Los padres juntos: りょうしん. Ejemplos: わたしのかぞくはよにんです。 あねはせんせいです。 No añadas さん a tu propia familia: eso sería respetar a alguien de tu casa delante de un extraño.",
+  "tarea": "Situación: Kaito te pregunta quién forma tu familia. Laura tiene que: contarle quién es cada uno y a qué se dedica."
+ },
+ "familia_otra": {
+  "items": [
+   "お父さん",
+   "お母さん",
+   "お兄さん",
+   "お姉さん",
+   "奥さん",
+   "兄弟",
+   "家族"
+  ],
+  "explicacion": "Para la familia de otra persona (y para dirigirte a la tuya en persona) se usan las formas con お y さん: おとうさん, おかあさん, おにいさん, おねえさん, y おくさん para su esposa. Algunas palabras llevan ご de cortesía en vez de お: ごかぞくは、なんにんですか。 ごきょうだいはいますか。 Ejemplo: おかあさんはおげんきですか。 Nunca uses estas formas para tu propia familia hablando con otros: ahí van ちち, はは, あに y あね.",
+  "tarea": "Situación: Kaito hace de compañero japonés nuevo que acabas de conocer. Laura tiene que: preguntarle por sus padres y sus hermanos con educación."
+ },
+ "familia_relaciones": {
+  "items": [
+   "友達",
+   "先生",
+   "学生",
+   "みんな",
+   "人",
+   "～たち"
+  ],
+  "explicacion": "ともだち es amigo/a y せんせい profesor/a. Se presentan con の: こちらはわたしのともだちです。 あのひとはわたしのせんせいです。 Para presentar a alguien que está delante se usa こちら, no これ, que es para cosas. Con el profesor se usa せんせい como título, no さん: たなかせんせい. Para varios, ～たち se añade a personas: ともだちたち suena raro, pero わたしたち ('nosotros') es muy común. Para 'todo el mundo' se dice みんな.",
+  "tarea": "Situación: Kaito te enseña una foto de una persona y te pregunta quién es. Laura tiene que: decirle si es tu amiga, tu profesora o una compañera de clase."
+ },
+ "familia_estado": {
+  "items": [
+   "結婚",
+   "若い",
+   "大人",
+   "子供"
+  ],
+  "explicacion": "Para decir que alguien está casado se usa けっこんしています: あねはけっこんしています。 Se pregunta: けっこんしていますか。 Respuesta: はい、しています。 / いいえ、していません。 Con un verbo sin ている, けっこんします significa 'me caso' (un acto futuro o puntual), no el estado. わかい significa 'joven' y es un adjetivo en い: あのひとはわかいです。 わかくないです。",
+  "tarea": "Situación: Kaito te pregunta si estás casada o soltera y si tus hermanos son jóvenes. Laura tiene que: contestarle con el estado de cada uno."
+ },
+ "casa_habitaciones": {
+  "items": [
+   "部屋",
+   "台所",
+   "玄関",
+   "お風呂",
+   "トイレ",
+   "庭",
+   "廊下",
+   "階段"
+  ],
+  "explicacion": "へや es cualquier habitación; だいどころ la cocina; げんかん la entrada donde te quitas los zapatos; おふろ el baño con bañera (el váter es aparte, トイレ); にわ el jardín; ろうか el pasillo; かいだん las escaleras. Para decir qué hay en casa se usa あります con に: うちにだいどころとおふろがあります。 Para ubicar: トイレはあそこです。",
+  "tarea": "Situación: Kaito te pregunta cómo es tu casa y qué habitaciones tiene. Laura tiene que: describírsela nombrando al menos tres partes."
+ },
+ "casa_objetos": {
+  "items": [
+   "椅子",
+   "机",
+   "テーブル",
+   "ベッド",
+   "冷蔵庫",
+   "本棚",
+   "時計",
+   "窓"
+  ],
+  "explicacion": "Los muebles son いす (silla), つくえ (mesa de estudio), テーブル (mesa de comer), ベッド (cama), れいぞうこ (nevera), ほんだな (estantería), とけい (reloj) y まど (ventana). Para decir qué hay se usa lugar + に + objeto + が + あります, porque son cosas sin vida: へやにつくえといすがあります。 Para enumerar se encadena con と: ベッドとほんだなとテーブル.",
+  "tarea": "Situación: Kaito te pregunta qué muebles hay en tu habitación. Laura tiene que: enumerarle al menos cuatro."
+ },
+ "casa_ubicar": {
+  "items": [
+   "机",
+   "本棚",
+   "冷蔵庫",
+   "椅子",
+   "かばん",
+   "置く"
+  ],
+  "explicacion": "Para ubicar un objeto se usa lugar + に + objeto + が + あります, o bien objeto + は + lugar + に + あります. Las posiciones se forman con の: つくえのうえ (encima de la mesa), つくえのなか (dentro), いすのとなり (al lado), つくえのした (debajo). Ejemplo: かばんはつくえのうえにあります。 れいぞうこはほんだなのとなりにあります。 Para decir 'lo dejo ahí' se usa おく: かばんをつくえのうえにおきます。",
+  "tarea": "Situación: Kaito te pregunta dónde has dejado las llaves y el bolso. Laura tiene que: decirle su posición exacta respecto a un mueble."
+ },
+ "casa_vivienda": {
+  "items": [
+   "住む",
+   "広い",
+   "狭い",
+   "アパート",
+   "うち",
+   "部屋",
+   "エレベーター"
+  ],
+  "explicacion": "Para decir dónde vives: lugar + に + すんでいます: わたしはマドリードにすんでいます。 Se pregunta: どこにすんでいますか。 Para describir tu casa se usan los adjetivos ひろい y せまい, que son い: うちはひろいです。 へやはせまいです。 Negativo: ひろくないです. Un piso pequeño se dice アパート, y se puede añadir si hay エレベーター: エレベーターがあります。",
+  "tarea": "Situación: Kaito te pregunta dónde vives, cómo es tu casa, si es grande o pequeña y si tiene ascensor. Laura tiene que: contestarle todo eso."
+ },
+ "casa_acciones": {
+  "items": [
+   "電気",
+   "つける",
+   "消す",
+   "鍵",
+   "掛ける"
+  ],
+  "explicacion": "Se enciende la luz con でんきをつける y se apaga con でんきをけす. Con llave se cierra con かぎをかける (abrir es かぎをあける). Son verbos con を: でんきをけします。 かぎをかけました。 Para pedírselo a alguien: でんきをけしてください。 Para preguntar si ya está hecho en casual: かぎかけた？ Es lo típico al salir de casa o al irte a dormir.",
+  "tarea": "Situación: Kaito finge estar en la puerta a punto de salir de casa y te pregunta qué tiene que hacer antes. Laura tiene que: recordarle la luz y la llave."
+ },
+ "casual_si_no": {
+  "items": [],
+  "explicacion": "Entre amigos y familia se usa うん para 'sí' y ううん para 'no', en lugar de はい e いいえ. うん se dice con un tono corto y descendente; ううん es más largo, con tono que baja. Ejemplo: おなかすいた？ ―うん、すいた。 / ううん、まだ。 Es un registro de confianza: con un jefe, un profesor o un desconocido se mantiene はい e いいえ, y con ellos うん suena demasiado familiar.",
+  "tarea": "Situación: Kaito te pregunta como a un amigo si ya has comido y si te apetece dar un paseo. Laura tiene que: contestarle en tono informal, sin はい ni いいえ.",
+  "claves": [
+   "うん",
+   "ううん"
+  ]
+ },
+ "casual_plain": {
+  "items": [],
+  "explicacion": "La forma llana quita ます y です. Verbos: たべます se convierte en たべる (presente), たべない (negativo), たべた (pasado) y たべなかった (pasado negativo). Con nombres, です pasa a だ, y se suele omitir: がくせいだよ. Con adjetivos en い desaparece です: たかいです → たかい. Las preguntas no llevan か: basta con subir el tono, あした、いく？ Con amigos, no con superiores.",
+  "tarea": "Situación: Kaito te pregunta como a una amiga qué comiste ayer y qué vas a hacer mañana. Laura tiene que: contárselo en tono informal, sin です ni ます.",
+  "patron": "llano"
+ },
+ "casual_conectar": {
+  "items": [
+   "じゃ; じゃあ"
+  ],
+  "explicacion": "じゃあ es la forma hablada de では y significa 'bueno, pues'. Sirve para cerrar una conversación (じゃあ、またね。 じゃあ、またあした。) o para pasar a otro tema (じゃあ、ごはんにしよう)... Es casual: con un cliente o un jefe se dice それでは o では. じゃ es la versión más corta, más rápida y menos cuidada que じゃあ.",
+  "tarea": "Situación: Kaito te dice que tiene que irse porque llega tarde a una cita. Laura tiene que: despedirte de él en tono de amigos, hasta mañana."
+ },
+ "potencial_poder": {
+  "items": [
+   "できる"
+  ],
+  "explicacion": "できる significa 'poder hacer' o 'saber hacer'. Con un nombre lleva が: にほんごができます。 ピアノができます。 Negativo: できません (casual: できない). Con un verbo se usa el diccionario + ことが: およぐことができます。 La pregunta es できますか。 Además existe la forma potencial propia de cada verbo: よむ → よめる, たべる → たべられる.",
+  "tarea": "Situación: Kaito te pregunta si sabes nadar o hablar japonés y te propone algo que no sabes hacer. Laura tiene que: contestarle qué puedes y qué no puedes hacer."
+ },
+ "potencial_ayuda": {
+  "items": [],
+  "explicacion": "Para pedir ayuda se usa la forma て del verbo + くれますか: てつだってくれますか。 ('¿me echas una mano?'). Más cortés: てつだってくれませんか。 Con amigos: てつだってくれる？ Se añade すみません delante si la persona no es de confianza: すみません、ちょっとてつだってくれませんか。 Funciona con cualquier verbo: かしてくれますか ('¿me lo prestas?'), おしえてくれますか ('¿me lo enseñas?').",
+  "tarea": "Situación: Kaito te pide que imagines que vas cargada de bolsas y que no consigues abrir un bote, y él hace de persona que pasa por ahí. Laura tiene que: pedirle ayuda con educación.",
+  "claves": [
+   "てくれ",
+   "てくださ"
+  ]
+ },
+ "potencial_intentar": {
+  "items": [],
+  "explicacion": "Verbo en forma て + みる significa 'probar a hacer algo' o 'intentarlo': やってみます ('lo intento', 'a ver qué tal'). Con otro verbo: たべてみます ('lo pruebo'), いってみます ('iré a ver'). Casual: やってみる. No significa esforzarse mucho (eso sería がんばる), sino arriesgarse a probar. Se usa mucho tras un 'puedes?': できる？ ―やってみる。",
+  "tarea": "Situación: Kaito te propone cocinar un plato japonés, algo que nunca has hecho. Laura tiene que: decirle que vas a probarlo.",
+  "claves": [
+   "てみ"
+  ]
+ },
+ "part_tema": {
+  "items": [
+   "は",
+   "も"
+  ],
+  "explicacion": "は (se pronuncia wa) marca el tema, aquello de lo que hablas, y se pone justo detrás de él: わたしは ラウラです (yo, soy Laura). Lo que dices después es el comentario sobre ese tema. Si el tema es el mismo de antes, se suele omitir. も sustituye a は cuando quieres decir también: わたしも スペインじんです (yo también soy española). No se pueden poner juntas: nunca わたしはも. Con は no estás diciendo quién hace algo, sino de qué hablas.",
+  "tarea": "Situación: Kaito te pregunta quién eres y de dónde eres, y cómo es tu mejor amiga. Laura tiene que: decirle quién eres y de dónde, y que tu mejor amiga también es de allí."
+ },
+ "part_objeto_accion": {
+  "items": [
+   "を"
+  ],
+  "explicacion": "を marca el objeto directo, lo que recibe la acción, y va entre ese sustantivo y el verbo: みずを のみます (bebo agua), にほんごを べんきょうします (estudio japonés). Se escribe を pero se pronuncia o. El orden es siempre sujeto, objeto, verbo, y el verbo va al final: わたしは パンを たべます. Solo se usa con verbos que llevan complemento directo; con verbos como いきます (ir) o ねます (dormir) no aparece.",
+  "tarea": "Situación: Kaito te pregunta qué haces normalmente por la mañana. Laura tiene que: contarle dos cosas que haces, por ejemplo qué desayunas o qué lees."
+ },
+ "part_lugar_tiempo": {
+  "items": [
+   "に",
+   "で",
+   "へ"
+  ],
+  "explicacion": "に marca el destino de un movimiento y la hora concreta: がっこうに いきます (voy a la escuela), ７じに おきます (me levanto a las siete). で marca el lugar donde ocurre la acción: としょかんで べんきょうします (estudio en la biblioteca). Regla útil: に es adonde vas o la hora exacta; で es donde haces algo. Palabras como きょう, あした o まいにち no llevan に. へ también sirve para el destino y se lee e.",
+  "tarea": "Situación: Kaito te pregunta a qué hora vas mañana a algún sitio y qué haces allí. Laura tiene que: decirle la hora, el lugar y qué haces allí."
+ },
+ "part_compania_y": {
+  "items": [
+   "と",
+   "や"
+  ],
+  "explicacion": "と tiene dos usos. Con compañía significa con: ともだちと ごはんを たべます (como con una amiga). Entre sustantivos significa y, con una lista completa: パンと たまご (pan y huevos, nada más). や da una lista abierta, solo algunos ejemplos entre otros: パンや たまご (pan, huevos y cosas así). Ninguna de las dos une frases enteras, solo sustantivos. La persona con quien haces algo va justo antes de と y antes del verbo.",
+  "tarea": "Situación: Kaito te pregunta con quién sueles comer o salir y qué llevas en la mochila. Laura tiene que: decirle con quién y listar dos o tres cosas de tu mochila como lista completa."
+ },
+ "part_pregunta_matiz": {
+  "items": [
+   "か",
+   "ね",
+   "よ"
+  ],
+  "explicacion": "Para preguntar basta añadir か al final de la frase, sin cambiar nada más: ラウラさんは がくせいですか (¿eres estudiante?). Hablando se sube un poco el tono, pero no hace falta signo de interrogación. ね al final pide confirmación, como un ¿verdad?: いい てんきですね (hace buen tiempo, ¿verdad?). よ informa de algo que el otro no sabe: あした やすみですよ (mañana es festivo, ¿sabes?). No abuses de よ, suena insistente.",
+  "tarea": "Situación: Kaito te pregunta algo de tu vida y luego comenta el tiempo esperando que le des la razón. Laura tiene que: contestarle, devolverle la pregunta y darle la razón con el matiz adecuado."
+ },
+ "verbos_rutina": {
+  "items": [
+   "起きる",
+   "食べる",
+   "勉強",
+   "寝る",
+   "飲む",
+   "する"
+  ],
+  "explicacion": "Los verbos en forma educada acaban en ます y van al final: おきます (me levanto), たべます (como), ねます (me acuesto), のみます (bebo). Usa に para la hora: ７じに おきます. Usa を para lo que comes o bebes: パンを たべます. Para estudiar se une 勉強 con する: べんきょうします. Para decir lo que haces cada día, añade まいにち al principio, sin に.",
+  "tarea": "Situación: Kaito te pide que le cuentes tu día normal. Laura tiene que: decirle en cuatro o cinco frases a qué hora te levantas, qué desayunas, qué estudias y a qué hora te acuestas."
+ },
+ "verbos_comunicar": {
+  "items": [
+   "話す",
+   "聞く",
+   "分かる",
+   "言う"
+  ],
+  "explicacion": "はなします es hablar: にほんごを はなします (hablo japonés), y con alguien se usa と: ともだちと はなします. ききます significa escuchar (おんがくを ききます) y también preguntar a alguien: せんせいに ききます. わかります es entender, y lo entendido lleva が, no を: にほんごが わかります (entiendo japonés). Negativo: わかりません (no entiendo). いいます es decir.",
+  "tarea": "Situación: Kaito te pregunta si entiendes japonés, qué idioma hablas con tu familia y a quién preguntas cuando tienes una duda. Laura tiene que: contestarle las tres cosas."
+ },
+ "verbos_ir_volver": {
+  "items": [
+   "行く",
+   "来る",
+   "帰る"
+  ],
+  "explicacion": "いきます es ir, alejarte de donde estás; きます es venir, acercarte a donde estás; かえります es volver al sitio al que perteneces, como casa o tu país. El destino lleva に (o へ): がっこうに いきます (voy a la escuela), うちに かえります (vuelvo a casa). Si vas a casa de quien habla contigo, en japonés se dice いきます, no きます. Hora y día de vuelta: ６じに かえります.",
+  "tarea": "Situación: Kaito te pregunta adónde vas después de clase, a qué hora vuelves a casa y si él va a venir a tu casa mañana. Laura tiene que: contestarle, usando el verbo correcto para ir, volver y venir."
+ },
+ "verbos_estudio_trabajo": {
+  "items": [
+   "勉強",
+   "する",
+   "働く",
+   "勤める"
+  ],
+  "explicacion": "べんきょうします es estudiar: nombre + する. El lugar donde estudias lleva で: としょかんで べんきょうします. はたらきます es trabajar como actividad y el lugar lleva で: ぎんこうで はたらきます. Para decir en qué empresa estás empleada se usa つとめます con に: ぎんこうに つとめています. Lo que estudias va con を: にほんごを べんきょうします.",
+  "tarea": "Situación: Kaito te pregunta qué estudias o en qué trabajas. Laura tiene que: decirle qué haces y dónde lo haces."
+ },
+ "tiempolugar_posicion": {
+  "items": [
+   "上",
+   "下",
+   "中",
+   "前",
+   "後ろ",
+   "隣",
+   "横"
+  ],
+  "explicacion": "La posición se dice con sustantivo + の + palabra de lugar: つくえの うえ (encima de la mesa), はこの なか (dentro de la caja), いえの まえ (delante de la casa), いすの うしろ (detrás de la silla), ぎんこうの となり (al lado del banco). Se completa con に y ある o いる: ほんは つくえの うえに あります. Cosas: あります; personas y animales: います. となり es entre cosas del mismo tipo; よこ es un lado cualquiera.",
+  "tarea": "Situación: Kaito te pregunta dónde está tu móvil o tu libro y dónde está el gato o una persona de tu casa. Laura tiene que: decirle dónde está cada cosa respecto a otro objeto."
+ },
+ "tiempolugar_preguntar_sitio": {
+  "items": [
+   "近い",
+   "遠い",
+   "近く",
+   "駅"
+  ],
+  "explicacion": "Para preguntar por un sitio: えきは どこですか (¿dónde está la estación?). Para saber la distancia: えきから ちかいですか (¿está cerca de la estación?). Respuestas: ちかいです (está cerca), とおいです (está lejos). ちかくに es en las cercanías: ちかくに コンビニが ありますか (¿hay un conbini por aquí cerca?). Educado y suave: ちょっと とおいですね.",
+  "tarea": "Situación: Kaito hace de vecino del barrio al que acabas de llegar. Laura tiene que: preguntarle si hay una cafetería cerca y dónde está la estación, y decirle si tu casa está cerca o lejos de ella."
+ },
+ "tiempolugar_quedar": {
+  "items": [
+   "会う",
+   "時間",
+   "一緒",
+   "駅",
+   "公園"
+  ],
+  "explicacion": "Para quedar, di la hora con に, el lugar y あいます: ３じに えきで あいましょう (quedemos a las tres en la estación). La persona con quien te ves lleva に o と: ともだちに あいます, ともだちと あいます. いっしょに significa juntos: いっしょに いきませんか (¿vamos juntos?). La hora se pregunta con なんじ: なんじに あいますか. El lugar se pregunta con どこで.",
+  "tarea": "Situación: Kaito quiere quedar contigo el sábado. Laura tiene que: proponerle una hora y un sitio concretos, por ejemplo la estación o el parque."
+ },
+ "tiempolugar_disponibilidad": {
+  "items": [
+   "暇",
+   "時間",
+   "今",
+   "毎日"
+  ],
+  "explicacion": "ひまです significa estar libre, sin plan: きょうは ひまです (hoy estoy libre). じかん es el tiempo disponible: じかんが ありますか (¿tienes tiempo?). Respuesta negativa suave: じかんが ありません. いま es ahora: いま ひまですか (¿estás libre ahora?). まいにち es todos los días, sin に: まいにち いそがしいです (cada día estoy ocupada). No digas ひまです a un superior si quieres sonar educado.",
+  "tarea": "Situación: Kaito te pregunta si estás libre mañana por la tarde. Laura tiene que: contestarle si tienes tiempo o no."
+ },
+ "teforma_encadenar": {
+  "items": [
+   "〜て（て形）"
+  ],
+  "explicacion": "Para decir varias acciones seguidas, todos los verbos van en forma て menos el último, que lleva el tiempo: おきて、たべて、でかけます. Cómo se forma: los ichidan (los de -eru/-iru, como たべる o みる) quitan る y añaden て: たべて, みて. Los godan cambian según la última sílaba: う, つ y る pasan a って (かう → かって, まつ → まって, かえる → かえって); む, ぶ y ぬ pasan a んで (のむ → のんで, あそぶ → あそんで); く pasa a いて (かく → かいて); ぐ pasa a いで (およぐ → およいで); す pasa a して (はなす → はなして). Irregulares: する → して, くる → きて, y いく → いって.",
+  "tarea": "Situación: Kaito te pregunta qué hiciste el fin de semana pasado o qué vas a hacer esta noche. Laura tiene que: contárselo en una frase, con dos o tres cosas en orden.",
+  "patron": "te"
+ },
+ "teforma_pedir": {
+  "items": [
+   "〜てください"
+  ],
+  "explicacion": "Para pedir a alguien que haga algo: verbo en forma て + ください. まって ください es \"espera, por favor\"; ゆっくり はなして ください, \"habla despacio, por favor\". Es educado pero directo, casi una instrucción: lo dice un profesor, un médico o alguien que pide algo normal.",
+  "tarea": "Situación: Kaito te dice que te ayudará con lo que necesites en clase. Laura tiene que: pedirle que abra la ventana, que espere, que hable más despacio o que repita.",
+  "patron": "tekudasai"
+ },
+ "teforma_permiso": {
+  "items": [
+   "〜てもいいです",
+   "〜てはいけません",
+   "〜て（て形）"
+  ],
+  "explicacion": "Para pedir permiso se usa forma て + もいいですか: しゃしんを とっても いいですか (¿puedo hacer una foto?). Respuestas: はい、どうぞ (sí, adelante) o すみません、ちょっと… (lo siento, mejor no). Para prohibir: てはいけません, que expresa una norma o una autoridad: ここで たばこを すっては いけません (aquí no se puede fumar). Con amigos suena más informal con ちゃだめ.",
+  "tarea": "Situación: Kaito hace de guardia de un museo. Laura tiene que: pedirle permiso para hacer una foto o sentarte, y decirle qué no se puede hacer allí.",
+  "patron": "te"
+ },
+ "teforma_progresivo": {
+  "items": [
+   "〜ています",
+   "〜て（て形）"
+  ],
+  "explicacion": "Se usa forma て + います para lo que ocurre ahora mismo: いま ごはんを たべています (ahora estoy comiendo). También expresa un estado resultante: けっこんしています (estoy casada), すんでいます (vivo en). No se dice けっこんして いる como acción de casarse. En conversación se come la い: たべてます. Negativo: たべていません. Pregunta: なにを していますか (¿qué estás haciendo?).",
+  "tarea": "Situación: Kaito te pregunta qué estás haciendo ahora mismo en casa, dónde vives y si estás casada o soltera. Laura tiene que: contestarle las tres cosas.",
+  "patron": "te"
+ },
+ "teforma_favores": {
+  "items": [
+   "〜てあげます",
+   "〜てくれます",
+   "〜てもらいます"
+  ],
+  "explicacion": "Con forma て + あげます haces algo por otra persona: ともだちに ほんを かして あげました (le presté un libro a una amiga). くれます es cuando alguien lo hace por ti: ともだちが てつだって くれました (una amiga me ayudó); quien lo hace lleva が. もらいます es que consigues que alguien lo haga: ともだちに おしえて もらいました (me lo explicó una amiga); quien lo hace lleva に. Con superiores, evita あげます a la cara.",
+  "tarea": "Situación: Kaito te pregunta qué hiciste por una amiga y qué hizo alguien por ti. Laura tiene que: contarle una cosa que hiciste por una amiga y otra que un profesor o amigo hizo por ti.",
+  "patron": "te"
+ },
+ "viaje_billete": {
+  "items": [
+   "切符",
+   "電車",
+   "地下鉄"
+  ],
+  "explicacion": "Para comprar el billete: きっぷを ください (un billete, por favor), o とうきょうまで いちまい ください (uno a Tokio). Para preguntar por el tren o el metro: この でんしゃは とうきょうに いきますか (¿este tren va a Tokio?). ちかてつの えきは どこですか (¿dónde está la estación de metro?). でんしゃに のります es tomar el tren: la partícula es に. まで indica hasta dónde.",
+  "tarea": "Situación: Kaito hace de empleado de la estación. Laura tiene que: pedirle un billete a una ciudad cercana y preguntarle si el tren o el metro va a tu destino."
+ },
+ "viaje_direcciones": {
+  "items": [
+   "右",
+   "左",
+   "まっすぐ",
+   "曲る",
+   "角",
+   "交差点"
+  ],
+  "explicacion": "Para preguntar: えきは どこですか o えきまで どう いきますか. Para dar indicaciones: まっすぐ いってください (siga recto), みぎに まがって ください (gire a la derecha), ひだりに まがります (giro a la izquierda). さいしょの かどを みぎに まがります (en la primera esquina a la derecha). こうさてんを わたります es cruzar el cruce. 右 es みぎ y 左 es ひだり.",
+  "tarea": "Situación: Kaito te pregunta cómo llegar a la estación desde donde estás. Laura tiene que: darle las indicaciones con giros a derecha e izquierda."
+ },
+ "viaje_sitios": {
+  "items": [
+   "銀行",
+   "郵便局",
+   "図書館",
+   "交番"
+  ],
+  "explicacion": "El patrón es sitio + は + どこですか: ぎんこうは どこですか (¿dónde está el banco?). Si es más cerca: ゆうびんきょくは ちかいですか. Para decir dónde está: ぎんこうは えきの よこに あります (el banco está al lado de la estación). Si te pierdes, se pregunta en el こうばん. Se dice すみません, ... は どこですか para llamar la atención con educación.",
+  "tarea": "Situación: Kaito hace de vecino del barrio. Laura tiene que: preguntarle dónde está la biblioteca, el banco o correos, y decirle tú dónde queda algo de tu barrio."
+ },
+ "viaje_orientarse": {
+  "items": [
+   "北",
+   "南",
+   "東",
+   "西"
+  ],
+  "explicacion": "Los puntos cardinales son きた (norte), みなみ (sur), ひがし (este) y にし (oeste). Sirven para orientarse: えきの ひがしに こうえんが あります (hay un parque al este de la estación). にほんの きたは ほっかいどうです. Se combinan con ぐち para las salidas de una estación: ひがしぐち (salida este), にしぐち (salida oeste). Con どちら o どっち puedes preguntar por la dirección.",
+  "tarea": "Situación: Kaito te pregunta dónde está tu ciudad en tu país y qué parte de España queda más al este y cuál más al oeste. Laura tiene que: contestarle con norte, sur, este u oeste."
+ },
+ "transint_pasa_solo": {
+  "items": [
+   "始まる",
+   "閉まる",
+   "開く"
+  ],
+  "explicacion": "Los verbos intransitivos dicen que algo ocurre solo, sin que se nombre a quien lo hace, y el sujeto lleva が: じゅぎょうが はじまります (la clase empieza), ドアが しまります (la puerta se cierra), みせが あきます (la tienda abre). No llevan を. Se usan mucho para horarios y avisos: えいがは ３じに はじまります (la película empieza a las tres). La pareja transitiva es はじめる, しめる y あける, donde alguien hace la acción.",
+  "tarea": "Situación: Kaito te pregunta a qué hora empieza tu clase o tu serie favorita y a qué hora abre y cierra la tienda de tu barrio. Laura tiene que: contestarle las horas."
+ },
+ "transint_yo_hago": {
+  "items": [
+   "開く"
+  ],
+  "explicacion": "La pareja あける y あく distingue quién hace la acción. あけます es transitivo: yo abro la puerta, y lo abierto lleva を: ドアを あけます. あきます es intransitivo: la puerta se abre sola, y lleva が: ドアが あきます. Lo mismo con しめます (cierro algo) y しまります (algo se cierra). Si hay un agente, usa el transitivo; si solo describes lo que ocurre, el intransitivo.",
+  "tarea": "Situación: Kaito te pregunta qué haces con la ventana y qué le pasa a la puerta del vecino cuando llega él. Laura tiene que: decirle que tú abres la ventana y que la puerta del vecino se abre sola."
+ },
+ "transint_estado": {
+  "items": [
+   "開く",
+   "閉まる"
+  ],
+  "explicacion": "El estado resultante de un verbo intransitivo se dice con forma て + います: ドアが あいて います (la puerta está abierta), みせが しまって います (la tienda está cerrada). Es lo que ves ahora, no quién lo hizo. Formación: あく es あいて, しまる es しまって. Para preguntar: ぎんこうは あいて いますか (¿está abierto el banco?). Con verbos transitivos el estado usa 〜て あります: ドアが あけて あります.",
+  "tarea": "Situación: Kaito te pregunta cómo está ahora la puerta de tu habitación y si la biblioteca de tu barrio está abierta. Laura tiene que: contestarle el estado de cada cosa."
+ },
+ "kata_pedir": {
+  "items": [
+   "コーヒー",
+   "パン",
+   "レストラン"
+  ],
+  "explicacion": "Para pedir basta con señalar lo que quieres y añadir ください: 「これ、ください」. Si conoces el nombre, va con を: 「コーヒーを ください」, 「パンを ください」. Para sonar más amable cierra con お願いします: 「コーヒー、おねがいします」. Si quieres llevártelo, añade 「テイクアウトで」. En cafeterías y tiendas es perfectamente normal pedir así, solo con el nombre y ください, sin más frases.",
+  "tarea": "Situación: Kaito hace de camarero en una cafetería. Laura tiene que: pedirle un café y un pan, y decirle que te lo llevas."
+ },
+ "kata_precio": {
+  "items": [
+   "コーヒー",
+   "パン",
+   "買い物"
+  ],
+  "explicacion": "Para preguntar el precio se usa いくら (cuánto) más です y か: 「いくらですか」. Se señala lo que quieres y se pregunta: 「これは いくらですか」. Con el nombre: 「コーヒーは いくらですか」, 「パンは いくらですか」. La partícula は marca de qué hablas. La respuesta será un número seguido de えん (円), por ejemplo 「さんびゃくえんです」. Es válido en tiendas, cafeterías y mercadillos, con cualquier persona.",
+  "tarea": "Situación: Kaito hace de dependiente en una tienda. Laura tiene que: preguntarle cuánto cuestan un café y un pan, señalando cada cosa, y repetirle el precio que te diga."
+ },
+ "kata_transporte_lugar": {
+  "items": [
+   "バス",
+   "タクシー",
+   "ホテル"
+  ],
+  "explicacion": "Los medios de transporte se dicen con で (por medio de): 「バスで いきます」, 「タクシーで いきます」. Los sitios funcionan con に para el destino: 「ホテルに いきます」. Para preguntar dónde está algo: 「ホテルは どこですか」. Recuerda que バス es autobús y ホテル es hotel occidental. El taxi es caro en Japón; se coge en una parada o levantando la mano en la calle, y la puerta se abre sola.",
+  "tarea": "Situación: Kaito te pregunta cómo vas a ir desde el aeropuerto hasta tu hotel. Laura tiene que: decirle qué transporte usas y cuál es el destino."
+ },
+ "kata_foto": {
+  "items": [
+   "写真",
+   "撮る",
+   "カメラ"
+  ],
+  "explicacion": "La foto es 写真 (しゃしん) y hacerla es 撮る (とる), con を: 「しゃしんを とります」 (voy a hacer una foto). Ojo, 撮る suena igual que 取る (coger), pero para fotos y vídeo se escribe 撮. Si quieres que otra persona te haga una foto con tu cámara, puedes decir 「しゃしん、おねがいします」 y darle el カメラ. Es una forma educada y sencilla de pedirlo a un desconocido.",
+  "tarea": "Situación: Kaito hace de compañero de viaje y luego de desconocido en la calle. Laura tiene que: avisar a Kaito de que vas a hacer una foto y pedirle al desconocido que te haga una con tu cámara."
+ },
+ "vmov_transporte": {
+  "items": [
+   "乗る",
+   "降りる"
+  ],
+  "explicacion": "Subirse a un transporte es 乗る (のる) y el sitio al que subes lleva に: 「バスに のります」, 「でんしゃに のります」. Bajarse es 降りる (おりる) y el vehículo lleva を: 「バスを おります」, 「でんしゃを おります」. Con el lugar donde bajas se usa で: 「えきで おります」. Son verbos cotidianos y corteses en forma ます, válidos con cualquiera.",
+  "tarea": "Situación: Kaito te pregunta cómo vas al trabajo o a clase. Laura tiene que: decirle en qué transporte te subes y dónde te bajas."
+ },
+ "vmov_entrar_salir": {
+  "items": [
+   "入る",
+   "出る"
+  ],
+  "explicacion": "Entrar es 入る (はいる) y lleva に o へ para el lugar: 「へやに はいります」. Salir es 出る (でる) y el lugar del que sales lleva を: 「うちを でます」, 「へやを でます」. Para decir la hora, añade じに: 「しちじに うちを でます」 (salgo de casa a las siete). En forma ます se dicen はいります y でます. Se usan en cualquier registro.",
+  "tarea": "Situación: Kaito te pregunta cómo es tu mañana. Laura tiene que: contarle a qué hora sales de casa y en qué sitio entras después."
+ },
+ "vmov_usar_objetos": {
+  "items": [
+   "使う",
+   "開ける",
+   "閉める"
+  ],
+  "explicacion": "Para pedir algo se pone el verbo en forma て y se añade ください. El objeto lleva を. 使う pasa a 使って: 「ペンを つかって ください」. 開ける pasa a 開けて: 「まどを あけて ください」. 閉める pasa a 閉めて: 「ドアを しめて ください」. Es una petición educada y válida con casi cualquier persona. Si lo que haces tú es solo contar, usa ます: 「まどを あけます」.",
+  "tarea": "Situación: Kaito hace de compañero de piso. Laura tiene que: pedirle que abra la ventana, que cierre la puerta y que use su bolígrafo.",
+  "patron": "tekudasai"
+ },
+ "vmov_vestirse": {
+  "items": [
+   "着る",
+   "はく",
+   "かぶる"
+  ],
+  "explicacion": "En japonés el verbo depende de la prenda. 着る (きる) es para lo que va en el torso: 「シャツを きます」, 「コートを きます」. はく es para lo que va en piernas y pies: 「ズボンを はきます」, 「くつを はきます」. かぶる es para lo que va en la cabeza: 「ぼうしを かぶります」. La prenda lleva を. Usarlos bien es parte de hablar con naturalidad, aunque un error no impide que te entiendan.",
+  "tarea": "Situación: Kaito te pregunta qué te pones hoy para salir. Laura tiene que: decirle una prenda de arriba, unos pantalones o zapatos y algo en la cabeza."
+ },
+ "vmov_actividades": {
+  "items": [
+   "走る",
+   "泳ぐ",
+   "遊ぶ"
+  ],
+  "explicacion": "走る (はしる) es correr, 泳ぐ (およぐ) es nadar y 遊ぶ (あそぶ) es jugar o pasarlo bien. El lugar de la actividad lleva で: 「こうえんで はしります」, 「プールで およぎます」. Con quien juegas, lleva と: 「ともだちと あそびます」. Se conjugan en ます: はしります, およぎます, あそびます. Valen para hablar de hobbies con cualquiera.",
+  "tarea": "Situación: Kaito te pregunta qué haces en tu tiempo libre. Laura tiene que: contarle qué haces usando correr, nadar o jugar, y dónde."
+ },
+ "comida_gustos": {
+  "items": [
+   "肉",
+   "魚",
+   "野菜",
+   "果物",
+   "お茶",
+   "飲み物"
+  ],
+  "explicacion": "Se dice lo que te gusta con が y すきです: 「さかなが すきです」, 「おちゃが すきです」. Lo que no te gusta, きらいです: 「にくは きらいです」. Para negar suavemente: 「すきじゃ ありません」. Se puede usar は para contrastar, y だいすき para algo que adoras. Si te preguntan 「なにが すきですか」, respondes con el nombre y すきです. Vale con cualquiera, en un restaurante o conversando.",
+  "tarea": "Situación: Kaito te pregunta qué comida o bebida te gusta mucho y cuál no te gusta nada. Laura tiene que: contestarle las dos cosas.",
+  "requiere": [
+   "すき",
+   "好き",
+   "きらい",
+   "嫌い"
+  ]
+ },
+ "comida_pedir": {
+  "items": [
+   "水",
+   "お茶",
+   "カレー",
+   "飲み物",
+   "食べ物"
+  ],
+  "explicacion": "En un restaurante se pide con 「〜を ください」 o 「〜を おねがいします」: 「カレーを おねがいします」, 「みずを ください」. Para llamar al camarero se dice 「すみません」. Para decir cuántas, se añade la cantidad: 「おちゃを ひとつ ください」. Para preguntar qué hay de beber: 「のみものは なにが ありますか」. El camarero responderá con 「はい」 y repetirá el pedido.",
+  "tarea": "Situación: Kaito hace de camarero y tú llegas al restaurante. Laura tiene que: pedirle un plato de curry y una bebida."
+ },
+ "comida_precio": {
+  "items": [],
+  "explicacion": "Para preguntar el precio se usa いくら más です y か: 「いくらですか」. Se puede señalar el plato: 「これは いくらですか」. Al pagar se dice 「おかいけい、おねがいします」 (la cuenta, por favor). La respuesta se da en えん (円): 「ごひゃくえんです」 es 500 yenes, 「せんにひゃくえんです」 es 1.200 yenes. Hay que dominar los números grandes para entender el precio. Se usa con cualquiera.",
+  "tarea": "Situación: Kaito hace de camarero y te dice el precio de un plato del menú. Laura tiene que: preguntarle cuánto cuesta y repetirle el precio para confirmarlo.",
+  "claves": [
+   "いくら"
+  ]
+ },
+ "comida_valorar": {
+  "items": [
+   "美味しい",
+   "まずい",
+   "甘い",
+   "辛い"
+  ],
+  "explicacion": "Son adjetivos い, se usan en frase: 「これは おいしいです」, 「あまいです」, 「からいです」. Para el contrario, 「まずいです」 suena muy directo, mejor evitarlo con otra persona; entre amigos vale. Para negar: 「からくないです」, 「おいしくないです」. Con 「すごく」 o 「とても」 se refuerza: 「とても おいしいです」. Se usan al probar la comida, y 「おいしい」 siempre queda bien al agradecer.",
+  "tarea": "Situación: Kaito te pregunta qué tal te parece el plato que estás probando. Laura tiene que: decirle si está dulce o picante y si te gusta."
+ },
+ "comida_mesa": {
+  "items": [],
+  "explicacion": "Antes de comer se dice 「いただきます」, siempre, también si comes sola. Al terminar, 「ごちそうさまでした」, y también al despedirte de quien te invitó o del dueño del local. Son fórmulas fijas, no cambian y no se traducen literalmente: son una forma de agradecer la comida. Si quieres repetir, 「おかわり」. Al ver la comida, 「おいしそう」. Son universales, valen con familia, amigos o en restaurantes.",
+  "tarea": "Situación: Kaito finge que te invita a comer y te pone el plato delante. Laura tiene que: decir lo que se dice antes de empezar y al terminar.",
+  "claves": [
+   "いただきます",
+   "ごちそうさま"
+  ]
+ },
+ "permiso_prohibir_pedir": {
+  "items": [
+   "〜ないでください"
+  ],
+  "explicacion": "Para pedir que no hagan algo, se pone el verbo en forma ない y se añade でください: たべる pasa a 「たべないでください」, さわる a 「さわらないでください」, いく a 「いかないでください」. Verbos en ru: quita る y pon ない. Verbos en u: cambia la última sílaba a su fila あ y añade ない (のむ pasa a のまない; かう pasa a かわない). Es una petición educada, apropiada con desconocidos, y sirve para normas.",
+  "tarea": "Situación: Kaito hace de turista que toca la pared de un museo y luego de otro que entra con zapatos. Laura tiene que: pedirle que no toque la pared y que no entre con zapatos."
+ },
+ "permiso_obligacion": {
+  "items": [
+   "〜なければなりません",
+   "〜なくてはいけません"
+  ],
+  "explicacion": "Para decir que hay que hacer algo, el verbo va en forma ない, se cambia い por ければ y se añade なりません: たべる pasa a 「たべなければなりません」; いく pasa a 「いかなければなりません」. La variante 「〜なくてはいけません」 es más conversacional: 「いかなくては いけません」. Se usa para normas, tareas o deberes: 「あした、はやく おきなければなりません」. Con superiores se prefiere la versión larga.",
+  "tarea": "Situación: Kaito te pregunta si puedes hacer algo mañana. Laura tiene que: contarle algo que tienes que hacer sí o sí y por qué no puedes dejarlo."
+ },
+ "permiso_no_hace_falta": {
+  "items": [
+   "〜なくてもいいです"
+  ],
+  "explicacion": "Para decir que no hace falta hacer algo, el verbo va en forma ない, se cambia い por くて y se añade もいいです: たべる pasa a 「たべなくてもいいです」, いく pasa a 「いかなくてもいいです」. Se traduce como 'no hace falta' o 'puedes no hacerlo'. Es la contrapartida de la obligación: 「あした、はやく おきなくても いいです」. Es amable y se usa para tranquilizar a alguien.",
+  "tarea": "Situación: Kaito hace de amigo nervioso por mañana. Laura tiene que: decirle que no hace falta que venga temprano ni que traiga nada."
+ },
+ "permiso_consejo": {
+  "items": [
+   "〜ないほうがいいです"
+  ],
+  "explicacion": "Para aconsejar no hacer algo, el verbo va en forma ない y se añade ほうがいいです: 「のまないほうがいいです」, 「いかないほうがいいです」. Significa 'mejor no ~' y es más suave que una prohibición. Suele ir con una razón: 「くすりを のまないほうが いいです」. Ojo: el consejo afirmativo lleva pasado (「たほうがいい」), pero en negativo se usa ない en presente. Se puede usar con amigos y colegas.",
+  "tarea": "Situación: Kaito hace de amigo con fiebre que quiere salir y beber alcohol. Laura tiene que: aconsejarle que mejor no salga hoy ni beba alcohol."
+ },
+ "cuerpo_partes": {
+  "items": [
+   "頭",
+   "お腹",
+   "目",
+   "手",
+   "足; 脚",
+   "顔",
+   "口",
+   "鼻",
+   "耳",
+   "歯"
+  ],
+  "explicacion": "Estas son las partes del cuerpo básicas: あたま (頭, cabeza), おなか (お腹, barriga), め (目, ojo), て (手, mano), あし (足, pie o pierna), かお (顔, cara), くち (口, boca), はな (鼻, nariz), みみ (耳, oreja), は (歯, diente). Para señalar y nombrar, lo normal es 「これは てです」. Sirven para decir dónde duele, o describir a alguien. Son palabras muy usadas, sin registro especial.",
+  "tarea": "Situación: Kaito te señala tres partes del cuerpo. Laura tiene que: decirle cómo se dice cada una en japonés."
+ },
+ "cuerpo_dolor": {
+  "items": [
+   "痛い",
+   "頭",
+   "お腹",
+   "歯",
+   "目"
+  ],
+  "explicacion": "Para decir que te duele algo, la parte del cuerpo lleva が y 痛いです (いたいです): 「あたまが いたいです」, 「おなかが いたいです」, 「はが いたいです」. Es un adjetivo い, así que para negar: 「いたくないです」. Con 「とても」 se refuerza. Es lo que se dice a un médico, en la farmacia o a un amigo. Vale en cualquier situación, formal o no.",
+  "tarea": "Situación: Kaito hace de farmacéutico. Laura tiene que: contarle que te duele la cabeza y también la barriga."
+ },
+ "cuerpo_estado": {
+  "items": [
+   "元気",
+   "病気",
+   "風邪",
+   "疲れる"
+  ],
+  "explicacion": "Para decir cómo estás: 「げんきです」 (estoy bien) y 「げんきじゃ ありません」. 「びょうきです」 es 'estoy enfermo'. El resfriado se 'coge' con 引く: 「かぜを ひきました」. Cansancio: 「つかれました」, o informal 「つかれた」. 「つかれました」 está en pasado, pero describe cómo estás ahora. Vale con médicos, colegas o amigos, y 「だいじょうぶです」 ayuda a tranquilizar.",
+  "tarea": "Situación: Kaito hace de amigo y te pregunta cómo estás. Laura tiene que: decirle que estás resfriada y muy cansada."
+ },
+ "cuerpo_explicar": {
+  "items": [
+   "〜んです",
+   "痛い",
+   "風邪"
+  ],
+  "explicacion": "〜んです añade una explicación, como 'es que...'. Con adjetivo い o verbo va en forma casual: 「あたまが いたいんです」, 「ねつが あるんです」. Con sustantivo y adjetivo な se usa なんです: 「かぜなんです」, 「げんきなんです」. Es más suave y natural que decir solo 「かぜです」. Sirve para justificar algo: 「きょうは いけません。かぜなんです」. Es muy común al hablar con un médico o un jefe.",
+  "tarea": "Situación: Kaito te invita a una cena esta noche. Laura tiene que: decirle que no puedes ir y explicarle la razón de salud."
+ },
+ "vida_trabajo": {
+  "items": [
+   "仕事",
+   "会社"
+  ],
+  "explicacion": "El trabajo es 仕事 (しごと) y la empresa 会社 (かいしゃ). Para decir dónde trabajas: 「かいしゃで はたらいています」, o más simple: 「かいしゃいんです」. Para hablar de tu jornada: 「しごとは ごじまでです」. Con 「しごとが たいへんです」 dices que es duro. Son palabras básicas que usas al presentarte en el ámbito laboral, con superiores y compañeros por igual.",
+  "tarea": "Situación: Kaito te pregunta en qué trabajas y a qué hora terminas. Laura tiene que: contestarle las dos cosas."
+ },
+ "vida_telefono": {
+  "items": [
+   "電話"
+  ],
+  "explicacion": "El teléfono o la llamada es 電話 (でんわ). Para decir que llamas: 「でんわを します」 o 「でんわを かけます」. Para avisar: 「あとで でんわします」. Para recibir una llamada: 「でんわが きました」. Con el nombre de la persona: 「たなかさんに でんわします」. Se usa con に para a quién llamas. Es un vocabulario básico y neutro, válido en cualquier situación del trabajo.",
+  "tarea": "Situación: Kaito hace de compañero de trabajo. Laura tiene que: avisarle de que le llamarás por teléfono más tarde."
+ },
+ "vida_problema": {
+  "items": [
+   "問題"
+  ],
+  "explicacion": "Un problema es 問題 (もんだい). Para decir que hay uno: 「もんだいが あります」. Para decir que no hay: 「もんだいは ありません」. Para decir que lo vas a comprobar: 「かくにんします」. Se juntan así: 「もんだいが あります。かくにんします」. Es una fórmula muy típica del trabajo, educada y segura cuando no sabes algo. Se usa con superiores y clientes.",
+  "tarea": "Situación: Kaito hace de jefe. Laura tiene que: avisarle de que hay un problema con un pedido y que vas a comprobarlo."
+ },
+ "vida_valorar": {
+  "items": [
+   "便利",
+   "大切"
+  ],
+  "explicacion": "便利 (べんり) significa práctico, y 大切 (たいせつ) importante o valioso. Los dos son adjetivos な: 「べんりです」, 「たいせつです」. Antes de un nombre llevan な: 「べんりな スマホ」, 「たいせつな しごと」. Para negar: 「べんりじゃ ありません」. Se usan para valorar objetos y personas: 「かぞくは たいせつです」. Valen con cualquiera.",
+  "tarea": "Situación: Kaito te pregunta qué cosa te parece muy práctica y cuál importante en tu vida. Laura tiene que: contestarle las dos cosas."
+ }
+}

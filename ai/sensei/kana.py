@@ -43,6 +43,69 @@ def normalizar_bloques_jp(texto: str) -> str:
     return _JP_RUN.sub(_envolver, sin)
 
 
+# Palabras funcionales que delatan español en una transcripción. Sin acentos
+# sueltos ni partículas que también son romaji japonés (no, de, ni, to, te, yo…):
+# Whisper convierte el japonés de Laura en latín raro («Vatæði var gak sejar í
+# masen») y eso NO es español.
+_PALABRAS_ES = frozenset(
+    "sí sé que qué y el la los las es pero vale eso esto como cómo porque por para "
+    "con una luego lo del al más bien también entonces está estoy cuando "
+    "dónde donde cuál hay ahora".split()
+)
+_SOLO_ES = frozenset({"no", "si", "vale", "ok", "vale vale"})
+
+
+def tiene_espanol(texto: str) -> bool:
+    """¿Hay español en lo transcrito? (frase entera en español o mezclada)."""
+    t = (texto or "").lower()
+    if "¿" in t or "¡" in t or "ñ" in t:
+        return True
+    palabras = re.findall(r"[a-záéíóúü]+", t)
+    if " ".join(palabras) in _SOLO_ES:
+        return True
+    return any(p in _PALABRAS_ES for p in palabras)
+
+
+_ROMAJI = dict(zip(*[iter((
+    "a あ i い u う e え o お ka か ki き ku く ke け ko こ sa さ shi し su す se せ so そ ta た chi ち tsu つ te て to と "
+    "na な ni に nu ぬ ne ね no の ha は hi ひ fu ふ he へ ho ほ ma ま mi み mu む me め mo も ya や yu ゆ yo よ "
+    "ra ら ri り ru る re れ ro ろ wa わ wo を ga が gi ぎ gu ぐ ge げ go ご za ざ ji じ zu ず ze ぜ zo ぞ da だ de で do ど "
+    "ba ば bi び bu ぶ be べ bo ぼ pa ぱ pi ぴ pu ぷ pe ぺ po ぽ kya きゃ kyu きゅ kyo きょ sha しゃ shu しゅ sho しょ "
+    "cha ちゃ chu ちゅ cho ちょ nya にゃ nyu にゅ nyo にょ hya ひゃ hyu ひゅ hyo ひょ mya みゃ myu みゅ myo みょ "
+    "rya りゃ ryu りゅ ryo りょ gya ぎゃ gyu ぎゅ gyo ぎょ ja じゃ ju じゅ jo じょ bya びゃ byu びゅ byo びょ "
+    "pya ぴゃ pyu ぴゅ pyo ぴょ si し ti ち tu つ hu ふ zi じ"
+).split())] * 2))
+_KATA = re.compile(r"[ァ-ヶ]")
+
+
+def _palabra_a_kana(p: str):
+    """Una palabra en romaji → hiragana, o None si no es romaji japonés entero."""
+    p, out, i = p.lower().replace("ō", "ou").replace("ū", "uu"), "", 0
+    while i < len(p):
+        if p[i] in "nm" and (i + 1 == len(p) or p[i + 1] not in "aiueoy") and (p[i] == "n" or p[i + 1] in "bpm"):
+            out, i = out + "ん", i + 1
+        elif i + 1 < len(p) and p[i] == p[i + 1] and p[i] in "kstpcdgbzj":  # kk → っk
+            out, i = out + "っ", i + 1
+        else:
+            for n in (3, 2, 1):
+                if p[i:i + n] in _ROMAJI:
+                    out, i = out + _ROMAJI[p[i:i + n]], i + n
+                    break
+            else:
+                return None
+    return out
+
+
+def normalizar_japones(texto: str) -> str:
+    """Lo que Whisper escribe de un japonés con acento (romaji, katakana) →
+    hiragana, para que las comprobaciones de conjugación lo vean. El romaji solo
+    se convierte si el texto no tiene español (sus palabras también «suenan» a kana)."""
+    t = _KATA.sub(lambda m: m.group() if m.group() == "ー" else chr(ord(m.group()) - 0x60), texto or "")
+    if not tiene_espanol(t):
+        t = re.sub(r"[A-Za-zō]+", lambda m: _palabra_a_kana(m.group()) or m.group(), t)
+    return re.sub(r"(?<=[぀-ゟ])\s+(?=[぀-ゟ])", "", t)
+
+
 def a_kana(texto: str) -> str:
     """Devuelve `texto` con los kanji pasados a hiragana; el resto intacto."""
     if not texto:
@@ -74,7 +137,7 @@ def bloques_japones(texto: str) -> list[str]:
     out = []
     for b in _BLOQUE.findall(normalizar_bloques_jp(texto or "")):
         b = b.strip()
-        if _JP.search(b):
+        if _JP.search(b) and len(b) > 1:  # 【は】【か】 sueltos son ruido en la card
             kana = a_kana(b)
             if kana not in out:
                 out.append(kana)
@@ -115,4 +178,9 @@ if __name__ == "__main__":
         normalizar_bloques_jp("【a【b】c】 y 日本語 suelto")
     assert romaji("がくせい") == "gakusei", romaji("がくせい")
     assert romaji("すみません") == "sumimasen", romaji("すみません")
+    for s in ("Sí.", "No sé", "no", "けさ おきて, y luego desayuné", "¿のんで?", "Vale."):
+        assert tiene_espanol(s), s
+    for s in ("けさ おきて、コーヒーを のんで", "Watashiwa, lordes.",
+              "Vatæði var gak sejar í masen.", "Okite, kohi o nonde", ""):
+        assert not tiene_espanol(s), s
     print("ok")

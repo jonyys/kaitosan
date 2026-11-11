@@ -25,30 +25,7 @@ def test_unidad_actual_en_bd_limpia_es_la_primera():
     assert unidad_actual(jap)["id"] == "saludos_basicos"
 
 
-def test_el_foco_abre_con_la_funcion_de_la_unidad():
-    jap = JapaneseMemory(os.path.join(tempfile.mkdtemp(), "test.db"))
-    memoria = MagicMock()
-    memoria.obtener_perfil.return_value = ""
-    prof = ProfesorJapones(jap, MagicMock(), memoria, MagicMock())
-
-    prof.entrar()
-    foco = prof._montar_estado()[1]
-    lineas = foco.split("\n")
-
-    unidad = CURRICULUM[0]
-    # Fase 17: el FOCO abre con la pista de arco de sesión; la unidad va detrás.
-    assert lineas[0].startswith("FASE DE LA SESIÓN")
-    assert lineas[1] == f"Unidad actual: {unidad['nombre']}"
-    assert unidad["funcion"] in lineas[2]
-    assert "【おつかれさま】" in foco
-    # y los ítems del temario siguen ahí, detrás de la cabecera, con los que
-    # tocan hoy marcados [introdúcelo hoy] dentro de la lista del can-do
-    assert "lo que necesita" in foco
-    assert "[introdúcelo hoy]" in foco
-
-
 if __name__ == "__main__":
     test_las_34_unidades_tienen_funcion_y_frases()
     test_unidad_actual_en_bd_limpia_es_la_primera()
-    test_el_foco_abre_con_la_funcion_de_la_unidad()
     print("OK")

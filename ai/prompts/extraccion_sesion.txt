@@ -3,7 +3,6 @@ Analiza la conversación y devuelve ÚNICAMENTE un JSON con este esquema exacto:
 
 {
   "summary": "<2-3 frases sobre qué se trabajó en la sesión>",
-  "can_dos": [{"id": "<id de la lista de can-dos activos>", "resultado": "conseguido|parcial|no_intentado", "evidencia": "<cita textual de algo que se dijo en la conversación>"}],
   "new_items": [{"category": "vocabulario|gramatica", "jp": "<japonés sin corchetes>", "es": "<español>"}],
   "sin_corregir": ["<error de Laura que el profesor NO corrigió, en una frase corta>"],
   "episodios": ["<algo que Laura contó de su vida: un viaje, sus perros, cómo le fue la semana…>"],
@@ -14,27 +13,6 @@ Analiza la conversación y devuelve ÚNICAMENTE un JSON con este esquema exacto:
 Reglas:
 - Incluye SOLO ítems que aparecieron realmente en la conversación.
 - Los ítems en japonés van sin los corchetes 【】.
-- can_dos: al principio del mensaje se te pasa la lista de CAN-DOS ACTIVOS de la sesión
-  (cada uno con su `id` y su texto "Puedo…"). Solo puedes calificar can-dos de esa lista;
-  usa su `id` EXACTO. No inventes ids.
-  * resultado:
-      - "conseguido": Laura produjo la función EN JAPONÉS ella sola, respondiendo a una
-        petición funcional del profesor ("¿cómo pides que te lo repitan?", "¿cómo se dice
-        eso?", "es de noche, ¿cómo te despides?"), SIN que el profesor dijera esa misma
-        frase en su turno inmediatamente anterior. Cuenta como conseguido aunque el profesor
-        se lo enseñara antes en la sesión o en sesiones pasadas: recordarlo y decirlo solo
-        ES el logro.
-      - "parcial": el profesor le dictó la frase en el turno justo antes y Laura solo la
-        repitió; o necesitó pistas fuertes; o le salió a medias / con un error que rompía
-        la función; o solo hizo una parte del can-do.
-      - "no_intentado": ese can-do no llegó a surgir en la sesión. No cambia nada; inclúyelo
-        solo si aporta, o simplemente omítelo.
-    Regla de oro: ¿dijo el profesor la frase japonesa en el turno anterior al de Laura?
-      sí → como mucho "parcial".   no, y Laura la produjo bien → "conseguido".
-  * evidencia: OBLIGATORIA. Una CITA TEXTUAL de algo que se dijo en la conversación
-    (lo que dijo Laura o el profesor), no una valoración vaga. Mal: "lo hizo bien".
-    Bien: "Laura dijo 「コーヒーをください」 sin que Kaito se lo diera".
-  * Si ninguno de los can-dos activos surgió, can_dos = [].
 - new_items: vocabulario, expresiones o puntos gramaticales que se TRABAJARON de verdad por
   primera vez: el profesor los explicó Y Laura llegó a usarlos o al menos a intentarlos en un
   turno suyo. NO incluyas algo que el profesor solo nombró de pasada, puso como ejemplo o
@@ -52,7 +30,7 @@ Reglas:
 - nota_profe: una o dos frases sobre cómo va Laura COMO ALUMNA / PERSONA — su ánimo, su
   actitud, su ritmo, su constancia: si se frustra o insiste, si viene con energía o cansada,
   si arranca ella los temas o espera a que la lleven, si va suelta o dubitativa. NO es un
-  resumen de qué se trabajó ni de qué aprendió (eso ya va en summary / can_dos / new_items):
+  resumen de qué se trabajó ni de qué aprendió (eso ya va en summary / new_items):
   nada de "practicó は/が" ni "vio 5 palabras nuevas".
   Bien: "Se frustra cuando no le sale la partícula a la primera, pero insiste hasta sacarla".
   Bien: "Hoy con energía, ha arrancado ella los temas sin que Kaito tirara".
@@ -60,9 +38,6 @@ Reglas:
 - Responde SOLO con el JSON, sin markdown ni texto adicional.
 
 === EJEMPLO ===
-CAN-DOS ACTIVOS:
-  - comida_pedir: Puedo pedir algo señalando la carta
-  - comida_gustos: Puedo decir qué comida y bebida me gusta y no
 Conversación:
 Profesor: Estamos en la cafetería. Pídeme algo de la carta.
 Laura: コーヒーをください
@@ -73,10 +48,6 @@ Laura: すし が すきです
 Salida esperada:
 {
   "summary": "Laura pidió un café en japonés sin ayuda (コーヒーをください). Para decir qué comida le gusta necesitó que Kaito le diera la frase primero.",
-  "can_dos": [
-    {"id": "comida_pedir", "resultado": "conseguido", "evidencia": "Laura dijo 「コーヒーをください」 sin que Kaito se lo diera"},
-    {"id": "comida_gustos", "resultado": "parcial", "evidencia": "Laura dijo 「すし が すきです」 solo después de que Kaito se lo dictara"}
-  ],
   "new_items": [
     {"category": "vocabulario", "jp": "コーヒー", "es": "café"}
   ],

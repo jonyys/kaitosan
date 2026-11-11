@@ -155,7 +155,7 @@ def test_boletin_db_vacia():
     assert bol["candos_dominados"] == 0
     assert bol["candos_pct"] == 0
     assert bol["candos_total"] > 0
-    assert bol["vocab_total"] == 710
+    assert bol["vocab_total"] == 721  # 710 de la lista N5 + 11 expresiones extra (saludos)
     assert bol["gram_total"] == 90
 
 
@@ -506,16 +506,12 @@ def test_practica_gram():
 
 
 def test_circuito():
-    from unittest.mock import MagicMock
-
-    from ai.sensei.profesor import ITEMS_CANDO_FOCO, ProfesorJapones
-
-    # unidad N5 con can-dos y >= 2 vocab no-kanji entre los ítems que el FOCO lista
+    # unidad N5 con can-dos y >= 2 vocab no-kanji
     elegida = None
     for u in CURRICULUM:
         if not u.get("can_dos"):
             continue
-        vocab = [jp for e in u.get("items", [])[:ITEMS_CANDO_FOCO]
+        vocab = [jp for e in u.get("items", [])
                  if e.get("kind") == "vocabulario" and e.get("tipo") != "kanji"
                  and (jp := str(e.get("jp") or "").strip())]
         if len(vocab) >= 2:
@@ -536,19 +532,7 @@ def test_circuito():
     # ... y `estado_item()` -- la fuente única -- lo da 'sabido'
     assert jm.estado_item(jp, "vocabulario") == "sabido"
 
-    # 2) ese 'sabido' llega al FOCO del profesor como [sabida]
-    mem = MagicMock()
-    mem.obtener_perfil.return_value = ""
-    prof = ProfesorJapones(jm, MagicMock(), mem, MagicMock())
-    prof._foco_unidad = unidad
-    prof._foco_nuevos = []
-    prof.session_id = 1
-    _rec, foco = prof._montar_estado()
-    linea = next((ln for ln in foco.splitlines()
-                  if f"【{jp}】" in ln and "[sabida]" in ln), None)
-    assert linea, "sin linea [sabida] para el item practicado en el FOCO:\n" + foco
-
-    # 3) el boton "marcar como completa" deja OTRO item igual de 'sabido'
+    # 2) el boton "marcar como completa" deja OTRO item igual de 'sabido'
     jm.marcar_completo(otro, "vocabulario")
     assert jm.estado_item(otro, "vocabulario") == "sabido"
 

@@ -18,7 +18,6 @@ except Exception:
     pass
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from ai.prompts import cargar_prompt
 from ai.sensei import profesor as profesor_mod
 from ai.sensei.curriculum import CURRICULUM
 from ai.sensei.profesor import ProfesorJapones
@@ -164,28 +163,22 @@ def _profesor(jap):
     return prof
 
 
-def test_foco():
-    """Unidad abierta, can-dos a 0: el FOCO nombra el primer can-do y lista sus
-    ítems con marcador de estado, y no menciona la cola de repaso / due."""
+def test_entrar_abre_el_primer_cando():
+    """BD limpia: la clase arranca presentando el primer can-do de la primera
+    unidad. Si ese can-do se empezó otro día, arranca por el repaso (la tarea)."""
     jm = _jm()
     prof = _profesor(jm)
     prof.entrar()
     if prof.timer:
         prof.timer.cancel()
+    primero = CURRICULUM[0]["can_dos"][0]["id"]
+    assert (prof.clase["cd"], prof.clase["fase"], prof.clase["aciertos"]) == (primero, "presentar", 0)
 
-    _, foco = prof._montar_estado()
-    unidad = CURRICULUM[0]  # BD limpia → primera unidad can-do
-    primer_can_do = unidad["can_dos"][0]["texto"]
-
-    assert f"Can-do de hoy: {primer_can_do}" in foco, foco
-    # ítems del can-do con marcador de estado (BD limpia → todos nuevos)
-    assert "[nueva]" in foco, foco
-    primer_item = unidad["items"][0]["jp"]
-    assert f"【{primer_item}】" in foco, foco
-
-    bajo = foco.lower()
-    for prohibida in ("cola de repaso", "srs hoy", "due"):
-        assert prohibida not in bajo, (prohibida, foco)
+    jm.set_can_do(primero, "conseguido", 1)  # una vez → en_progreso
+    prof.entrar()
+    if prof.timer:
+        prof.timer.cancel()
+    assert prof.clase["fase"] == "repaso"
 
 
 def test_unidad_avanza_por_candos():
@@ -213,55 +206,9 @@ def test_sin_rotar_due():
     assert "get_due_items(" not in src, "quedó get_due_items en el flujo del profesor"
 
 
-def test_marcador_estado():
-    """Fase 10 — cada ítem del FOCO lleva su marcador de estado. Un ítem sabido
-    sale con [sabida]; uno nuevo, con [nueva]. Y el prompt trae la regla."""
-    jm = _jm()
-    unidad = CURRICULUM[0]  # BD limpia -> unidad can-do abierta
-    sabido, nuevo = unidad["items"][0], unidad["items"][1]
-    assert sabido["jp"] != nuevo["jp"]
-
-    with jm._conectar() as c:
-        if sabido["kind"] == "gramatica":
-            c.execute(
-                "INSERT INTO japanese_grammar (grammar_point, reps, mastery) VALUES (?, 2, 0)",
-                (sabido["jp"],),
-            )
-        else:
-            c.execute(
-                "INSERT INTO japanese_vocabulary (word, reps, status) VALUES (?, 2, 'learned')",
-                (sabido["jp"],),
-            )
-    assert jm.estado_item(sabido["jp"], sabido["kind"]) == "sabido"
-    assert jm.estado_item(nuevo["jp"], nuevo["kind"]) == "nuevo"
-
-    prof = _profesor(jm)
-    prof.entrar()
-    if prof.timer:
-        prof.timer.cancel()
-    prof._foco_nuevos = []  # este test mira el marcador de estado, no el "de hoy"
-    _, foco = prof._montar_estado()
-
-    def _linea_foco_de(jp):
-        pref = f"  - 【{jp}】"
-        return next((ln for ln in foco.splitlines()
-                     if ln.startswith(pref) and ("[sabida]" in ln or "[nueva]" in ln
-                                                 or "[en progreso]" in ln)), None)
-
-    ln_sabido = _linea_foco_de(sabido["jp"])
-    ln_nuevo = _linea_foco_de(nuevo["jp"])
-    assert ln_sabido and "[sabida]" in ln_sabido, foco
-    assert ln_nuevo and "[nueva]" in ln_nuevo, foco
-
-    prompt = cargar_prompt("profesor_japones")
-    metodo = prompt.split("== MÉTODO DE ENSEÑANZA ==", 1)[1]
-    assert "Cada palabra del FOCO lleva su estado" in metodo
-    assert "[sabida]" in metodo and "[en progreso]" in metodo and "[nueva]" in metodo
-
-
 def test_smoke_8_turnos_y_cierre():
     """Sustituto de `python simulate_sensei.py` (sin API key / sin
-    google.generativeai en el entorno): 8 turnos + _montar_estado() y luego el
+    google.generativeai en el entorno): 8 turnos y luego el
     cierre/extracción, todo con el LLM mockeado y sin excepción."""
     import json as _json
 
@@ -273,9 +220,7 @@ def test_smoke_8_turnos_y_cierre():
         prof.timer.cancel()
 
     for i in range(8):
-        recuerdas, foco = prof._montar_estado()
-        assert isinstance(recuerdas, str) and isinstance(foco, str)
-        assert "Unidad actual:" in foco
+        assert isinstance(prof._recuerdas(), str)
         resp = prof.responder_turno(f"turno {i} 【こんにちは】")
         assert resp and resp.strip()
 
@@ -284,7 +229,7 @@ def test_smoke_8_turnos_y_cierre():
     # Cierre + extracción: el extractor devuelve JSON mockeado, no debe lanzar.
     prof.provider.completar.return_value = _json.dumps({
         "summary": "Laura practicó saludos y presentaciones.",
-        "can_dos": [], "new_items": [], "sin_corregir": [],
+        "new_items": [], "sin_corregir": [],
         "episodios": [], "kaito_dijo": [], "nota_profe": "Va soltándose.",
     })
     prof.cerrar_sesion_y_extraer()
@@ -301,9 +246,68 @@ if __name__ == "__main__":
     test_set_can_do()
     test_estado_item_igual_que_pagina()
     test_fraccion_can_dos()
-    test_foco()
+    test_entrar_abre_el_primer_cando()
     test_unidad_avanza_por_candos()
     test_sin_rotar_due()
-    test_marcador_estado()
     test_smoke_8_turnos_y_cierre()
     print("OK")
+
+
+def test_items_de_cando_existen_en_su_unidad():
+    """Cada jp de la lista `items` de un can-do está en los ítems de su unidad
+    (si no, items_de_cando lo descarta en silencio y la clase se queda sin él)."""
+    from ai.sensei.curriculum import items_de_cando
+    for u in CURRICULUM:
+        for cd in u.get("can_dos", []):
+            if cd.get("items"):
+                assert [it["jp"] for it in items_de_cando(u, cd)] == cd["items"], cd["id"]
+
+
+def _avanza(prof, frase="これは ためしです"):
+    """Acierta con el juez falso hasta cerrar el can-do actual; devuelve la instrucción final."""
+    cd = prof.clase["cd"]
+    out = prof._instruccion("hola")  # abre (presentar/repaso)
+    while prof.clase["cd"] == cd and prof.clase["fase"] != "libre":
+        out = prof._instruccion(frase)
+    return out
+
+
+def test_cola_pendientes_nuevos_y_repaso_antiguo():
+    """Primero lo pendiente (repaso, sin explicar), luego lo nuevo; cada 4 nuevos
+    conseguidos, 1 repaso de algo dominado; nunca se repite un can-do en la sesión."""
+    jm = _jm()
+    prof = _profesor(jm)
+    prof.juez = lambda cd, m, fase="tarea": True
+    u0 = CURRICULUM[0]["can_dos"]
+    jm.set_can_do(u0[0]["id"], "conseguido", -1)              # dominado (2 sesiones)
+    jm.set_can_do(u0[0]["id"], "conseguido", -2)
+    jm.set_can_do(u0[1]["id"], "conseguido", -1)              # pendiente
+    prof.entrar()
+    if prof.timer:
+        prof.timer.cancel()
+    assert (prof.clase["cd"], prof.clase["tipo"]) == (u0[1]["id"], "pendiente")
+    assert "inventada por ti" in prof._instruccion("hola")     # repaso: situación nueva
+    vistos = []
+    for _ in range(6):
+        vistos.append((prof.clase["cd"], prof.clase.get("tipo")))
+        _avanza(prof)
+    tipos = [t for _, t in vistos]
+    assert tipos[0] == "pendiente" and tipos[1:5] == ["nuevo"] * 4 and tipos[5] == "antiguo"
+    assert vistos[5][0] == u0[0]["id"]
+    assert len({c for c, _ in vistos}) == len(vistos)          # sin repetir en la sesión
+
+
+def test_tras_5_fallos_da_modelo_y_pasa_al_siguiente():
+    jm = _jm()
+    prof = _profesor(jm)
+    prof.juez = lambda cd, m, fase="tarea": False
+    prof.entrar()
+    if prof.timer:
+        prof.timer.cancel()
+    primero = prof.clase["cd"]
+    prof._instruccion("hola")
+    for _ in range(4):
+        assert "varios intentos" not in prof._instruccion("これは ちがいます")
+    assert "varios intentos" in prof._instruccion("これは ちがいます")
+    assert prof.clase["cd"] != primero
+    assert jm.can_dos_progreso()[primero]["estado"] == "en_progreso"   # parcial: se verá otro día

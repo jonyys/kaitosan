@@ -1,5 +1,8 @@
 """Espina dorsal del temario de japonés y selector del próximo ítem nuevo."""
 
+import json
+import os
+
 from ai.sensei.kanji_n5 import unidades_kanji
 
 CURRICULUM = [
@@ -28,6 +31,20 @@ CURRICULUM = [
       }
     ],
     'items': [
+      # 'extra': True = expresión fija que la lista oficial JLPT N5 no trae
+      # (es una lista de palabras sueltas) pero sin la que esta unidad no
+      # tiene sentido. La Fase 02 las borró por no estar en el CSV.
+      {'kind': 'vocabulario', 'jp': 'おはようございます', 'reading': 'おはようございます', 'meaning': 'buenos días', 'tipo': 'expresión', 'extra': True, 'ejemplo': 'せんせい、おはようございます', 'literal': 'profesor / buenos-días', 'uso': 'hasta media mañana; entre amigos se corta a おはよう'},
+      {'kind': 'vocabulario', 'jp': 'こんにちは', 'reading': 'こんにちは', 'meaning': 'hola (durante el día)', 'tipo': 'expresión', 'extra': True, 'ejemplo': 'こんにちは、げんきですか', 'literal': 'hola / ¿estás-bien?', 'uso': 'solo de día, de media mañana al atardecer; no se usa con la gente de tu propia casa'},
+      {'kind': 'vocabulario', 'jp': 'こんばんは', 'reading': 'こんばんは', 'meaning': 'buenas noches (saludo)', 'tipo': 'expresión', 'extra': True, 'ejemplo': 'こんばんは、おそいですね', 'literal': 'buenas-noches / es-tarde-¿verdad?', 'uso': 'al encontrarte con alguien ya de noche; no sirve como despedida'},
+      {'kind': 'vocabulario', 'jp': 'おやすみなさい', 'reading': 'おやすみなさい', 'meaning': 'buenas noches (al dormir)', 'tipo': 'expresión', 'extra': True, 'ejemplo': 'おやすみなさい、また あした', 'literal': 'buenas-noches / otra-vez / mañana', 'uso': 'solo cuando alguien se va a dormir, no al despedirte por la calle de noche; entre amigos, おやすみ'},
+      {'kind': 'vocabulario', 'jp': 'さようなら', 'reading': 'さようなら', 'meaning': 'adiós', 'tipo': 'expresión', 'extra': True, 'ejemplo': 'さようなら、また らいしゅう', 'literal': 'adiós / otra-vez / la-semana-que-viene', 'uso': "despedida con peso de 'no nos vemos en un tiempo'; para el día a día se dice じゃあね o また あした"},
+      {'kind': 'vocabulario', 'jp': 'ありがとう', 'reading': 'ありがとう', 'meaning': 'gracias', 'tipo': 'expresión', 'extra': True, 'ejemplo': 'ありがとう ございます', 'literal': 'gracias / (forma cortés)', 'uso': 'con amigos ありがとう a secas; con desconocidos o gente mayor, siempre con ございます'},
+      {'kind': 'vocabulario', 'jp': 'すみません', 'reading': 'すみません', 'meaning': 'disculpe / perdón', 'tipo': 'expresión', 'extra': True, 'ejemplo': 'すみません、みずを ください', 'literal': 'perdón / agua-OBJ / por-favor', 'uso': 'vale para tres cosas: pedir perdón, llamar al camarero y dar las gracias por una molestia'},
+      {'kind': 'vocabulario', 'jp': 'わかりません', 'reading': 'わかりません', 'meaning': 'no entiendo', 'tipo': 'expresión', 'extra': True, 'ejemplo': 'すみません、わかりません', 'literal': 'perdón / no-entiendo', 'uso': "en presente negativo; para 'no te he entendido ahora mismo' nunca se usa わかりませんでした"},
+      {'kind': 'vocabulario', 'jp': 'わかりました', 'reading': 'わかりました', 'meaning': 'entendido / comprendido', 'tipo': 'expresión', 'extra': True, 'ejemplo': 'はい、わかりました', 'literal': 'sí / he-entendido', 'uso': "va en pasado: 'ya lo he captado'. Responder わかります suena raro"},
+      {'kind': 'vocabulario', 'jp': 'もう一度', 'reading': 'もういちど', 'meaning': 'una vez más / repetir', 'tipo': 'expresión', 'extra': True, 'ejemplo': 'もういちど おねがいします', 'literal': 'una-vez-más / por-favor', 'uso': 'la frase de supervivencia en clase; casi siempre con おねがいします detrás'},
+      {'kind': 'vocabulario', 'jp': 'ゆっくり', 'reading': 'ゆっくり', 'meaning': 'despacio / lentamente', 'tipo': 'adverbio', 'extra': True, 'ejemplo': 'ゆっくり はなして ください', 'literal': 'despacio / habla / por-favor', 'uso': 'es adverbio: va delante del verbo, nunca detrás'},
       {
         'kind': 'vocabulario',
         'jp': 'ああ',
@@ -8629,12 +8646,20 @@ _CORTE = next(i for i, u in enumerate(CURRICULUM) if u["id"] == "forma_potencial
 CURRICULUM[_CORTE]["prerequisito"] = _UNIDADES_KANJI[-1]["id"]
 CURRICULUM[_CORTE:_CORTE] = _UNIDADES_KANJI
 
+# Datos de clase de cada can-do (items que necesita, explicación, tarea, patrón
+# de comprobación): viven aparte para no tocar este literal. Ver ai/sensei/clase.py.
+with open(os.path.join(os.path.dirname(__file__), "candos_clase.json"), encoding="utf-8") as _f:
+    _CANDOS_CLASE = json.load(_f)
+for _u in CURRICULUM:
+    for _cd in _u.get("can_dos", []):
+        _cd.update(_CANDOS_CLASE.get(_cd["id"], {}))
+
 UMBRAL_PREREQ_DEFECTO = 0.75
 # Fase 09: una unidad can-do se da por "completa" (y unidad_actual avanza) cuando
 # al menos este porcentaje de sus can-dos está en 'dominado'.
 UMBRAL_UNIDAD_COMPLETA = 0.8
 
-# Índice jp → ítem del temario, para enriquecer el FOCO (ejemplo / literal / uso)
+# Índice jp → ítem del temario (lecturas para comprobar lo que dice Laura, ejemplos…)
 # también en los ítems de repaso, que vienen de la BD y no traen esos campos.
 ITEM_POR_JP = {item["jp"]: item for unit in CURRICULUM for item in unit["items"]}
 
@@ -8675,6 +8700,16 @@ def unidad_actual(jap_memory):
     return abierta
 
 
+def items_de_cando(unidad, cando):
+    """Los ítems que necesita un can-do: su lista `items` (jp, en ese orden)
+    si la tiene (candos_clase.json); si no, la unidad entera."""
+    jps = (cando or {}).get("items")
+    if not jps:
+        return unidad.get("items", [])
+    por_jp = {it["jp"]: it for it in unidad.get("items", [])}
+    return [por_jp[jp] for jp in jps if jp in por_jp]
+
+
 def siguiente_items_nuevos(jap_memory, n=1):
     """Los ítems que pide el can-do activo — en la práctica, los de su unidad —
     que Laura aún no tiene (estado_item == 'nuevo'). Hasta n (MAX_ITEMS_NUEVOS).
@@ -8686,8 +8721,11 @@ def siguiente_items_nuevos(jap_memory, n=1):
     unidad = unidad_actual(jap_memory)
     if not unidad:
         return []
+    prog = jap_memory.can_dos_progreso()
+    activo = next((cd for cd in unidad.get("can_dos", [])
+                   if prog.get(cd["id"], {}).get("estado") != "dominado"), None)
     result = []
-    for item in unidad["items"]:
+    for item in items_de_cando(unidad, activo):
         if jap_memory.estado_item(item["jp"], _kind_de(item)) == "nuevo":
             result.append({**item, "unidad": unidad["nombre"]})
             if len(result) >= n:

@@ -8,8 +8,7 @@ load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 DEFAULT_MODEL = "openai/gpt-oss-120b"
 MAX_TOKENS = 300
-MAX_TOKENS_SENSEI = 2048       # profesor, turno normal (razonamiento gpt-oss + respuesta)
-MAX_TOKENS_EXPLICACION = 3072  # profesor, turno de desglose gramatical
+MAX_TOKENS_EXPLICACION = 3072  # profesor: techo por turno (razonamiento + respuesta)
 TEMPERATURE = 0.7
 TEMPERATURE_SENSEI = 0.3  # respuestas del profesor — más deterministas para seguir las reglas
 
@@ -22,6 +21,7 @@ MODEL_SENSEI = "openai/gpt-oss-120b"
 # medium | high lo fija. Con gpt-oss de primario, `low` funciona bien. OJO: si
 # qwen3.7-flash entra de reserva, cualquier valor ≠ off le mete 15-30 s/turno.
 REASONING_EFFORT_SENSEI = os.getenv("REASONING_EFFORT_SENSEI", "low").strip().lower()
+
 
 # Frases que sacan del modo sensei. Se comprueban por subcadena sobre el texto
 # en minúsculas. Las usa brain._responder y también speech_to_text para dejar
@@ -170,12 +170,8 @@ MAX_ITEMS_NUEVOS = 2   # ítems (estado 'nuevo') que el can-do activo introduce 
 # Fase 09: el profesor ya no orquesta por cola SRS. La cola `due` de vocab/gram
 # solo la mueve el juego web (Bloque IV) y el SRS de kanji; el profesor no la
 # toca (`due_count` de resumen_perfil vale solo para eso). THROTTLE_DUE ya no
-# frena ítems nuevos: hoy es solo el tope de la lista de puntos débiles del FOCO.
+# frena ítems nuevos: hoy es solo el tope de la lista de puntos débiles que ve Kaito.
 THROTTLE_DUE = 12
-# Fase 09: chequeo de óxido — cada cuántas sesiones el FOCO incluye una muestra
-# de vocabulario ya 'sabido' de unidades pasadas. Knob, se afina con datos.
-CHEQUEO_OXIDO_CADA = 5
-
 # Segundos de espera antes de lanzar la extracción al cerrar la sesión. La
 # llamada del extractor es grande y, si va pegada al turno de despedida, las dos
 # caen en la misma ventana de tokens/min de Groq y salta el rate limit (se
@@ -188,14 +184,6 @@ EXTRACCION_RETRASO_SEG = int(os.getenv("EXTRACCION_RETRASO_SEG", "45"))
 # de reserva (o falla) y el progreso de la sesión se pierde o se corrompe.
 EXTRACCION_PAUSA_LLAMADAS_SEG = int(os.getenv("EXTRACCION_PAUSA_LLAMADAS_SEG", "18"))
 
-# Nivel de inmersión (1→4): cuánto japonés habla Kaito. Se calcula solo a partir
-# del vocabulario dominado (learned + mastered); estos son los umbrales de salto.
-# NIVEL_INMERSION=3 en el entorno lo fija a mano para probar.
-# Knob: pendiente de afinar con el ritmo real del juego web (Bloque IV) — Laura
-# acumulará 'sabido' más rápido, así que casi seguro suben. No se cambian ahora,
-# se ajustan con datos de uso real.
-NIVEL_INMERSION_UMBRALES = (15, 40, 80)
-NIVEL_INMERSION_FORZADO = int(os.getenv("NIVEL_INMERSION", "0")) or None
 
 # Busqueda en internet
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "")

@@ -32,6 +32,7 @@ def _vocab_items():
         for u in CURRICULUM
         for it in u["items"]
         if it["kind"] == "vocabulario" and it.get("tipo") != "kanji"
+        and not it.get("extra")  # expresiones fijas fuera de la lista JLPT
     ]
 
 

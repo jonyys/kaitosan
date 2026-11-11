@@ -38,7 +38,7 @@ DB_PATH = os.path.join(DATA_DIR, "kaito.db")
 
 from core.memory import Memory
 from core.japanese_memory import JapaneseMemory
-from ai.fallback_provider import FallbackProvider
+from ai.sensei_provider import SenseiProvider
 from ai.sensei.profesor import ProfesorJapones
 
 W = 72
@@ -134,13 +134,11 @@ def mostrar_bd_japonesa(jap_memory, titulo_sec):
 
 def mostrar_contexto_profesor(profesor, etiqueta):
     seccion(etiqueta)
-    recuerdas, foco = profesor._montar_estado()
     linea("── [RECUERDAS DE LAURA] ──────────────────────────────────────")
-    for l in recuerdas.splitlines():
+    for l in profesor._recuerdas().splitlines():
         linea(l)
-    linea("\n── [FOCO DE HOY] ────────────────────────────────────────────")
-    for l in foco.splitlines():
-        linea(l)
+    linea("\n── [CLASE] ───────────────────────────────────────────────────")
+    linea(f"{profesor.clase}")
 
 
 def mostrar_sesiones_bd(jap_memory):
@@ -274,7 +272,7 @@ def main():
     linea(f"Fecha/Hora : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     linea(f"BD         : {DB_PATH}")
     linea(f"Modo       : {'interactivo' if args.interactive else 'automático (conversación predefinida)'}")
-    linea(f"Prompt     : profesor_japones.txt")
+    linea(f"Prompt     : sensei_clase.txt")
 
     if args.clean:
         seccion("LIMPIANDO DATOS JAPONESES")
@@ -283,7 +281,7 @@ def main():
     seccion("INICIALIZANDO COMPONENTES")
     memory = Memory()
     jap_memory = JapaneseMemory(DB_PATH)
-    provider = FallbackProvider()
+    provider = SenseiProvider()
     socketio_mock = MockSocketIO()
 
     profesor = ProfesorJapones(
@@ -300,7 +298,7 @@ def main():
     seccion("ACTIVANDO MODO SENSEI")
     profesor.entrar()
     linea(f"Session ID en japanese_sessions: {profesor.session_id}")
-    linea("Prompt cargado: profesor_japones.txt")
+    linea("Prompt cargado: sensei_clase.txt")
     linea("Timer de inactividad (20 min) activo — se cancela al salir")
 
     seccion("CONVERSACIÓN")
@@ -370,7 +368,7 @@ def main():
     )
     mostrar_contexto_profesor(
         profesor_siguiente,
-        "CONTEXTO PRÓXIMA SESIÓN  —  [RECUERDAS DE LAURA] + [FOCO DE HOY]"
+        "CONTEXTO PRÓXIMA SESIÓN  —  [RECUERDAS DE LAURA]"
     )
 
     titulo("FIN DE LA SIMULACIÓN")

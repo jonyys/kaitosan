@@ -52,26 +52,20 @@ def _preparar(jap, extractor):
     return prof
 
 
-def test_can_do_conseguido_queda_en_progreso_con_evidencia():
+def test_extractor_no_califica_can_dos():
+    """Los can-dos los marca el código durante la clase: aunque el extractor
+    devuelva una calificación, al cerrar no se toca can_do_progreso."""
     jap = JapaneseMemory(os.path.join(tempfile.mkdtemp(), "t.db"))
-    evidencia = "Laura dijo 「コーヒーをください」 sin que Kaito se lo diera"
     respuesta = json.dumps({
         "summary": "Laura pidió un café en japonés sin ayuda.",
-        "can_dos": [
-            {"id": CAN_DO_PEDIR, "resultado": "conseguido", "evidencia": evidencia}
-        ],
+        "can_dos": [{"id": CAN_DO_PEDIR, "resultado": "conseguido", "evidencia": "x"}],
         "new_items": [], "sin_corregir": [], "episodios": [], "kaito_dijo": [],
     })
     prof = _preparar(jap, lambda h: respuesta)
 
     prof._ejecutar_extraccion(prof.session_id)
 
-    prog = jap.can_dos_progreso()
-    assert CAN_DO_PEDIR in prog, prog
-    fila = prog[CAN_DO_PEDIR]
-    assert fila["estado"] == "en_progreso", fila
-    assert fila["veces_ok"] == 1, fila
-    assert fila["nota"] == evidencia, fila
+    assert jap.can_dos_progreso() == {}
 
 
 def test_extractor_caido_no_toca_ningun_can_do():
@@ -98,7 +92,7 @@ def test_ejecutar_extraccion_no_llama_srs():
 
 
 if __name__ == "__main__":
-    test_can_do_conseguido_queda_en_progreso_con_evidencia()
+    test_extractor_no_califica_can_dos()
     test_extractor_caido_no_toca_ningun_can_do()
     test_ejecutar_extraccion_no_llama_srs()
     print("OK")

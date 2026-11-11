@@ -71,10 +71,9 @@ class TextToSpeech:
         # (U+FE0F) + "combining enclosing keycap" (U+20E3). ANTES de tocar los
         # asteriscos: si no, el de un eventual *️⃣ sobreviviría a medias.
         texto = re.sub(r'[0-9#]️?⃣', '', texto)
-        # Asteriscos sueltos: el recorte de 【】 en modo sensei (_acotar_japones)
-        # a veces vacía un bloque y deja huérfano el "*" de un "*【frase】*" o
-        # "* 【frase】" sin su pareja. No hay ningún uso legítimo de "*" hablado,
-        # así que se quitan todos en vez de intentar emparejarlos.
+        # Asteriscos sueltos: el modelo a veces marca negritas o deja un "*"
+        # huérfano. No hay ningún uso legítimo de "*" hablado, así que se
+        # quitan todos en vez de intentar emparejarlos.
         texto = texto.replace('*', '')
         # "no es / no soy" se lee "barra diagonal" — es el separador de
         # alternativas por escrito, en voz se dice "o" (medio/ambos anchos).
