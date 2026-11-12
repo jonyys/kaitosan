@@ -19,7 +19,7 @@ def _brain(activo):
     b.profesor = MagicMock()
     b.profesor.esta_activo.return_value = activo
     b.profesor.saludo_inicial.return_value = random.choice(SALUDOS)
-    b._emitir_desactivar_sensei = False
+    b.socketio = MagicMock()
     return b
 
 
@@ -27,8 +27,10 @@ def test_salir_del_modo_sensei_se_despide():
     b = _brain(activo=True)
     resp, _ = b._responder("quiero salir del modo sensei")
     assert resp in DESPEDIDAS
-    assert b._emitir_desactivar_sensei is True
     b.profesor.salir.assert_called_once()
+    # la cara vuelve a la normal al decidir la salida, una sola vez y antes de hablar
+    b.socketio.emit.assert_called_once_with("modo_sensei", {"activo": False})
+    assert b.salida_ts > 0
 
 
 def test_entrar_al_modo_sensei_saluda():

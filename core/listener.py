@@ -13,6 +13,8 @@ from core.emociones import es_solo_gracias, gesto_para_gracias
 TIMEOUT_CONVERSACION_SEG = 3
 # La animación de la cara al entrar en sensei dura 1,9-2,3 s: el saludo no suena hasta que acaba.
 SENSEI_ENTRADA_SEG = float(os.getenv("SENSEI_ENTRADA_SEG", "2.4"))
+# Al salir: la cara tarda ~0,7 s en esconder la pizarra y hasta 2,3 s en la transición.
+SENSEI_SALIDA_SEG = float(os.getenv("SENSEI_SALIDA_SEG", "3.2"))
 
 
 def _normalizar(texto: str) -> str:
@@ -22,6 +24,12 @@ def _normalizar(texto: str) -> str:
         if unicodedata.category(c) != 'Mn'
     )
     return re.sub(r'[^\w\s]', '', sin_tildes).strip()
+
+
+def _esperar_hasta(momento):
+    """Duerme hasta `momento` (time.monotonic). None o ya pasado: no espera."""
+    if momento:
+        time.sleep(max(0.0, momento - time.monotonic()))
 
 
 class VoiceListener:
@@ -157,9 +165,6 @@ class VoiceListener:
             except Exception as e:  # noqa: BLE001 — pase lo que pase, vuelve a idle (el ciclo espera)
                 print(f"❌ Error al hablar: {e}")
             mostrar()  # si no llegó a sonar (error, callado), que al menos se vea
-            if self.brain._emitir_desactivar_sensei:
-                self.brain._emitir_desactivar_sensei = False
-                self.socketio.emit("modo_sensei", {"activo": False})
             self.state.cambiar("idle")
             self.socketio.emit("estado", {"estado": "idle"})
 
@@ -186,8 +191,12 @@ class VoiceListener:
         entrada = getattr(self.brain.profesor, "entrada_ts", None)
         if not sensei_estaba_activo and self.brain.profesor.esta_activo() and isinstance(entrada, (int, float)):
             datos["no_antes_de"] = entrada + SENSEI_ENTRADA_SEG
+        # Acaba de salir (despedida): la cara ya volvió a la normal al decidirlo (brain)
+        if salio_de_sensei:
+            datos["no_antes_de"] = self.brain.salida_ts + SENSEI_SALIDA_SEG
         if en_directo:
             if not dichas:  # no hubo streaming: se habla entera
+                _esperar_hasta(datos.get("no_antes_de"))  # la despedida en streaming no puede llevar la espera al hilo de voz
                 frases.put(re.sub(r'https?://\S+', '', respuesta).strip())
             frases.put(None)
             if iniciado.is_set():

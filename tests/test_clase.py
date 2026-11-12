@@ -48,7 +48,7 @@ def test_comprobacion_por_ingredientes_y_japones_suelto():
     assert usa_patron({"claves": ["いただきます"]}, "じゃあ、いただきます!")
     assert normalizar_bloques_jp("帰る es godan, 【いいね】") == "【帰る】 es godan, 【いいね】"
     # en pantalla, siempre hiragana (nunca kanji)
-    assert frases_para_card("Bien: 【今朝起きて、会社に行きました】 y 帰る") == ["けさおきて、かいしゃにいきました", "かえる"]
+    assert frases_para_card("Bien: 【今朝起きて、会社に行きました】 y 帰る") == ["かえる"]
 
 
 def test_todos_los_candos_tienen_datos_de_clase():
@@ -149,7 +149,7 @@ def test_japones_que_whisper_tomo_por_español_cuenta():
     p.activo = True
     vistos = []
     p.juez_romaji = lambda cd, m, fase, **k: vistos.append(m) or True
-    p.clase = {"cd": "saludos_saludar", "fase": "tarea", "tipo": "nuevo", "aciertos": 0, "fallos": 0}
+    p.clase = {"cd": "saludos_saludar", "fase": "tarea", "tipo": "nuevo", "aciertos": 0, "fallos": 0, "fallos_cd": 1}
     p._instruccion("Ohio por la mañana, con Bangwa por la noche y Yasumi antes de dormir.")
     assert p.clase["aciertos"] == 1 and len(vistos) == 1
     p._instruccion("¿Y al mediodía qué se dice?")   # una pregunta no va al juez
@@ -433,3 +433,57 @@ def test_los_nombres_propios_no_entran_al_vocabulario(tmp_path):
     p._foco_unidad = next(u for u in CURRICULUM if u["id"] == "saludos_basicos")
     p._ejecutar_extraccion(7, [{"role": "user", "content": "x"}, {"role": "assistant", "content": "y"}])
     assert set(jm.vocab_rows()) == {"ありがとう"}
+
+
+def test_paso_a_lo_siguiente_con_los_textos_reales_de_la_pi():
+    """Logs 12-nov 17:05 y 17:29: se trataron como español sin más."""
+    from ai.sensei.profesor import _RE_SIGUIENTE
+    for s in ["Pasa lo siguiente, que ya me has enseñado mucho a saludar y eso, y eso ya me lo sé. Pasa lo siguiente.",
+              "Paso a lo siguiente, ya te he dicho 5 veces, gracias.", "Esto ya lo sé", "ya me lo sé"]:
+        assert _RE_SIGUIENTE.search(s), s
+        p = ProfesorJapones(MagicMock(), MagicMock(), MagicMock(), MagicMock())
+        p.activo = True
+        p._foco_unidad = next(u for u in CURRICULUM if u["id"] == "saludos_basicos")
+        p.clase = {"cd": "saludos_saludar", "fase": "practicar", "tipo": "nuevo", "aciertos": 0, "fallos": 0,
+                   "nuevos": 0, "hechos": []}
+        assert "pasar a lo siguiente" in p._instruccion(s), s
+
+
+def test_sin_fallos_basta_un_acierto_por_fase_y_con_fallos_siguen_dos():
+    p = ProfesorJapones(MagicMock(), MagicMock(), MagicMock(), MagicMock())
+    cd = {"id": "x", "texto": "t", "tarea": "Situación: s. Laura tiene que: algo."}
+    p.clase = {"cd": "x", "fase": "practicar", "tipo": "nuevo", "aciertos": 0, "fallos": 0, "fallos_cd": 0}
+    p._cerrar_cd = lambda cd, r: "CERRADO"
+    assert "Plantéale" in p._acierto(cd) and p.clase["fase"] == "tarea"   # 1 en práctica
+    assert "Felicítala" in p._acierto(cd)                                 # 1 en tarea
+    p.clase.update(fase="practicar", aciertos=0)
+    p._fallo(cd, "x")                                                      # un fallo: 2 y 2
+    assert "Plantéale" not in p._acierto(cd) and "Plantéale" in p._acierto(cd)
+    assert "Felicítala" not in p._acierto(cd) and "Felicítala" in p._acierto(cd)
+
+
+def test_pizarra_se_separa_del_texto_y_se_parsea():
+    sep = ProfesorJapones._separar_pizarra
+    assert sep("Di hola.\nPIZARRA: こんにちは = hola; 水 = agua") == (
+        "Di hola.", [{"jp": "こんにちは", "es": "hola"}, {"jp": "みず", "es": "agua"}])
+    assert sep("Nada.\nPIZARRA: -") == ("Nada.", [])
+    assert sep("Sin línea.") == ("Sin línea.", None)
+    assert len(sep("x\nPIZARRA: あ=a; い=i; う=u; え=e")[1]) == 4 - 1
+
+
+def test_la_linea_pizarra_no_se_habla_ni_va_en_la_respuesta():
+    # la línea llega pegada a una frase corta y partida en trozos: nada de ella llega a on_frase
+    trozos = ["Dime 【こんにちは】.\nPIZ", "ARRA: こんにちは = ho", "la; ねこ = gato.\nOtra cosa."]
+    prov, dichas = _ProvStream(trozos), []
+    p = _profe(prov)
+    r = p.responder_turno("hola", on_frase=dichas.append)
+    assert dichas == ["Dime 【こんにちは】."] and r == "Dime 【こんにちは】."
+    assert p.ultima_frase_objetivo == [{"jp": "こんにちは", "es": "hola"}, {"jp": "ねこ", "es": "gato"}]
+    assert "PIZARRA" not in p.mensajes[-1]["content"]
+    # camino sin streaming, y el modelo se olvida de la línea → None
+    p = _profe(_ProvStream(["Dime algo.\nPIZARRA: -"]))
+    assert p.responder_turno("hola") == "Dime algo." and p.ultima_frase_objetivo == []
+    p = _profe(_ProvStream(["Dime algo."]))
+    p.ultima_frase_objetivo = [{"jp": "あ"}]
+    p.responder_turno("hola")
+    assert p.ultima_frase_objetivo is None

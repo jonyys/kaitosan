@@ -813,44 +813,203 @@
   // Pizarra: la cara sube, la pizarra entra por abajo y el kana se escribe con tiza.
   // Al quitarla el texto se queda para que salga con ella.
   const pizarraTexto = senseiJp.querySelector(".pizarra-texto");
+  const pTiza = senseiJp.querySelector(".pizarra-tiza");
+  const pBorr = senseiJp.querySelector(".pizarra-borrador");
+  const pVelo = senseiJp.querySelector(".pizarra-velo");
   // La letra de tiza se baja al abrir la cara: si no, la primera pizarra sale vacía un momento
   document.fonts.load('600 1em "Klee One"', "あいうえおかきくけこアイウエオ").catch(() => {});
+
+  // Estado de la animación: filas = animaciones de máscara (al cancelar se congelan donde
+  // estén), otras = tiza, borrador, velo y polvo
+  const P = { firma: "", filas: [], otras: [], timers: [] };
+  const PAUSA = ",.;:、。 ";
+  const pMask = (p) => `${p * 100}% 0%, 0px 0px`; // 1 = fila oculta, 0 = a la vista
+  const pAnim = (el, kf, op, lista = P.otras) => {
+    const a = el.animate(kf, { fill: "both", ...op });
+    lista.push(a);
+    return a;
+  };
+
+  function pCancelar() {
+    P.timers.forEach(clearTimeout);
+    P.timers = [];
+    for (const a of P.filas) {
+      try { a.commitStyles(); } catch (e) {}
+      a.cancel();
+    }
+    P.otras.forEach((a) => a.cancel());
+    P.filas = [];
+    P.otras = [];
+    senseiJp.querySelectorAll(".polvo").forEach((e) => e.remove());
+  }
+
+  // Lista de hasta 3 elementos: string (kana) u objeto {jp, es}
+  function pItems(frases) {
+    return frases
+      .slice(0, 3)
+      .map((f) => (typeof f === "string" ? { jp: f } : { jp: String((f && f.jp) || ""), es: f && f.es ? String(f.es) : "" }))
+      .filter((i) => i.jp.trim());
+  }
+
+  // Una fila por kana (las largas se parten por las comas, para no cortar una palabra) y una
+  // pequeña debajo con el significado
+  function pConstruir(items) {
+    pizarraTexto.textContent = "";
+    const fila = (t, cls) => {
+      const d = document.createElement("div");
+      d.className = "fila " + cls;
+      d.textContent = t;
+      pizarraTexto.appendChild(d);
+      return d;
+    };
+    const filas = [];
+    for (const it of items) {
+      const partes = it.jp.length > 10 ? it.jp.split(/(?<=[、。])/) : [it.jp];
+      partes.forEach((p) => filas.push(fila(p.trim(), "jp")));
+      if (it.es) filas.push(fila(it.es, "es"));
+    }
+    return filas;
+  }
+
+  // La letra más grande con la que cada fila cabe dentro del círculo (con margen) una vez
+  // la pizarra esté arriba; se mide con ella aún escondida, restando su posición
+  function pAjustar(filas) {
+    const larga = filas.length > 2 || filas.some((f) => f.classList.contains("jp") && f.textContent.length > 8);
+    senseiJp.classList.toggle("larga", larga);
+    face.classList.toggle("pizarra-larga", larga);
+    const W = innerWidth, H = innerHeight, R = Math.min(W, H) / 2 - 10;
+    const cabe = () => {
+      const pr = senseiJp.getBoundingClientRect();
+      const top = H - senseiJp.offsetHeight;
+      return filas.every((f) => {
+        const r = f.getBoundingClientRect();
+        const y0 = top + r.top - pr.top, y1 = top + r.bottom - pr.top;
+        const dy = Math.max(Math.abs(y0 - H / 2), Math.abs(y1 - H / 2));
+        if (y0 < top + 12 || dy >= R) return false;
+        const hw = Math.sqrt(R * R - dy * dy);
+        return r.left - pr.left >= W / 2 - hw && r.right - pr.left <= W / 2 + hw;
+      });
+    };
+    let tam = 64;
+    do {
+      for (const f of filas) f.style.fontSize = (f.classList.contains("es") ? Math.max(11, Math.round(tam * 0.36)) : tam) + "px";
+    } while (!cabe() && (tam -= 2) >= 16);
+  }
+
+  // Escribe las filas una a una. t0 = segundos hasta que la tiza sale de la repisa
+  function pEscribir(filas, t0) {
+    const pr = senseiJp.getBoundingClientRect();
+    const rest = { x: senseiJp.offsetWidth * 0.62, y: -14 };
+    const tr = (x, y, r = -35) => `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) rotate(${r.toFixed(1)}deg)`;
+    pTiza.style.transform = tr(rest.x, rest.y);
+    const track = [{ t: 0, x: rest.x, y: rest.y, e: "ease-in-out" }];
+    let t = t0, cur = rest, puffs = 0;
+    const rg = document.createRange();
+    // Con mucho texto la tiza va más deprisa: que no tarde más de ~5 s (Kaito ya ha acabado de hablar)
+    const largo = filas.reduce((s, f) => s + f.firstChild.data.length * (f.classList.contains("es") ? 0.045 : 0.15), 0);
+    const prisa = Math.min(1, 5 / largo);
+    filas.forEach((f, fi) => {
+      const nodo = f.firstChild, fr = f.getBoundingClientRect(), W = fr.width;
+      const es = f.classList.contains("es"), paso = (es ? 0.045 : 0.15) * prisa, txt = nodo.data;
+      const pos = []; // x del final de cada carácter y y de su línea de escritura
+      for (let i = 0; i < txt.length; i++) {
+        rg.setStart(nodo, i);
+        rg.setEnd(nodo, i + 1);
+        const b = rg.getBoundingClientRect();
+        pos.push({ x: b.right - fr.left, y: b.top + b.height * 0.6 - pr.top, ini: b.left - fr.left });
+      }
+      // La tiza viaja desde donde esté hasta el principio de la fila
+      const a0 = { x: fr.left - pr.left + pos[0].ini, y: pos[0].y };
+      track.push({ t, x: cur.x, y: cur.y, e: "ease-in-out" });
+      t += fi === 0 ? 0.4 : 0.28;
+      track.push({ t, x: a0.x, y: a0.y, e: "linear" });
+      const ini = t;
+      const edge = (x) => Math.min(1.2, Math.max(0, 1 - (x - 2) / W)); // borde suave de 10px
+      const mk = [{ t: 0, p: edge(-12) }];
+      const dust = es ? 8 : 3;
+      pos.forEach((c, i) => {
+        t += paso;
+        const dx = fr.left - pr.left + c.x;
+        track.push({ t, x: dx, y: c.y + (Math.random() - 0.5) * 2.4, r: -35 + (Math.random() - 0.5) * 8, e: "linear" }); // temblor
+        mk.push({ t: t - ini, p: edge(c.x) });
+        if (PAUSA.includes(txt[i])) {
+          t += 0.12;
+          track.push({ t, x: dx, y: c.y, e: "linear" });
+          mk.push({ t: t - ini, p: edge(c.x) });
+        }
+        if (i % dust === 1 && puffs++ < 14) pPolvo(dx, c.y + 5, t);
+      });
+      const dur = t - ini;
+      const a = pAnim(f, mk.map((k) => ({ offset: k.t / dur, maskPosition: pMask(k.p) })), { delay: ini * 1000, duration: dur * 1000, easing: "linear" }, P.filas);
+      a.onfinish = () => { a.commitStyles(); a.cancel(); P.filas = P.filas.filter((x) => x !== a); };
+      cur = track[track.length - 1];
+    });
+    // Al terminar la tiza vuelve a la repisa
+    track.push({ t: t + 0.2, x: cur.x, y: cur.y, e: "ease-in-out" });
+    track.push({ t: t + 0.65, x: rest.x, y: rest.y, e: "linear" });
+    const total = t + 0.65;
+    pAnim(pTiza, track.map((k) => ({ offset: Math.min(1, k.t / total), transform: tr(k.x, k.y, k.r), easing: k.e })), { duration: total * 1000, easing: "linear" });
+  }
+
+  function pPolvo(x, y, t) {
+    const d = document.createElement("i");
+    d.className = "polvo";
+    senseiJp.appendChild(d);
+    const dx = (Math.random() - 0.5) * 14;
+    const a = pAnim(d, [
+      { opacity: 0.85, transform: `translate(${x}px, ${y}px)` },
+      { opacity: 0, transform: `translate(${x + dx}px, ${y + 14 + Math.random() * 10}px)` },
+    ], { delay: t * 1000, duration: 650 + Math.random() * 300, easing: "ease-in", fill: "none" });
+    a.onfinish = () => d.remove();
+  }
+
+  // Un borrador barre cada fila de derecha a izquierda; el texto se borra a su paso y queda
+  // un velo de tiza que se desvanece. Devuelve cuántos segundos dura el barrido.
+  function pBorrar() {
+    const pr = senseiJp.getBoundingClientRect();
+    const filas = [...pizarraTexto.children];
+    const W = senseiJp.offsetWidth;
+    const track = [];
+    let t = 0.05, x0 = 1e9, x1 = 0, y0 = 1e9, y1 = 0;
+    filas.forEach((f, i) => {
+      const r = f.getBoundingClientRect();
+      const L = r.left - pr.left - 12, Rr = r.right - pr.left + 12, cy = r.top + r.height / 2 - pr.top;
+      x0 = Math.min(x0, L); x1 = Math.max(x1, Rr); y0 = Math.min(y0, r.top - pr.top); y1 = Math.max(y1, r.bottom - pr.top);
+      if (i === 0) track.push({ t, x: W + 40, y: cy });
+      track.push({ t: (t += 0.2), x: Rr, y: cy });
+      const dur = 0.25 + r.width / 650;
+      pAnim(f, [{ maskPosition: pMask(1 + 14 / r.width) }], { delay: t * 1000, duration: dur * 1000, easing: "linear" }, P.filas);
+      // Zigzag: sube y baja un poco mientras barre
+      for (let k = 1; k <= 3; k++) track.push({ t: t + (dur * k) / 3, x: Rr + (L - Rr) * (k / 3), y: cy + (k % 2 ? -6 : 6) });
+      t += dur;
+    });
+    track.push({ t: t + 0.25, x: W + 40, y: track[track.length - 1].y });
+    const total = t + 0.25;
+    pAnim(pBorr, track.map((k, i) => ({ offset: k.t / total, opacity: i === 0 || i === track.length - 1 ? 0 : 1, transform: `translate(${(k.x - 29).toFixed(1)}px, ${(k.y - 13).toFixed(1)}px)` })), { duration: total * 1000, easing: "linear", fill: "none" });
+    Object.assign(pVelo.style, { left: x0 - 8 + "px", top: y0 - 6 + "px", width: x1 - x0 + 16 + "px", height: y1 - y0 + 12 + "px" });
+    const fin = total + 0.8;
+    pAnim(pVelo, [{ opacity: 0, offset: 0 }, { opacity: 0.55, offset: t / fin }, { opacity: 0, offset: 1 }], { duration: fin * 1000, easing: "ease-out", fill: "none" });
+    return t;
+  }
+
   function mostrarJaponesSensei(frases) {
-    hayPizarra = !!(frases && frases.length);
+    const items = frases && frases.length ? pItems(frases) : [];
+    const firma = JSON.stringify(items);
+    if (items.length && hayPizarra && firma === P.firma) return; // el mismo texto: nada que hacer
+    const habia = hayPizarra && pizarraTexto.childElementCount > 0;
+    pCancelar();
+    hayPizarra = items.length > 0;
+    P.firma = hayPizarra ? firma : "";
     senseiJp.classList.toggle("visible", hayPizarra);
     face.classList.toggle("con-pizarra", hayPizarra);
     if (!hayPizarra) return mirar(0, 0);
-    // Las frases largas se parten por las comas, para no cortar una palabra a medias
-    frases = frases.flatMap((f) => (f.length > 10 ? f.split(/(?<=、)/) : [f]));
-    const larga = frases.length > 1 || frases[0].length > 8;
-    senseiJp.classList.toggle("larga", larga);
-    face.classList.toggle("pizarra-larga", larga);
-    pizarraTexto.textContent = "";
-    let n = 0;
-    for (const f of frases) {
-      const linea = document.createElement("div");
-      for (const c of f) {
-        // Un span con solo un espacio no ocupa nada: el espacio va suelto
-        if (c === " ") {
-          linea.append(" ");
-          continue;
-        }
-        const k = document.createElement("span");
-        k.className = "kana";
-        k.textContent = c;
-        k.style.animationDelay = 0.55 + n++ * 0.07 + "s"; // empieza cuando la pizarra ya ha subido
-        linea.appendChild(k);
-      }
-      pizarraTexto.appendChild(linea);
-    }
-    // La letra más grande que quepa: primero sin partir las frases y, si ni así, partiéndolas
-    let tam = 64;
-    const sobra = () => pizarraTexto.scrollHeight > pizarraTexto.clientHeight || pizarraTexto.scrollWidth > pizarraTexto.clientWidth;
-    pizarraTexto.style.whiteSpace = "nowrap";
-    pizarraTexto.style.fontSize = tam + "px";
-    while (sobra() && tam > 26) pizarraTexto.style.fontSize = (tam -= 2) + "px";
-    pizarraTexto.style.whiteSpace = "";
-    while (sobra() && tam > 16) pizarraTexto.style.fontSize = (tam -= 2) + "px";
+    const empezar = (t0) => {
+      const filas = pConstruir(items);
+      pAjustar(filas);
+      pEscribir(filas, t0);
+    };
+    if (habia) P.timers.push(setTimeout(() => empezar(0.1), (pBorrar() + 0.35) * 1000));
+    else empezar(0.7); // la pizarra aún está subiendo
     // Mira a la pizarra en cuanto aparece
     mirar(azar(-2, 2), MIRA_PIZARRA);
     prox.mirada = ahora + 2500;
@@ -867,8 +1026,12 @@
     };
     if (face.classList.contains("sensei") === activo) return cambiar();
     const elegido = tipo || CAMBIOS_SENSEI[Math.floor(Math.random() * CAMBIOS_SENSEI.length)];
-    if (window.KaitoTransicion) window.KaitoTransicion.tapar(elegido, cambiar);
-    else cambiar();
+    const tapar = () => (window.KaitoTransicion ? window.KaitoTransicion.tapar(elegido, cambiar) : cambiar());
+    // Al salir con la pizarra puesta: baja, la cara vuelve (~0.75 s) y solo entonces empieza la transición
+    if (!activo && hayPizarra) {
+      mostrarJaponesSensei(null);
+      setTimeout(tapar, 750);
+    } else tapar();
   };
   socket.on("modo_sensei", (data) => window.kaitoCambiarSensei(!!data.activo));
 

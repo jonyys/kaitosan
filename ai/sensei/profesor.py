@@ -3,6 +3,7 @@
 El código decide qué toca y comprueba; el LLM solo habla. Cada can-do (datos en
 ai/sensei/candos_clase.json) pasa por fases fijas:
   presentar → practicar (2 aciertos) → tarea (2 aciertos) → conseguido → siguiente.
+(Si no ha fallado ni una vez en el can-do, basta 1 acierto en práctica y 1 en tarea.)
 Orden de la sesión (_siguiente): primero los pendientes (conseguidos una vez otro
 día: repaso, solo tarea en una situación nueva), luego los nuevos de la unidad (y
 de la siguiente), con 1 repaso de algo ya dominado cada 4 nuevos. Tras 5 intentos
@@ -29,6 +30,7 @@ from ai.sensei.clase import (
     ACIERTOS_ANTIGUO,
     cortar_frases,
     ACIERTOS_PRACTICA,
+    ACIERTOS_SIN_FALLOS,
     ACIERTOS_TAREA,
     FALLOS_MAX,
     LIBRE_TURNOS_TEMA,
@@ -62,6 +64,8 @@ _RE_NO_SE = re.compile(
     r"c[oó]mo se (hace|usa)|no s[eé] c[oó]mo|"
     # Quejas de que le pide demasiado («sin habérmelo enseñado», «muchas cosas»): igual.
     r"ense[ñn]ad|muchas cosas|pidiendo mucho|demasiad|dif[ií]cil", re.IGNORECASE)  # «cómo se dice X» es solo vocabulario: no cuenta
+# Línea final que el LLM añade para la pizarra: «PIZARRA: kana = significado; kana = significado».
+_RE_PIZARRA = re.compile(r"PIZARRA\s*:", re.IGNORECASE)
 # Laura quiere pasar a lo siguiente / dice que ya lo sabe: no hay que insistir.
 _RE_SIGUIENTE = re.compile(
     r"pas(a|o|ar|emos)( a| con)? (lo|el|la) siguiente|vamos a lo siguiente|"
@@ -141,6 +145,9 @@ _DESPEDIDAS_LAURA = (
 )
 
 
+# Cierre de las instrucciones que encadenan dos cosas (felicitar + abrir lo nuevo).
+_UNA_PETICION = " Todo el turno acaba con UNA sola petición (la de lo nuevo); nada de «luego» ni segunda tarea."
+
 _EXTRACCION_PROMPT = cargar_prompt("extraccion_sesion")
 
 
@@ -165,8 +172,9 @@ class ProfesorJapones:
         self._juez_previo = {}
         self._pool_juez = ThreadPoolExecutor(max_workers=2)
         self.mensajes = []          # historial propio de la sesión sensei (solo user/assistant)
-        # Lo leen la cara y el STT (ReferenceText de Azure). Siempre None: Laura
-        # produce frases suyas, no repite una dada (ver ponytail del módulo).
+        # Lo lee la pizarra (frases_para_card): lista [{"jp","es"}] de la línea PIZARRA del
+        # turno, [] si no hay nada que enseñar, None si el modelo no la puso. Azure no la
+        # usa como referencia (ver ponytail del módulo).
         self.ultima_frase_objetivo = None
         # {"cd": id, "fase": presentar|repaso|practicar|tarea|libre, "aciertos": n}
         self.clase = None
@@ -267,8 +275,8 @@ class ProfesorJapones:
     def salir(self):
         """Desactiva el modo sensei, cancela el timer y cierra la sesión.
 
-        El evento modo_sensei activo:False lo emite app.py después de que el
-        TTS termine, para que la despedida se pronuncie con la cara sensei.
+        El evento modo_sensei activo:False lo emite brain ANTES de la despedida:
+        la cara esconde la pizarra y vuelve a la normal, y luego habla.
         """
         if self.timer:
             self.timer.cancel()
@@ -337,7 +345,7 @@ class ProfesorJapones:
     def _abrir(self, cd, tipo):
         """Pone la clase en ese can-do y devuelve qué tiene que hacer Kaito."""
         st = self.clase
-        st.update(cd=cd["id"], tipo=tipo, aciertos=0, fallos=0)
+        st.update(cd=cd["id"], tipo=tipo, aciertos=0, fallos=0, fallos_cd=0)
         if tipo == "nuevo":
             st["fase"] = "practicar"
             # Boletín: ◐ desde que se empieza a enseñar, no solo al acertar ni al cerrarlo.
@@ -363,19 +371,21 @@ class ProfesorJapones:
         if not sig:
             st.update(cd=None, fase="libre", aciertos=0)
             return "Luego charla con ella de lo que quiera, usando en japonés solo lo que ya sabe."
-        return "Luego: " + self._abrir(sig, tipo)
+        return "Luego: " + self._abrir(sig, tipo) + _UNA_PETICION
 
     def _fallo(self, cd, instr):
         """Un intento en japonés sin acierto. A los FALLOS_MAX seguidos, en vez de
         insistir: Kaito le da un modelo y se pasa a lo siguiente (se volverá a ver)."""
         st = self.clase
         st["fallos"] = st.get("fallos", 0) + 1
+        st["fallos_cd"] = st.get("fallos_cd", 0) + 1  # fallos desde que se abrió este can-do
         if st["fallos"] < FALLOS_MAX:
             return instr
         # Lo dominado que falla baja a en_progreso ('error'); lo demás queda empezado.
         resultado = "error" if st.get("tipo") == "antiguo" else "parcial"
         return ("Laura lleva varios intentos sin conseguirlo. Sin agobiarla: dale tú UNA frase "
                 f"modelo corta, correcta y sencilla en japonés que haga esto: {que_hacer(cd)} "
+                "Es solo para que la oiga: no le pidas que la repita. "
                 "Dile en media frase que lo volveréis a ver otro día y cambia de tema. "
                 + self._cerrar_cd(cd, resultado))
 
@@ -415,7 +425,7 @@ class ProfesorJapones:
             return self._fallo(cd, f"Laura ha dicho 【{dicho}】 y lo correcto es 【{bien}】 porque {motivo}. "
                     "Si te ha preguntado algo, contéstalo primero en una frase. Corrige SOLO "
                     "este error diciéndole el porqué (la regla, en español) y pídele que lo "
-                    "intente otra vez con otra frase suya.")
+                    "intente otra vez con otra frase suya (una sola petición, sin darle la frase hecha).")
         if (_RE_JP_CHAR.search(mensaje) and tiene_espanol(mensaje)
                 and "?" not in mensaje and "¿" not in mensaje):
             # Mezcla: dice en japonés lo que sabe y rellena en español lo que le
@@ -429,7 +439,7 @@ class ProfesorJapones:
         if _RE_JP_CHAR.search(mensaje):
             return self._fallo(cd, "Lo que ha dicho Laura aún no cumple lo de hoy "
                     f"({cd['texto']}): o no lo usa, o falla justo en eso. Responde a lo que dice en "
-                    "una frase; si se ha equivocado en lo de hoy, corrígeselo con el porqué; si no "
+                    "una frase (sin decirle que está bien: no lo está); si se ha equivocado en lo de hoy, corrígeselo con el porqué; si no "
                     "lo ha usado, anímala a hacerlo, sin darle la frase hecha.")
         if _RE_NO_SE.search(mensaje):
             return self._fallo(cd, self._ayuda(cd))
@@ -458,11 +468,14 @@ class ProfesorJapones:
         st = self.clase
         st["aciertos"] += 1
         st["fallos"] = 0
-        if st["fase"] == "practicar" and st["aciertos"] >= ACIERTOS_PRACTICA:
+        # Sin ningún fallo en este can-do basta 1 acierto por fase; con fallos, los de siempre.
+        limpio = not st.get("fallos_cd")
+        if st["fase"] == "practicar" and st["aciertos"] >= (ACIERTOS_SIN_FALLOS if limpio else ACIERTOS_PRACTICA):
             st.update(fase="tarea", aciertos=0)
             return ("Ha acertado. Celébralo en media frase, con calidez y sin repetir "
                     "fórmulas. Luego: " + tarea(cd))
-        meta = ACIERTOS_ANTIGUO if st.get("tipo") == "antiguo" else ACIERTOS_TAREA
+        meta = (ACIERTOS_ANTIGUO if st.get("tipo") == "antiguo"
+                else ACIERTOS_SIN_FALLOS if limpio else ACIERTOS_TAREA)
         if st["fase"] == "tarea" and st["aciertos"] >= meta:
             return (f"Felicítala: ya sabe hacer esto: {cd['texto']}. "
                     + self._cerrar_cd(cd, "conseguido"))
@@ -470,7 +483,7 @@ class ProfesorJapones:
                 + que_hacer(cd) if st["fase"] == "tarea"
                 else "pídele otra frase con lo mismo, sobre otro tema. " + PEDIR_FRASE)
         return (f"Ha acertado. Celébralo en media frase, con calidez y sin repetir fórmulas, "
-                f"y {otra}, sin darle la respuesta. Lo que dice Laura viene de reconocimiento "
+                f"y {otra}, sin darle la respuesta (una sola petición, nada de «luego»). Lo que dice Laura viene de reconocimiento "
                 "de voz y puede estar mal transcrito: NO corrijas nada más (ni partículas "
                 "ni palabras): la corrección de conjugación ya la hace el programa.")
 
@@ -518,7 +531,20 @@ class ProfesorJapones:
         no se repite: se queda con lo recibido."""
         if os.getenv("LLM_STREAMING", "1") == "0" or not hasattr(self.provider, "completar_stream"):
             return None
-        total, buf, dichas = "", "", 0
+        total, buf, dichas, cortado = "", "", 0, False
+
+        def decir(f):
+            """Habla la frase sin la línea PIZARRA; tras ella no se habla nada más."""
+            nonlocal dichas, cortado
+            if cortado:
+                return
+            m = _RE_PIZARRA.search(f)
+            if m:
+                cortado, f = True, f[:m.start()]
+            if f.strip():
+                on_frase(normalizar_bloques_jp(f.strip()))
+                dichas += 1
+
         try:
             for trozo in self.provider.completar_stream(
                     historial, max_tokens=MAX_TOKENS_EXPLICACION, temperature=TEMPERATURE_SENSEI,
@@ -528,19 +554,30 @@ class ProfesorJapones:
                 buf += trozo
                 frases, buf = cortar_frases(buf)
                 for f in frases:
-                    on_frase(normalizar_bloques_jp(f))
-                    dichas += 1
+                    decir(f)
         except Exception as e:  # noqa: BLE001
             if dichas == 0:
                 print(f"⚠️ Streaming del LLM no disponible ({type(e).__name__}) → respuesta entera")
                 return None
             print(f"⚠️ Streaming cortado a mitad ({type(e).__name__}): sigo con lo recibido")
-        resto = buf.strip()
-        if resto:
-            on_frase(normalizar_bloques_jp(resto))
-        respuesta = normalizar_bloques_jp(total.strip())
-        return respuesta or None
+        decir(buf)
+        return total.strip() or None  # con la línea PIZARRA: la separa responder_turno
 
+
+    @staticmethod
+    def _separar_pizarra(texto):
+        """(texto sin la línea PIZARRA, lista [{"jp","es"}] | None si el modelo no la puso).
+        «PIZARRA: -» → []. El japonés va siempre en kana."""
+        m = _RE_PIZARRA.search(texto)
+        if not m:
+            return texto, None
+        out = []
+        for ent in texto[m.end():].splitlines()[0].split(";"):
+            jp, _, es = ent.partition("=")
+            jp = a_kana(jp.replace("【", "").replace("】", "").strip())
+            if _RE_JP_CHAR.search(jp):
+                out.append({"jp": jp, **({"es": es.strip(" .")} if es.strip(" .") else {})})
+        return texto[:m.start()].strip(), out[:3]
 
     def responder_turno(self, mensaje: str, lento_extra: bool = False, pron_contexto: str = None,
                         on_frase=None) -> str:
@@ -554,6 +591,7 @@ class ProfesorJapones:
         entera, igual que sin streaming. Si el streaming falla antes de dar nada,
         se vuelve al camino normal (y `on_frase` no se llama)."""
         self._renovar_timer()
+        self.ultima_frase_objetivo = None  # lo fija el LLM cada turno (línea PIZARRA)
         if self.clase is None:  # instancia sin entrar() (p. ej. tests)
             self._empezar_clase()
         sistema = cargar_prompt("sensei_clase").replace("{RECUERDAS_DE_LAURA}", self._recuerdas())
@@ -572,10 +610,13 @@ class ProfesorJapones:
                     historial, max_tokens=MAX_TOKENS_EXPLICACION,
                     temperature=TEMPERATURE_SENSEI, reasoning_effort=REASONING_EFFORT_SENSEI,
                 ).replace("**", "").strip()  # la voz leería los asteriscos
-                respuesta = normalizar_bloques_jp(respuesta)  # japonés suelto → 【】
         except Exception as e:
             print(f"❌ Error LLM en modo sensei: {e}")
             return "【ちょっとまってください。】 Un momento, hubo un problema técnico."
+        # La línea PIZARRA no se habla ni se muestra, ni va al historial (el juez lee ese historial).
+        respuesta, self.ultima_frase_objetivo = self._separar_pizarra(respuesta)
+        print(f"🧑‍🏫 Pizarra: {self.ultima_frase_objetivo}")  # para revisar en los logs si cuadra con lo pedido
+        respuesta = normalizar_bloques_jp(respuesta)  # japonés suelto → 【】
         if not respuesta:
             return "Perdona, se me ha cruzado un cable. ¿Me lo repites? 【もういちど おねがいします】"
         self.mensajes.append({"role": "user", "content": mensaje})

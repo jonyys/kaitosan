@@ -8,7 +8,7 @@
    "さようなら"
   ],
   "explicacion": "El saludo depende de la hora. Por la mañana: おはようございます (con amigos, おはよう). De día: こんにちは. Al encontrarte con alguien ya de noche: こんばんは. おやすみなさい solo se dice a quien se va a dormir, no sirve como saludo. さようなら es una despedida con peso, de 'no nos vemos en un tiempo'; en el día a día se dice じゃあね o また あした. Recuerda que こんにちは y こんばんは no son despedidas.",
-  "tarea": "Situación: Kaito finge que son las nueve de la mañana, luego que os cruzáis por la calle de noche, y al final que se va a dormir. Laura tiene que: saludar en cada momento y despedirse de él."
+  "tarea": "Situación: Kaito finge que es una hora concreta del día (las nueve de la mañana, la tarde, la noche) y os cruzáis por la calle. Laura tiene que: saludarle como corresponde a esa hora."
  },
  "saludos_gracias": {
   "items": [
@@ -27,7 +27,7 @@
    "いいえ"
   ],
   "explicacion": "Para disculparte por una molestia usa すみません (o すみませんでした si ya pasó). Quien recibe la disculpa le quita importancia con 大丈夫です, 'no pasa nada', o con いいえ、だいじょうぶです. Entre amigos también ごめんなさい o ごめん. Ejemplo: すみません、おくれました。 / だいじょうぶです。 Ojo: 大丈夫です también puede ser un 'no, gracias' amable cuando te ofrecen algo.",
-  "tarea": "Situación: Kaito te pisa sin querer en un tren lleno y se disculpa; después te pide que hagas de alguien que llega tarde a una cita. Laura tiene que: quitarle importancia a su disculpa y, en tu papel, pedir perdón por llegar tarde."
+  "tarea": "Situación: Kaito te pisa sin querer en un tren lleno y se disculpa. Laura tiene que: quitarle importancia a su disculpa."
  },
  "saludos_noentiendo": {
   "items": [
@@ -37,7 +37,7 @@
    "わかりました"
   ],
   "explicacion": "Cuando no entiendes, di わかりません ('no entiendo'), siempre en presente. Para pedir que lo repitan: もう一度 おねがいします. Para que hable más despacio: ゆっくり おねがいします; ゆっくり es adverbio y va delante del verbo. Cuando ya lo has captado, わかりました (en pasado). Ejemplo: すみません、わかりません。もう一度 おねがいします。",
-  "tarea": "Situación: Kaito te suelta una frase larga en japonés a toda velocidad y luego te la repite despacio. Laura tiene que: decirle que no la has entendido, pedirle que la repita más despacio y confirmarle cuando ya la entiendas."
+  "tarea": "Situación: Kaito te suelta una frase larga en japonés a toda velocidad. Laura tiene que: decirle que no la has entendido y pedirle que la repita más despacio."
  },
  "num_contar": {
   "items": [

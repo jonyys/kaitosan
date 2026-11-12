@@ -144,14 +144,18 @@ def bloques_japones(texto: str) -> list[str]:
     return out
 
 
-def frases_para_card(respuesta: str, objetivo: str | None = None) -> list[str]:
-    """Lo que se muestra en la card del sensei, siempre en solo kana.
+def frases_para_card(respuesta: str, objetivo=None) -> list:
+    """Lo que se muestra en la pizarra del sensei, siempre en solo kana.
 
-    Si el turno fijó una frase objetivo (línea @@OBJETIVO@@ o heurística sobre
-    【】), se muestra ESA entera: es lo que Laura tiene que decir y contra lo que
-    se puntúa. Si no hay objetivo, los trozos 【…】 sueltos del turno."""
-    # más de 3 tarjetas tapan la cara en la pantalla de 480x480
-    return [a_kana(objetivo)] if objetivo else bloques_japones(respuesta)[:3]
+    `objetivo` es lo que fijó el LLM en su línea PIZARRA: una lista de {"jp","es"}
+    (se devuelve tal cual, [] = nada que enseñar) o un str (esa frase entera). Sin
+    objetivo (el modelo no puso la línea), solo el ÚLTIMO bloque 【…】 de la respuesta,
+    que suele ser lo que se le pide."""
+    if isinstance(objetivo, list):
+        return objetivo[:3]  # más de 3 tarjetas tapan la cara en la pantalla de 480x480
+    if objetivo:
+        return [a_kana(objetivo)]
+    return bloques_japones(respuesta)[-1:]
 
 
 if __name__ == "__main__":
@@ -165,7 +169,11 @@ if __name__ == "__main__":
     assert bloques_japones("Repite: 【おはよう】 … 【おはよう】") == ["おはよう"]
     assert frases_para_card("di 【ねこ】", "ちょっと、もう一度お願いします") == ["ちょっと、もういちどおねがいします"]
     assert frases_para_card("di 【ねこ】", None) == ["ねこ"]
-    assert len(frases_para_card("【あ い】【う え】【お か】【き く】", None)) == 3
+    assert frases_para_card("【あさひ】 y di 【こんにちは】", None) == ["こんにちは"]  # solo el último
+    assert frases_para_card("sin japonés", None) == []
+    lista = [{"jp": "あ", "es": "a"}, {"jp": "い"}, {"jp": "う"}, {"jp": "え"}]
+    assert frases_para_card("x 【ねこ】", lista) == lista[:3]
+    assert frases_para_card("x 【ねこ】", []) == []
     assert bloques_japones("sin japonés 【hola】") == []
     # 【】 anidados → un bloque limpio y continuo, sin "suelto" (contenido tal cual)
     assert bloques_japones("【いいね、【こんにちは】は午後です。】") == ["いいね、こんにちははごごです。"], \

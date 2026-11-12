@@ -11,6 +11,7 @@ from ai.sensei.curriculum import ITEM_POR_JP
 
 ACIERTOS_PRACTICA = 2
 ACIERTOS_TAREA = 2
+ACIERTOS_SIN_FALLOS = 1  # si no ha fallado ni una vez en el can-do: 1 acierto en práctica y 1 en tarea
 ACIERTOS_ANTIGUO = 1  # repaso de algo ya dominado: basta con ver que lo recuerda
 LIBRE_TURNOS_TEMA = 3  # en charla libre, cada 3 turnos se guía hacia un can-do ya trabajado
 NUEVOS_POR_ANTIGUO = 4 # 1 repaso de lo antiguo por cada 4 objetivos nuevos (~20 %)
@@ -151,14 +152,16 @@ PEDIR_FRASE = (
     "tiene que decir (algo corto de su vida, distinto de tu ejemplo), no solo un tema. Que pueda "
     "montarla con palabras que ya ha visto; si le falta alguna (como mucho 2), dásela antes en "
     "japonés y di qué significa con palabras (nada de signos como =). Los nombres propios no son palabras"
-    " nuevas: se dicen tal cual, sin traducirlos.")
+    " nuevas: se dicen tal cual, sin traducirlos. Es lo ÚLTIMO que dices y lo ÚNICO que le pides: nada de "
+    "«y luego…», «ahora con una tuya» ni una segunda frase.")
 
 
 def tarea(cd):
     return (f"Plantéale esta tarea EN ESPAÑOL, empezando directamente por la situación (nada de «la tarea es»), haciendo tú tu parte, sin "
             f"darle la respuesta ni un ejemplo. {cd['tarea']} Si para contestar le falta alguna palabra "
             "que no ha visto (como mucho 2), dásela suelta en japonés y di qué significa. Todo en 2 frases cortas como máximo, "
-            "y pídele lo que dice «Laura tiene que», sin añadir más cosas. Háblale a ella de tú (nunca "
+            "y pídele UNA sola cosa de lo que dice «Laura tiene que» (si hay varias, solo la primera; las "
+            "demás, otro día), en una sola situación, sin «y luego…» y sin darle la frase. Háblale a ella de tú (nunca "
             "digas «Laura tiene que»: eso es para ti). Ella contesta en japonés.")
 
 
@@ -172,7 +175,8 @@ def tarea_nueva(cd):
     """Tarea de repaso: Kaito no ve la situación original, así que la inventa."""
     return ("Plantéale EN ESPAÑOL una situación cotidiana nueva, inventada por ti, en la que "
             f"Laura tenga que: {que_hacer(cd)} Situación de UNA sola frase y UNA sola acción, que "
-            "pueda contar con palabras que ya ha visto (nada de historias con varios pasos). Empieza "
+            "pueda contar con palabras que ya ha visto (nada de historias con varios pasos ni de pedirle una "
+            "segunda cosa después). Empieza "
             "directamente por ella, haz tú tu parte y no le des la respuesta ni un ejemplo; si le "
             "falta alguna palabra (como mucho 2), dásela suelta en japonés con su significado. "
             "Háblale a ella de tú. Ella contesta en japonés.")
