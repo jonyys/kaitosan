@@ -105,7 +105,8 @@ def presentar(cd):
     return (
         f"Preséntale lo de hoy: {cd['texto']}. Explicación (elige solo lo imprescindible para "
         f"empezar y dilo natural, sin recitarla; el resto lo verá al corregirla): {cd['explicacion']} "
-        "Pon un ejemplo con algo de su vida y termina pidiéndole que diga ella una frase suya "
+        "Como máximo 2 o 3 cosas japonesas nuevas en total (el ejemplo cuenta); el resto, en los "
+        "siguientes turnos. Pon un ejemplo con algo de su vida y termina pidiéndole que diga ella una frase suya "
         "con esto. No le pidas que repita tu ejemplo."
     )
 
