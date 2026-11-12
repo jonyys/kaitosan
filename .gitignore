@@ -227,3 +227,6 @@ data/
 # Herramientas de prueba de Claude Code (servidores de vista previa y registros del navegador)
 .claude/launch.json
 .playwright-mcp/
+
+# caché de voz (trozos repetidos)
+audio/tts_cache/

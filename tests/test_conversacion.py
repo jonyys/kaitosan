@@ -289,13 +289,12 @@ def test_hablar_por_trozos_avisa_al_empezar_y_al_acabar_y_callar_lo_corta():
     import numpy as np
     from ai import text_to_speech as mod
 
-    async def trozos(self, texto, base):
+    async def trozos(self, texto, base, como_audio=False, corto=False):
         for i in range(3):
-            yield f"{base}_{i}"
+            yield np.full(4800, 0.3, dtype=np.float32)
     llamadas = []
     t = _tts(mod)
-    t._generar_trozos = lambda texto, base: trozos(t, texto, base)
-    t._cargar_trozo = lambda ruta: np.full(4800, 0.3, dtype=np.float32)
+    t._generar_trozos = lambda texto, base, **kw: trozos(t, texto, base, **kw)
     sd = SdFalso()
     with mock.patch.object(mod, "sd", sd), mock.patch("core.system_settings.volumen_factor", return_value=1.0):
         t._hablar_por_trozos("hola", on_start=lambda: llamadas.append("start"), on_stop=lambda: llamadas.append("stop"))
@@ -303,7 +302,7 @@ def test_hablar_por_trozos_avisa_al_empezar_y_al_acabar_y_callar_lo_corta():
     assert np.concatenate(sd.sonado)[:, 0].tolist().count(np.float32(0.3)) == 3 * 4800
 
     # sin audio (texto sin nada hablable): solo avisa de que ha parado
-    async def nada(texto, base):
+    async def nada(texto, base, **kw):
         return
         yield
     llamadas.clear()
@@ -409,11 +408,10 @@ def test_hablar_frases_suena_cada_frase_segun_llega_y_acaba_con_none():
     t = _tts(mod)
     sintetizadas = []
 
-    async def trozos(texto, base):
+    async def trozos(texto, base, **kw):
         sintetizadas.append(texto)
-        yield f"{base}:{texto}"
+        yield np.full(4800, 0.1 if "uno" in texto else -0.1, dtype=np.float32)
     t._generar_trozos = trozos
-    t._cargar_trozo = lambda ruta: np.full(4800, 0.1 if "uno" in ruta else -0.1, dtype=np.float32)
     frases = __import__("queue").Queue()
     avisos = []
     sd = SdFalso()
@@ -431,3 +429,44 @@ def test_hablar_frases_suena_cada_frase_segun_llega_y_acaba_con_none():
     assert sintetizadas == ["frase uno", "frase dos"] and avisos == ["start", "stop"]
     assert np.array_equal(util, np.concatenate([np.full(4800, 0.1, np.float32), np.full(4800, -0.1, np.float32)]))
     assert sd.creados == 1   # un solo stream para toda la respuesta
+
+
+def test_primer_trozo_sin_ffmpeg_acortado_y_cache_de_trozos_repetidos(tmp_path):
+    import asyncio
+    import numpy as np
+    from ai import text_to_speech as mod
+
+    t = _tts(mod)
+    t.voice_es, t.voice_ja = "es", "ja"
+    t._cache_dir = str(tmp_path)
+
+    # 1. ajustar en numpy: silencio inicial + recorte de bordes + pausa, sin ffmpeg
+    sr = t.sample_rate_device
+    audio = np.concatenate([np.zeros(sr), np.full(sr, 0.5, np.float32), np.zeros(sr)]).astype(np.float32)
+    sal = t._ajustar_np(audio, trim_inicio=True, trim_fin=True, pausa=0.3, silencio_inicial=0.15)
+    assert sal[: int(0.15 * sr)].max() == 0 and 0.5 in sal           # silencio delante, voz en medio
+    esperado = int(0.15 * sr) + sr + 2 * int(0.06 * sr) + int(0.3 * sr)
+    assert abs(len(sal) - esperado) <= 2                              # bordes recortados (dejando 0,06 s)
+    assert len(t._ajustar_np(audio, trim_inicio=False, trim_fin=False, pausa=0, silencio_inicial=0)) == 3 * sr
+
+    # 2. el primer trozo largo en español se corta en una pausa cercana
+    largo = "Bueno, Laura, vamos a ver qué recuerdas de la clase de ayer, cuéntame todo."
+    a, b = t._acortar_primero([(largo, "es"), ("ください", "ja")])[:2]
+    assert len(a[0]) <= 56 and a[0].endswith(",") and (a[0] + " " + b[0]) == largo
+    assert t._acortar_primero([("Corto.", "es")]) == [("Corto.", "es")]
+
+    # 3. caché: la 2.ª vez que sale un trozo no se vuelve a descargar
+    descargas = []
+
+    async def fake_generar(txt, voz, ruta):
+        descargas.append(txt)
+        open(ruta, "wb").write(b"mp3")
+    t._generar_audio_segmento = fake_generar
+    t._cargar_trozo = lambda ruta: (os.unlink(ruta), np.full(sr, 0.5, np.float32))[1]
+
+    async def una_vez():
+        return [x async for x in t._generar_trozos("¡Qué bien, Laura!", str(tmp_path / "t"), como_audio=True)]
+    import os
+    asyncio.run(una_vez()); asyncio.run(una_vez())
+    assert descargas == ["¡Qué bien, Laura!"]                         # la 2.ª salió de la caché
+    assert len([f for f in os.listdir(tmp_path) if f.endswith(".mp3")]) == 1

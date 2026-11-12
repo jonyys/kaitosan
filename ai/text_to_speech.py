@@ -11,7 +11,9 @@ import subprocess
 import threading
 import time as tmod
 import collections
+import hashlib
 import queue
+import shutil
 
 # Cualquier carácter japonés (kana o kanji).
 JP_CHAR = r'[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]'
@@ -243,39 +245,126 @@ class TextToSpeech:
                 out.append((actual, voz))
         return out
 
-    async def _generar_trozos(self, texto: str, base: str):
+    # ── Caché en disco de los trozos que se repiten («¡Qué bien!», 【ました】…) ────────
+    CACHE_MAX_CHARS = 90      # solo se guardan trozos cortos: son los que se repiten
+    CACHE_MAX_ARCHIVOS = 400  # al pasarse, se borran los menos usados
+
+    def _carpeta_cache(self):
+        """Carpeta de la caché (TTS_CACHE_DIR; por defecto audio/tts_cache) o None."""
+        if not hasattr(self, "_cache_dir"):
+            try:
+                d = os.getenv("TTS_CACHE_DIR") or os.path.join(
+                    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "audio", "tts_cache")
+                os.makedirs(d, exist_ok=True)
+                self._cache_dir = d
+            except OSError:
+                self._cache_dir = None
+        return self._cache_dir
+
+    def _ruta_cache(self, txt, voz):
+        d = self._carpeta_cache()
+        if not d or len(txt) > self.CACHE_MAX_CHARS or os.getenv("TTS_CACHE", "1") == "0":
+            return None
+        return os.path.join(d, hashlib.sha1(f"{voz}|{txt}".encode("utf-8")).hexdigest() + ".mp3")
+
+    def _guardar_cache(self, destino, ruta):
+        try:
+            shutil.copyfile(ruta, destino + ".tmp")
+            os.replace(destino + ".tmp", destino)  # atómico: nunca queda un mp3 a medias
+            carpeta = os.path.dirname(destino)
+            archivos = [os.path.join(carpeta, f) for f in os.listdir(carpeta) if f.endswith(".mp3")]
+            if len(archivos) > self.CACHE_MAX_ARCHIVOS:
+                for viejo in sorted(archivos, key=os.path.getmtime)[:50]:
+                    os.unlink(viejo)
+        except OSError as e:
+            print(f"⚠️ Caché de voz: {e}")
+
+    def _ajustar_np(self, data, *, trim_inicio, trim_fin, pausa, silencio_inicial):
+        """Lo que hacía ffmpeg en los trozos en español, sobre el audio ya decodificado
+        (sin lanzar ffmpeg, ~0,4 s menos en el primer trozo): recorta el silencio de relleno
+        de edge-tts en los bordes internos y añade la pausa final / el silencio inicial."""
+        sr = self.sample_rate_device
+        umbral, margen = 10 ** (-50 / 20), int(0.06 * sr)
+        con_sonido = np.flatnonzero(np.abs(data) > umbral)
+        if con_sonido.size:
+            ini = max(0, con_sonido[0] - margen) if trim_inicio else 0
+            fin = min(len(data), con_sonido[-1] + 1 + margen) if trim_fin else len(data)
+            data = data[ini:fin]
+        partes = []
+        if silencio_inicial > 0:
+            partes.append(np.zeros(int(silencio_inicial * sr), dtype=np.float32))
+        partes.append(data)
+        if pausa > 0:
+            partes.append(np.zeros(int(pausa * sr), dtype=np.float32))
+        return np.concatenate(partes) if len(partes) > 1 else data
+
+    def _acortar_primero(self, segmentos, minimo=60, tope=45):
+        """El primer trozo en español, si es largo, se corta en una coma/pausa cercana: la
+        descarga tarda según el texto, y así el primer sonido llega antes."""
+        if not segmentos or segmentos[0][1] == self.voice_ja or len(segmentos[0][0]) <= minimo:
+            return segmentos
+        txt, voz = segmentos[0]
+        corte = max((m.end() for m in re.finditer(r"[,;:.!?¿¡]\s", txt[:tope + 10]) if m.end() >= 12), default=0)
+        if not corte:
+            corte = txt.rfind(" ", 15, tope)
+        if corte <= 0:
+            return segmentos
+        return [(txt[:corte].strip(), voz), (txt[corte:].strip(), voz)] + segmentos[1:]
+
+    async def _generar_trozos(self, texto: str, base: str, como_audio: bool = False, corto: bool = False):
         """Genera y procesa los trozos de la respuesta y los va devolviendo EN ORDEN,
         cada uno en cuanto está listo. La descarga de todos arranca a la vez (hasta 4
         simultáneas), así el primero suena enseguida y los demás ya están hechos
-        cuando les toca. `base` es la ruta (sin extensión) de los temporales."""
+        cuando les toca. `base` es la ruta (sin extensión) de los temporales.
+        Con `como_audio=True` devuelve arrays de audio (los trozos en español se ajustan
+        en numpy, sin ffmpeg; los japoneses sí pasan por ffmpeg por el atempo); si no,
+        rutas de mp3 ya procesados (para concatenarlos). `corto=True` acorta el primero."""
         from core.config import TTS_PAUSA_SEGMENTOS, TTS_SILENCIO_INICIAL
 
         segmentos = self._partir_largos(
             self._juntar_japones(self._dividir_texto(self._limpiar_markdown(texto))))
+        if corto:
+            segmentos = self._acortar_primero(segmentos)
         if not segmentos:
             return
         pausa = TTS_PAUSA_SEGMENTOS  # fija; "más despacio" solo afecta al atempo del japonés
         sem = asyncio.Semaphore(4)
 
         async def generar(i, txt, voz):
-            async with sem:
-                ruta = f"{base}_seg{i}.mp3"
-                await self._generar_audio_segmento(txt, voz, ruta)
+            ruta = f"{base}_seg{i}.mp3"
+            en_cache = self._ruta_cache(txt, voz)
+            if en_cache and os.path.exists(en_cache):
+                shutil.copyfile(en_cache, ruta)
+                os.utime(en_cache)  # lo usado hace poco se queda
                 return ruta
+            async with sem:
+                await self._generar_audio_segmento(txt, voz, ruta)
+            if en_cache:
+                self._guardar_cache(en_cache, ruta)
+            return ruta
 
         tareas = [asyncio.create_task(generar(i, t, v)) for i, (t, v) in enumerate(segmentos)]
         ultimo = len(segmentos) - 1
         try:
             for i, (txt, voz) in enumerate(segmentos):
                 ruta = await tareas[i]
-                yield await asyncio.to_thread(
+                es_ja = voz == self.voice_ja
+                if como_audio and not es_ja:
+                    data = await asyncio.to_thread(self._cargar_trozo, ruta)
+                    yield self._ajustar_np(
+                        data, trim_inicio=(i != 0), trim_fin=(i != ultimo),
+                        pausa=(pausa if i != ultimo else 0.0),
+                        silencio_inicial=(TTS_SILENCIO_INICIAL if i == 0 else 0.0))
+                    continue
+                ruta = await asyncio.to_thread(
                     self._procesar_segmento, ruta,
-                    es_japones=(voz == self.voice_ja),
+                    es_japones=es_ja,
                     trim_inicio=(i != 0),          # el primer trozo conserva su arranque
                     trim_fin=(i != ultimo),        # el último conserva su cola
                     pausa_final=(pausa if i != ultimo else 0.0),
                     silencio_inicial=(TTS_SILENCIO_INICIAL if i == 0 else 0.0),
                 )
+                yield (await asyncio.to_thread(self._cargar_trozo, ruta)) if como_audio else ruta
         finally:
             for t in tareas:
                 t.cancel()
@@ -445,12 +534,10 @@ class TextToSpeech:
 
         def producir():
             async def correr():
-                async for ruta in self._generar_trozos(texto, base):
+                async for audio in self._generar_trozos(texto, base, como_audio=True, corto=True):
                     if self._callado.is_set():
-                        if os.path.exists(ruta):
-                            os.unlink(ruta)
                         break
-                    cola.put(self._cargar_trozo(ruta))
+                    cola.put(audio)
             try:
                 asyncio.run(correr())
             except Exception as e:  # noqa: BLE001
@@ -498,12 +585,11 @@ class TextToSpeech:
                     if self._callado.is_set() or not str(frase).strip():
                         continue  # se sigue vaciando la cola, sin sintetizar
                     print(f"🔊 Hablando: {frase}")
-                    async for ruta in self._generar_trozos(frase, f"{base}_f{n}"):
+                    async for audio in self._generar_trozos(
+                            frase, f"{base}_f{n}", como_audio=True, corto=(n == 0)):
                         if self._callado.is_set():
-                            if os.path.exists(ruta):
-                                os.unlink(ruta)
                             break
-                        cola.put(self._cargar_trozo(ruta))
+                        cola.put(audio)
                     n += 1
             try:
                 asyncio.run(correr())
