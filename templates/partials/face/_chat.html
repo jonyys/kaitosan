@@ -15,24 +15,8 @@
 ">
 </div>
 
-<!-- Card de japonés en modo sensei: lo que hay que decir, siempre en kana -->
-<div id="sensei-jp" style="
-    position: fixed;
-    bottom: 44px;
-    left: calc(var(--cara-ancho) / 2);
-    transform: translateX(-50%);
-    max-width: 88%;
-    text-align: center;
-    padding: 22px 34px;
-    background: rgba(26, 16, 6, 0.72);
-    border: 1px solid rgba(var(--cara-brillo), 0.45);
-    border-radius: 20px;
-    box-shadow: 0 0 34px rgba(var(--cara-brillo), 0.22);
-    color: var(--cara-esclera);
-    font-family: 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Noto Sans JP', sans-serif;
-    font-size: 42px;
-    line-height: 1.5;
-    letter-spacing: 2px;
-    display: none;
-">
+<!-- Pizarra del modo sensei: lo que hay que decir, siempre en kana. Estilos en _estilos.html -->
+<div id="sensei-jp" class="pizarra" aria-live="polite">
+  <div class="pizarra-texto"></div>
+  <i class="pizarra-tiza"></i>
 </div>

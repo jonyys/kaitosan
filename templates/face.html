@@ -11,8 +11,8 @@
     {% if es_kiosko %}<link rel="expect" href="#paginaLista" blocking="render">{% endif %}
     {# Antes de pintar nada: si venimos del reloj, la primera imagen ya lleva los ojos cerrados #}
     <script>if (/\/reloj(\?|$)/.test(document.referrer)) document.documentElement.classList.add("ojos-cerrados");</script>
-    {# La misma letra del reloj: la transición lo dibuja desde aquí antes de saltar a él #}
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700&display=swap">
+    {# La misma letra del reloj (la transición lo dibuja desde aquí antes de saltar a él) y la de tiza de la pizarra del sensei #}
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700&family=Klee+One:wght@600&display=swap">
     <script src="/static/transiciones.js"></script>
     {% include 'partials/face/_estilos.html' %}
 </head>

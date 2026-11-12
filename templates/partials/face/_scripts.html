@@ -71,6 +71,9 @@
   const DORMIRSE_MS = CAE_MS + CIERRA_MS + 15000;
   window.kaitoDormirseMs = DORMIRSE_MS; // el kiosko lo lanza con esta antelación
   const miradaBase = { x: 0, y: 0 };
+  // Pizarra del sensei puesta (mostrarJaponesSensei) y cuánto baja la mirada para leerla
+  let hayPizarra = false;
+  const MIRA_PIZARRA = 10;
   let ladoPensando = 1;
   let quietoDesde = 0;
   let ahora = 0;
@@ -175,6 +178,12 @@
   }
 
   function nuevaMirada() {
+    // Con la pizarra puesta casi siempre la mira a ella, y de vez en cuando a Laura
+    if (hayPizarra) {
+      if (Math.random() < 0.7) mirar(azar(-3, 3), MIRA_PIZARRA + azar(-1, 1));
+      else mirar(0, 0);
+      return;
+    }
     // Una emoción puede fijar hacia dónde mira (triste al suelo, pensativo arriba)
     if (emocionActual && EMOCIONES[emocionActual].mira) {
       const [x, y] = EMOCIONES[emocionActual].mira;
@@ -801,18 +810,50 @@
 
   const senseiJp = document.getElementById("sensei-jp");
 
+  // Pizarra: la cara sube, la pizarra entra por abajo y el kana se escribe con tiza.
+  // Al quitarla el texto se queda para que salga con ella.
+  const pizarraTexto = senseiJp.querySelector(".pizarra-texto");
+  // La letra de tiza se baja al abrir la cara: si no, la primera pizarra sale vacía un momento
+  document.fonts.load('600 1em "Klee One"', "あいうえおかきくけこアイウエオ").catch(() => {});
   function mostrarJaponesSensei(frases) {
-    senseiJp.textContent = "";
-    if (!frases || !frases.length) {
-      senseiJp.style.display = "none";
-      return;
-    }
-    frases.forEach((f) => {
+    hayPizarra = !!(frases && frases.length);
+    senseiJp.classList.toggle("visible", hayPizarra);
+    face.classList.toggle("con-pizarra", hayPizarra);
+    if (!hayPizarra) return mirar(0, 0);
+    // Las frases largas se parten por las comas, para no cortar una palabra a medias
+    frases = frases.flatMap((f) => (f.length > 10 ? f.split(/(?<=、)/) : [f]));
+    const larga = frases.length > 1 || frases[0].length > 8;
+    senseiJp.classList.toggle("larga", larga);
+    face.classList.toggle("pizarra-larga", larga);
+    pizarraTexto.textContent = "";
+    let n = 0;
+    for (const f of frases) {
       const linea = document.createElement("div");
-      linea.textContent = f;
-      senseiJp.appendChild(linea);
-    });
-    senseiJp.style.display = "block";
+      for (const c of f) {
+        // Un span con solo un espacio no ocupa nada: el espacio va suelto
+        if (c === " ") {
+          linea.append(" ");
+          continue;
+        }
+        const k = document.createElement("span");
+        k.className = "kana";
+        k.textContent = c;
+        k.style.animationDelay = 0.55 + n++ * 0.07 + "s"; // empieza cuando la pizarra ya ha subido
+        linea.appendChild(k);
+      }
+      pizarraTexto.appendChild(linea);
+    }
+    // La letra más grande que quepa: primero sin partir las frases y, si ni así, partiéndolas
+    let tam = 64;
+    const sobra = () => pizarraTexto.scrollHeight > pizarraTexto.clientHeight || pizarraTexto.scrollWidth > pizarraTexto.clientWidth;
+    pizarraTexto.style.whiteSpace = "nowrap";
+    pizarraTexto.style.fontSize = tam + "px";
+    while (sobra() && tam > 26) pizarraTexto.style.fontSize = (tam -= 2) + "px";
+    pizarraTexto.style.whiteSpace = "";
+    while (sobra() && tam > 16) pizarraTexto.style.fontSize = (tam -= 2) + "px";
+    // Mira a la pizarra en cuanto aparece
+    mirar(azar(-2, 2), MIRA_PIZARRA);
+    prox.mirada = ahora + 2500;
   }
 
   socket.on("sensei_japones", (data) => mostrarJaponesSensei(data.frases));
