@@ -411,12 +411,13 @@ class JapaneseMemory:
                 )
 
     def vocab_rows(self) -> dict:
-        """{word: {reading, meaning, type, status, reps}} de todo el vocabulario en BD."""
+        """{word: {reading, meaning, type, status, reps, sensei_usos}} de todo el vocabulario en BD."""
         with self._conectar() as conn:
             conn.row_factory = sqlite3.Row
             return {r["word"]: dict(r) for r in conn.execute(
                 "SELECT word, reading, meaning, type, status, "
-                "COALESCE(reps, 0) AS reps FROM japanese_vocabulary"
+                "COALESCE(reps, 0) AS reps, COALESCE(sensei_usos, 0) AS sensei_usos "
+                "FROM japanese_vocabulary"
             )}
 
     def gram_rows(self) -> dict:

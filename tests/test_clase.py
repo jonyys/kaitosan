@@ -370,3 +370,40 @@ def test_el_juez_solo_ve_la_frase_de_kaito_en_las_tareas(monkeypatch):
     assert clase.juez_cumple(cd, "おはよう", "practicar", contexto="PREGUNTA_DE_KAITO") is True
     assert clase.juez_cumple(cd, "おはよう", "tarea", contexto="PREGUNTA_DE_KAITO") is True
     assert "PREGUNTA_DE_KAITO" not in Prov.prompts[0] and "PREGUNTA_DE_KAITO" in Prov.prompts[1]
+
+
+def test_vocabulario_solo_lo_que_kaito_dice_en_clase(tmp_path):
+    """12-nov: la sesión registraba «los 2 siguientes del can-do» (さようなら, おやすみなさい…)
+    aunque Kaito no los enseñara, y duplicaba お母さん / おかあさん."""
+    from core.japanese_memory import JapaneseMemory
+    jm = JapaneseMemory(str(tmp_path / "j.db"))
+    p = ProfesorJapones(jm, MagicMock(), MagicMock(), MagicMock())
+    p.session_id = 7
+    p._extraer_resumen_basico = lambda t: "resumen"
+    p._llamar_extractor = lambda h, **k: (_ for _ in ()).throw(RuntimeError("sin API"))
+    p._foco_unidad = next(u for u in CURRICULUM if u["id"] == "saludos_basicos")
+    p._ejecutar_extraccion(7, [
+        {"role": "assistant", "content": "Modo Sensei activado! 【やあ】, Laura. 【さようなら】"},  # apertura: no cuenta
+        {"role": "user", "content": "vamos"},
+        {"role": "assistant", "content": "【おはよう、おかあさん】 y de noche 【こんばんは】. 【きのう えいがを みました】"},
+        {"role": "assistant", "content": "【おかあさん】 otra vez"},
+    ])
+    palabras = set(jm.vocab_rows())
+    assert {"お母さん", "こんばんは", "昨日", "映画"} <= palabras
+    assert "さようなら" not in palabras and "おかあさん" not in palabras and "今晩" not in palabras
+
+
+def test_la_lista_de_palabras_vistas_tiene_tope_y_prioriza_las_usadas():
+    jm = MagicMock()
+    jm.resumen_perfil.return_value = {}
+    filas = {f"w{i}": {"word": f"w{i}", "reading": f"w{i}", "meaning": f"m{i}", "reps": 0,
+                       "sensei_usos": 5 if i == 3 else 0} for i in range(200)}
+    jm.vocab_rows.return_value = filas
+    mem = MagicMock()
+    mem.obtener_perfil.return_value = ""
+    p = ProfesorJapones(jm, MagicMock(), mem, MagicMock())
+    r = p._recuerdas()
+    linea = next(l for l in r.splitlines() if l.startswith("Palabras que Laura ya ha visto"))
+    assert "las 60 más usadas; conoce 140 más" in linea
+    assert linea.count("(m") == 60 and "w3 (m3)" in linea and "w199 (m199)" in linea  # usada y reciente
+    assert "w0 (m0)" not in linea   # vieja y sin uso: fuera

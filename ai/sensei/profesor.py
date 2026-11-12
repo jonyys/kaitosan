@@ -42,18 +42,18 @@ from ai.sensei.clase import (
     juez_cumple,
     usa_patron,
 )
-from ai.sensei.curriculum import CURRICULUM, siguiente_items_nuevos, unidad_actual
+from ai.sensei.curriculum import CURRICULUM, unidad_actual
 from ai.sensei.kana import a_kana, normalizar_bloques_jp, normalizar_japones, tiene_espanol
 from core.config import (
     EXTRACCION_PAUSA_LLAMADAS_SEG,
     EXTRACCION_RETRASO_SEG,
-    MAX_ITEMS_NUEVOS,
     MAX_TOKENS_EXPLICACION,
     REASONING_EFFORT_SENSEI,
     TEMPERATURE_SENSEI,
     THROTTLE_DUE,
 )
 
+MAX_PALABRAS_VISTAS = 60  # tope de la lista «palabras que Laura ya ha visto» que va en cada turno
 MAX_TURNOS = 8  # pares user/assistant conservados en el contexto del LLM
 # Laura dice que no sabe / no se acuerda / pide ayuda (en español): hay que ayudarla.
 _RE_NO_SE = re.compile(
@@ -66,6 +66,43 @@ _RE_SIGUIENTE = re.compile(
     r"pas(a|ar|emos)( a| con)? (lo|el|la) siguiente|vamos a lo siguiente|"
     r"siguiente (tema|lecci[oó]n|cosa|ejercicio)|ya (me )?lo s[eé]|"
     r"cambia(r|mos)? de (tema|lecci[oó]n)|otra (cosa|lecci[oó]n)", re.IGNORECASE)
+# Vocabulario del temario por forma escrita (jp y lectura, sin 〜 ni glosas): sirve para saber qué
+# palabras dijo Kaito. ponytail: solo palabras de 2+ kana y como token entero (con o sin partícula
+# pegada); las de 1 kana (き, め…) no se detectan.
+_PARTICULAS = "をはがにでとものへ"
+_RE_BLOQUE_JP = re.compile(r"【(.*?)】")
+_VOCAB_POR_FORMA, _CANONICO = {}, {}
+for _u in CURRICULUM:
+    for _it in _u.get("items", []):
+        if _it.get("kind") != "vocabulario" or _it.get("tipo") == "kanji":
+            continue
+        for _f in (_it.get("jp") or "", _it.get("reading") or ""):
+            for _s in re.sub(r"[（(].*?[)）]", "", _f).replace("〜", "").replace("～", "").split(";"):
+                _s = _s.strip()
+                if len(_s) >= 2:
+                    _VOCAB_POR_FORMA.setdefault(_s, _it)
+                    if _s != _it["jp"]:
+                        _CANONICO.setdefault(_s, _it["jp"])
+
+
+def _vocab_dicho(mensajes):
+    """Palabras del temario que Kaito dijo en sus bloques 【】 durante la clase, sin repetir.
+    Se salta el saludo de apertura (lo anterior al primer mensaje de Laura)."""
+    primero = next((i for i, m in enumerate(mensajes) if m["role"] == "user"), len(mensajes))
+    vistas = {}
+    for m in mensajes[primero:]:
+        if m["role"] != "assistant":
+            continue
+        for bloque in _RE_BLOQUE_JP.findall(m["content"]):
+            for tok in re.split(r"[\s、。，,．.！!？?・「」]+", bloque):
+                # Primero el token entero («こんばんは» no es «こんばん» + は); si no, sin la partícula.
+                it = _VOCAB_POR_FORMA.get(tok) or (
+                    _VOCAB_POR_FORMA.get(tok[:-1]) if tok[-1:] and tok[-1] in _PARTICULAS else None)
+                if it:
+                    vistas.setdefault(it["jp"], it)
+    return list(vistas.values())
+
+
 # Todos los can-dos con datos de clase, por id (la cola puede cruzar unidades).
 _POR_ID = {cd["id"]: cd for u in CURRICULUM for cd in u.get("can_dos", [])
            if cd.get("explicacion") and cd.get("tarea")}
@@ -135,7 +172,6 @@ class ProfesorJapones:
 
         # Unidad abierta e ítems nuevos, resueltos una vez por sesión en entrar()
         # y persistidos al cerrar (_ejecutar_extraccion).
-        self._foco_nuevos = []
         self._foco_unidad = None
         self._ja_alt = None  # el turno oído forzando japonés (oir_japones), solo para este turno
 
@@ -198,11 +234,8 @@ class ProfesorJapones:
         self._juez_previo = {}
         self.ultima_frase_objetivo = None
 
-        # La unidad abierta y los ítems nuevos del can-do activo se resuelven UNA
-        # vez por sesión (no una por turno). Los nuevos se persisten al cerrar
-        # (_ejecutar_extraccion), no aquí. MAX_ITEMS_NUEVOS limita cuántos.
+        # La unidad abierta se resuelve UNA vez por sesión (no una por turno).
         self._foco_unidad = unidad_actual(self.jap_memory)
-        self._foco_nuevos = siguiente_items_nuevos(self.jap_memory, MAX_ITEMS_NUEVOS)
 
         now = datetime.now().isoformat(sep=" ", timespec="seconds")
         with self.jap_memory._conectar() as conn:
@@ -567,14 +600,20 @@ class ProfesorJapones:
             lineas_r.append(f"Vocabulario por estado: {estados}")
 
         # Qué palabras concretas ha visto: sin esto Kaito le pide frases con palabras
-        # que nunca le ha enseñado. ponytail: tope de 80 (las más repasadas primero).
+        # que nunca le ha enseñado. Con el tiempo la lista crece: van las MAX_PALABRAS_VISTAS más
+        # usadas (en clase y en el juego) y, a igualdad, las más recientes. ponytail: sin filtrar
+        # por tema; si hace falta, priorizar las de la unidad abierta.
         try:
-            filas = sorted(self.jap_memory.vocab_rows().values(), key=lambda r: -r["reps"])
+            filas = [r for r in self.jap_memory.vocab_rows().values() if r.get("meaning")][::-1]
+            filas.sort(key=lambda r: -(r["reps"] + r.get("sensei_usos", 0)))  # estable: recientes antes
             vistas = [f"{a_kana(r['reading'] or r['word'])} ({r['meaning']})"
-                      for r in filas[:80] if r.get("meaning")]
+                      for r in filas[:MAX_PALABRAS_VISTAS]]
+            resto = len(filas) - len(vistas)
         except Exception:  # noqa: BLE001 — memoria sin vocabulario (tests, BD vieja)
-            vistas = []
-        lineas_r.append("Palabras que Laura ya ha visto: " + (", ".join(vistas) or "casi ninguna todavía"))
+            vistas, resto = [], 0
+        lineas_r.append(
+            "Palabras que Laura ya ha visto" + (f" (las {len(vistas)} más usadas; conoce {resto} más)" if resto > 0 else "")
+            + ": " + (", ".join(vistas) or "casi ninguna todavía"))
 
         if perfil_jap.get("last_sessions"):
             lineas_r.append("Últimas sesiones:")
@@ -625,14 +664,13 @@ class ProfesorJapones:
             return
         session_id = self.session_id
         mensajes = list(self.mensajes)
-        foco_nuevos = list(self._foco_nuevos)
         foco_unidad = self._foco_unidad
         self.session_id = None  # liberar ya: la sesión siguiente puede abrir mientras esperamos
 
         self._dormir(EXTRACCION_RETRASO_SEG)
 
         try:
-            self._ejecutar_extraccion(session_id, mensajes, foco_nuevos, foco_unidad)
+            self._ejecutar_extraccion(session_id, mensajes, foco_unidad)
         except Exception as e:
             print(f"⚠️ Error inesperado en extracción de sesión {session_id}: {e}")
             try:
@@ -651,8 +689,7 @@ class ProfesorJapones:
         except Exception:
             pass
 
-    def _ejecutar_extraccion(self, session_id: int, mensajes=None,
-                             foco_nuevos=None, foco_unidad=None):
+    def _ejecutar_extraccion(self, session_id: int, mensajes=None, foco_unidad=None):
         # Sin argumentos → usa el estado vivo (call sites de tests). Con ellos →
         # la instantánea que tomó cerrar_sesion_y_extraer antes de esperar.
         mensajes = self.mensajes if mensajes is None else mensajes
@@ -661,21 +698,17 @@ class ProfesorJapones:
             self.jap_memory.guardar_resumen_sesion(session_id, summary=None)
             return
 
-        foco_nuevos = list(self._foco_nuevos if foco_nuevos is None else foco_nuevos)
         unidad = (self._foco_unidad if foco_unidad is None else foco_unidad) or {}
 
-        # Persistir aquí los ítems nuevos de la sesión.
-        for nuevo in foco_nuevos:
+        # Vocabulario: solo lo que Kaito dijo de verdad en la clase (sus bloques 【】), no «los
+        # 2 siguientes del can-do» como antes (registraba palabras que nunca se enseñaron).
+        for item in _vocab_dicho(mensajes):
             try:
                 self.jap_memory.add_item(
-                    nuevo["kind"], nuevo["jp"],
-                    reading=nuevo.get("reading"),
-                    meaning=nuevo.get("meaning"),
-                    tipo=nuevo.get("tipo"),
-                    session_id=session_id,
-                )
-            except Exception as e:
-                print(f"⚠️ Error persistiendo ítem nuevo '{nuevo['jp']}': {e}")
+                    "vocabulario", item["jp"], reading=item.get("reading"),
+                    meaning=item.get("meaning"), tipo=item.get("tipo"), session_id=session_id)
+            except Exception as e:  # noqa: BLE001
+                print(f"⚠️ Error persistiendo ítem '{item['jp']}': {e}")
 
         transcript = self._construir_transcript(mensajes)
 
@@ -734,7 +767,7 @@ class ProfesorJapones:
         # Ítems nuevos que introdujo la sesión: se registran en la BD de vocab/gram
         # (su progreso SRS ya no lo mueve el profesor — lo hará el juego web).
         for item in data.get("new_items", []):
-            jp = (item.get("jp") or "").strip()
+            jp = _CANONICO.get((item.get("jp") or "").strip(), (item.get("jp") or "").strip())
             es = (item.get("es") or "").strip()
             category = (item.get("category") or "vocabulario").lower()
             if not jp:
