@@ -31,6 +31,8 @@ REASONING_EFFORT_SENSEI = os.getenv("REASONING_EFFORT_SENSEI", "off").strip().lo
 TRIGGERS_SALIR_SENSEI = [
     "salir del modo sensei", "sal del modo sensei", "modo sensei off",
     "salir del modo", "sal del modo", "desactivar modo", "desctivar", "desactiva",
+    # Logs (12-nov noche): «quiero salir de modo sensei» (sin «l») no se reconocía y costó 2 turnos
+    "salir de modo", "sal de modo", "salir del sensei", "sal del sensei", "salir de sensei",
 ]
 
 # Frases que delatan una PREGUNTA/comentario libre en español ("¿cómo se dice

@@ -482,19 +482,29 @@ class ProfesorJapones:
                 "Responde a lo que dice o pregunta, corto (si pregunta algo de japonés, "
                 f"explícaselo). Luego retoma: {vuelta}")
 
+    def _historial_llm(self):
+        """Los últimos turnos para el LLM. La línea PIZARRA solo en los dos últimos mensajes de Kaito
+        (basta para que no pierda el formato; en los demás son tokens de más en cada turno)."""
+        out, vistos = [], 0
+        for m in reversed(self.mensajes[-(MAX_TURNOS * 2):]):
+            if m["role"] == "assistant":
+                vistos += 1
+                if vistos > 2:
+                    m = {**m, "content": _sin_pizarra(m["content"])}
+            out.append(m)
+        return out[::-1]
+
     def _instr_no_cumple(self, cd, mensaje):
         """El juez dijo que no. Kaito dice SOLO lo que el juez comprobó que falta. Logs (12-nov
         noche): sin saber qué fallaba, se inventó un «じゃありません» que Laura no dijo y le dio la
         vuelta al orden de lo que dijo."""
         if self._falta:
-            causa = f"Lo que falta, comprobado: {self._falta}. Dile SOLO eso, con el porqué en una frase. "
+            causa = f"Falta (comprobado): {self._falta}. Dile solo eso, con el porqué. "
         else:
-            causa = ("No se ha podido comprobar qué falla: no le señales ningún error concreto; pídele que "
-                     "lo diga otra vez, entero y despacio. ")
-        return (f"Lo que ha dicho Laura aún no cumple lo de hoy ({cd['texto']}). "
-                f"Lo que ha dicho, en su orden: «{a_kana(mensaje)}». " + causa +
-                "No menciones palabras ni errores que no estén en lo que ha dicho, ni cambies su orden. "
-                "Responde a lo que dice en una frase (sin decirle que está bien: no lo está) y sin darle la frase hecha.")
+            causa = "No se ha podido comprobar qué falla: no señales ningún error; pídele que lo repita entero y despacio. "
+        return (f"Lo que ha dicho Laura aún no cumple lo de hoy ({cd['texto']}). Dijo, en su orden: "
+                f"«{a_kana(mensaje)}». " + causa + "No menciones nada que no esté ahí ni cambies su orden. "
+                "Respóndele en una frase (sin decir que está bien) y sin darle la frase hecha.")
 
     def _acierto(self, cd):
         """Laura ha hecho lo de hoy: cuenta el acierto y dice qué toca después."""
@@ -639,12 +649,10 @@ class ProfesorJapones:
         # Logs (12-nov noche): sin este recordatorio el modelo se olvidaba de la línea PIZARRA en
         # 14 de 17 turnos. Y así sabe qué está viendo Laura ahora mismo.
         ahora = _texto_pizarra(self.pizarra_actual)
-        usuario += ("\n[Pizarra (no la menciones como sistema): "
-                    + (f"Laura ve ahora en ella: {ahora}. " if ahora else "ahora está vacía. ")
-                    + "Acaba tu respuesta con la línea PIZARRA de este turno (1 a 3 entradas: lo que le "
-                    "pides ahora con su significado), o «PIZARRA: -» si no hay nada que enseñar.]")
+        usuario += ("\n[Pizarra: " + (f"Laura ve «{ahora}»" if ahora else "vacía")
+                    + ". Cierra con la línea PIZARRA: kana = significado (1-3, lo que pides ahora) o PIZARRA: -]")
         historial = ([{"role": "system", "content": sistema}]
-                     + self.mensajes[-(MAX_TURNOS * 2):]
+                     + self._historial_llm()
                      + [{"role": "user", "content": usuario}])
         respuesta = self._respuesta_en_stream(historial, on_frase) if on_frase else None
         try:

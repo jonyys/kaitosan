@@ -504,9 +504,9 @@ def test_kaito_sabe_que_hay_en_la_pizarra_y_se_le_recuerda_el_formato():
 
     p = _profe(Prov())
     p.responder_turno("uno")
-    assert "ahora está vacía" in vistos[0] and "línea PIZARRA" in vistos[0]
+    assert "Pizarra: vacía" in vistos[0] and "línea PIZARRA" in vistos[0]
     p.responder_turno("dos")
-    assert "Laura ve ahora en ella: こんにちは = hola" in vistos[1]
+    assert "Laura ve «こんにちは = hola»" in vistos[1]
     assert p.pizarra_actual == [{"jp": "こんにちは", "es": "hola"}]
     # lo que él mismo puso va en el historial, para que no pierda el formato
     assert any("PIZARRA: こんにちは = hola" in m["content"] for m in p.mensajes if m["role"] == "assistant")
@@ -539,12 +539,12 @@ def test_si_el_juez_dice_que_no_kaito_solo_dice_lo_que_falta_y_en_el_orden_dicho
         return False
     p.juez = juez
     instr = p._instruccion("私はコーヒーを飲みます。お酒を飲みません。")
-    assert "Lo que falta, comprobado: solo dice el verbo" in instr
+    assert "Falta (comprobado): solo dice el verbo" in instr
     assert instr.index("のみます") < instr.index("のみません")      # en el orden en que lo dijo, en kana
-    assert "No menciones palabras ni errores que no estén en lo que ha dicho" in instr
+    assert "No menciones nada que no esté ahí" in instr
     # sin motivo (el juez no lo da): no señala ningún error concreto
     p.juez = lambda cd, m, fase, contexto=None: clase.MOTIVOS.pop(m, None) or False
-    assert "ningún error concreto" in p._instruccion("私はコーヒーを飲みます。")
+    assert "no señales ningún error" in p._instruccion("私はコーヒーを飲みます。")
 
 
 def test_tras_un_acierto_en_la_tarea_pide_solo_una_cosa():
@@ -553,3 +553,34 @@ def test_tras_un_acierto_en_la_tarea_pide_solo_una_cosa():
     cd = {"id": "x", "texto": "t", "tarea": "Situación: s. Laura tiene que: contar lo de cada día y una que nunca haces."}
     p.clase = {"cd": "x", "fase": "tarea", "tipo": "nuevo", "aciertos": 0, "fallos": 0, "fallos_cd": 1}  # con fallos: meta 2
     assert "UNA sola cosa" in p._acierto(cd)
+
+
+def test_salir_de_modo_sin_l_tambien_sale():
+    """12-nov noche: «Quiero salir de modo Sensei» no se reconocía y costó dos turnos."""
+    from ai.speech_to_text import _es_salida_sensei
+    for t in ["Quiero salir de modo Sensei", "sal de modo sensei", "quiero salir del sensei", "Quiero salir del modo sencillo."]:
+        assert _es_salida_sensei(t), t
+    for t in ["quiero salir a correr", "salgo de casa", "el modo de decirlo"]:
+        assert not _es_salida_sensei(t), t
+
+
+def test_normalizar_japones_no_se_cae_con_palabras_latinas_acabadas_en_m():
+    from ai.sensei.kana import normalizar_japones
+    for t in ["sem", "Adam", "mum", "hún koma sem físte"]:
+        assert isinstance(normalizar_japones(t), str)
+    assert normalizar_japones("sempai") == "せんぱい"
+
+
+def test_presentar_fija_la_estructura_para_no_soltar_mucho_japones():
+    from ai.sensei.clase import presentar
+    t = presentar({"texto": "x", "explicacion": "e"})
+    assert "EXACTAMENTE así, en 3 frases cortas" in t and "UN solo ejemplo japonés" in t and "como mucho 2 palabras" in t
+
+
+def test_la_linea_pizarra_solo_va_en_los_dos_ultimos_mensajes_de_kaito():
+    p = _profe(_ProvStream())
+    for i in range(4):
+        p.mensajes += [{"role": "user", "content": f"u{i}"},
+                       {"role": "assistant", "content": f"a{i}\nPIZARRA: あ = a"}]
+    con = [m["content"] for m in p._historial_llm() if m["role"] == "assistant"]
+    assert ["PIZARRA" in c for c in con] == [False, False, True, True]

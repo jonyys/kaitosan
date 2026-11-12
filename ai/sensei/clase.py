@@ -41,13 +41,15 @@ _PROMPT_JUEZ = (
     "{criterio} NO cumple si solo menciona una "
     "palabra del tema, habla de otra cosa o no hace lo que pide el objetivo. NO cumple tampoco si "
     "falla justo en lo que se enseña (la partícula, forma o expresión clave del objetivo). Fuera de "
-    "eso, no exijas perfección gramatical ni un vocabulario concreto. OJO: el texto viene de "
-    "reconocimiento de voz y suele traer partículas o sílabas de más, de menos o cambiadas (un «と» o un «の» "
-    "suelto que ella no dijo): no las cuentes en su contra ni las menciones en «falta»; valora si en lo "
-    "esencial hace lo que pide.{romaji} Responde solo JSON: {{\"cumple\": true, \"falta\": \"\"}} o {{\"cumple\": false, \"falta\": \"...\"}}. "
-    "«falta»: si NO cumple, en español y en pocas palabras (máximo 12), qué de lo que pide el objetivo "
-    "no hace lo que ha dicho Laura. Describe solo lo que falta o sobra en SU frase; no inventes errores "
-    "que no estén en ella ni le atribuyas palabras que no ha dicho. Vacío si cumple."
+    "eso, no exijas perfección gramatical ni un vocabulario concreto. OJO: el texto viene de reconocimiento de "
+    "voz y suele traer partículas o sílabas de más, de menos o cambiadas (un «と» o un «の» suelto que ella no "
+    "dijo): no las cuentes en su contra ni las menciones en «falta»; valora si en lo esencial hace lo que pide."
+    # (medido 12-nov noche con el modelo real: con una redacción más corta el juez rechazaba la frase del
+    # sake 12 de 12 veces; con esta la acepta 10 de 12)
+    "{romaji} "
+    "Responde solo JSON: {{\"cumple\": true, \"falta\": \"\"}} o {{\"cumple\": false, \"falta\": \"...\"}}; "
+    "«falta»: si NO cumple, en ≤10 palabras, qué no hace de lo que pide el objetivo (solo lo que falta en SU "
+    "frase, sin inventar errores)."
 )
 # Logs de la Pi (12-nov): «ohayō por la mañana, konbanwa por la noche…» → Whisper lo tomó
 # por español y escribió «Ohio por la mañana, con Bangwa por la noche…». Era correcto.
@@ -71,9 +73,8 @@ def _contexto_juez(kaito):
         return ""
     kaito = kaito.strip()[-500:]  # la pregunta va al final
     # Kaito pide UNA sola cosa por turno: se valora esa, aunque la tarea de arriba tenga varias
-    return (f"Lo que acaba de decirle Kaito (la situación o pregunta a la que responde, manda "
-            f"sobre la tarea de arriba; valora solo lo que Kaito le pide ahí: si pide una sola cosa, "
-            f"basta con esa): «{kaito}»\n")
+    return (f"Lo último que dijo Kaito (manda sobre la tarea de arriba; valora solo lo que pide ahí, "
+            f"aunque la tarea tenga más): «{kaito}»\n")
 
 
 def juez_cumple(cd, mensaje, fase="tarea", romaji=False, contexto=None):
@@ -155,10 +156,12 @@ def errores(cd, mensaje):
 
 def presentar(cd):
     return (
-        f"Preséntale lo de hoy: {cd['texto']}. Explicación (elige solo lo imprescindible para "
-        f"empezar y dilo natural, sin recitarla; el resto lo verá al corregirla): {cd['explicacion']} "
-        "Como máximo 2 o 3 cosas japonesas nuevas en total (el ejemplo cuenta); el resto, en los "
-        "siguientes turnos. Todo en unos 15 segundos hablado: explicación de 1-2 frases cortas. Pon un ejemplo con algo de su vida. "
+        f"Preséntale lo de hoy: {cd['texto']}. Para ti (no la recites): {cd['explicacion']} "
+        # Logs (12-nov noche): soltó 7 cosas japonesas (ます, か, 3 del ejemplo, 2 palabras). Un «máximo 3»
+        # a secas no se cumplía (9 de 12 presentaciones se pasaban, media 6,4); con esta estructura, media 3,8.
+        "Hazlo EXACTAMENTE así, en 3 frases cortas (unos 15 s): 1) la idea principal en español, sin japonés; "
+        "2) UN solo ejemplo japonés corto en 【】, de su vida (nada más de japonés en esa frase); "
+        "3) pídele la frase en español, dándole como mucho 2 palabras sueltas en 【】. "
         + PEDIR_FRASE
     )
 
@@ -170,8 +173,7 @@ PEDIR_FRASE = (
     "tiene que decir (algo corto de su vida, distinto de tu ejemplo), no solo un tema. Que pueda "
     "montarla con palabras que ya ha visto; si le falta alguna (como mucho 2), dásela antes en "
     "japonés y di qué significa con palabras (nada de signos como =). Los nombres propios no son palabras"
-    " nuevas: se dicen tal cual, sin traducirlos. Es lo ÚLTIMO que dices y lo ÚNICO que le pides: nada de "
-    "«y luego…», «ahora con una tuya» ni una segunda frase.")
+    " nuevas: se dicen tal cual, sin traducirlos. Es lo ÚLTIMO que dices y lo ÚNICO que le pides.")
 
 
 def tarea(cd):

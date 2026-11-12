@@ -82,7 +82,7 @@ def _palabra_a_kana(p: str):
     """Una palabra en romaji → hiragana, o None si no es romaji japonés entero."""
     p, out, i = p.lower().replace("ō", "ou").replace("ū", "uu"), "", 0
     while i < len(p):
-        if p[i] in "nm" and (i + 1 == len(p) or p[i + 1] not in "aiueoy") and (p[i] == "n" or p[i + 1] in "bpm"):
+        if p[i] in "nm" and (i + 1 == len(p) or p[i + 1] not in "aiueoy") and (p[i] == "n" or (i + 1 < len(p) and p[i + 1] in "bpm")):
             out, i = out + "ん", i + 1
         elif i + 1 < len(p) and p[i] == p[i + 1] and p[i] in "kstpcdgbzj":  # kk → っk
             out, i = out + "っ", i + 1
@@ -175,6 +175,9 @@ if __name__ == "__main__":
     assert frases_para_card("x 【ねこ】", lista) == lista[:3]
     assert frases_para_card("x 【ねこ】", []) == []
     assert bloques_japones("sin japonés 【hola】") == []
+    # palabra latina acabada en «m»: antes IndexError (logs 12-nov noche)
+    assert "sem" in normalizar_japones("hún koma sem físte")   # no se cae (koma → こま es romaji válido)
+    assert normalizar_japones("Adam") == "Adam" and normalizar_japones("sempai") == "せんぱい"
     # 【】 anidados → un bloque limpio y continuo, sin "suelto" (contenido tal cual)
     assert bloques_japones("【いいね、【こんにちは】は午後です。】") == ["いいね、こんにちははごごです。"], \
         bloques_japones("【いいね、【こんにちは】は午後です。】")
