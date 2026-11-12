@@ -17,10 +17,11 @@
   #card-edit textarea { min-height: 54px; }
   #card-edit input[readonly] { opacity: .65; }
   #card-edit [hidden] { display: none; }
+  #card-edit:focus { outline: none; }
   #card-edit select option { background: var(--bg); color: var(--text); }
   #card-edit .cf-actions { display: flex; gap: 8px; margin-top: 14px; }
 </style>
-<dialog id="card-edit" class="flash-pop">
+<dialog id="card-edit" class="flash-pop" tabindex="-1" autofocus>
   <form method="POST" action="/japones/card/{{ kind }}/guardar">
     <input type="hidden" name="nuevo" value="1" />
     <h3 id="card-edit-titulo"></h3>
