@@ -193,6 +193,7 @@ class ProfesorJapones:
             self.timer.cancel()
         self._renovar_timer()
         self._empezar_clase()
+        self.entrada_ts = time.monotonic()  # la pantalla empieza ahora la animación de la cara
         self.socketio.emit("modo_sensei", {"activo": True})
         print("🎌 Modo Sensei activado")
 

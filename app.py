@@ -20,7 +20,7 @@ from flask_socketio import SocketIO
 from dotenv import load_dotenv
 from core.state import StateManager
 from core.brain import Brain
-from core.listener import VoiceListener
+from core.listener import VoiceListener, SENSEI_ENTRADA_SEG
 from core.button import PowerButton
 from core.config import FLASK_SECRET_KEY
 from core.emociones import es_solo_gracias, gesto_para_gracias
@@ -93,6 +93,10 @@ def chat():
 
         sensei_estaba = brain.profesor.esta_activo()
         respuesta, lento_extra = brain.responder(mensaje)
+        # Acaba de entrar en sensei: la voz espera a que acabe la animación de la cara
+        _entrada = getattr(brain.profesor, "entrada_ts", None)
+        no_antes_de = (_entrada + SENSEI_ENTRADA_SEG if not sensei_estaba and brain.profesor.esta_activo()
+                       and isinstance(_entrada, (int, float)) else None)
 
         # Emitir mensaje (sin cambiar estado todavía)
         # Texto y tarjeta salen cuando EMPIEZA la voz (si no, se ven con Kaito callado)
@@ -113,7 +117,8 @@ def chat():
             socketio.emit("estado", {"estado": "speaking"})
 
         def hablar_y_volver():
-            tts.hablar(respuesta, lento_extra=lento_extra, on_start=al_iniciar_audio)
+            tts.hablar(respuesta, lento_extra=lento_extra, on_start=al_iniciar_audio,
+                       no_antes_de=no_antes_de)
             mostrar()
             if brain._emitir_desactivar_sensei:
                 brain._emitir_desactivar_sensei = False
@@ -176,6 +181,10 @@ def grabar():
         # Responde con Groq (siempre devuelve (respuesta, lento_extra))
         sensei_estaba = brain.profesor.esta_activo()
         respuesta, lento_extra = brain.responder(texto, pron_contexto=pron_ctx)
+        # Acaba de entrar en sensei: la voz espera a que acabe la animación de la cara
+        _entrada = getattr(brain.profesor, "entrada_ts", None)
+        no_antes_de = (_entrada + SENSEI_ENTRADA_SEG if not sensei_estaba and brain.profesor.esta_activo()
+                       and isinstance(_entrada, (int, float)) else None)
 
         # Emitir mensaje (sin cambiar estado todavía)
         # Texto y tarjeta salen cuando EMPIEZA la voz (si no, se ven con Kaito callado)
@@ -196,7 +205,8 @@ def grabar():
             socketio.emit("estado", {"estado": "speaking"})
 
         def hablar_y_volver():
-            tts.hablar(respuesta, lento_extra=lento_extra, on_start=al_iniciar_audio)
+            tts.hablar(respuesta, lento_extra=lento_extra, on_start=al_iniciar_audio,
+                       no_antes_de=no_antes_de)
             mostrar()
             if brain._emitir_desactivar_sensei:
                 brain._emitir_desactivar_sensei = False

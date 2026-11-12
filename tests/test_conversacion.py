@@ -470,3 +470,58 @@ def test_primer_trozo_sin_ffmpeg_acortado_y_cache_de_trozos_repetidos(tmp_path):
     asyncio.run(una_vez()); asyncio.run(una_vez())
     assert descargas == ["¡Qué bien, Laura!"]                         # la 2.ª salió de la caché
     assert len([f for f in os.listdir(tmp_path) if f.endswith(".mp3")]) == 1
+
+
+def test_el_saludo_de_entrada_no_suena_hasta_que_acaba_la_animacion():
+    """Al entrar en sensei la cara hace una animación de ~2 s: el saludo espera a que acabe."""
+    import numpy as np
+    from ai import text_to_speech as mod
+
+    async def trozos(texto, base, **kw):
+        yield np.full(4800, 0.3, dtype=np.float32)
+    t = _tts(mod)
+    t._generar_trozos = trozos
+    sd = SdFalso()
+    arranque = []
+    objetivo = time.monotonic() + 0.4
+    with mock.patch.object(mod, "sd", sd), mock.patch("core.system_settings.volumen_factor", return_value=1.0):
+        t._hablar_por_trozos("hola", on_start=lambda: arranque.append(time.monotonic()), no_antes_de=objetivo)
+    assert arranque and arranque[0] >= objetivo          # el audio ya estaba listo, pero espera
+    assert not sd.sonado or len(sd.sonado) > 0
+    # sin `no_antes_de` arranca sin espera
+    arranque.clear()
+    t0 = time.monotonic()
+    with mock.patch.object(mod, "sd", SdFalso()), mock.patch("core.system_settings.volumen_factor", return_value=1.0):
+        t._hablar_por_trozos("hola", on_start=lambda: arranque.append(time.monotonic()))
+    assert arranque[0] - t0 < 0.3
+
+
+def test_listener_pasa_la_espera_de_la_animacion_solo_al_saludo_de_entrada():
+    from core import listener as mod
+
+    def turno(estaba_activo, ahora_activo):
+        estado = {"v": "idle"}
+        state = mock.Mock(get=lambda: estado["v"], cambiar=lambda v: estado.update(v=v))
+        profesor = mock.Mock(modo_conv=False, ultima_frase_objetivo=None, entrada_ts=1000.0)
+        activo = {"v": estaba_activo}
+        profesor.esta_activo.side_effect = lambda: activo["v"]   # cambia al responder, como en la realidad
+        brain = mock.Mock(profesor=profesor, ultimo_turno_ts=0.0, asunto_cerrado=False,
+                          _emitir_desactivar_sensei=False)
+        brain.responder.side_effect = lambda *a, **k: (activo.update(v=ahora_activo), ("Modo Sensei activado!", False))[1]
+        recibido = {}
+
+        class Tts(TtsFalso):
+            def hablar(self, texto, lento_extra=False, on_start=None, no_antes_de=None):
+                recibido["no_antes_de"] = no_antes_de
+                on_start()
+        v = mod.VoiceListener.__new__(mod.VoiceListener)
+        v.recorder = mock.Mock(record_vad=lambda timeout_inicio_seg=0: "a.wav")
+        v.stt = mock.Mock()
+        v.brain, v.tts, v.state, v.socketio = brain, Tts(), state, mock.Mock()
+        with mock.patch.object(mod, "transcribir_para_turno", return_value=("activa el modo sensei", None)):
+            v._ciclo_voz()
+        time.sleep(0.2)
+        return recibido.get("no_antes_de")
+
+    assert turno(False, True) == 1000.0 + mod.SENSEI_ENTRADA_SEG    # acaba de entrar: espera
+    assert turno(False, False) is None                              # no entró: sin espera

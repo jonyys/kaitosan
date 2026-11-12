@@ -11,6 +11,8 @@ from core.config import TRIGGERS_DESPEDIDA
 from core.emociones import es_solo_gracias, gesto_para_gracias
 
 TIMEOUT_CONVERSACION_SEG = 3
+# La animación de la cara al entrar en sensei dura 1,9-2,3 s: el saludo no suena hasta que acaba.
+SENSEI_ENTRADA_SEG = float(os.getenv("SENSEI_ENTRADA_SEG", "2.4"))
 
 
 def _normalizar(texto: str) -> str:
@@ -149,7 +151,8 @@ class VoiceListener:
                     self.tts.hablar_frases(frases, on_start=al_iniciar_audio)
                 else:
                     texto_audio = re.sub(r'https?://\S+', '', datos["respuesta"]).strip()
-                    self.tts.hablar(texto_audio, lento_extra=datos["lento_extra"], on_start=al_iniciar_audio)
+                    self.tts.hablar(texto_audio, lento_extra=datos["lento_extra"], on_start=al_iniciar_audio,
+                                    no_antes_de=datos.get("no_antes_de"))
             except Exception as e:  # noqa: BLE001 — pase lo que pase, vuelve a idle (el ciclo espera)
                 print(f"❌ Error al hablar: {e}")
             mostrar()  # si no llegó a sonar (error, callado), que al menos se vea
@@ -178,6 +181,10 @@ class VoiceListener:
             respuesta=respuesta, lento_extra=lento_extra,
             en_sensei=self.brain.profesor.esta_activo() and sensei_estaba_activo,
             objetivo=getattr(self.brain.profesor, "ultima_frase_objetivo", None))
+        # Acaba de entrar en sensei: la voz espera a que termine la animación de la cara
+        entrada = getattr(self.brain.profesor, "entrada_ts", None)
+        if not sensei_estaba_activo and self.brain.profesor.esta_activo() and isinstance(entrada, (int, float)):
+            datos["no_antes_de"] = entrada + SENSEI_ENTRADA_SEG
         if en_directo:
             if not dichas:  # no hubo streaming: se habla entera
                 frases.put(re.sub(r'https?://\S+', '', respuesta).strip())

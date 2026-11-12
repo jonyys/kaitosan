@@ -449,7 +449,7 @@ class TextToSpeech:
         """Una orden de callar solo vale para la respuesta de ese turno."""
         self._callado.clear()
 
-    def hablar(self, texto: str, lento_extra: bool = False, on_start=None, on_stop=None):
+    def hablar(self, texto: str, lento_extra: bool = False, on_start=None, on_stop=None, no_antes_de=None):
         self._lento_extra = lento_extra
 
         # Le han mandado callar mientras pensaba: ni siquiera genera el audio
@@ -465,7 +465,7 @@ class TextToSpeech:
             return
 
         if os.getenv("TTS_STREAMING", "1") != "0":  # TTS_STREAMING=0 → como antes
-            return self._hablar_por_trozos(texto, on_start, on_stop)
+            return self._hablar_por_trozos(texto, on_start, on_stop, no_antes_de)
 
         try:
             print(f"🔊 Hablando: {texto}")
@@ -523,7 +523,7 @@ class TextToSpeech:
             data = self._convertir_sample_rate(data, orig_sr=fs, target_sr=self.sample_rate_device)
         return data
 
-    def _hablar_por_trozos(self, texto: str, on_start=None, on_stop=None):
+    def _hablar_por_trozos(self, texto: str, on_start=None, on_stop=None, no_antes_de=None):
         """Como hablar(), pero empieza a sonar en cuanto está el primer trozo y
         reproduce los demás según se generan (ver _generar_trozos)."""
         cola = queue.Queue()
@@ -546,15 +546,23 @@ class TextToSpeech:
                 cola.put(None)
 
         threading.Thread(target=producir, daemon=True).start()
-        self._consumir_cola(cola, on_start, on_stop)
+        self._consumir_cola(cola, on_start, on_stop, no_antes_de)
 
-    def _consumir_cola(self, cola, on_start=None, on_stop=None):
+    def _consumir_cola(self, cola, on_start=None, on_stop=None, no_antes_de=None):
         """Reproduce los trozos de audio que van llegando a `cola` (None = no hay más)."""
         try:
             primero = cola.get()
             if primero is None or self._callado.is_set():
                 if primero is None:
                     print("⚠️ TTS: no se generó audio (texto sin contenido hablable)")
+                if on_stop:
+                    on_stop()
+                return
+            # `no_antes_de` (time.monotonic): el audio ya está listo pero no suena hasta
+            # entonces (p. ej. a que acabe la animación de la cara al entrar en sensei).
+            while no_antes_de and tmod.monotonic() < no_antes_de and not self._callado.is_set():
+                tmod.sleep(0.03)
+            if self._callado.is_set():
                 if on_stop:
                     on_stop()
                 return
@@ -566,7 +574,7 @@ class TextToSpeech:
         except Exception as e:  # noqa: BLE001
             print(f"❌ Error en TTS: {e}")
 
-    def hablar_frases(self, frases, lento_extra=False, on_start=None, on_stop=None):
+    def hablar_frases(self, frases, lento_extra=False, on_start=None, on_stop=None, no_antes_de=None):
         """Como hablar(), pero el texto llega por frases a la cola `frases` (None = fin)
         mientras el LLM aún escribe: cada frase se sintetiza según llega y suena enseguida."""
         self._lento_extra = lento_extra
@@ -599,7 +607,7 @@ class TextToSpeech:
                 cola.put(None)
 
         threading.Thread(target=producir, daemon=True).start()
-        self._consumir_cola(cola, on_start, on_stop)
+        self._consumir_cola(cola, on_start, on_stop, no_antes_de)
 
     def _sonar_por_trozos(self, primero, cola):
         """Reproduce `primero` y los trozos que lleguen a `cola` (None = no hay más),
