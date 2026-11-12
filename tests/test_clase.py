@@ -218,3 +218,33 @@ def test_cortar_frases_une_las_cortas_y_respeta_los_bloques():
     from ai.sensei.clase import cortar_frases
     assert cortar_frases("¡Hola! Qué tal estás hoy, Laura? Bien") == (["¡Hola! Qué tal estás hoy, Laura?"], " Bien")
     assert cortar_frases("Di 【いち。に】 ahora mismo por favor.")[0] == ["Di 【いち。に】 ahora mismo por favor."]
+
+
+def test_stream_de_openrouter_conserva_tildes_y_japones(monkeypatch):
+    """Logs de la Pi: el SSE sin charset se leía como latin-1 («despuÃ©s») y la voz lo leía mal."""
+    import json
+    from ai import openrouter_provider as mod
+
+    def sse(texto):
+        return ("data: " + json.dumps({"choices": [{"delta": {"content": texto}}]}, ensure_ascii=False)).encode("utf-8")
+
+    class Resp:
+        status_code = 200
+        text = ""
+        def iter_lines(self, decode_unicode=False):
+            if decode_unicode:   # lo que hacía el código malo: latin-1 si no hay charset
+                for l in self.iter_lines():
+                    yield l.decode("latin-1")
+                return
+            yield b": OPENROUTER PROCESSING"
+            yield sse("Ayer, después del trabajo ")
+            yield sse("jugaste 【あそびました】.")
+            yield b"data: [DONE]"
+        def close(self):
+            pass
+
+    monkeypatch.setattr(mod, "OPENROUTER_API_KEY", "x")
+    monkeypatch.setattr(mod.requests, "post", lambda *a, **k: Resp())
+    prov = mod.OpenRouterProvider(modelos=["m"])
+    assert "".join(prov.completar_stream([{"role": "user", "content": "hola"}])) == \
+        "Ayer, después del trabajo jugaste 【あそびました】."

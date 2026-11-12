@@ -170,7 +170,10 @@ class OpenRouterProvider:
         dio = False
         uso = {}
         try:
-            for linea in r.iter_lines(decode_unicode=True):
+            # Bytes y decodificar a mano en UTF-8: con decode_unicode, requests usa latin-1
+            # si la respuesta SSE no declara charset, y «después» llegaba como «despuÃ©s».
+            for bruto in r.iter_lines():
+                linea = bruto.decode("utf-8", errors="replace") if isinstance(bruto, bytes) else bruto
                 if not linea or not linea.startswith("data:"):
                     continue  # comentarios SSE («: OPENROUTER PROCESSING») y líneas vacías
                 cuerpo = linea[5:].strip()
