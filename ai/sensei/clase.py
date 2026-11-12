@@ -131,7 +131,8 @@ PEDIR_FRASE = (
 
 def tarea(cd):
     return (f"Plantéale esta tarea EN ESPAÑOL, empezando directamente por la situación (nada de «la tarea es»), haciendo tú tu parte, sin "
-            f"darle la respuesta ni un ejemplo. {cd['tarea']} Todo en 2 frases cortas como máximo, "
+            f"darle la respuesta ni un ejemplo. {cd['tarea']} Si para contestar le falta alguna palabra "
+            "que no ha visto (como mucho 2), dásela suelta en japonés y di qué significa. Todo en 2 frases cortas como máximo, "
             "y pídele lo que dice «Laura tiene que», sin añadir más cosas. Háblale a ella de tú (nunca "
             "digas «Laura tiene que»: eso es para ti). Ella contesta en japonés.")
 

@@ -18,9 +18,10 @@ TEMPERATURE_SENSEI = 0.3  # respuestas del profesor — más deterministas para 
 MODEL_SENSEI = "openai/gpt-oss-120b"
 # Razonamiento de los turnos del sensei — vale para TODOS los modelos por igual
 # (gpt-oss, qwen, glm, la reserva Groq): off = sin thinking (rápido); low |
-# medium | high lo fija. Con gpt-oss de primario, `low` funciona bien. OJO: si
-# qwen3.7-flash entra de reserva, cualquier valor ≠ off le mete 15-30 s/turno.
-REASONING_EFFORT_SENSEI = os.getenv("REASONING_EFFORT_SENSEI", "low").strip().lower()
+# medium | high lo fija. `off` desde 12-nov: con deepseek-v4.1-flash de primario
+# enseña igual de bien sin razonar, en ~1,5 s y a la mitad de coste (gpt-oss
+# razona aunque se le apague). OJO: qwen3.7-flash con ≠ off va a 15-30 s/turno.
+REASONING_EFFORT_SENSEI = os.getenv("REASONING_EFFORT_SENSEI", "off").strip().lower()
 
 
 # Frases que sacan del modo sensei. Se comprueban por subcadena sobre el texto
@@ -77,7 +78,7 @@ OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "").strip()
 OPENROUTER_MODELOS_SENSEI = [
     m.strip() for m in os.getenv(
         "OPENROUTER_MODELOS_SENSEI",
-        "openai/gpt-oss-120b,qwen/qwen3.7-flash,z-ai/glm-5.3-flash",
+        "deepseek/deepseek-v4.1-flash,openai/gpt-6-luna,z-ai/glm-5.3-flash",
     ).split(",") if m.strip()
 ]
 
