@@ -3,7 +3,6 @@
 ai/sensei/profesor.py.
 """
 
-import json
 import os
 import re
 
@@ -35,7 +34,7 @@ def _formas(cd):
 
 _PROMPT_JUEZ = (
     "Clase de japonés N5 para una estudiante española hablando con su profesor.\n"
-    "Objetivo: {texto}\nLo que se enseña: {explicacion}\n{tarea}\n\n"
+    "Objetivo: {texto}\nLo que se enseña: {explicacion}\n{tarea}\n{contexto}\n"
     "Laura ha dicho (viene de reconocimiento de voz: puede tener fallos de transcripción): «{msg}»\n\n"
     "¿Lo que dice demuestra que hace lo que pide el objetivo? Cumple si es una frase en japonés que "
     "{criterio} NO cumple si solo menciona una "
@@ -51,15 +50,32 @@ _NOTA_ROMAJI = (
     "こんばんは, «Yasumi» = おやすみ, «con un chihuahua» = こんにちは). Si se reconocen en ella las "
     "palabras japonesas que pide el objetivo, cumple aunque el resto esté en español.")
 _juez_prov = None
+_VEREDICTO = {"type": "json_schema", "json_schema": {"name": "veredicto", "strict": True, "schema": {
+    "type": "object", "properties": {"cumple": {"type": "boolean"}},
+    "required": ["cumple"], "additionalProperties": False}}}
 
 
-def juez_cumple(cd, mensaje, fase="tarea", romaji=False):
+def _contexto_juez(kaito):
+    """Lo último que dijo Kaito: la situación a la que responde Laura. Logs (12-nov): sin
+    ella, «おはようございます、こんばんは、おやすみなさい» no cumplía (3/3) porque el juez no
+    sabía que en la situación Kaito «se va a dormir»; y Kaito suele inventar la situación."""
+    if not kaito:
+        return ""
+    kaito = kaito.strip()[-500:]  # la pregunta va al final
+    return (f"Lo que acaba de decirle Kaito (la situación o pregunta a la que responde, manda "
+            f"sobre la tarea de arriba): «{kaito}»\n")
+
+
+def juez_cumple(cd, mensaje, fase="tarea", romaji=False, contexto=None):
     """¿Cumple el mensaje lo que pide el objetivo? Un modelo pequeño responde sí/no
     (~1 s). Medido sobre 387 frases: 4 falsos negativos y 15 falsos positivos, frente
     a 75 y 122 con palabras clave. None si no hay clave o falla → vale la comprobación
-    por palabras. JUEZ_MODELO (.env) cambia el modelo; JUEZ_MODELO=off lo apaga."""
+    por palabras. JUEZ_MODELO (.env) cambia el modelo; JUEZ_MODELO=off lo apaga.
+    `contexto`: lo último que dijo Kaito. 12-nov, 17 casos ×3 con situación de Kaito:
+    haiku-5.5 50/51, gpt-6-luna 47, gemini-3.1-flash-lite 45 (rechazaba siempre
+    «おはようございます、こんばんは、おやすみなさい»), deepseek-v4.1-flash 44."""
     global _juez_prov
-    modelo = os.getenv("JUEZ_MODELO", "google/gemini-3.1-flash-lite")
+    modelo = os.getenv("JUEZ_MODELO", "anthropic/claude-haiku-5.5")
     if modelo.lower() == "off" or not os.getenv("OPENROUTER_API_KEY"):
         return None
     try:
@@ -74,10 +90,16 @@ def juez_cumple(cd, mensaje, fase="tarea", romaji=False):
             tarea, criterio = "", "usa lo que se enseña en una frase suya, por sencilla que sea."
         p = _PROMPT_JUEZ.format(texto=cd["texto"], explicacion=cd.get("explicacion", ""),
                                 tarea=tarea, criterio=criterio, msg=mensaje,
-                                romaji=_NOTA_ROMAJI if romaji else "")
+                                romaji=_NOTA_ROMAJI if romaji else "",
+                                contexto=_contexto_juez(contexto))
+        # Esquema obligatorio: con solo «json_object», haiku a veces se ponía a analizar en
+        # voz alta las letras españolas y no llegaba al veredicto (2 de cada 4).
         r = _juez_prov.completar([{"role": "user", "content": p}], max_tokens=30, temperature=0,
-                                 response_format={"type": "json_object"}, reasoning_effort="off")
-        return bool(json.loads(r[r.index("{"):r.rindex("}") + 1])["cumple"])
+                                 response_format=_VEREDICTO, reasoning_effort="off")
+        v = re.findall(r'"cumple"\s*:\s*(true|false)', r)
+        if not v:
+            raise ValueError(f"sin veredicto: {r[:80]!r}")
+        return v[-1] == "true"
     except Exception as e:  # noqa: BLE001
         print(f"⚠️ Juez de objetivo no disponible ({type(e).__name__}) → palabras clave")
         return None

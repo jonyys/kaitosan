@@ -141,7 +141,8 @@ class ProfesorJapones:
     modo_conv = False
     juez = staticmethod(juez_cumple)  # los tests lo cambian por None
     # Turno «en español» que puede ser japonés mal transcrito (ver _NOTA_ROMAJI).
-    juez_romaji = staticmethod(lambda cd, m, fase: juez_cumple(cd, m, fase, romaji=True))
+    juez_romaji = staticmethod(lambda cd, m, fase, contexto=None:
+                               juez_cumple(cd, m, fase, romaji=True, contexto=contexto))
 
     @staticmethod
     def _clave_juez(texto):
@@ -159,7 +160,8 @@ class ProfesorJapones:
         fase = self.clase["fase"]
         clave = (cd["id"], fase, self._clave_juez(texto))
         if clave not in self._juez_previo:
-            self._juez_previo[clave] = self._pool_juez.submit(self.juez, cd, texto, fase)
+            self._juez_previo[clave] = self._pool_juez.submit(
+                self.juez, cd, texto, fase, contexto=self._ultimo_kaito())
 
     def oir_japones(self, texto):
         """El STT: este turno, que Whisper tomó por español, oído forzando japonés."""
@@ -172,7 +174,11 @@ class ProfesorJapones:
                 return fut.result(timeout=8)
             except Exception:  # noqa: BLE001
                 pass
-        return self.juez(cd, mensaje, fase)
+        return self.juez(cd, mensaje, fase, contexto=self._ultimo_kaito())
+
+    def _ultimo_kaito(self):
+        """Lo último que dijo Kaito: la situación a la que responde Laura (para el juez)."""
+        return next((m["content"] for m in reversed(self.mensajes) if m["role"] == "assistant"), None)
 
     @property
     def espera_japones(self) -> bool:
@@ -382,7 +388,8 @@ class ProfesorJapones:
                 and cd.get("patron") not in ("te", "ta", "tekudasai", "llano")
                 # Primero lo oído forzando japonés, solo (mezclado con el español el juez
                 # se lía); si no, el texto de Whisper con letras españolas.
-                and any(self.juez_romaji(cd, m, st["fase"]) for m in ([ja_alt] if ja_alt else []) + [mensaje])):
+                and any(self.juez_romaji(cd, m, st["fase"], contexto=self._ultimo_kaito())
+                        for m in ([ja_alt] if ja_alt else []) + [mensaje])):
             return self._acierto(cd)
         if st["fase"] != "tarea":
             vuelta = "pídele una frase con lo de hoy. " + PEDIR_FRASE

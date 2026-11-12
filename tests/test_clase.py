@@ -90,7 +90,7 @@ def test_juez_adelantado_se_aprovecha_si_azure_escribe_lo_mismo():
     puntuación o en kanji), no se vuelve a preguntar."""
     llamadas = []
 
-    def juez(cd, m, fase):
+    def juez(cd, m, fase, contexto=None):
         llamadas.append(m)
         return True
 
@@ -118,7 +118,7 @@ def test_no_se_ayuda_en_vez_de_repetir_y_no_llama_al_juez_en_español():
     p = ProfesorJapones(MagicMock(), MagicMock(), MagicMock(), MagicMock())
     p._foco_unidad = next(u for u in CURRICULUM if u["id"] == "comida_bebida")
     p.activo = True
-    p.juez = lambda cd, m, fase="tarea": llamadas.append(m) or True
+    p.juez = lambda cd, m, fase="tarea", **k: llamadas.append(m) or True
     # repaso (pendiente) en tarea: no se acuerda → vuelve a presentar y a practicar
     p.clase = {"cd": "comida_gustos", "fase": "tarea", "tipo": "pendiente", "aciertos": 1, "fallos": 0}
     out = p._instruccion("No sé hacerlo, ¿me lo explicas?")
@@ -145,7 +145,7 @@ def test_japones_que_whisper_tomo_por_español_cuenta():
     p = ProfesorJapones(MagicMock(), MagicMock(), MagicMock(), MagicMock())
     p.activo = True
     vistos = []
-    p.juez_romaji = lambda cd, m, fase: vistos.append(m) or True
+    p.juez_romaji = lambda cd, m, fase, **k: vistos.append(m) or True
     p.clase = {"cd": "saludos_saludar", "fase": "tarea", "tipo": "nuevo", "aciertos": 0, "fallos": 0}
     p._instruccion("Ohio por la mañana, con Bangwa por la noche y Yasumi antes de dormir.")
     assert p.clase["aciertos"] == 1 and len(vistos) == 1
@@ -158,6 +158,21 @@ def test_japones_que_whisper_tomo_por_español_cuenta():
     assert vistos[-1] == "おはよう こんばんは おやすみ"
     p._instruccion("Ohio con Bang Bang, Hoy Azul.")
     assert vistos[-1] == "Ohio con Bang Bang, Hoy Azul."
+
+
+def test_el_juez_ve_lo_ultimo_que_dijo_kaito():
+    """Logs (12-nov): sin la situación de Kaito («…y al final me voy a dormir»), el juez
+    rechazaba «おはようございます、こんばんは、おやすみなさい»."""
+    p = ProfesorJapones(MagicMock(), MagicMock(), MagicMock(), MagicMock())
+    p.activo = True
+    ctx = []
+    p.juez = lambda cd, m, fase="tarea", contexto=None: ctx.append(contexto) or True
+    p.mensajes = [{"role": "assistant", "content": "Son las nueve… y al final me voy a dormir."},
+                  {"role": "user", "content": "vale"},
+                  {"role": "assistant", "content": "Salúdame en cada momento."}]
+    p.clase = {"cd": "saludos_saludar", "fase": "tarea", "tipo": "nuevo", "aciertos": 0, "fallos": 0}
+    p._instruccion("おはようございます、こんばんは、おやすみなさい")
+    assert ctx == ["Salúdame en cada momento."]
 
 
 def test_stt_vuelve_a_oir_en_japones_lo_que_tomo_por_español():

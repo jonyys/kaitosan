@@ -277,7 +277,7 @@ def test_cola_pendientes_nuevos_y_repaso_antiguo():
     conseguidos, 1 repaso de algo dominado; nunca se repite un can-do en la sesión."""
     jm = _jm()
     prof = _profesor(jm)
-    prof.juez = lambda cd, m, fase="tarea": True
+    prof.juez = lambda cd, m, fase="tarea", **k: True
     u0 = CURRICULUM[0]["can_dos"]
     jm.set_can_do(u0[0]["id"], "conseguido", -1)              # dominado (2 sesiones)
     jm.set_can_do(u0[0]["id"], "conseguido", -2)
@@ -300,7 +300,7 @@ def test_cola_pendientes_nuevos_y_repaso_antiguo():
 def test_tras_5_fallos_da_modelo_y_pasa_al_siguiente():
     jm = _jm()
     prof = _profesor(jm)
-    prof.juez = lambda cd, m, fase="tarea": False
+    prof.juez = lambda cd, m, fase="tarea", **k: False
     prof.entrar()
     if prof.timer:
         prof.timer.cancel()
