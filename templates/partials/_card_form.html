@@ -16,6 +16,8 @@
   #card-edit input, #card-edit textarea, #card-edit select { display: block; width: 100%; box-sizing: border-box; margin-top: 4px; font-weight: 400; }
   #card-edit textarea { min-height: 54px; }
   #card-edit input[readonly] { opacity: .65; }
+  #card-edit [hidden] { display: none; }
+  #card-edit select option { background: var(--bg); color: var(--text); }
   #card-edit .cf-actions { display: flex; gap: 8px; margin-top: 14px; }
 </style>
 <dialog id="card-edit" class="flash-pop">
@@ -24,11 +26,11 @@
     <h3 id="card-edit-titulo"></h3>
     <label id="card-edit-unidad">{{ 'Categoría' if kind == 'kanji' else 'Unidad' }}
       <select name="unidad">
-        <option value="">{{ 'Mis kanjis' if kind == 'kanji' else 'Extra (sin unidad)' }}</option>
+        {% if kind != 'kanji' %}<option value="">Extra (sin unidad)</option>{% endif %}
         {% for uid, unombre in cards_unidades(kind) %}<option value="{{ uid }}">{{ unombre }}</option>{% endfor %}
-        <option value="__nueva">＋ {{ 'Categoría' if kind == 'kanji' else 'Unidad' }} nueva…</option>
+        <option value="__nueva">＋ {{ 'Categoría' if kind == 'kanji' else 'Unidad' }} nueva</option>
       </select>
-      <input type="text" name="unidad_nueva" placeholder="Nombre de la nueva" autocomplete="off" hidden />
+      <input type="text" name="unidad_nueva" placeholder="Nombre de la nueva {{ 'categoría' if kind == 'kanji' else 'unidad' }}" autocomplete="off" hidden />
     </label>
     {% for name, label, grande in _campos %}
     <label>{{ label }}
