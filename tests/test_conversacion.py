@@ -50,6 +50,18 @@ class TtsFalso:
     def hablar(self, texto, lento_extra=False, on_start=None):
         on_start()
 
+    def hablar_frases(self, frases, lento_extra=False, on_start=None):
+        """Como la real: espera frases hasta None; suena con la primera."""
+        dichas = []
+        while True:
+            f = frases.get(timeout=5)
+            if f is None:
+                break
+            if not dichas:
+                on_start()
+            dichas.append(f)
+        self.dichas = dichas
+
     def callado(self):
         return self._c
 
@@ -319,6 +331,10 @@ def test_texto_y_tarjeta_salen_cuando_empieza_la_voz_no_antes():
             on_start()
             orden.append("suena")
 
+        def hablar_frases(self, frases, lento_extra=False, on_start=None):
+            orden.append("generando audio")
+            super().hablar_frases(frases, on_start=lambda: (on_start(), orden.append("suena")))
+
     socketio = mock.Mock()
     socketio.emit.side_effect = lambda ev, *a, **k: orden.append(ev)
     v = mod.VoiceListener.__new__(mod.VoiceListener)
@@ -333,3 +349,85 @@ def test_texto_y_tarjeta_salen_cuando_empieza_la_voz_no_antes():
         time.sleep(0.01)
     assert orden.index("generando audio") < orden.index("mensaje") < orden.index("suena")
     assert orden.index("generando audio") < orden.index("sensei_japones")
+
+
+def test_voz_parte_los_trozos_largos_en_español_por_frases():
+    from ai import text_to_speech as mod
+    t = mod.TextToSpeech.__new__(mod.TextToSpeech)
+    t.voice_es, t.voice_ja = "es", "ja"
+    largo = "Primera frase bastante larga para llenar. " * 2 + "Segunda frase de cierre, que sigue. ¿Y una pregunta más?"
+    trozos = t._partir_largos([(largo, "es"), ("ください", "ja")], maximo=110)
+    assert all(len(x) <= 110 for x, v in trozos if v == "es") and len(trozos) >= 3
+    assert " ".join(x for x, v in trozos if v == "es") == largo.strip()   # no se pierde nada
+    assert trozos[-1] == ("ください", "ja")
+
+
+def test_streaming_del_llm_la_voz_empieza_antes_que_el_final_y_la_tarjeta_espera_al_final():
+    from core import listener as mod
+
+    orden = []
+    estado = {"v": "idle"}
+    state = mock.Mock(get=lambda: estado["v"], cambiar=lambda v: estado.update(v=v))
+    profesor = mock.Mock(modo_conv=False, ultima_frase_objetivo=None)
+    profesor.esta_activo.return_value = True
+    brain = mock.Mock(profesor=profesor, ultimo_turno_ts=0.0, asunto_cerrado=False,
+                      _emitir_desactivar_sensei=False)
+
+    def responder(texto, pron_contexto=None, on_frase=None):
+        on_frase("【こんにちは】, Laura. Primera frase.", False)
+        orden.append("llega la 1ª frase")
+        time.sleep(0.15)        # el LLM sigue escribiendo mientras ya suena la primera
+        on_frase("Segunda frase, la última.", False)
+        orden.append("el LLM acaba")
+        return "【こんにちは】, Laura. Primera frase. Segunda frase, la última.", False
+    brain.responder.side_effect = responder
+
+    class Tts(TtsFalso):
+        def hablar_frases(self, frases, lento_extra=False, on_start=None):
+            super().hablar_frases(frases, on_start=lambda: (orden.append("suena"), on_start()))
+            orden.append("fin de la voz")
+    tts = Tts()
+    socketio = mock.Mock()
+    socketio.emit.side_effect = lambda ev, *a, **k: orden.append(ev)
+    v = mod.VoiceListener.__new__(mod.VoiceListener)
+    v.recorder = mock.Mock(record_vad=lambda timeout_inicio_seg=0: "a.wav")
+    v.stt = mock.Mock()
+    v.brain, v.tts, v.state, v.socketio = brain, tts, state, socketio
+    with mock.patch.object(mod, "transcribir_para_turno", return_value=("hola", None)):
+        v._ciclo_voz()
+    assert orden.index("llega la 1ª frase") < orden.index("suena")
+    assert orden.index("el LLM acaba") < orden.index("sensei_japones")   # la tarjeta, con la respuesta entera
+    assert orden.index("suena") < orden.index("sensei_japones")         # y nunca antes de que suene
+    assert orden.count("sensei_japones") == 1 and orden.count("mensaje") == 1
+    assert tts.dichas == ["【こんにちは】, Laura. Primera frase.", "Segunda frase, la última."]
+
+
+def test_hablar_frases_suena_cada_frase_segun_llega_y_acaba_con_none():
+    import numpy as np
+    from ai import text_to_speech as mod
+
+    t = _tts(mod)
+    sintetizadas = []
+
+    async def trozos(texto, base):
+        sintetizadas.append(texto)
+        yield f"{base}:{texto}"
+    t._generar_trozos = trozos
+    t._cargar_trozo = lambda ruta: np.full(4800, 0.1 if "uno" in ruta else -0.1, dtype=np.float32)
+    frases = __import__("queue").Queue()
+    avisos = []
+    sd = SdFalso()
+
+    def llegan():
+        frases.put("frase uno")
+        time.sleep(0.05)               # el LLM aún escribe la siguiente
+        frases.put("frase dos")
+        frases.put(None)
+    threading.Thread(target=llegan, daemon=True).start()
+    with mock.patch.object(mod, "sd", sd), mock.patch("core.system_settings.volumen_factor", return_value=1.0):
+        t.hablar_frases(frases, on_start=lambda: avisos.append("start"), on_stop=lambda: avisos.append("stop"))
+    sonado = np.concatenate(sd.sonado)[:, 0]
+    util = sonado[sonado != 0]
+    assert sintetizadas == ["frase uno", "frase dos"] and avisos == ["start", "stop"]
+    assert np.array_equal(util, np.concatenate([np.full(4800, 0.1, np.float32), np.full(4800, -0.1, np.float32)]))
+    assert sd.creados == 1   # un solo stream para toda la respuesta

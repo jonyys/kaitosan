@@ -69,16 +69,16 @@ class Brain:
         ]
         print(f"✅ Sesión {self.session_id} iniciada")
 
-    def responder(self, mensaje: str, pron_contexto: str = None) -> tuple[str, bool]:
+    def responder(self, mensaje: str, pron_contexto: str = None, on_frase=None) -> tuple[str, bool]:
         """Devuelve siempre (respuesta, lento_extra). Marca el turno para el
         filtro de alucinación de Whisper (ver transcribir_para_turno)."""
         self.asunto_cerrado = False
         try:
-            return self._responder(mensaje, pron_contexto=pron_contexto)
+            return self._responder(mensaje, pron_contexto=pron_contexto, on_frase=on_frase)
         finally:
             self.ultimo_turno_ts = time.monotonic()
 
-    def _responder(self, mensaje: str, pron_contexto: str = None) -> tuple[str, bool]:
+    def _responder(self, mensaje: str, pron_contexto: str = None, on_frase=None) -> tuple[str, bool]:
         """`pron_contexto` — resumen de pronunciación (Azure) del audio de este
         turno; solo se usa cuando el modo sensei está activo.
         """
@@ -106,7 +106,9 @@ class Brain:
 
         if self.profesor.esta_activo():
             lento_extra = any(p in mensaje.lower() for p in ["más lento", "despacio", "lentamente", "despacito"])
-            respuesta = self.profesor.responder_turno(mensaje, lento_extra, pron_contexto=pron_contexto)
+            respuesta = self.profesor.responder_turno(
+                mensaje, lento_extra, pron_contexto=pron_contexto,
+                on_frase=(lambda f: on_frase(f, lento_extra)) if on_frase else None)
             self.memory.guardar_mensaje(self.session_id, "user", mensaje)
             self.memory.guardar_mensaje(self.session_id, "assistant", respuesta)
             print(f"🤖 Kaito [sensei]: {respuesta}")

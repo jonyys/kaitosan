@@ -1,3 +1,5 @@
+import os
+import queue
 import re
 import time
 import threading
@@ -105,38 +107,51 @@ class VoiceListener:
         self.tts.empezar_turno()
         self.state.cambiar("thinking")
         sensei_estaba_activo = self.brain.profesor.esta_activo()
-        respuesta, lento_extra = self.brain.responder(texto, pron_contexto=pron_ctx)
-        # Salir del modo sensei es una despedida: no sigas escuchando encadenado
-        # como en modo conversación normal — que se calle y quede en idle hasta
-        # el próximo "kaito".
-        salio_de_sensei = sensei_estaba_activo and not self.brain.profesor.esta_activo()
-        # El texto y la tarjeta de kana salen cuando EMPIEZA la voz, no antes: si se ven
-        # mientras se genera el audio (1-3 s), parece que Kaito se ha quedado pillado.
-        en_sensei = self.brain.profesor.esta_activo()
-        objetivo = getattr(self.brain.profesor, "ultima_frase_objetivo", None)
-        mostrado = []
+
+        # Streaming del LLM: en sensei, la voz empieza con la primera frase mientras el
+        # modelo aún escribe (LLM_STREAMING=0 lo apaga). Fuera de sensei, o si el modelo no
+        # llega a dar frases (despedida, fallo), se habla la respuesta entera como siempre.
+        en_directo = sensei_estaba_activo and os.getenv("LLM_STREAMING", "1") != "0"
+        frases, dichas = queue.Queue(), []
+        datos = {}                      # respuesta, en_sensei, objetivo (cuando el LLM acaba)
+        iniciado, mostrado, cerrojo = threading.Event(), [], threading.Lock()
+
+        def on_frase(frase, lento):
+            dichas.append(frase)
+            self.tts._lento_extra = lento
+            frases.put(re.sub(r'https?://\S+', '', frase).strip())
 
         def mostrar():
-            if mostrado:
-                return
-            mostrado.append(True)
-            self.socketio.emit("mensaje", {"texto": respuesta})
-            if en_sensei:
+            # El texto y la tarjeta de kana salen cuando EMPIEZA la voz Y ya está toda la
+            # respuesta: si se ven antes, parece que Kaito se ha quedado pillado.
+            with cerrojo:
+                if mostrado or not datos:
+                    return
+                mostrado.append(True)
+            self.socketio.emit("mensaje", {"texto": datos["respuesta"]})
+            if datos["en_sensei"]:
                 # En modo sensei, muestra en la cara la frase objetivo (o los 【…】
                 # sueltos si no hay), siempre en solo kana (nunca kanji).
                 self.socketio.emit(
                     "sensei_japones",
-                    {"frases": frases_para_card(respuesta, objetivo)},
+                    {"frases": frases_para_card(datos["respuesta"], datos["objetivo"])},
                 )
 
         def al_iniciar_audio():
+            iniciado.set()
             mostrar()
             self.state.cambiar("speaking")
             self.socketio.emit("estado", {"estado": "speaking"})
 
         def hablar_y_volver():
-            texto_audio = re.sub(r'https?://\S+', '', respuesta).strip()
-            self.tts.hablar(texto_audio, lento_extra=lento_extra, on_start=al_iniciar_audio)
+            try:
+                if en_directo:
+                    self.tts.hablar_frases(frases, on_start=al_iniciar_audio)
+                else:
+                    texto_audio = re.sub(r'https?://\S+', '', datos["respuesta"]).strip()
+                    self.tts.hablar(texto_audio, lento_extra=datos["lento_extra"], on_start=al_iniciar_audio)
+            except Exception as e:  # noqa: BLE001 — pase lo que pase, vuelve a idle (el ciclo espera)
+                print(f"❌ Error al hablar: {e}")
             mostrar()  # si no llegó a sonar (error, callado), que al menos se vea
             if self.brain._emitir_desactivar_sensei:
                 self.brain._emitir_desactivar_sensei = False
@@ -144,7 +159,33 @@ class VoiceListener:
             self.state.cambiar("idle")
             self.socketio.emit("estado", {"estado": "idle"})
 
-        threading.Thread(target=hablar_y_volver, daemon=True).start()
+        voz = threading.Thread(target=hablar_y_volver, daemon=True)
+        if en_directo:
+            voz.start()  # espera las frases; suena con la primera
+        try:
+            respuesta, lento_extra = self.brain.responder(
+                texto, pron_contexto=pron_ctx, on_frase=on_frase if en_directo else None)
+        except BaseException:
+            if en_directo:
+                frases.put(None)  # que el hilo de voz no se quede esperando
+            raise
+        # Salir del modo sensei es una despedida: no sigas escuchando encadenado
+        # como en modo conversación normal — que se calle y quede en idle hasta
+        # el próximo "kaito".
+        salio_de_sensei = sensei_estaba_activo and not self.brain.profesor.esta_activo()
+        # (sin tarjeta en el saludo de entrada: el modo no estaba activo al empezar el turno)
+        datos.update(
+            respuesta=respuesta, lento_extra=lento_extra,
+            en_sensei=self.brain.profesor.esta_activo() and sensei_estaba_activo,
+            objetivo=getattr(self.brain.profesor, "ultima_frase_objetivo", None))
+        if en_directo:
+            if not dichas:  # no hubo streaming: se habla entera
+                frases.put(re.sub(r'https?://\S+', '', respuesta).strip())
+            frases.put(None)
+            if iniciado.is_set():
+                mostrar()  # la voz ya había empezado: ahora que está toda la respuesta, se ve
+        else:
+            voz.start()
 
         while self.state.get() != "idle":
             time.sleep(0.2)

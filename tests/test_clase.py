@@ -135,12 +135,86 @@ def test_no_se_ayuda_en_vez_de_repetir_y_no_llama_al_juez_en_español():
     assert llamadas == []   # ningún mensaje en español llegó al juez
 
 
-def test_voz_parte_los_trozos_largos_en_español_por_frases():
-    from ai import text_to_speech as mod
-    t = mod.TextToSpeech.__new__(mod.TextToSpeech)
-    t.voice_es, t.voice_ja = "es", "ja"
-    largo = "Primera frase bastante larga para llenar. " * 2 + "Segunda frase de cierre, que sigue. ¿Y una pregunta más?"
-    trozos = t._partir_largos([(largo, "es"), ("ください", "ja")], maximo=110)
-    assert all(len(x) <= 110 for x, v in trozos if v == "es") and len(trozos) >= 3
-    assert " ".join(x for x, v in trozos if v == "es") == largo.strip()   # no se pierde nada
-    assert trozos[-1] == ("ください", "ja")
+def test_silencio_no_se_convierte_en_acierto():
+    """Logs de la Pi: Laura callada → Whisper «.» → Azure silencio → Whisper-ja inventó
+    «ご視聴ありがとうございました» y contó como acierto."""
+    from ai.speech_to_text import _ruta_transcripcion, transcribir_para_turno
+
+    class Stt:
+        def __init__(self, crudo, azure):
+            self.crudo, self.azure, self.llamadas = crudo, azure, []
+
+        def transcribir(self, a, idioma=None):
+            self.llamadas.append(("whisper", idioma))
+            return self.crudo if idioma is None else "ご視聴ありがとうございました"
+
+        def transcribir_con_pronunciacion(self, a, referencia=None):
+            self.llamadas.append(("azure",))
+            return self.azure
+
+    kw = dict(sensei_activo=True, modo_conv=False, espera_japones=True)
+    # Whisper devuelve solo «.»: ni Azure ni segundo Whisper
+    s = Stt(".", None)
+    assert _ruta_transcripcion(s, "a.wav", **kw) == ("", None) and s.llamadas == [("whisper", None)]
+    # Azure oye silencio: turno vacío, sin caer a Whisper-ja
+    s = Stt("あ", {"texto": "", "pron": None})
+    assert _ruta_transcripcion(s, "a.wav", **kw) == ("", None)
+    assert ("whisper", "ja") not in s.llamadas
+    # y si aun así llega una frase fantasma, se descarta
+    s = Stt("あ", None)
+    assert transcribir_para_turno(s, "a.wav", **kw) == ("", None)
+
+
+class _ProvStream:
+    """Proveedor falso: completar_stream da trozos de texto; completar, la respuesta entera."""
+    def __init__(self, trozos=None, falla_al_principio=False, corta_a_mitad=False):
+        self.trozos, self.falla, self.corta, self.enteras = trozos or [], falla_al_principio, corta_a_mitad, 0
+
+    def completar_stream(self, mensajes, **kw):
+        if self.falla:
+            raise RuntimeError("sin streaming")
+        for i, t in enumerate(self.trozos):
+            if self.corta and i == 2:
+                raise ConnectionError("se cortó")
+            yield t
+
+    def completar(self, mensajes, **kw):
+        self.enteras += 1
+        return "".join(self.trozos) or "Respuesta entera de reserva, bastante larga."
+
+
+def _profe(prov):
+    p = ProfesorJapones(MagicMock(), prov, MagicMock(), MagicMock())
+    p._foco_unidad = next(u for u in CURRICULUM if u["id"] == "comida_bebida")
+    p.activo = True
+    p._recuerdas = lambda: ""
+    p.clase = {"cd": "comida_gustos", "fase": "practicar", "aciertos": 0, "fallos": 0, "tipo": "nuevo"}
+    return p
+
+
+def test_streaming_da_frases_completas_y_la_respuesta_entera():
+    trozos = ["¡Qué bien, Laura! Ahora cuéntame ", "algo con 【すきです", "。ね】 de tu día.", "\nOtra frase final sin punto"]
+    prov, dichas = _ProvStream(trozos), []
+    r = _profe(prov).responder_turno("hola", on_frase=dichas.append)
+    assert dichas == ["¡Qué bien, Laura! Ahora cuéntame algo con 【すきです。ね】 de tu día.",
+                      "Otra frase final sin punto"]       # sin cortar dentro de 【】
+    assert r == "".join(trozos).strip() and prov.enteras == 0
+
+
+def test_si_el_streaming_falla_antes_de_dar_nada_se_usa_el_camino_normal():
+    prov, dichas = _ProvStream(falla_al_principio=True), []
+    r = _profe(prov).responder_turno("hola", on_frase=dichas.append)
+    assert dichas == [] and prov.enteras == 1 and "reserva" in r
+
+
+def test_si_el_stream_se_corta_a_mitad_no_se_repite_lo_ya_dicho():
+    prov, dichas = _ProvStream(["Primera frase bastante larga, de verdad. ", "Segunda ", "cortada"], corta_a_mitad=True), []
+    r = _profe(prov).responder_turno("hola", on_frase=dichas.append)
+    assert dichas[0].startswith("Primera frase") and prov.enteras == 0   # no se vuelve a pedir
+    assert r.startswith("Primera frase")
+
+
+def test_cortar_frases_une_las_cortas_y_respeta_los_bloques():
+    from ai.sensei.clase import cortar_frases
+    assert cortar_frases("¡Hola! Qué tal estás hoy, Laura? Bien") == (["¡Hola! Qué tal estás hoy, Laura?"], " Bien")
+    assert cortar_frases("Di 【いち。に】 ahora mismo por favor.")[0] == ["Di 【いち。に】 ahora mismo por favor."]

@@ -50,3 +50,12 @@ class SenseiProvider:
             mensajes, max_tokens=max_tokens, response_format=response_format,
             temperature=temperature, reasoning_effort=reasoning_effort,
         )
+
+    def completar_stream(self, mensajes, max_tokens=None, temperature=None, reasoning_effort=None):
+        """Texto de la respuesta según llega (OpenRouter). Si OpenRouter no está o falla antes
+        de dar nada, lanza la excepción: el llamante vuelve a `completar` (con su reserva)."""
+        if not self.openrouter:
+            raise RuntimeError("sin OpenRouter: no hay streaming")
+        yield from self.openrouter.completar_stream(
+            mensajes, max_tokens=max_tokens, temperature=temperature,
+            reasoning_effort=reasoning_effort)

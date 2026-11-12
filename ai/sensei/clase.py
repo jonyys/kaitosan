@@ -129,3 +129,24 @@ def tarea_nueva(cd):
             f"Laura tenga que: {que_hacer(cd)} Situación breve (2 frases como máximo, sin añadir más "
             "acciones de las que pide). Empieza directamente por ella, haz tú tu parte y no le "
             "des la respuesta ni un ejemplo. Háblale a ella de tú. Ella contesta en japonés.")
+
+
+def cortar_frases(texto, minimo=25, final=False):
+    """Corta lo que llega del LLM en frases COMPLETAS para ir hablándolas ya: termina en
+    . ? ! 。 o salto de línea, nunca dentro de un bloque 【…】 y con al menos `minimo`
+    caracteres (una frase muy corta se une a la siguiente: cada trozo de voz cuesta ~1 s).
+    Devuelve (frases, resto); con `final=True` el resto también sale como frase."""
+    frases, ini, prof = [], 0, 0
+    for i, ch in enumerate(texto):
+        if ch == "【":
+            prof += 1
+        elif ch == "】":
+            prof = max(0, prof - 1)
+        elif prof == 0 and ch in ".?!。\n" and len(texto[ini:i + 1].strip()) >= minimo:
+            frases.append(texto[ini:i + 1].strip())
+            ini = i + 1
+    resto = texto[ini:]
+    if final and resto.strip():
+        frases.append(resto.strip())
+        resto = ""
+    return frases, resto

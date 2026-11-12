@@ -459,6 +459,10 @@ class TextToSpeech:
                 cola.put(None)
 
         threading.Thread(target=producir, daemon=True).start()
+        self._consumir_cola(cola, on_start, on_stop)
+
+    def _consumir_cola(self, cola, on_start=None, on_stop=None):
+        """Reproduce los trozos de audio que van llegando a `cola` (None = no hay más)."""
         try:
             primero = cola.get()
             if primero is None or self._callado.is_set():
@@ -474,6 +478,42 @@ class TextToSpeech:
                 on_stop()
         except Exception as e:  # noqa: BLE001
             print(f"❌ Error en TTS: {e}")
+
+    def hablar_frases(self, frases, lento_extra=False, on_start=None, on_stop=None):
+        """Como hablar(), pero el texto llega por frases a la cola `frases` (None = fin)
+        mientras el LLM aún escribe: cada frase se sintetiza según llega y suena enseguida."""
+        self._lento_extra = lento_extra
+        cola = queue.Queue()
+        with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as tmp:
+            base = tmp.name.replace(".mp3", "")
+        os.unlink(base + ".mp3")
+
+        def producir():
+            async def correr():
+                n = 0
+                while True:
+                    frase = await asyncio.to_thread(frases.get)
+                    if frase is None:
+                        break
+                    if self._callado.is_set() or not str(frase).strip():
+                        continue  # se sigue vaciando la cola, sin sintetizar
+                    print(f"🔊 Hablando: {frase}")
+                    async for ruta in self._generar_trozos(frase, f"{base}_f{n}"):
+                        if self._callado.is_set():
+                            if os.path.exists(ruta):
+                                os.unlink(ruta)
+                            break
+                        cola.put(self._cargar_trozo(ruta))
+                    n += 1
+            try:
+                asyncio.run(correr())
+            except Exception as e:  # noqa: BLE001
+                print(f"❌ Error en TTS: {e}")
+            finally:
+                cola.put(None)
+
+        threading.Thread(target=producir, daemon=True).start()
+        self._consumir_cola(cola, on_start, on_stop)
 
     def _sonar_por_trozos(self, primero, cola):
         """Reproduce `primero` y los trozos que lleguen a `cola` (None = no hay más),

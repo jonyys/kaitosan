@@ -177,6 +177,11 @@ class SpeechToText:
             resp.raise_for_status()
             body = resp.json()
 
+            if body.get("RecognitionStatus") == "InitialSilenceTimeout":
+                # Azure no oyó voz: Laura no ha dicho nada. NO se cae a Whisper-ja: con
+                # silencio se inventa frases («ご視聴ありがとうございました»).
+                print("🤫 Azure no oyó voz (silencio): turno vacío")
+                return {"texto": "", "pron": None}
             if body.get("RecognitionStatus") != "Success" or not body.get("NBest"):
                 print(f"⚠️ Azure sin reconocimiento útil: {body.get('RecognitionStatus')}. Uso Groq Whisper.")
                 return None
@@ -288,6 +293,14 @@ class SpeechToText:
         return "\n".join(lineas)
 
 
+# Lo que Whisper se inventa en japonés con silencio o ruido (subtítulos de vídeos).
+_ALUCINACION_JA = re.compile(r"ご?(視聴|清聴|覧いただき)|チャンネル登録|字幕|最後までご|おやすみなさい。?$")
+
+
+def _es_alucinacion_ja(texto: str) -> bool:
+    return bool(texto and _ALUCINACION_JA.search(texto))
+
+
 def transcribir_para_turno(stt: SpeechToText, archivo: str, *, sensei_activo: bool,
                            modo_conv: bool, espera_japones: bool = False,
                            segundos_desde_turno: float = None, al_oir=None):
@@ -300,6 +313,9 @@ def transcribir_para_turno(stt: SpeechToText, archivo: str, *, sensei_activo: bo
     texto, pron = _ruta_transcripcion(
         stt, archivo, sensei_activo=sensei_activo, modo_conv=modo_conv,
         espera_japones=espera_japones, al_oir=al_oir)
+    if sensei_activo and _es_alucinacion_ja(texto):
+        print(f"🙅 Ignorada alucinación de Whisper en japonés: «{texto}»")
+        return "", None
     if sensei_activo and re.fullmatch(r"\s*(thank you|thanks|thank you for watching|you)[.!\s]*",
                                       texto or "", re.IGNORECASE):
         print(f"🙅 Ignorada alucinación de Whisper en sensei: «{texto}»")
@@ -356,15 +372,15 @@ def _ruta_transcripcion(stt: SpeechToText, archivo: str, *, sensei_activo: bool,
     quiere_pron = sensei_activo and espera_japones and (not modo_conv or AZURE_PRON_EN_CHARLA)
     if quiere_pron:
         crudo = stt.transcribir(archivo, idioma=None)
-        if not (crudo or "").strip():  # Whisper falló o no oyó nada: no asumir japonés
-            return crudo, None
+        if not re.search(r"\w", crudo or ""):  # vacío o solo «.»: no oyó nada, no asumir japonés
+            return "", None
         if _es_salida_sensei(crudo):
             print(f"🚪 Salida de sensei detectada en turno de práctica: «{crudo}»")
             return crudo, None
         if _es_pregunta_libre(crudo) or tiene_espanol(crudo):
             print(f"💬 Español (o mezcla) en turno de práctica, sin puntuar: «{crudo}»")
             return crudo, None
-        if al_oir:
+        if al_oir and re.search(r"[぀-ヿ一-鿿]", crudo):
             try:
                 al_oir(crudo)
             except Exception as e:  # noqa: BLE001

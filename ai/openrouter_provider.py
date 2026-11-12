@@ -13,6 +13,8 @@ dependencia) en vez del SDK de OpenAI para no añadir nada.
 `OPENROUTER_MODELOS_SENSEI` se recorre en orden: el primero que responda gana;
 rate limit / modelo caído / respuesta vacía → siguiente.
 """
+import json
+
 import requests
 
 from core.config import (
@@ -135,3 +137,73 @@ class OpenRouterProvider:
             return contenido
 
         raise Exception(f"Todos los modelos OpenRouter fallaron. Último error: {ultimo}")
+
+    def completar_stream(self, mensajes, max_tokens=None, temperature=None, reasoning_effort=None):
+        """Como `completar`, pero va devolviendo el texto según llega (generador de trozos
+        de texto). Solo usa el primer modelo: si falla ANTES de dar nada, lanza la excepción
+        y el llamante vuelve a `completar` (con su reserva de modelos). Si se corta a mitad
+        de respuesta, termina con lo que llegó (repetir la respuesta entera duplicaría lo ya
+        dicho en voz alta)."""
+        if not OPENROUTER_API_KEY:
+            raise RuntimeError("OPENROUTER_API_KEY no configurada")
+        if not self.modelos:
+            raise RuntimeError("OpenRouter sin modelos configurados")
+        modelo = self.modelos[0]
+        ef = (reasoning_effort or "off").strip().lower()
+        payload = {
+            "model": modelo,
+            "messages": mensajes,
+            "max_tokens": max_tokens or MAX_TOKENS,
+            "temperature": temperature if temperature is not None else TEMPERATURE,
+            "provider": {"sort": "throughput"},
+            "reasoning": {"enabled": False} if ef == "off" else {"effort": ef},
+            "stream": True,
+            "stream_options": {"include_usage": True},
+        }
+        headers = {"Authorization": f"Bearer {OPENROUTER_API_KEY}", "X-Title": "Kaitosan"}
+        r = requests.post(_URL, headers=headers, json=payload, timeout=_TIMEOUT, stream=True)
+        if r.status_code == 400 and "reasoning" in r.text.lower():  # no acepta tocar reasoning
+            payload.pop("reasoning", None)
+            r = requests.post(_URL, headers=headers, json=payload, timeout=_TIMEOUT, stream=True)
+        if r.status_code != 200:
+            raise Exception(f"OpenRouter {modelo} {r.status_code}: {r.text[:200]}")
+        dio = False
+        uso = {}
+        try:
+            for linea in r.iter_lines(decode_unicode=True):
+                if not linea or not linea.startswith("data:"):
+                    continue  # comentarios SSE («: OPENROUTER PROCESSING») y líneas vacías
+                cuerpo = linea[5:].strip()
+                if cuerpo == "[DONE]":
+                    break
+                try:
+                    d = json.loads(cuerpo)
+                except ValueError:
+                    continue
+                if d.get("error"):
+                    raise Exception(f"OpenRouter {modelo}: {d['error']}")
+                uso = d.get("usage") or uso
+                for ch in d.get("choices") or []:
+                    texto = (ch.get("delta") or {}).get("content") or ""
+                    if texto:
+                        dio = True
+                        yield texto
+        except Exception as e:  # noqa: BLE001
+            if not dio:
+                raise
+            print(f"⚠️ OpenRouter {modelo}: stream cortado a mitad ({type(e).__name__}); sigo con lo recibido")
+        finally:
+            r.close()
+        if not dio:
+            raise Exception(f"OpenRouter {modelo}: respuesta vacía")
+        try:
+            tokens = int(uso.get("total_tokens", 0) or 0)
+            if tokens:
+                clave = f"openrouter/{modelo}"
+                d = self.tracker.añadir_tokens(clave, tokens)
+                print(f"📊 Tokens {clave}: {tokens} (stream)")
+            coste = float(uso.get("cost", 0) or 0)
+            if coste:
+                self.tracker.añadir_coste(f"openrouter/{modelo}", coste)
+        except Exception as e:  # noqa: BLE001
+            print(f"⚠️ Error guardando tokens: {e}")

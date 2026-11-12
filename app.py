@@ -91,6 +91,7 @@ def chat():
         tts.empezar_turno()
         state.cambiar("thinking")
 
+        sensei_estaba = brain.profesor.esta_activo()
         respuesta, lento_extra = brain.responder(mensaje)
 
         # Emitir mensaje (sin cambiar estado todavía)
@@ -102,7 +103,8 @@ def chat():
                 return
             mostrado.append(True)
             socketio.emit("mensaje", {"texto": respuesta})
-            emitir_japones_sensei(respuesta)
+            if sensei_estaba:  # sin tarjeta en el saludo de entrada
+                emitir_japones_sensei(respuesta)
 
         # Callback que se ejecuta cuando el audio empieza de verdad
         def al_iniciar_audio():
@@ -172,6 +174,7 @@ def grabar():
         state.cambiar("thinking")
 
         # Responde con Groq (siempre devuelve (respuesta, lento_extra))
+        sensei_estaba = brain.profesor.esta_activo()
         respuesta, lento_extra = brain.responder(texto, pron_contexto=pron_ctx)
 
         # Emitir mensaje (sin cambiar estado todavía)
@@ -183,7 +186,8 @@ def grabar():
                 return
             mostrado.append(True)
             socketio.emit("mensaje", {"texto": respuesta})
-            emitir_japones_sensei(respuesta)
+            if sensei_estaba:  # sin tarjeta en el saludo de entrada
+                emitir_japones_sensei(respuesta)
 
         # Callback que se ejecuta cuando el audio empieza de verdad
         def al_iniciar_audio():

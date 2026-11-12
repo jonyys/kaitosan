@@ -16,6 +16,7 @@ la evaluación de pronunciación no tiene con qué comparar.
 """
 
 import json
+import os
 import random
 import re
 import threading
@@ -26,6 +27,7 @@ from datetime import datetime
 from ai.prompts import cargar_prompt
 from ai.sensei.clase import (
     ACIERTOS_ANTIGUO,
+    cortar_frases,
     ACIERTOS_PRACTICA,
     ACIERTOS_TAREA,
     FALLOS_MAX,
@@ -401,12 +403,48 @@ class ProfesorJapones:
 
     # ── Turno de conversación ─────────────────────────────────────────────────
 
-    def responder_turno(self, mensaje: str, lento_extra: bool = False, pron_contexto: str = None) -> str:
+    def _respuesta_en_stream(self, historial, on_frase):
+        """Pide la respuesta en streaming y va pasando a `on_frase` cada frase completa.
+        Devuelve la respuesta entera, o None si no se pudo (nada se ha dicho todavía:
+        el llamante usa el camino normal). Una vez dicha alguna frase, un corte a mitad
+        no se repite: se queda con lo recibido."""
+        if os.getenv("LLM_STREAMING", "1") == "0" or not hasattr(self.provider, "completar_stream"):
+            return None
+        total, buf, dichas = "", "", 0
+        try:
+            for trozo in self.provider.completar_stream(
+                    historial, max_tokens=MAX_TOKENS_EXPLICACION, temperature=TEMPERATURE_SENSEI,
+                    reasoning_effort=REASONING_EFFORT_SENSEI):
+                trozo = trozo.replace("**", "")
+                total += trozo
+                buf += trozo
+                frases, buf = cortar_frases(buf)
+                for f in frases:
+                    on_frase(normalizar_bloques_jp(f))
+                    dichas += 1
+        except Exception as e:  # noqa: BLE001
+            if dichas == 0:
+                print(f"⚠️ Streaming del LLM no disponible ({type(e).__name__}) → respuesta entera")
+                return None
+            print(f"⚠️ Streaming cortado a mitad ({type(e).__name__}): sigo con lo recibido")
+        resto = buf.strip()
+        if resto:
+            on_frase(normalizar_bloques_jp(resto))
+        respuesta = normalizar_bloques_jp(total.strip())
+        return respuesta or None
+
+
+    def responder_turno(self, mensaje: str, lento_extra: bool = False, pron_contexto: str = None,
+                        on_frase=None) -> str:
         """Respuesta del sensei a un turno. No lanza excepciones al exterior:
         ante fallos del proveedor devuelve un mensaje amable.
 
         `pron_contexto` — resumen de la evaluación de pronunciación de Azure
-        para este audio (o None); va al turno, NO al historial limpio."""
+        para este audio (o None); va al turno, NO al historial limpio.
+        `on_frase(frase)` — si se pasa, se llama con cada frase completa según llega
+        del LLM (streaming) para ir hablándola; el valor devuelto es la respuesta
+        entera, igual que sin streaming. Si el streaming falla antes de dar nada,
+        se vuelve al camino normal (y `on_frase` no se llama)."""
         self._renovar_timer()
         if self.clase is None:  # instancia sin entrar() (p. ej. tests)
             self._empezar_clase()
@@ -419,12 +457,14 @@ class ProfesorJapones:
         historial = ([{"role": "system", "content": sistema}]
                      + self.mensajes[-(MAX_TURNOS * 2):]
                      + [{"role": "user", "content": usuario}])
+        respuesta = self._respuesta_en_stream(historial, on_frase) if on_frase else None
         try:
-            respuesta = self.provider.completar(
-                historial, max_tokens=MAX_TOKENS_EXPLICACION,
-                temperature=TEMPERATURE_SENSEI, reasoning_effort=REASONING_EFFORT_SENSEI,
-            ).replace("**", "").strip()  # la voz leería los asteriscos
-            respuesta = normalizar_bloques_jp(respuesta)  # japonés suelto → 【】
+            if respuesta is None:
+                respuesta = self.provider.completar(
+                    historial, max_tokens=MAX_TOKENS_EXPLICACION,
+                    temperature=TEMPERATURE_SENSEI, reasoning_effort=REASONING_EFFORT_SENSEI,
+                ).replace("**", "").strip()  # la voz leería los asteriscos
+                respuesta = normalizar_bloques_jp(respuesta)  # japonés suelto → 【】
         except Exception as e:
             print(f"❌ Error LLM en modo sensei: {e}")
             return "【ちょっとまってください。】 Un momento, hubo un problema técnico."
