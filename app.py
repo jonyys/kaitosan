@@ -97,7 +97,7 @@ def chat():
         _entrada = getattr(brain.profesor, "entrada_ts", None)
         no_antes_de = (_entrada + SENSEI_ENTRADA_SEG if not sensei_estaba and brain.profesor.esta_activo()
                        and isinstance(_entrada, (int, float)) else None)
-        # Acaba de salir (despedida): la cara ya volvió a la normal al decidirlo (brain)
+        # Acaba de salir (despedida): espera a que la pizarra baje (brain la manda bajar al decidirlo)
         if sensei_estaba and not brain.profesor.esta_activo():
             no_antes_de = brain.salida_ts + SENSEI_SALIDA_SEG
 
@@ -110,7 +110,7 @@ def chat():
                 return
             mostrado.append(True)
             socketio.emit("mensaje", {"texto": respuesta})
-            if sensei_estaba:  # sin tarjeta en el saludo de entrada
+            if sensei_estaba and brain.profesor.esta_activo():  # sin pizarra en el saludo de entrada ni en la despedida
                 emitir_japones_sensei(respuesta)
 
         # Callback que se ejecuta cuando el audio empieza de verdad
@@ -123,6 +123,10 @@ def chat():
             tts.hablar(respuesta, lento_extra=lento_extra, on_start=al_iniciar_audio,
                        no_antes_de=no_antes_de)
             mostrar()
+            # Salir del sensei: la animación a la cara normal va DESPUÉS de la despedida
+            if brain._emitir_desactivar_sensei:
+                brain._emitir_desactivar_sensei = False
+                socketio.emit("modo_sensei", {"activo": False})
             state.cambiar("idle")
             socketio.emit("estado", {"estado": "idle"})
 
@@ -186,7 +190,7 @@ def grabar():
         _entrada = getattr(brain.profesor, "entrada_ts", None)
         no_antes_de = (_entrada + SENSEI_ENTRADA_SEG if not sensei_estaba and brain.profesor.esta_activo()
                        and isinstance(_entrada, (int, float)) else None)
-        # Acaba de salir (despedida): la cara ya volvió a la normal al decidirlo (brain)
+        # Acaba de salir (despedida): espera a que la pizarra baje (brain la manda bajar al decidirlo)
         if sensei_estaba and not brain.profesor.esta_activo():
             no_antes_de = brain.salida_ts + SENSEI_SALIDA_SEG
 
@@ -199,7 +203,7 @@ def grabar():
                 return
             mostrado.append(True)
             socketio.emit("mensaje", {"texto": respuesta})
-            if sensei_estaba:  # sin tarjeta en el saludo de entrada
+            if sensei_estaba and brain.profesor.esta_activo():  # sin pizarra en el saludo de entrada ni en la despedida
                 emitir_japones_sensei(respuesta)
 
         # Callback que se ejecuta cuando el audio empieza de verdad
@@ -212,6 +216,10 @@ def grabar():
             tts.hablar(respuesta, lento_extra=lento_extra, on_start=al_iniciar_audio,
                        no_antes_de=no_antes_de)
             mostrar()
+            # Salir del sensei: la animación a la cara normal va DESPUÉS de la despedida
+            if brain._emitir_desactivar_sensei:
+                brain._emitir_desactivar_sensei = False
+                socketio.emit("modo_sensei", {"activo": False})
             state.cambiar("idle")
             socketio.emit("estado", {"estado": "idle"})
 

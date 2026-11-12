@@ -13,8 +13,9 @@ from core.emociones import es_solo_gracias, gesto_para_gracias
 TIMEOUT_CONVERSACION_SEG = 3
 # La animación de la cara al entrar en sensei dura 1,9-2,3 s: el saludo no suena hasta que acaba.
 SENSEI_ENTRADA_SEG = float(os.getenv("SENSEI_ENTRADA_SEG", "2.4"))
-# Al salir: la cara tarda ~0,7 s en esconder la pizarra y hasta 2,3 s en la transición.
-SENSEI_SALIDA_SEG = float(os.getenv("SENSEI_SALIDA_SEG", "3.2"))
+# Al salir: la despedida no suena hasta que la pizarra ha bajado y la cara está al frente
+# (~0,75 s). La animación de salida va después de la despedida.
+SENSEI_SALIDA_SEG = float(os.getenv("SENSEI_SALIDA_SEG", "0.9"))
 
 
 def _normalizar(texto: str) -> str:
@@ -165,6 +166,10 @@ class VoiceListener:
             except Exception as e:  # noqa: BLE001 — pase lo que pase, vuelve a idle (el ciclo espera)
                 print(f"❌ Error al hablar: {e}")
             mostrar()  # si no llegó a sonar (error, callado), que al menos se vea
+            # Salir del sensei: la animación a la cara normal va DESPUÉS de la despedida
+            if self.brain._emitir_desactivar_sensei:
+                self.brain._emitir_desactivar_sensei = False
+                self.socketio.emit("modo_sensei", {"activo": False})
             self.state.cambiar("idle")
             self.socketio.emit("estado", {"estado": "idle"})
 

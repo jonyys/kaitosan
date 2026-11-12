@@ -28,8 +28,10 @@ def test_salir_del_modo_sensei_se_despide():
     resp, _ = b._responder("quiero salir del modo sensei")
     assert resp in DESPEDIDAS
     b.profesor.salir.assert_called_once()
-    # la cara vuelve a la normal al decidir la salida, una sola vez y antes de hablar
-    b.socketio.emit.assert_called_once_with("modo_sensei", {"activo": False})
+    # la pizarra baja al decidir la salida (una sola vez); la animación de salida queda pendiente
+    # para después de la despedida (la emite el listener/app)
+    b.socketio.emit.assert_called_once_with("sensei_pizarra_fuera", {})
+    assert b._emitir_desactivar_sensei is True
     assert b.salida_ts > 0
 
 

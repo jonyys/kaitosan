@@ -15,8 +15,11 @@
 ">
 </div>
 
-<!-- Pizarra del modo sensei: lo que hay que decir, siempre en kana. Estilos en _estilos.html -->
-<div id="sensei-jp" class="pizarra" aria-live="polite">
+<!-- Pizarra del modo sensei: lo que hay que decir, siempre en kana. Estilos en _estilos.html.
+     aria-hidden y sin aria-live: Chromium en la Pi arranca con --force-renderer-accessibility
+     (lo pone Raspberry Pi OS) y cada nodo que se escribe o borra aquí le costaba memoria y CPU;
+     Kaito ya lo dice en voz alta. -->
+<div id="sensei-jp" class="pizarra" aria-hidden="true">
   <div class="pizarra-texto"></div>
   <i class="pizarra-velo"></i>
   <i class="pizarra-borrador"></i>

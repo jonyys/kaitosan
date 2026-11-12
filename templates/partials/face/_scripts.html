@@ -819,16 +819,51 @@
   // La letra de tiza se baja al abrir la cara: si no, la primera pizarra sale vacía un momento
   document.fonts.load('600 1em "Klee One"', "あいうえおかきくけこアイウエオ").catch(() => {});
 
-  // Estado de la animación: filas = animaciones de máscara (al cancelar se congelan donde
+  // Estado de la animación: filas = animaciones de recorte (al cancelar se congelan donde
   // estén), otras = tiza, borrador, velo y polvo
-  const P = { firma: "", filas: [], otras: [], timers: [] };
+  const P = { firma: "", filas: [], otras: [], timers: [], polvo: 0 };
   const PAUSA = ",.;:、。 ";
-  const pMask = (p) => `${p * 100}% 0%, 0px 0px`; // 1 = fila oculta, 0 = a la vista
+  // Cada fila es fila > ventana > texto. Revelar = deslizar la ventana (que recorta) hacia la
+  // derecha y el texto hacia la izquierda lo mismo: el texto no se mueve y la ventana lo va
+  // descubriendo. Solo transform, así corre en el compositor y no gasta hilo principal
+  // (con clip-path o máscaras la Pi repintaba la fila en cada cuadro). p: 1 = oculta, 0 = a la vista.
+  const pVent = (f) => f.firstChild;
+  const pTx = (f) => f.firstChild.firstChild;
+  const pDesliza = (p, W) => `translateX(${(-p * W).toFixed(1)}px)`; // la ventana usa p; el texto, -p
   const pAnim = (el, kf, op, lista = P.otras) => {
     const a = el.animate(kf, { fill: "both", ...op });
     lista.push(a);
     return a;
   };
+
+  // Grano de tiza: dos mosaicos de motas (blanco y amarillo pálido) generados una sola vez.
+  // Un canvas pequeño sale mucho más barato que un filtro SVG en la Pi.
+  (function () {
+    const c = document.createElement("canvas");
+    c.width = c.height = 96;
+    const cx = c.getContext("2d");
+    const img = cx.createImageData(96, 96);
+    const mosaico = (r, g, b) => {
+      for (let i = 0; i < img.data.length; i += 4) {
+        img.data[i] = r;
+        img.data[i + 1] = g;
+        img.data[i + 2] = b;
+        img.data[i + 3] = Math.random() < 0.2 ? 70 : 255;
+      }
+      cx.putImageData(img, 0, 0);
+      return `url("${c.toDataURL()}")`;
+    };
+    senseiJp.style.setProperty("--grano", mosaico(244, 241, 230));
+    senseiJp.style.setProperty("--grano-es", mosaico(219, 208, 147));
+  })();
+
+  // Seis motitas de polvo que se reutilizan en cada escritura (nada de crear y borrar nodos)
+  const pPolvos = Array.from({ length: 6 }, () => {
+    const d = document.createElement("i");
+    d.className = "polvo";
+    senseiJp.appendChild(d);
+    return d;
+  });
 
   function pCancelar() {
     P.timers.forEach(clearTimeout);
@@ -840,7 +875,7 @@
     P.otras.forEach((a) => a.cancel());
     P.filas = [];
     P.otras = [];
-    senseiJp.querySelectorAll(".polvo").forEach((e) => e.remove());
+    P.polvo = 0;
   }
 
   // Lista de hasta 3 elementos: string (kana) u objeto {jp, es}
@@ -858,7 +893,13 @@
     const fila = (t, cls) => {
       const d = document.createElement("div");
       d.className = "fila " + cls;
-      d.textContent = t;
+      const v = document.createElement("div");
+      v.className = "vent";
+      const x = document.createElement("div");
+      x.className = "tx";
+      x.textContent = t;
+      v.appendChild(x);
+      d.appendChild(v);
       pizarraTexto.appendChild(d);
       return d;
     };
@@ -890,10 +931,21 @@
         return r.left - pr.left >= W / 2 - hw && r.right - pr.left <= W / 2 + hw;
       });
     };
-    let tam = 64;
-    do {
+    // Búsqueda binaria entre 16 y 64 px (de 2 en 2): cabe() es monótona, y probar los 25
+    // tamaños uno a uno eran 25 layouts seguidos (medio segundo de bloqueo en la Pi, y cada
+    // tamaño deja entradas en las cachés de tipografía)
+    const poner = (k) => {
+      const tam = 16 + 2 * k;
       for (const f of filas) f.style.fontSize = (f.classList.contains("es") ? Math.max(11, Math.round(tam * 0.36)) : tam) + "px";
-    } while (!cabe() && (tam -= 2) >= 16);
+    };
+    let lo = 0, hi = 24;
+    while (lo < hi) {
+      const mid = (lo + hi + 1) >> 1;
+      poner(mid);
+      if (cabe()) lo = mid;
+      else hi = mid - 1;
+    }
+    poner(lo);
   }
 
   // Escribe las filas una a una. t0 = segundos hasta que la tiza sale de la repisa
@@ -906,10 +958,10 @@
     let t = t0, cur = rest, puffs = 0;
     const rg = document.createRange();
     // Con mucho texto la tiza va más deprisa: que no tarde más de ~5 s (Kaito ya ha acabado de hablar)
-    const largo = filas.reduce((s, f) => s + f.firstChild.data.length * (f.classList.contains("es") ? 0.045 : 0.15), 0);
+    const largo = filas.reduce((s, f) => s + f.textContent.length * (f.classList.contains("es") ? 0.045 : 0.15), 0);
     const prisa = Math.min(1, 5 / largo);
     filas.forEach((f, fi) => {
-      const nodo = f.firstChild, fr = f.getBoundingClientRect(), W = fr.width;
+      const nodo = pTx(f).firstChild, fr = f.getBoundingClientRect(), W = fr.width;
       const es = f.classList.contains("es"), paso = (es ? 0.045 : 0.15) * prisa, txt = nodo.data;
       const pos = []; // x del final de cada carácter y y de su línea de escritura
       for (let i = 0; i < txt.length; i++) {
@@ -924,8 +976,8 @@
       t += fi === 0 ? 0.4 : 0.28;
       track.push({ t, x: a0.x, y: a0.y, e: "linear" });
       const ini = t;
-      const edge = (x) => Math.min(1.2, Math.max(0, 1 - (x - 2) / W)); // borde suave de 10px
-      const mk = [{ t: 0, p: edge(-12) }];
+      const edge = (x) => Math.max(0, 1 - x / W); // fracción de la fila que aún queda oculta
+      const mk = [{ t: 0, p: 1 }];
       const dust = es ? 8 : 3;
       pos.forEach((c, i) => {
         t += paso;
@@ -937,11 +989,23 @@
           track.push({ t, x: dx, y: c.y, e: "linear" });
           mk.push({ t: t - ini, p: edge(c.x) });
         }
-        if (i % dust === 1 && puffs++ < 14) pPolvo(dx, c.y + 5, t);
+        if (i % dust === 1 && puffs++ < pPolvos.length) pPolvo(dx, c.y + 5, t);
       });
       const dur = t - ini;
-      const a = pAnim(f, mk.map((k) => ({ offset: k.t / dur, maskPosition: pMask(k.p) })), { delay: ini * 1000, duration: dur * 1000, easing: "linear" }, P.filas);
-      a.onfinish = () => { a.commitStyles(); a.cancel(); P.filas = P.filas.filter((x) => x !== a); };
+      // Oculta hasta que le toque; su animación se crea entonces
+      const v = pVent(f), x = pTx(f);
+      v.style.transform = pDesliza(1, W);
+      x.style.transform = pDesliza(-1, W);
+      const op = { duration: dur * 1000, easing: "linear" };
+      P.timers.push(setTimeout(() => {
+        const a = pAnim(v, mk.map((k) => ({ offset: k.t / dur, transform: pDesliza(k.p, W) })), op, P.filas);
+        pAnim(x, mk.map((k) => ({ offset: k.t / dur, transform: pDesliza(-k.p, W) })), op, P.filas);
+        a.onfinish = () => {
+          v.style.transform = x.style.transform = "none";
+          P.filas.forEach((b) => (b.effect.target === v || b.effect.target === x) && b.cancel());
+          P.filas = P.filas.filter((b) => b.effect.target !== v && b.effect.target !== x);
+        };
+      }, ini * 1000));
       cur = track[track.length - 1];
     });
     // Al terminar la tiza vuelve a la repisa
@@ -952,15 +1016,12 @@
   }
 
   function pPolvo(x, y, t) {
-    const d = document.createElement("i");
-    d.className = "polvo";
-    senseiJp.appendChild(d);
+    const d = pPolvos[P.polvo++ % pPolvos.length];
     const dx = (Math.random() - 0.5) * 14;
-    const a = pAnim(d, [
+    pAnim(d, [
       { opacity: 0.85, transform: `translate(${x}px, ${y}px)` },
       { opacity: 0, transform: `translate(${x + dx}px, ${y + 14 + Math.random() * 10}px)` },
     ], { delay: t * 1000, duration: 650 + Math.random() * 300, easing: "ease-in", fill: "none" });
-    a.onfinish = () => d.remove();
   }
 
   // Un borrador barre cada fila de derecha a izquierda; el texto se borra a su paso y queda
@@ -978,7 +1039,12 @@
       if (i === 0) track.push({ t, x: W + 40, y: cy });
       track.push({ t: (t += 0.2), x: Rr, y: cy });
       const dur = 0.25 + r.width / 650;
-      pAnim(f, [{ maskPosition: pMask(1 + 14 / r.width) }], { delay: t * 1000, duration: dur * 1000, easing: "linear" }, P.filas);
+      // Desde donde esté ahora (la fila puede estar a medio escribir) hasta oculta, por la derecha
+      const v = pVent(f), x = pTx(f), Wf = r.width;
+      const cur = new DOMMatrix(getComputedStyle(v).transform).m41; // 0 = a la vista, -Wf = oculta
+      const op = { delay: t * 1000, duration: dur * 1000, easing: "linear" };
+      pAnim(v, [{ transform: `translateX(${cur}px)` }, { transform: pDesliza(1, Wf) }], op, P.filas);
+      pAnim(x, [{ transform: `translateX(${-cur}px)` }, { transform: pDesliza(-1, Wf) }], op, P.filas);
       // Zigzag: sube y baja un poco mientras barre
       for (let k = 1; k <= 3; k++) track.push({ t: t + (dur * k) / 3, x: Rr + (L - Rr) * (k / 3), y: cy + (k % 2 ? -6 : 6) });
       t += dur;
@@ -1034,6 +1100,9 @@
     } else tapar();
   };
   socket.on("modo_sensei", (data) => window.kaitoCambiarSensei(!!data.activo));
+  // Al decir que sale: la pizarra baja y la cara vuelve al frente, sin cambiar de cara. Kaito
+  // se despide así, con la cara sensei, y solo después llega modo_sensei false (la animación)
+  socket.on("sensei_pizarra_fuera", () => mostrarJaponesSensei(null));
 
   // De dónde parte la capa de la transición, para que no se note cuándo aparece
   function poseCara(dormido) {

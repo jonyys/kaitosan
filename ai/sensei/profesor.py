@@ -275,8 +275,9 @@ class ProfesorJapones:
     def salir(self):
         """Desactiva el modo sensei, cancela el timer y cierra la sesión.
 
-        El evento modo_sensei activo:False lo emite brain ANTES de la despedida:
-        la cara esconde la pizarra y vuelve a la normal, y luego habla.
+        Al salir, brain emite sensei_pizarra_fuera (la pizarra baja y la cara vuelve al
+        frente, aún con la cara sensei), Kaito se despide así y el listener/app emite
+        modo_sensei activo:False después de que el TTS termine (la animación de salida).
         """
         if self.timer:
             self.timer.cancel()

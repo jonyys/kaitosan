@@ -78,7 +78,8 @@ def ciclo(asunto_cerrado=False, callado=False, salir_de_sensei=False):
     activo = [True, False] if salir_de_sensei else [False, False]
     profesor = mock.Mock(modo_conv=False, ultima_frase_objetivo=None)
     profesor.esta_activo.side_effect = lambda: activo[0] if len(activo) == 1 else activo.pop(0)
-    brain = mock.Mock(profesor=profesor, ultimo_turno_ts=0.0, asunto_cerrado=asunto_cerrado)
+    brain = mock.Mock(profesor=profesor, ultimo_turno_ts=0.0, asunto_cerrado=asunto_cerrado,
+                      _emitir_desactivar_sensei=False)
     brain.responder.return_value = ("Respuesta", False)
 
     v = mod.VoiceListener.__new__(mod.VoiceListener)
@@ -319,7 +320,8 @@ def test_texto_y_tarjeta_salen_cuando_empieza_la_voz_no_antes():
     state = mock.Mock(get=lambda: estado["v"], cambiar=lambda v: estado.update(v=v))
     profesor = mock.Mock(modo_conv=False, ultima_frase_objetivo=None)
     profesor.esta_activo.return_value = True
-    brain = mock.Mock(profesor=profesor, ultimo_turno_ts=0.0, asunto_cerrado=False)
+    brain = mock.Mock(profesor=profesor, ultimo_turno_ts=0.0, asunto_cerrado=False,
+                      _emitir_desactivar_sensei=False)
     brain.responder.return_value = ("【こんにちは】, Laura", False)
 
     class Tts(TtsFalso):
@@ -367,7 +369,8 @@ def test_streaming_del_llm_la_voz_empieza_antes_que_el_final_y_la_tarjeta_espera
     state = mock.Mock(get=lambda: estado["v"], cambiar=lambda v: estado.update(v=v))
     profesor = mock.Mock(modo_conv=False, ultima_frase_objetivo=None)
     profesor.esta_activo.return_value = True
-    brain = mock.Mock(profesor=profesor, ultimo_turno_ts=0.0, asunto_cerrado=False)
+    brain = mock.Mock(profesor=profesor, ultimo_turno_ts=0.0, asunto_cerrado=False,
+                      _emitir_desactivar_sensei=False)
 
     def responder(texto, pron_contexto=None, on_frase=None):
         on_frase("【こんにちは】, Laura. Primera frase.", False)
@@ -502,7 +505,8 @@ def test_listener_pasa_la_espera_de_la_animacion_solo_al_saludo_de_entrada():
         profesor = mock.Mock(modo_conv=False, ultima_frase_objetivo=None, entrada_ts=1000.0)
         activo = {"v": estaba_activo}
         profesor.esta_activo.side_effect = lambda: activo["v"]   # cambia al responder, como en la realidad
-        brain = mock.Mock(profesor=profesor, ultimo_turno_ts=0.0, asunto_cerrado=False)
+        brain = mock.Mock(profesor=profesor, ultimo_turno_ts=0.0, asunto_cerrado=False,
+                      _emitir_desactivar_sensei=False)
         brain.responder.side_effect = lambda *a, **k: (activo.update(v=ahora_activo), ("Modo Sensei activado!", False))[1]
         recibido = {}
 
@@ -523,9 +527,9 @@ def test_listener_pasa_la_espera_de_la_animacion_solo_al_saludo_de_entrada():
     assert turno(False, False) is None                              # no entró: sin espera
 
 
-def test_salir_del_sensei_la_cara_vuelve_antes_de_la_despedida_y_la_voz_espera():
-    """Al salir, `modo_sensei` false sale antes de que suene la despedida, y la voz
-    espera SENSEI_SALIDA_SEG desde ese momento (la cara tarda en pasar a la normal)."""
+def test_salir_del_sensei_se_despide_con_la_cara_sensei_y_luego_sale():
+    """Al salir: primero baja la pizarra (`sensei_pizarra_fuera`), la voz espera SENSEI_SALIDA_SEG
+    y se despide con la cara sensei, y solo DESPUÉS de hablar sale `modo_sensei` false (la animación)."""
     from core import listener as mod
 
     orden, marcas = [], {}
@@ -534,14 +538,16 @@ def test_salir_del_sensei_la_cara_vuelve_antes_de_la_despedida_y_la_voz_espera()
     activo = {"v": True}
     profesor = mock.Mock(modo_conv=False, ultima_frase_objetivo=None)
     profesor.esta_activo.side_effect = lambda: activo["v"]
-    brain = mock.Mock(profesor=profesor, ultimo_turno_ts=0.0, asunto_cerrado=False)
+    brain = mock.Mock(profesor=profesor, ultimo_turno_ts=0.0, asunto_cerrado=False,
+                      _emitir_desactivar_sensei=False)
     socketio = mock.Mock()
     socketio.emit.side_effect = lambda ev, *a, **k: orden.append(ev)
 
-    def responder(*a, **k):   # como Brain: apaga el modo y emite el evento antes de devolver la despedida
+    def responder(*a, **k):   # como Brain: apaga el modo, manda bajar la pizarra y deja la salida pendiente
         activo["v"] = False
-        socketio.emit("modo_sensei", {"activo": False})
-        brain.salida_ts = marcas["emitido"] = time.monotonic()
+        socketio.emit("sensei_pizarra_fuera", {})
+        brain.salida_ts = marcas["pizarra"] = time.monotonic()
+        brain._emitir_desactivar_sensei = True
         return "Hasta luego, Laura.", False
     brain.responder.side_effect = responder
 
@@ -557,9 +563,10 @@ def test_salir_del_sensei_la_cara_vuelve_antes_de_la_despedida_y_la_voz_espera()
     v.recorder = mock.Mock(record_vad=lambda timeout_inicio_seg=0: "a.wav")
     v.stt = mock.Mock()
     v.brain, v.tts, v.state, v.socketio = brain, Tts(), state, socketio
-    with mock.patch.object(mod, "transcribir_para_turno", return_value=("quiero salir del modo sensei", None)), \
-            mock.patch.object(mod, "SENSEI_SALIDA_SEG", 0.3):
+    with mock.patch.object(mod, "transcribir_para_turno", return_value=("quiero salir del modo sensei", None)),             mock.patch.object(mod, "SENSEI_SALIDA_SEG", 0.3):
         v._ciclo_voz()
-    assert orden.index("modo_sensei") < orden.index("suena")
-    assert marcas["suena"] - marcas["emitido"] >= 0.25     # la voz espera (margen por la resolución del reloj)
+    assert orden.index("sensei_pizarra_fuera") < orden.index("suena") < orden.index("modo_sensei")
+    assert marcas["suena"] - marcas["pizarra"] >= 0.25     # la voz espera a que baje la pizarra
     assert orden.count("modo_sensei") == 1
+    assert "sensei_japones" not in orden                   # y la pizarra no vuelve a salir en la despedida
+    assert brain._emitir_desactivar_sensei is False

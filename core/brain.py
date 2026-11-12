@@ -54,8 +54,11 @@ class Brain:
         self.profesor = ProfesorJapones(
             self.jap_memory, SenseiProvider(), self.memory, self.socketio
         )
-        # Momento en que se sale del modo sensei: la voz de la despedida espera (listener/app).
+        # Al salir del modo sensei: salida_ts = cuándo se mandó bajar la pizarra (la voz de la
+        # despedida espera a que baje) y _emitir_desactivar_sensei = falta la animación de
+        # salida (listener/app la mandan DESPUÉS de hablar, para despedirse con la cara sensei).
         self.salida_ts = 0.0
+        self._emitir_desactivar_sensei = False
         # Momento del último turno (pregunta o respuesta). Lo usa el filtro de
         # alucinación de Whisper en transcribir_para_turno.
         self.ultimo_turno_ts = 0.0
@@ -90,9 +93,11 @@ class Brain:
         if any(f in _msg for f in TRIGGERS_SALIR_SENSEI):
             if self.profesor.esta_activo():
                 self.profesor.salir()
-                # La cara vuelve a la normal ANTES de que Kaito se despida
-                self.socketio.emit("modo_sensei", {"activo": False})
+                # 1) La pizarra baja y la cara vuelve al frente, aún con la cara sensei
+                self.socketio.emit("sensei_pizarra_fuera", {})
                 self.salida_ts = time.monotonic()
+                # 2) Kaito se despide; 3) y solo entonces la animación de salida (modo_sensei false)
+                self._emitir_desactivar_sensei = True
                 return random.choice(DESPEDIDAS), False
 
         _triggers_entrar = ["sensei", "entrar en modo", "entra en modo", "activar modo", "en modo",
