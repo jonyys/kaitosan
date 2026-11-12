@@ -139,6 +139,8 @@ class ProfesorJapones:
     # (transcribir_para_turno): False = evalúa pronunciación cuando toca.
     modo_conv = False
     juez = staticmethod(juez_cumple)  # los tests lo cambian por None
+    # Turno «en español» que puede ser japonés mal transcrito (ver _NOTA_ROMAJI).
+    juez_romaji = staticmethod(lambda cd, m, fase: juez_cumple(cd, m, fase, romaji=True))
 
     @staticmethod
     def _clave_juez(texto):
@@ -357,27 +359,9 @@ class ProfesorJapones:
             return self._fallo(cd, "Laura ha mezclado: lo que sabe en japonés y en español lo que le falta. "
                     "Dile en media frase que la parte en japonés va bien, dale en japonés solo "
                     "lo que dijo en español (corto) y pídele que diga la frase entera en japonés.")
-        # Solo si hay japonés: con un mensaje en español no hay nada que juzgar (y el
-        # juez cuesta ~1 s por turno).
         if _RE_JP_CHAR.search(mensaje) and usa_patron(
                 cd, mensaje, juez=lambda c, m: self._juzgar(c, m, st["fase"])):
-            st["aciertos"] += 1
-            st["fallos"] = 0
-            if st["fase"] == "practicar" and st["aciertos"] >= ACIERTOS_PRACTICA:
-                st.update(fase="tarea", aciertos=0)
-                return ("Ha acertado. Celébralo en media frase, con calidez y sin repetir "
-                        "fórmulas. Luego: " + tarea(cd))
-            meta = ACIERTOS_ANTIGUO if st.get("tipo") == "antiguo" else ACIERTOS_TAREA
-            if st["fase"] == "tarea" and st["aciertos"] >= meta:
-                return (f"Felicítala: ya sabe hacer esto: {cd['texto']}. "
-                        + self._cerrar_cd(cd, "conseguido"))
-            otra = ("plantéale otra situación distinta y corta, inventada por ti, en la que tenga que: "
-                    + que_hacer(cd) if st["fase"] == "tarea"
-                    else "pídele otra frase con lo mismo, sobre otro tema. " + PEDIR_FRASE)
-            return (f"Ha acertado. Celébralo en media frase, con calidez y sin repetir fórmulas, "
-                    f"y {otra}, sin darle la respuesta. Lo que dice Laura viene de reconocimiento "
-                    "de voz y puede estar mal transcrito: NO corrijas nada más (ni partículas "
-                    "ni palabras): la corrección de conjugación ya la hace el programa.")
+            return self._acierto(cd)
         if _RE_JP_CHAR.search(mensaje):
             return self._fallo(cd, "Lo que ha dicho Laura aún no cumple lo de hoy "
                     f"({cd['texto']}): o no lo usa, o falla justo en eso. Responde a lo que dice en "
@@ -385,12 +369,40 @@ class ProfesorJapones:
                     "lo ha usado, anímala a hacerlo, sin darle la frase hecha.")
         if _RE_NO_SE.search(mensaje):
             return self._fallo(cd, self._ayuda(cd))
+        # «En español» sin preguntar nada: puede ser su respuesta en japonés que Whisper
+        # tomó por español («Ohio por la mañana, con Bangwa por la noche»).
+        # Las conjugaciones (te/ta/…) no se pueden juzgar sobre letras mal transcritas.
+        if ("?" not in mensaje and "¿" not in mensaje
+                and cd.get("patron") not in ("te", "ta", "tekudasai", "llano")
+                and self.juez_romaji(cd, mensaje, st["fase"])):
+            return self._acierto(cd)
         if st["fase"] != "tarea":
             vuelta = "pídele una frase con lo de hoy. " + PEDIR_FRASE
         else:  # la MISMA situación, no una nueva en cada turno
             vuelta = "vuelve a plantearle la misma situación que le planteaste, sin cambiarla."
         return ("Laura habla en español: responde a lo que dice o pregunta, corto (si pregunta "
                 f"algo de japonés, explícaselo). Luego retoma: {vuelta}")
+
+    def _acierto(self, cd):
+        """Laura ha hecho lo de hoy: cuenta el acierto y dice qué toca después."""
+        st = self.clase
+        st["aciertos"] += 1
+        st["fallos"] = 0
+        if st["fase"] == "practicar" and st["aciertos"] >= ACIERTOS_PRACTICA:
+            st.update(fase="tarea", aciertos=0)
+            return ("Ha acertado. Celébralo en media frase, con calidez y sin repetir "
+                    "fórmulas. Luego: " + tarea(cd))
+        meta = ACIERTOS_ANTIGUO if st.get("tipo") == "antiguo" else ACIERTOS_TAREA
+        if st["fase"] == "tarea" and st["aciertos"] >= meta:
+            return (f"Felicítala: ya sabe hacer esto: {cd['texto']}. "
+                    + self._cerrar_cd(cd, "conseguido"))
+        otra = ("plantéale otra situación distinta y corta, inventada por ti, en la que tenga que: "
+                + que_hacer(cd) if st["fase"] == "tarea"
+                else "pídele otra frase con lo mismo, sobre otro tema. " + PEDIR_FRASE)
+        return (f"Ha acertado. Celébralo en media frase, con calidez y sin repetir fórmulas, "
+                f"y {otra}, sin darle la respuesta. Lo que dice Laura viene de reconocimiento "
+                "de voz y puede estar mal transcrito: NO corrijas nada más (ni partículas "
+                "ni palabras): la corrección de conjugación ya la hace el programa.")
 
     def _charla_guiada(self):
         """Modo libre: charla que, cada LIBRE_TURNOS_TEMA turnos, empuja a Laura a usar

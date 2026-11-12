@@ -41,12 +41,19 @@ _PROMPT_JUEZ = (
     "{criterio} NO cumple si solo menciona una "
     "palabra del tema, habla de otra cosa o no hace lo que pide el objetivo. NO cumple tampoco si "
     "falla justo en lo que se enseña (la partícula, forma o expresión clave del objetivo). Fuera de "
-    "eso, no exijas perfección gramatical ni un vocabulario concreto. Responde solo JSON: {{\"cumple\": true}} o {{\"cumple\": false}}."
+    "eso, no exijas perfección gramatical ni un vocabulario concreto.{romaji} Responde solo JSON: {{\"cumple\": true}} o {{\"cumple\": false}}."
 )
+# Logs de la Pi (12-nov): «ohayō por la mañana, konbanwa por la noche…» → Whisper lo tomó
+# por español y escribió «Ohio por la mañana, con Bangwa por la noche…». Era correcto.
+_NOTA_ROMAJI = (
+    "\nOJO: el reconocimiento lo ha tomado por español, así que las palabras japonesas llegan "
+    "escritas como si fueran españolas (p. ej. «Ohio» u «o fallo» = おはよう, «con Bangwa» = "
+    "こんばんは, «Yasumi» = おやすみ, «con un chihuahua» = こんにちは). Si se reconocen en ella las "
+    "palabras japonesas que pide el objetivo, cumple aunque el resto esté en español.")
 _juez_prov = None
 
 
-def juez_cumple(cd, mensaje, fase="tarea"):
+def juez_cumple(cd, mensaje, fase="tarea", romaji=False):
     """¿Cumple el mensaje lo que pide el objetivo? Un modelo pequeño responde sí/no
     (~1 s). Medido sobre 387 frases: 4 falsos negativos y 15 falsos positivos, frente
     a 75 y 122 con palabras clave. None si no hay clave o falla → vale la comprobación
@@ -66,7 +73,8 @@ def juez_cumple(cd, mensaje, fase="tarea"):
         else:  # práctica: basta con usar lo que se enseña en una frase suya
             tarea, criterio = "", "usa lo que se enseña en una frase suya, por sencilla que sea."
         p = _PROMPT_JUEZ.format(texto=cd["texto"], explicacion=cd.get("explicacion", ""),
-                                tarea=tarea, criterio=criterio, msg=mensaje)
+                                tarea=tarea, criterio=criterio, msg=mensaje,
+                                romaji=_NOTA_ROMAJI if romaji else "")
         r = _juez_prov.completar([{"role": "user", "content": p}], max_tokens=30, temperature=0,
                                  response_format={"type": "json_object"}, reasoning_effort="off")
         return bool(json.loads(r[r.index("{"):r.rindex("}") + 1])["cumple"])

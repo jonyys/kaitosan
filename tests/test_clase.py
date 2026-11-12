@@ -139,6 +139,20 @@ def test_no_se_ayuda_en_vez_de_repetir_y_no_llama_al_juez_en_español():
     assert "no se acuerda" in out and p.clase["fase"] == "practicar"
 
 
+def test_japones_que_whisper_tomo_por_español_cuenta():
+    """Logs de la Pi (12-nov): «ohayō por la mañana, konbanwa por la noche y oyasumi antes
+    de dormir» llegó como «Ohio por la mañana, con Bangwa…» y Kaito repetía la tarea."""
+    p = ProfesorJapones(MagicMock(), MagicMock(), MagicMock(), MagicMock())
+    p.activo = True
+    vistos = []
+    p.juez_romaji = lambda cd, m, fase: vistos.append(m) or True
+    p.clase = {"cd": "saludos_saludar", "fase": "tarea", "tipo": "nuevo", "aciertos": 0, "fallos": 0}
+    p._instruccion("Ohio por la mañana, con Bangwa por la noche y Yasumi antes de dormir.")
+    assert p.clase["aciertos"] == 1 and len(vistos) == 1
+    p._instruccion("¿Y al mediodía qué se dice?")   # una pregunta no va al juez
+    assert len(vistos) == 1 and p.clase["aciertos"] == 1
+
+
 def test_silencio_no_se_convierte_en_acierto():
     """Logs de la Pi: Laura callada → Whisper «.» → Azure silencio → Whisper-ja inventó
     «ご視聴ありがとうございました» y contó como acierto."""
