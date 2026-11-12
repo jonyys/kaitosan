@@ -51,6 +51,10 @@ from core.config import (
 )
 
 MAX_TURNOS = 8  # pares user/assistant conservados en el contexto del LLM
+# Laura dice que no sabe / no se acuerda / pide ayuda (en español): hay que ayudarla.
+_RE_NO_SE = re.compile(
+    r"\bno (lo )?s[eé]\b|no me acuerdo|no recuerdo|no entiendo|expl[ií]ca|ay[uú]da|"
+    r"c[oó]mo se (hace|usa)|no s[eé] c[oó]mo", re.IGNORECASE)  # «cómo se dice X» es solo vocabulario: no cuenta
 # Todos los can-dos con datos de clase, por id (la cola puede cruzar unidades).
 _POR_ID = {cd["id"]: cd for u in CURRICULUM for cd in u.get("can_dos", [])
            if cd.get("explicacion") and cd.get("tarea")}
@@ -347,7 +351,10 @@ class ProfesorJapones:
             return self._fallo(cd, "Laura ha mezclado: lo que sabe en japonés y en español lo que le falta. "
                     "Dile en media frase que la parte en japonés va bien, dale en japonés solo "
                     "lo que dijo en español (corto) y pídele que diga la frase entera en japonés.")
-        if usa_patron(cd, mensaje, juez=lambda c, m: self._juzgar(c, m, st["fase"])):
+        # Solo si hay japonés: con un mensaje en español no hay nada que juzgar (y el
+        # juez cuesta ~1 s por turno).
+        if _RE_JP_CHAR.search(mensaje) and usa_patron(
+                cd, mensaje, juez=lambda c, m: self._juzgar(c, m, st["fase"])):
             st["aciertos"] += 1
             st["fallos"] = 0
             if st["fase"] == "practicar" and st["aciertos"] >= ACIERTOS_PRACTICA:
@@ -358,8 +365,8 @@ class ProfesorJapones:
             if st["fase"] == "tarea" and st["aciertos"] >= meta:
                 return (f"Felicítala: ya sabe hacer esto: {cd['texto']}. "
                         + self._cerrar_cd(cd, "conseguido"))
-            otra = ("plantéale otra situación distinta, inventada por ti, en la que tenga que "
-                    "(todo de una vez, no por partes): " + que_hacer(cd) if st["fase"] == "tarea"
+            otra = ("plantéale otra situación distinta y corta, inventada por ti, en la que tenga que: "
+                    + que_hacer(cd) if st["fase"] == "tarea"
                     else "pídele otra frase con lo mismo, sobre otro tema (sin repetir «dime una frase tuya»)")
             return (f"Ha acertado. Celébralo en media frase, con calidez y sin repetir fórmulas, "
                     f"y {otra}, sin darle la respuesta. Lo que dice Laura viene de reconocimiento "
@@ -370,12 +377,27 @@ class ProfesorJapones:
                     f"({cd['texto']}): o no lo usa, o falla justo en eso. Responde a lo que dice en "
                     "una frase; si se ha equivocado en lo de hoy, corrígeselo con el porqué; si no "
                     "lo ha usado, anímala a hacerlo, sin darle la frase hecha.")
+        if _RE_NO_SE.search(mensaje):
+            return self._fallo(cd, self._ayuda(cd))
         if st["fase"] != "tarea":
             vuelta = "pídele una frase suya con lo de hoy."
-        else:
-            vuelta = tarea(cd) if st.get("tipo", "nuevo") == "nuevo" else tarea_nueva(cd)
+        else:  # la MISMA situación, no una nueva en cada turno
+            vuelta = "vuelve a plantearle la misma situación que le planteaste, sin cambiarla."
         return ("Laura habla en español: responde a lo que dice o pregunta, corto (si pregunta "
                 f"algo de japonés, explícaselo). Luego retoma: {vuelta}")
+
+    def _ayuda(self, cd):
+        """Laura dice que no sabe, no se acuerda o pide que se lo expliquen. Un profesor
+        da primero lo que falta y simplifica; si era un repaso, vuelve a explicarlo."""
+        st = self.clase
+        if st.get("tipo") in ("pendiente", "antiguo") and st["fase"] == "tarea":
+            st.update(fase="practicar", aciertos=0)  # no se acuerda: se vuelve a presentar
+            return ("Laura no se acuerda de esto. Empieza por la palabra o frase que le falte, "
+                    "en japonés y en español, y vuelve a explicárselo con calma. "
+                    + presentar(cd))
+        return ("Laura no sabe cómo hacerlo. Contesta primero a lo que pregunta: dale TÚ la palabra "
+                "o la frase que le falte (en japonés, con su significado). Luego simplifica: "
+                "pídele UNA sola cosa corta, no varias.")
 
     # ── Turno de conversación ─────────────────────────────────────────────────
 

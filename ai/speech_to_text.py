@@ -300,6 +300,10 @@ def transcribir_para_turno(stt: SpeechToText, archivo: str, *, sensei_activo: bo
     texto, pron = _ruta_transcripcion(
         stt, archivo, sensei_activo=sensei_activo, modo_conv=modo_conv,
         espera_japones=espera_japones, al_oir=al_oir)
+    if sensei_activo and re.fullmatch(r"\s*(thank you|thanks|thank you for watching|you)[.!\s]*",
+                                      texto or "", re.IGNORECASE):
+        print(f"🙅 Ignorada alucinación de Whisper en sensei: «{texto}»")
+        return "", None
     if (texto and segundos_desde_turno is not None
             and segundos_desde_turno > STT_AGRADECIMIENTO_TIMEOUT_SEG
             and _es_agradecimiento_corto(texto)):

@@ -112,8 +112,9 @@ def presentar(cd):
 
 def tarea(cd):
     return (f"Plantéale esta tarea EN ESPAÑOL, empezando directamente por la situación (nada de «la tarea es»), haciendo tú tu parte, sin "
-            f"darle la respuesta ni un ejemplo. {cd['tarea']} Pídeselo todo de una vez, no por "
-            "partes. Ella contesta en japonés.")
+            f"darle la respuesta ni un ejemplo. {cd['tarea']} Todo en 2 frases cortas como máximo, "
+            "y pídele lo que dice «Laura tiene que», sin añadir más cosas. Háblale a ella de tú (nunca "
+            "digas «Laura tiene que»: eso es para ti). Ella contesta en japonés.")
 
 
 def que_hacer(cd):
@@ -125,6 +126,6 @@ def que_hacer(cd):
 def tarea_nueva(cd):
     """Tarea de repaso: Kaito no ve la situación original, así que la inventa."""
     return ("Plantéale EN ESPAÑOL una situación cotidiana nueva, inventada por ti, en la que "
-            f"Laura tenga que: {que_hacer(cd)} Empieza directamente por la situación, haz tú tu "
-            "parte y no le des la respuesta ni un ejemplo. Pídeselo todo de una vez, no por "
-            "partes. Ella contesta en japonés.")
+            f"Laura tenga que: {que_hacer(cd)} Situación breve (2 frases como máximo, sin añadir más "
+            "acciones de las que pide). Empieza directamente por ella, haz tú tu parte y no le "
+            "des la respuesta ni un ejemplo. Háblale a ella de tú. Ella contesta en japonés.")

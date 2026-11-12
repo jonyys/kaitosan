@@ -97,7 +97,9 @@ class Brain:
                             "modo estudio", "modo clase", "modo lección", "modo leccion",
                             "hablemos en japonés", "hablemos en japones", "hablar en japones",
                             "dame clase de japonés", "dame clase de japones", "practicar japonés",
-                            "practicar japones"]
+                            "practicar japones",
+                            # cómo suele transcribir Whisper «modo sensei» dicho en español
+                            "modo sencill", "modus", "modo shen", "modo sensey", "modo sensi"]
         if any(f in _msg for f in _triggers_entrar) and not self.profesor.esta_activo():
             self.profesor.entrar()
             return self.profesor.saludo_inicial(), False

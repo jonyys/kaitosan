@@ -223,6 +223,26 @@ class TextToSpeech:
                 out.append((txt, voz))
         return out
 
+    def _partir_largos(self, segmentos: list, maximo: int = 110) -> list:
+        """Un trozo en español largo (~280 caracteres) tardó 7 s en empezar a sonar en la
+        Pi: se parte por frases (. ? ! ;) en trozos de hasta `maximo` caracteres para que
+        suene la primera enseguida. Los japoneses no se tocan."""
+        out = []
+        for txt, voz in segmentos:
+            if voz == self.voice_ja or len(txt) <= maximo:
+                out.append((txt, voz))
+                continue
+            actual = ""
+            for frase in re.split(r"(?<=[.!?;])\s+", txt):
+                if actual and len(actual) + 1 + len(frase) > maximo:
+                    out.append((actual, voz))
+                    actual = frase
+                else:
+                    actual = (actual + " " + frase).strip()
+            if actual:
+                out.append((actual, voz))
+        return out
+
     async def _generar_trozos(self, texto: str, base: str):
         """Genera y procesa los trozos de la respuesta y los va devolviendo EN ORDEN,
         cada uno en cuanto está listo. La descarga de todos arranca a la vez (hasta 4
@@ -230,7 +250,8 @@ class TextToSpeech:
         cuando les toca. `base` es la ruta (sin extensión) de los temporales."""
         from core.config import TTS_PAUSA_SEGMENTOS, TTS_SILENCIO_INICIAL
 
-        segmentos = self._juntar_japones(self._dividir_texto(self._limpiar_markdown(texto)))
+        segmentos = self._partir_largos(
+            self._juntar_japones(self._dividir_texto(self._limpiar_markdown(texto))))
         if not segmentos:
             return
         pausa = TTS_PAUSA_SEGMENTOS  # fija; "más despacio" solo afecta al atempo del japonés

@@ -110,3 +110,37 @@ def test_juez_adelantado_se_aprovecha_si_azure_escribe_lo_mismo():
     p._foco_unidad = next(u for u in CURRICULUM if u["id"] == "te_forma")
     p.precalentar_juez("おきて、たべて")
     assert len(llamadas) == 2
+
+
+def test_no_se_ayuda_en_vez_de_repetir_y_no_llama_al_juez_en_español():
+    """Logs de la Pi: «no sé hacerlo, explícame» → Kaito repetía la tarea con otro escenario."""
+    llamadas = []
+    p = ProfesorJapones(MagicMock(), MagicMock(), MagicMock(), MagicMock())
+    p._foco_unidad = next(u for u in CURRICULUM if u["id"] == "comida_bebida")
+    p.activo = True
+    p.juez = lambda cd, m, fase="tarea": llamadas.append(m) or True
+    # repaso (pendiente) en tarea: no se acuerda → vuelve a presentar y a practicar
+    p.clase = {"cd": "comida_gustos", "fase": "tarea", "tipo": "pendiente", "aciertos": 1, "fallos": 0}
+    out = p._instruccion("No sé hacerlo, ¿me lo explicas?")
+    assert "no se acuerda" in out and "Preséntale" in out
+    assert p.clase["fase"] == "practicar" and p.clase["aciertos"] == 0 and p.clase["fallos"] == 1
+    # tarea nueva: da la palabra y simplifica, sin cambiar de situación
+    p.clase = {"cd": "comida_gustos", "fase": "tarea", "tipo": "nuevo", "aciertos": 0, "fallos": 0}
+    out = p._instruccion("Es que no sé cómo se hace")
+    assert "dale TÚ la palabra" in out and p.clase["fase"] == "tarea"
+    # una duda de vocabulario NO cuenta como fallo
+    p.clase["fallos"] = 0
+    out = p._instruccion("¿Cómo se dice jugar?")
+    assert "misma situación" in out and p.clase["fallos"] == 0
+    assert llamadas == []   # ningún mensaje en español llegó al juez
+
+
+def test_voz_parte_los_trozos_largos_en_español_por_frases():
+    from ai import text_to_speech as mod
+    t = mod.TextToSpeech.__new__(mod.TextToSpeech)
+    t.voice_es, t.voice_ja = "es", "ja"
+    largo = "Primera frase bastante larga para llenar. " * 2 + "Segunda frase de cierre, que sigue. ¿Y una pregunta más?"
+    trozos = t._partir_largos([(largo, "es"), ("ください", "ja")], maximo=110)
+    assert all(len(x) <= 110 for x, v in trozos if v == "es") and len(trozos) >= 3
+    assert " ".join(x for x, v in trozos if v == "es") == largo.strip()   # no se pierde nada
+    assert trozos[-1] == ("ください", "ja")
