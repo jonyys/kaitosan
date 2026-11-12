@@ -41,11 +41,12 @@ from ai.sensei.clase import (
     que_hacer,
     tarea,
     tarea_nueva,
+    MOTIVOS,
     juez_cumple,
     usa_patron,
 )
 from ai.sensei.curriculum import CURRICULUM, unidad_actual
-from ai.sensei.kana import a_kana, normalizar_bloques_jp, normalizar_japones, tiene_espanol
+from ai.sensei.kana import a_kana, bloques_japones, normalizar_bloques_jp, normalizar_japones, tiene_espanol
 from core.config import (
     EXTRACCION_PAUSA_LLAMADAS_SEG,
     EXTRACCION_RETRASO_SEG,
@@ -66,6 +67,16 @@ _RE_NO_SE = re.compile(
     r"ense[ñn]ad|muchas cosas|pidiendo mucho|demasiad|dif[ií]cil", re.IGNORECASE)  # «cómo se dice X» es solo vocabulario: no cuenta
 # Línea final que el LLM añade para la pizarra: «PIZARRA: kana = significado; kana = significado».
 _RE_PIZARRA = re.compile(r"PIZARRA\s*:", re.IGNORECASE)
+
+
+def _texto_pizarra(entradas):
+    """«kana = significado; kana = significado» de una lista [{"jp","es"}] ('' si está vacía)."""
+    return "; ".join(f"{e['jp']} = {e['es']}" if e.get("es") else e["jp"] for e in entradas or [])
+
+
+def _sin_pizarra(texto):
+    """Un mensaje del historial sin su línea PIZARRA (para el juez y para el extractor)."""
+    return _RE_PIZARRA.split(texto or "", 1)[0].strip()
 # Laura quiere pasar a lo siguiente / dice que ya lo sabe: no hay que insistir.
 _RE_SIGUIENTE = re.compile(
     r"pas(a|o|ar|emos)( a| con)? (lo|el|la) siguiente|vamos a lo siguiente|"
@@ -170,12 +181,15 @@ class ProfesorJapones:
         self.session_id = None
         # Veredictos del juez adelantados mientras Azure transcribe (precalentar_juez).
         self._juez_previo = {}
+        self._falta = ""  # lo que el juez dijo que falta en el turno actual (clase.MOTIVOS)
         self._pool_juez = ThreadPoolExecutor(max_workers=2)
         self.mensajes = []          # historial propio de la sesión sensei (solo user/assistant)
         # Lo lee la pizarra (frases_para_card): lista [{"jp","es"}] de la línea PIZARRA del
         # turno, [] si no hay nada que enseñar, None si el modelo no la puso. Azure no la
         # usa como referencia (ver ponytail del módulo).
         self.ultima_frase_objetivo = None
+        # Lo que Laura ve ahora en la pizarra (lista [{"jp","es"}]); Kaito lo sabe en cada turno.
+        self.pizarra_actual = []
         # {"cd": id, "fase": presentar|repaso|practicar|tarea|libre, "aciertos": n}
         self.clase = None
 
@@ -210,25 +224,30 @@ class ProfesorJapones:
         fase = self.clase["fase"]
         clave = (cd["id"], fase, self._clave_juez(texto))
         if clave not in self._juez_previo:
-            self._juez_previo[clave] = self._pool_juez.submit(
-                self.juez, cd, texto, fase, contexto=self._ultimo_kaito())
+            self._juez_previo[clave] = (self._pool_juez.submit(
+                self.juez, cd, texto, fase, contexto=self._ultimo_kaito()), texto)
 
     def oir_japones(self, texto):
         """El STT: este turno, que Whisper tomó por español, oído forzando japonés."""
         self._ja_alt = texto
 
     def _juzgar(self, cd, mensaje, fase):
-        fut = self._juez_previo.get((cd["id"], fase, self._clave_juez(mensaje)))
-        if fut is not None:
+        previo = self._juez_previo.get((cd["id"], fase, self._clave_juez(mensaje)))
+        if previo is not None:
+            fut, texto = previo
             try:
-                return fut.result(timeout=8)
+                v = fut.result(timeout=8)
+                self._falta = MOTIVOS.get(texto, "")
+                return v
             except Exception:  # noqa: BLE001
                 pass
-        return self.juez(cd, mensaje, fase, contexto=self._ultimo_kaito())
+        v = self.juez(cd, mensaje, fase, contexto=self._ultimo_kaito())
+        self._falta = MOTIVOS.get(mensaje, "")
+        return v
 
     def _ultimo_kaito(self):
         """Lo último que dijo Kaito: la situación a la que responde Laura (para el juez)."""
-        return next((m["content"] for m in reversed(self.mensajes) if m["role"] == "assistant"), None)
+        return next((_sin_pizarra(m["content"]) for m in reversed(self.mensajes) if m["role"] == "assistant"), None)
 
     @property
     def espera_japones(self) -> bool:
@@ -242,6 +261,7 @@ class ProfesorJapones:
         self.mensajes = []
         self._juez_previo = {}
         self.ultima_frase_objetivo = None
+        self.pizarra_actual = []
 
         # La unidad abierta se resuelve UNA vez por sesión (no una por turno).
         self._foco_unidad = unidad_actual(self.jap_memory)
@@ -402,6 +422,7 @@ class ProfesorJapones:
     def _instruccion(self, mensaje):
         st, cd = self.clase, self._cd()
         ja_alt, self._ja_alt = self._ja_alt, None  # vale solo para este turno
+        self._falta = ""
         if any(d in mensaje.lower() for d in _DESPEDIDAS_LAURA):
             return ("Laura se despide. Despídete con cariño en una o dos frases, recordándole "
                     "en media frase lo que ha practicado hoy. No le pidas nada más.")
@@ -438,10 +459,7 @@ class ProfesorJapones:
                 cd, mensaje, juez=lambda c, m: self._juzgar(c, m, st["fase"])):
             return self._acierto(cd)
         if _RE_JP_CHAR.search(mensaje):
-            return self._fallo(cd, "Lo que ha dicho Laura aún no cumple lo de hoy "
-                    f"({cd['texto']}): o no lo usa, o falla justo en eso. Responde a lo que dice en "
-                    "una frase (sin decirle que está bien: no lo está); si se ha equivocado en lo de hoy, corrígeselo con el porqué; si no "
-                    "lo ha usado, anímala a hacerlo, sin darle la frase hecha.")
+            return self._fallo(cd, self._instr_no_cumple(cd, mensaje))
         if _RE_NO_SE.search(mensaje):
             return self._fallo(cd, self._ayuda(cd))
         # «En español» sin preguntar nada: puede ser su respuesta en japonés que Whisper
@@ -464,6 +482,20 @@ class ProfesorJapones:
                 "Responde a lo que dice o pregunta, corto (si pregunta algo de japonés, "
                 f"explícaselo). Luego retoma: {vuelta}")
 
+    def _instr_no_cumple(self, cd, mensaje):
+        """El juez dijo que no. Kaito dice SOLO lo que el juez comprobó que falta. Logs (12-nov
+        noche): sin saber qué fallaba, se inventó un «じゃありません» que Laura no dijo y le dio la
+        vuelta al orden de lo que dijo."""
+        if self._falta:
+            causa = f"Lo que falta, comprobado: {self._falta}. Dile SOLO eso, con el porqué en una frase. "
+        else:
+            causa = ("No se ha podido comprobar qué falla: no le señales ningún error concreto; pídele que "
+                     "lo diga otra vez, entero y despacio. ")
+        return (f"Lo que ha dicho Laura aún no cumple lo de hoy ({cd['texto']}). "
+                f"Lo que ha dicho, en su orden: «{a_kana(mensaje)}». " + causa +
+                "No menciones palabras ni errores que no estén en lo que ha dicho, ni cambies su orden. "
+                "Responde a lo que dice en una frase (sin decirle que está bien: no lo está) y sin darle la frase hecha.")
+
     def _acierto(self, cd):
         """Laura ha hecho lo de hoy: cuenta el acierto y dice qué toca después."""
         st = self.clase
@@ -480,7 +512,10 @@ class ProfesorJapones:
         if st["fase"] == "tarea" and st["aciertos"] >= meta:
             return (f"Felicítala: ya sabe hacer esto: {cd['texto']}. "
                     + self._cerrar_cd(cd, "conseguido"))
-        otra = ("plantéale otra situación distinta y corta, inventada por ti, en la que tenga que: "
+        # Logs (12-nov noche): con que_hacer(cd) entero pedía «una cosa que haces cada día Y otra que
+        # nunca haces» en el mismo turno: solo UNA de las acciones.
+        otra = ("plantéale otra situación distinta y corta, inventada por ti, en la que tenga que (pídele "
+                "UNA sola cosa; si aquí hay varias, solo una, y la otra otro día): "
                 + que_hacer(cd) if st["fase"] == "tarea"
                 else "pídele otra frase con lo mismo, sobre otro tema. " + PEDIR_FRASE)
         return (f"Ha acertado. Celébralo en media frase, con calidez y sin repetir fórmulas, "
@@ -601,6 +636,13 @@ class ProfesorJapones:
         usuario = f"{mensaje}\n\n[INSTRUCCIÓN: {instr}]"
         if pron_contexto:
             usuario += f"\n[Pronunciación (no la menciones como sistema): {pron_contexto}]"
+        # Logs (12-nov noche): sin este recordatorio el modelo se olvidaba de la línea PIZARRA en
+        # 14 de 17 turnos. Y así sabe qué está viendo Laura ahora mismo.
+        ahora = _texto_pizarra(self.pizarra_actual)
+        usuario += ("\n[Pizarra (no la menciones como sistema): "
+                    + (f"Laura ve ahora en ella: {ahora}. " if ahora else "ahora está vacía. ")
+                    + "Acaba tu respuesta con la línea PIZARRA de este turno (1 a 3 entradas: lo que le "
+                    "pides ahora con su significado), o «PIZARRA: -» si no hay nada que enseñar.]")
         historial = ([{"role": "system", "content": sistema}]
                      + self.mensajes[-(MAX_TURNOS * 2):]
                      + [{"role": "user", "content": usuario}])
@@ -614,14 +656,20 @@ class ProfesorJapones:
         except Exception as e:
             print(f"❌ Error LLM en modo sensei: {e}")
             return "【ちょっとまってください。】 Un momento, hubo un problema técnico."
-        # La línea PIZARRA no se habla ni se muestra, ni va al historial (el juez lee ese historial).
-        respuesta, self.ultima_frase_objetivo = self._separar_pizarra(respuesta)
-        print(f"🧑‍🏫 Pizarra: {self.ultima_frase_objetivo}")  # para revisar en los logs si cuadra con lo pedido
+        # La línea PIZARRA no se habla ni se muestra, pero SÍ va al historial: así el modelo ve su
+        # propio formato y recuerda qué puso (el juez y el extractor la quitan: _sin_pizarra).
+        respuesta, pizarra = self._separar_pizarra(respuesta)
         respuesta = normalizar_bloques_jp(respuesta)  # japonés suelto → 【】
+        if pizarra is None:  # se olvidó de la línea: la pizarra enseña lo último que dijo en japonés
+            pizarra = [{"jp": b} for b in bloques_japones(respuesta)[-1:]]
+            print("⚠️ El modelo no puso la línea PIZARRA")
+        self.ultima_frase_objetivo = self.pizarra_actual = pizarra
+        print(f"🧑‍🏫 Pizarra: {pizarra}")  # para revisar en los logs si cuadra con lo pedido
         if not respuesta:
             return "Perdona, se me ha cruzado un cable. ¿Me lo repites? 【もういちど おねがいします】"
         self.mensajes.append({"role": "user", "content": mensaje})
-        self.mensajes.append({"role": "assistant", "content": respuesta})
+        self.mensajes.append({"role": "assistant",
+                              "content": f"{respuesta}\nPIZARRA: {_texto_pizarra(pizarra) or '-'}"})
         return respuesta
 
     # ── Memoria de Laura ──────────────────────────────────────────────────────
@@ -841,7 +889,7 @@ class ProfesorJapones:
         lines = []
         for m in (self.mensajes if mensajes is None else mensajes):
             rol = "Profesor" if m["role"] == "assistant" else "Laura"
-            lines.append(f"{rol}: {m['content']}")
+            lines.append(f"{rol}: {_sin_pizarra(m['content'])}")
         return "\n".join(lines)
 
     def _extraer_resumen_basico(self, transcript: str) -> str:

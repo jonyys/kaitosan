@@ -41,7 +41,13 @@ _PROMPT_JUEZ = (
     "{criterio} NO cumple si solo menciona una "
     "palabra del tema, habla de otra cosa o no hace lo que pide el objetivo. NO cumple tampoco si "
     "falla justo en lo que se enseña (la partícula, forma o expresión clave del objetivo). Fuera de "
-    "eso, no exijas perfección gramatical ni un vocabulario concreto.{romaji} Responde solo JSON: {{\"cumple\": true}} o {{\"cumple\": false}}."
+    "eso, no exijas perfección gramatical ni un vocabulario concreto. OJO: el texto viene de "
+    "reconocimiento de voz y suele traer partículas o sílabas de más, de menos o cambiadas (un «と» o un «の» "
+    "suelto que ella no dijo): no las cuentes en su contra ni las menciones en «falta»; valora si en lo "
+    "esencial hace lo que pide.{romaji} Responde solo JSON: {{\"cumple\": true, \"falta\": \"\"}} o {{\"cumple\": false, \"falta\": \"...\"}}. "
+    "«falta»: si NO cumple, en español y en pocas palabras (máximo 12), qué de lo que pide el objetivo "
+    "no hace lo que ha dicho Laura. Describe solo lo que falta o sobra en SU frase; no inventes errores "
+    "que no estén en ella ni le atribuyas palabras que no ha dicho. Vacío si cumple."
 )
 # Logs de la Pi (12-nov): «ohayō por la mañana, konbanwa por la noche…» → Whisper lo tomó
 # por español y escribió «Ohio por la mañana, con Bangwa por la noche…». Era correcto.
@@ -51,9 +57,10 @@ _NOTA_ROMAJI = (
     "こんばんは, «Yasumi» = おやすみ, «con un chihuahua» = こんにちは). Si se reconocen en ella las "
     "palabras japonesas que pide el objetivo, cumple aunque el resto esté en español.")
 _juez_prov = None
+MOTIVOS = {}  # lo que el juez dijo que falta, por mensaje juzgado: profesor._instruccion se lo da a Kaito
 _VEREDICTO = {"type": "json_schema", "json_schema": {"name": "veredicto", "strict": True, "schema": {
-    "type": "object", "properties": {"cumple": {"type": "boolean"}},
-    "required": ["cumple"], "additionalProperties": False}}}
+    "type": "object", "properties": {"cumple": {"type": "boolean"}, "falta": {"type": "string"}},
+    "required": ["cumple", "falta"], "additionalProperties": False}}}
 
 
 def _contexto_juez(kaito):
@@ -63,8 +70,10 @@ def _contexto_juez(kaito):
     if not kaito:
         return ""
     kaito = kaito.strip()[-500:]  # la pregunta va al final
+    # Kaito pide UNA sola cosa por turno: se valora esa, aunque la tarea de arriba tenga varias
     return (f"Lo que acaba de decirle Kaito (la situación o pregunta a la que responde, manda "
-            f"sobre la tarea de arriba): «{kaito}»\n")
+            f"sobre la tarea de arriba; valora solo lo que Kaito le pide ahí: si pide una sola cosa, "
+            f"basta con esa): «{kaito}»\n")
 
 
 def juez_cumple(cd, mensaje, fase="tarea", romaji=False, contexto=None):
@@ -97,12 +106,21 @@ def juez_cumple(cd, mensaje, fase="tarea", romaji=False, contexto=None):
                                 contexto=_contexto_juez(contexto) if fase == "tarea" else "")
         # Esquema obligatorio: con solo «json_object», haiku a veces se ponía a analizar en
         # voz alta las letras españolas y no llegaba al veredicto (2 de cada 4).
-        r = _juez_prov.completar([{"role": "user", "content": p}], max_tokens=30, temperature=0,
+        r = _juez_prov.completar([{"role": "user", "content": p}], max_tokens=90, temperature=0,
                                  response_format=_VEREDICTO, reasoning_effort="off")
         v = re.findall(r'"cumple"\s*:\s*(true|false)', r)
         if not v:
             raise ValueError(f"sin veredicto: {r[:80]!r}")
-        return v[-1] == "true"
+        cumple = v[-1] == "true"
+        f = re.search(r'"falta"\s*:\s*"((?:[^"\\]|\\.)*)"', r)
+        falta = "" if cumple or not f else f.group(1).replace('\\"', '"').strip()
+        MOTIVOS[mensaje] = falta
+        if len(MOTIVOS) > 64:
+            MOTIVOS.pop(next(iter(MOTIVOS)))
+        # Antes el log no guardaba ni el veredicto ni el porqué: un turno bueno rechazado no se podía explicar
+        print(f"⚖️ Juez [{fase}] «{mensaje[:50]}» → {'cumple' if cumple else 'NO cumple'}"
+              + (f" · falta: {falta}" if falta else ""))
+        return cumple
     except Exception as e:  # noqa: BLE001
         print(f"⚠️ Juez de objetivo no disponible ({type(e).__name__}) → palabras clave")
         return None

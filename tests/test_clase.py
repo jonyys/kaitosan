@@ -479,11 +479,77 @@ def test_la_linea_pizarra_no_se_habla_ni_va_en_la_respuesta():
     r = p.responder_turno("hola", on_frase=dichas.append)
     assert dichas == ["Dime 【こんにちは】."] and r == "Dime 【こんにちは】."
     assert p.ultima_frase_objetivo == [{"jp": "こんにちは", "es": "hola"}, {"jp": "ねこ", "es": "gato"}]
-    assert "PIZARRA" not in p.mensajes[-1]["content"]
-    # camino sin streaming, y el modelo se olvida de la línea → None
+    # la línea SÍ va al historial (el modelo ve su formato), pero el juez no la lee
+    assert p.mensajes[-1]["content"].endswith("PIZARRA: こんにちは = hola; ねこ = gato")
+    assert "PIZARRA" not in p._ultimo_kaito() and "PIZARRA" not in p._construir_transcript()
+    # camino sin streaming y «PIZARRA: -» → vacía
     p = _profe(_ProvStream(["Dime algo.\nPIZARRA: -"]))
     assert p.responder_turno("hola") == "Dime algo." and p.ultima_frase_objetivo == []
+    # el modelo se olvida de la línea: la pizarra enseña lo último que dijo en japonés
     p = _profe(_ProvStream(["Dime algo."]))
-    p.ultima_frase_objetivo = [{"jp": "あ"}]
     p.responder_turno("hola")
-    assert p.ultima_frase_objetivo is None
+    assert p.ultima_frase_objetivo == []
+    p = _profe(_ProvStream(["Di 【ねこ】 otra vez."]))
+    p.responder_turno("hola")
+    assert p.ultima_frase_objetivo == [{"jp": "ねこ"}] and p.mensajes[-1]["content"].endswith("PIZARRA: ねこ")
+
+
+def test_kaito_sabe_que_hay_en_la_pizarra_y_se_le_recuerda_el_formato():
+    vistos = []
+
+    class Prov(_ProvStream):
+        def completar(self, mensajes, **kw):
+            vistos.append(mensajes[-1]["content"])
+            return "Dime hola.\nPIZARRA: こんにちは = hola"
+
+    p = _profe(Prov())
+    p.responder_turno("uno")
+    assert "ahora está vacía" in vistos[0] and "línea PIZARRA" in vistos[0]
+    p.responder_turno("dos")
+    assert "Laura ve ahora en ella: こんにちは = hola" in vistos[1]
+    assert p.pizarra_actual == [{"jp": "こんにちは", "es": "hola"}]
+    # lo que él mismo puso va en el historial, para que no pierda el formato
+    assert any("PIZARRA: こんにちは = hola" in m["content"] for m in p.mensajes if m["role"] == "assistant")
+
+
+def test_el_juez_devuelve_el_motivo(monkeypatch):
+    import ai.sensei.clase as clase
+
+    class Prov:
+        def completar(self, mensajes, **kw):
+            return '{"cumple": false, "falta": "solo dice el \\"verbo\\""}'
+
+    monkeypatch.setenv("JUEZ_MODELO", "x/y")
+    monkeypatch.setenv("OPENROUTER_API_KEY", "k")
+    monkeypatch.setattr(clase, "_juez_prov", Prov())
+    cd = {"texto": "t", "explicacion": "e", "tarea": "Laura tiene que: saludar"}
+    assert clase.juez_cumple(cd, "のみます", "tarea") is False
+    assert clase.MOTIVOS["のみます"] == 'solo dice el "verbo"'
+
+
+def test_si_el_juez_dice_que_no_kaito_solo_dice_lo_que_falta_y_en_el_orden_dicho():
+    """12-nov noche: Kaito le atribuyó a Laura un «じゃありません» que no dijo y le dio la vuelta
+    al orden de «のみます … のみません»."""
+    import ai.sensei.clase as clase
+    p = _profe(_ProvStream())
+    p.clase = {"cd": "desumasu_rutina", "fase": "tarea", "aciertos": 0, "fallos": 0, "tipo": "nuevo", "fallos_cd": 1}
+
+    def juez(cd, m, fase, contexto=None):
+        clase.MOTIVOS[m] = "solo dice el verbo, sin lo que hace"
+        return False
+    p.juez = juez
+    instr = p._instruccion("私はコーヒーを飲みます。お酒を飲みません。")
+    assert "Lo que falta, comprobado: solo dice el verbo" in instr
+    assert instr.index("のみます") < instr.index("のみません")      # en el orden en que lo dijo, en kana
+    assert "No menciones palabras ni errores que no estén en lo que ha dicho" in instr
+    # sin motivo (el juez no lo da): no señala ningún error concreto
+    p.juez = lambda cd, m, fase, contexto=None: clase.MOTIVOS.pop(m, None) or False
+    assert "ningún error concreto" in p._instruccion("私はコーヒーを飲みます。")
+
+
+def test_tras_un_acierto_en_la_tarea_pide_solo_una_cosa():
+    """12-nov noche: pedía «una cosa que haces cada día Y otra que nunca haces» en el mismo turno."""
+    p = ProfesorJapones(MagicMock(), MagicMock(), MagicMock(), MagicMock())
+    cd = {"id": "x", "texto": "t", "tarea": "Situación: s. Laura tiene que: contar lo de cada día y una que nunca haces."}
+    p.clase = {"cd": "x", "fase": "tarea", "tipo": "nuevo", "aciertos": 0, "fallos": 0, "fallos_cd": 1}  # con fallos: meta 2
+    assert "UNA sola cosa" in p._acierto(cd)
