@@ -10,6 +10,8 @@ import re
 import subprocess
 import threading
 import time as tmod
+import collections
+import queue
 
 # Cualquier carácter japonés (kana o kanji).
 JP_CHAR = r'[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]'
@@ -210,36 +212,64 @@ class TextToSpeech:
             return out_path
         return seg_path  # si ffmpeg falla, seguimos con el original
 
+    def _juntar_japones(self, segmentos: list) -> list:
+        """Trozos japoneses seguidos (【を】 【ください】) → una sola petición: cada
+        petición a edge-tts cuesta ~0,7 s y así se ahorran las de los trozos cortos."""
+        out = []
+        for txt, voz in segmentos:
+            if out and voz == self.voice_ja and out[-1][1] == self.voice_ja:
+                out[-1] = (out[-1][0] + "、" + txt, voz)
+            else:
+                out.append((txt, voz))
+        return out
+
+    async def _generar_trozos(self, texto: str, base: str):
+        """Genera y procesa los trozos de la respuesta y los va devolviendo EN ORDEN,
+        cada uno en cuanto está listo. La descarga de todos arranca a la vez (hasta 4
+        simultáneas), así el primero suena enseguida y los demás ya están hechos
+        cuando les toca. `base` es la ruta (sin extensión) de los temporales."""
+        from core.config import TTS_PAUSA_SEGMENTOS, TTS_SILENCIO_INICIAL
+
+        segmentos = self._juntar_japones(self._dividir_texto(self._limpiar_markdown(texto)))
+        if not segmentos:
+            return
+        pausa = TTS_PAUSA_SEGMENTOS  # fija; "más despacio" solo afecta al atempo del japonés
+        sem = asyncio.Semaphore(4)
+
+        async def generar(i, txt, voz):
+            async with sem:
+                ruta = f"{base}_seg{i}.mp3"
+                await self._generar_audio_segmento(txt, voz, ruta)
+                return ruta
+
+        tareas = [asyncio.create_task(generar(i, t, v)) for i, (t, v) in enumerate(segmentos)]
+        ultimo = len(segmentos) - 1
+        try:
+            for i, (txt, voz) in enumerate(segmentos):
+                ruta = await tareas[i]
+                yield await asyncio.to_thread(
+                    self._procesar_segmento, ruta,
+                    es_japones=(voz == self.voice_ja),
+                    trim_inicio=(i != 0),          # el primer trozo conserva su arranque
+                    trim_fin=(i != ultimo),        # el último conserva su cola
+                    pausa_final=(pausa if i != ultimo else 0.0),
+                    silencio_inicial=(TTS_SILENCIO_INICIAL if i == 0 else 0.0),
+                )
+        finally:
+            for t in tareas:
+                t.cancel()
+            await asyncio.gather(*tareas, return_exceptions=True)
+
     async def _generar_audio_completo(self, texto: str, tmp_path: str):
         """
         Genera el audio final uniendo los segmentos español y japonés.
         """
-        from core.config import TTS_PAUSA_SEGMENTOS, TTS_SILENCIO_INICIAL
-
-        texto = self._limpiar_markdown(texto)
-        segmentos = self._dividir_texto(texto)
-
-        if not segmentos:
-            return
-
-        # La pausa entre trozos es fija; "más despacio" solo afecta al atempo del japonés.
-        pausa = TTS_PAUSA_SEGMENTOS
-
-        # Generar y procesar cada segmento por separado
         seg_paths = []
-        ultimo = len(segmentos) - 1
-        for i, (txt, voz) in enumerate(segmentos):
-            seg_path = tmp_path.replace(".mp3", f"_seg{i}.mp3")
-            await self._generar_audio_segmento(txt, voz, seg_path)
-            seg_path = self._procesar_segmento(
-                seg_path,
-                es_japones=(voz == self.voice_ja),
-                trim_inicio=(i != 0),          # el primer trozo conserva su arranque
-                trim_fin=(i != ultimo),        # el último conserva su cola
-                pausa_final=(pausa if i != ultimo else 0.0),
-                silencio_inicial=(TTS_SILENCIO_INICIAL if i == 0 else 0.0),
-            )
+        async for seg_path in self._generar_trozos(texto, tmp_path.replace(".mp3", "")):
             seg_paths.append(seg_path)
+
+        if not seg_paths:
+            return
 
         if len(seg_paths) == 1:
             os.replace(seg_paths[0], tmp_path)
@@ -324,6 +354,9 @@ class TextToSpeech:
                 on_stop()
             return
 
+        if os.getenv("TTS_STREAMING", "1") != "0":  # TTS_STREAMING=0 → como antes
+            return self._hablar_por_trozos(texto, on_start, on_stop)
+
         try:
             print(f"🔊 Hablando: {texto}")
 
@@ -367,6 +400,127 @@ class TextToSpeech:
 
         except Exception as e:
             print(f"❌ Error en TTS: {e}")
+
+    def _cargar_trozo(self, ruta: str) -> np.ndarray:
+        """mp3 de un trozo → audio mono float32 a la frecuencia del altavoz."""
+        data, fs = sf.read(ruta)
+        os.unlink(ruta)
+        if data.dtype != np.float32:
+            data = data.astype(np.float32)
+        if len(data.shape) > 1:
+            data = data.mean(axis=1)
+        if fs != self.sample_rate_device:
+            data = self._convertir_sample_rate(data, orig_sr=fs, target_sr=self.sample_rate_device)
+        return data
+
+    def _hablar_por_trozos(self, texto: str, on_start=None, on_stop=None):
+        """Como hablar(), pero empieza a sonar en cuanto está el primer trozo y
+        reproduce los demás según se generan (ver _generar_trozos)."""
+        cola = queue.Queue()
+        print(f"🔊 Hablando: {texto}")
+        with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as tmp:
+            base = tmp.name.replace(".mp3", "")
+        os.unlink(base + ".mp3")
+
+        def producir():
+            async def correr():
+                async for ruta in self._generar_trozos(texto, base):
+                    if self._callado.is_set():
+                        if os.path.exists(ruta):
+                            os.unlink(ruta)
+                        break
+                    cola.put(self._cargar_trozo(ruta))
+            try:
+                asyncio.run(correr())
+            except Exception as e:  # noqa: BLE001
+                print(f"❌ Error en TTS: {e}")
+            finally:
+                cola.put(None)
+
+        threading.Thread(target=producir, daemon=True).start()
+        try:
+            primero = cola.get()
+            if primero is None or self._callado.is_set():
+                if primero is None:
+                    print("⚠️ TTS: no se generó audio (texto sin contenido hablable)")
+                if on_stop:
+                    on_stop()
+                return
+            if on_start:
+                on_start()
+            self._sonar_por_trozos(primero, cola)
+            if on_stop:
+                on_stop()
+        except Exception as e:  # noqa: BLE001
+            print(f"❌ Error en TTS: {e}")
+
+    def _sonar_por_trozos(self, primero, cola):
+        """Reproduce `primero` y los trozos que lleguen a `cola` (None = no hay más),
+        con UN solo stream de salida; si el siguiente trozo aún no está, suena
+        silencio hasta que llegue. Mueve la boca según lo ya reproducido."""
+        from core.system_settings import volumen_factor
+        vol = volumen_factor()
+        sr = self.sample_rate_device
+        pendientes = collections.deque()
+        estado = {"fin": False, "reproducido": 0, "actual": np.zeros(0, np.float32), "pos": 0}
+        intervalos, acum = [], [0.0]
+
+        def anadir(d):
+            for a, b in self._detectar_intervalos_habla(d):
+                intervalos.append((acum[0] + a, acum[0] + b))
+            acum[0] += len(d) / sr
+            pendientes.append(d * vol)
+
+        anadir(primero)
+        terminado = threading.Event()
+
+        def rellenar(salida, frames, _tiempo, _estado):
+            sale = 0
+            while sale < frames:
+                if estado["pos"] >= len(estado["actual"]):
+                    if pendientes:
+                        estado["actual"], estado["pos"] = pendientes.popleft(), 0
+                        continue
+                    break  # hueco (esperando trozo) o fin
+                n = min(frames - sale, len(estado["actual"]) - estado["pos"])
+                salida[sale:sale + n, 0] = estado["actual"][estado["pos"]:estado["pos"] + n]
+                estado["pos"] += n
+                estado["reproducido"] += n
+                sale += n
+            salida[sale:] = 0
+            if self._callado.is_set() or (sale < frames and estado["fin"] and not pendientes):
+                raise sd.CallbackStop
+
+        stream = sd.OutputStream(
+            samplerate=sr, device=self.device, channels=1,
+            dtype="float32", callback=rellenar, finished_callback=terminado.set,
+        )
+        sio = getattr(self, "socketio", None)
+
+        def control_boca():
+            abierta = False
+            while not terminado.is_set() and not self._callado.is_set():
+                ahora = estado["reproducido"] / sr
+                debe = any(a <= ahora < b for a, b in list(intervalos))
+                if debe != abierta:
+                    sio.emit("boca", {"hablado": debe})
+                    abierta = debe
+                tmod.sleep(0.03)
+            if abierta:
+                sio.emit("boca", {"hablado": False})
+
+        stream.start()
+        if sio:
+            threading.Thread(target=control_boca, daemon=True).start()
+        while True:  # recoge los trozos según llegan
+            d = cola.get()
+            if d is None:
+                break
+            if not self._callado.is_set():
+                anadir(d)
+        estado["fin"] = True
+        terminado.wait()
+        stream.close()
 
     def _convertir_sample_rate(self, audio, orig_sr, target_sr) -> np.ndarray:
         """Convierte sample rate sin librosa."""

@@ -83,3 +83,30 @@ def test_juez_manda_si_responde_y_si_no_valen_las_palabras_clave():
     assert not usa_patron(gustos, "コーヒーが好きです", juez=lambda cd, m: False)
     assert usa_patron(gustos, "コーヒーが好きです", juez=lambda cd, m: None)     # sin juez → clave
     assert not usa_patron(gustos, "お茶をください", juez=lambda cd, m: None)
+
+
+def test_juez_adelantado_se_aprovecha_si_azure_escribe_lo_mismo():
+    """Whisper dice X, el juez ya empieza; si Azure escribe lo mismo (aunque con otra
+    puntuación o en kanji), no se vuelve a preguntar."""
+    llamadas = []
+
+    def juez(cd, m, fase):
+        llamadas.append(m)
+        return True
+
+    p = ProfesorJapones(MagicMock(), MagicMock(), MagicMock(), MagicMock())
+    p._foco_unidad = next(u for u in CURRICULUM if u["id"] == "comida_bebida")
+    p.activo = True
+    p.clase = {"cd": "comida_gustos", "fase": "practicar", "aciertos": 0, "fallos": 0}
+    p.juez = juez
+    p.precalentar_juez("コーヒーが すきです")
+    cd = p._cd()
+    assert p._juzgar(cd, "コーヒーが好きです。", "practicar") is True   # Azure: otro texto, misma frase
+    assert len(llamadas) == 1
+    assert p._juzgar(cd, "さかなが すきです", "practicar") is True     # otra frase: pregunta de nuevo
+    assert len(llamadas) == 2
+    # los objetivos de conjugación no usan juez
+    p.clase["cd"] = "teforma_encadenar"
+    p._foco_unidad = next(u for u in CURRICULUM if u["id"] == "te_forma")
+    p.precalentar_juez("おきて、たべて")
+    assert len(llamadas) == 2

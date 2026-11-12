@@ -20,6 +20,7 @@ import random
 import re
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 
 from ai.prompts import cargar_prompt
@@ -38,7 +39,7 @@ from ai.sensei.clase import (
     usa_patron,
 )
 from ai.sensei.curriculum import CURRICULUM, siguiente_items_nuevos, unidad_actual
-from ai.sensei.kana import normalizar_bloques_jp, normalizar_japones, tiene_espanol
+from ai.sensei.kana import a_kana, normalizar_bloques_jp, normalizar_japones, tiene_espanol
 from core.config import (
     EXTRACCION_PAUSA_LLAMADAS_SEG,
     EXTRACCION_RETRASO_SEG,
@@ -107,6 +108,9 @@ class ProfesorJapones:
         self.activo = False
         self.timer = None
         self.session_id = None
+        # Veredictos del juez adelantados mientras Azure transcribe (precalentar_juez).
+        self._juez_previo = {}
+        self._pool_juez = ThreadPoolExecutor(max_workers=2)
         self.mensajes = []          # historial propio de la sesión sensei (solo user/assistant)
         # Lo leen la cara y el STT (ReferenceText de Azure). Siempre None: Laura
         # produce frases suyas, no repite una dada (ver ponytail del módulo).
@@ -126,6 +130,33 @@ class ProfesorJapones:
     modo_conv = False
     juez = staticmethod(juez_cumple)  # los tests lo cambian por None
 
+    @staticmethod
+    def _clave_juez(texto):
+        """Lo mismo dicho por Whisper y por Azure (con o sin puntuación, kanji o kana)."""
+        return re.sub(r"[\s、。，．,.!?！？]", "", a_kana(normalizar_japones(texto or "")))
+
+    def precalentar_juez(self, texto):
+        """Mientras Azure transcribe, el juez ya valora lo que dijo Whisper. Si Azure
+        escribe lo mismo, el veredicto ya está (ahorra ~1 s); si no, se pregunta de nuevo."""
+        if not self.espera_japones or not texto:
+            return
+        cd = self._cd()
+        if not cd or cd.get("patron") in ("te", "ta", "tekudasai", "llano"):
+            return  # esos los decide el código, sin juez
+        fase = self.clase["fase"]
+        clave = (cd["id"], fase, self._clave_juez(texto))
+        if clave not in self._juez_previo:
+            self._juez_previo[clave] = self._pool_juez.submit(self.juez, cd, texto, fase)
+
+    def _juzgar(self, cd, mensaje, fase):
+        fut = self._juez_previo.get((cd["id"], fase, self._clave_juez(mensaje)))
+        if fut is not None:
+            try:
+                return fut.result(timeout=8)
+            except Exception:  # noqa: BLE001
+                pass
+        return self.juez(cd, mensaje, fase)
+
     @property
     def espera_japones(self) -> bool:
         """Lo lee el STT antes de grabar: en práctica y tarea Laura contesta en
@@ -136,6 +167,7 @@ class ProfesorJapones:
         """Activa el modo sensei y abre una sesión en la BD."""
         self.activo = True
         self.mensajes = []
+        self._juez_previo = {}
         self.ultima_frase_objetivo = None
 
         # La unidad abierta y los ítems nuevos del can-do activo se resuelven UNA
@@ -315,7 +347,7 @@ class ProfesorJapones:
             return self._fallo(cd, "Laura ha mezclado: lo que sabe en japonés y en español lo que le falta. "
                     "Dile en media frase que la parte en japonés va bien, dale en japonés solo "
                     "lo que dijo en español (corto) y pídele que diga la frase entera en japonés.")
-        if usa_patron(cd, mensaje, juez=lambda c, m: self.juez(c, m, st["fase"])):
+        if usa_patron(cd, mensaje, juez=lambda c, m: self._juzgar(c, m, st["fase"])):
             st["aciertos"] += 1
             st["fallos"] = 0
             if st["fase"] == "practicar" and st["aciertos"] >= ACIERTOS_PRACTICA:

@@ -81,6 +81,7 @@ class VoiceListener:
             sensei_activo=self.brain.profesor.esta_activo(),
             modo_conv=self.brain.profesor.modo_conv,
             espera_japones=self.brain.profesor.espera_japones,
+            al_oir=self.brain.profesor.precalentar_juez,
             segundos_desde_turno=time.monotonic() - self.brain.ultimo_turno_ts,
         )
         if not texto:

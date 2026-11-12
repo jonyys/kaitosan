@@ -290,7 +290,7 @@ class SpeechToText:
 
 def transcribir_para_turno(stt: SpeechToText, archivo: str, *, sensei_activo: bool,
                            modo_conv: bool, espera_japones: bool = False,
-                           segundos_desde_turno: float = None):
+                           segundos_desde_turno: float = None, al_oir=None):
     """Transcribe un turno y descarta la alucinación de agradecimiento de Whisper.
 
     Si `segundos_desde_turno` (tiempo desde la última pregunta/respuesta) supera
@@ -299,7 +299,7 @@ def transcribir_para_turno(stt: SpeechToText, archivo: str, *, sensei_activo: bo
     """
     texto, pron = _ruta_transcripcion(
         stt, archivo, sensei_activo=sensei_activo, modo_conv=modo_conv,
-        espera_japones=espera_japones)
+        espera_japones=espera_japones, al_oir=al_oir)
     if (texto and segundos_desde_turno is not None
             and segundos_desde_turno > STT_AGRADECIMIENTO_TIMEOUT_SEG
             and _es_agradecimiento_corto(texto)):
@@ -326,8 +326,10 @@ def _es_pregunta_libre(texto: str) -> bool:
 
 
 def _ruta_transcripcion(stt: SpeechToText, archivo: str, *, sensei_activo: bool,
-                        modo_conv: bool, espera_japones: bool = False):
-    """Enruta la transcripción de un turno.
+                        modo_conv: bool, espera_japones: bool = False, al_oir=None):
+    """Enruta la transcripción de un turno. `al_oir(texto)`, si se pasa, se llama con
+    lo que dijo Whisper justo antes de la llamada a Azure (el profesor lo usa para ir
+    adelantando el veredicto del juez mientras Azure transcribe).
 
     - Sensei y Kaito espera japonés (fases de práctica y tarea): SIEMPRE una
       pasada de Groq Whisper primero, dure lo que dure el audio (un «sí» o un
@@ -358,6 +360,11 @@ def _ruta_transcripcion(stt: SpeechToText, archivo: str, *, sensei_activo: bool,
         if _es_pregunta_libre(crudo) or tiene_espanol(crudo):
             print(f"💬 Español (o mezcla) en turno de práctica, sin puntuar: «{crudo}»")
             return crudo, None
+        if al_oir:
+            try:
+                al_oir(crudo)
+            except Exception as e:  # noqa: BLE001
+                print(f"⚠️ al_oir falló: {e}")
         res = stt.transcribir_con_pronunciacion(archivo)
         if res is not None:
             return res["texto"], res.get("pron")

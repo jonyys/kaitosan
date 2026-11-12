@@ -150,7 +150,7 @@ def test_suena_todo_el_audio_y_rellena_el_final_con_silencio():
     t = _tts(mod)
     audio = np.arange(1, 1001, dtype=np.float32)
     sd = SdFalso()
-    with mock.patch.object(mod, "sd", sd):
+    with mock.patch.object(mod, "sd", sd), mock.patch("core.system_settings.volumen_factor", return_value=1.0):
         t._reproducir_con_control_boca(audio, [])
     sonado = np.concatenate(sd.sonado)[:, 0]
     assert np.array_equal(sonado[:1000], audio)
@@ -237,3 +237,64 @@ def test_callar_antes_de_empezar_no_reproduce():
     with mock.patch.object(mod, "sd", sd):
         t._reproducir_con_control_boca(np.zeros(10, dtype=np.float32), [])
     assert sd.creados == 0
+
+
+# ── Voz por trozos: suena el primero mientras se generan los demás ───────────
+
+def test_juntar_japones_une_solo_los_japoneses_seguidos():
+    from ai import text_to_speech as mod
+    t = _tts(mod)
+    t.voice_es, t.voice_ja = "es", "ja"
+    assert t._juntar_japones([("a", "es"), ("を", "ja"), ("ください", "ja"), ("b", "es"), ("うん", "ja")]) == [
+        ("a", "es"), ("を、ください", "ja"), ("b", "es"), ("うん", "ja")]
+
+
+def test_los_trozos_suenan_en_orden_y_la_voz_empieza_con_el_primero():
+    import numpy as np
+    from ai import text_to_speech as mod
+
+    t = _tts(mod)
+    a = np.full(4800, 0.5, dtype=np.float32)
+    b = np.full(4800, -0.5, dtype=np.float32)
+    cola = __import__("queue").Queue()
+    sd = SdFalso()
+
+    def llega_tarde():
+        time.sleep(0.05)  # el 2.º trozo aún se está generando: suena silencio y luego sigue
+        cola.put(b)
+        cola.put(None)
+
+    threading.Thread(target=llega_tarde, daemon=True).start()
+    with mock.patch.object(mod, "sd", sd), mock.patch("core.system_settings.volumen_factor", return_value=1.0):
+        t._sonar_por_trozos(a, cola)
+    sonado = np.concatenate(sd.sonado)[:, 0]
+    util = sonado[sonado != 0]
+    assert np.array_equal(util, np.concatenate([a, b]))   # ni se pierde ni se repite nada
+    assert sd.creados == 1                                  # un solo stream, sin cortes entre trozos
+
+
+def test_hablar_por_trozos_avisa_al_empezar_y_al_acabar_y_callar_lo_corta():
+    import numpy as np
+    from ai import text_to_speech as mod
+
+    async def trozos(self, texto, base):
+        for i in range(3):
+            yield f"{base}_{i}"
+    llamadas = []
+    t = _tts(mod)
+    t._generar_trozos = lambda texto, base: trozos(t, texto, base)
+    t._cargar_trozo = lambda ruta: np.full(4800, 0.3, dtype=np.float32)
+    sd = SdFalso()
+    with mock.patch.object(mod, "sd", sd), mock.patch("core.system_settings.volumen_factor", return_value=1.0):
+        t._hablar_por_trozos("hola", on_start=lambda: llamadas.append("start"), on_stop=lambda: llamadas.append("stop"))
+    assert llamadas == ["start", "stop"]
+    assert np.concatenate(sd.sonado)[:, 0].tolist().count(np.float32(0.3)) == 3 * 4800
+
+    # sin audio (texto sin nada hablable): solo avisa de que ha parado
+    async def nada(texto, base):
+        return
+        yield
+    llamadas.clear()
+    t._generar_trozos = nada
+    t._hablar_por_trozos("...", on_start=lambda: llamadas.append("start"), on_stop=lambda: llamadas.append("stop"))
+    assert llamadas == ["stop"]

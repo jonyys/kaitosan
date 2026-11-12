@@ -144,6 +144,7 @@ def grabar():
             sensei_activo=brain.profesor.esta_activo(),
             modo_conv=brain.profesor.modo_conv,
             espera_japones=brain.profesor.espera_japones,
+            al_oir=brain.profesor.precalentar_juez,
             segundos_desde_turno=time.monotonic() - brain.ultimo_turno_ts,
         )
 
