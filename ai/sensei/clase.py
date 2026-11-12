@@ -13,7 +13,8 @@ from ai.sensei.curriculum import ITEM_POR_JP
 ACIERTOS_PRACTICA = 2
 ACIERTOS_TAREA = 2
 ACIERTOS_ANTIGUO = 1  # repaso de algo ya dominado: basta con ver que lo recuerda
-NUEVOS_POR_ANTIGUO = 4  # 1 repaso de lo antiguo por cada 4 objetivos nuevos (~20 %)
+LIBRE_TURNOS_TEMA = 3  # en charla libre, cada 3 turnos se guía hacia un can-do ya trabajado
+NUEVOS_POR_ANTIGUO = 4 # 1 repaso de lo antiguo por cada 4 objetivos nuevos (~20 %)
 FALLOS_MAX = 5  # intentos seguidos sin acierto → modelo de respuesta y a lo siguiente
 _RE_JP_CHAR = re.compile(r"[぀-ゟ゠-ヿ一-鿿]")
 

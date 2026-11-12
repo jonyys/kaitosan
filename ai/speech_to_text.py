@@ -196,7 +196,7 @@ class SpeechToText:
             pron = self._resumir_pronunciacion(best, referencia=ref, oido=texto)
             print(f"✅ Transcripción (Azure): {texto}")
             print(f"🗣️  Pronunciación: {pron.replace(chr(10), '  |  ') if pron else 'sin datos de evaluación en la respuesta de Azure'}")
-            return {"texto": texto, "pron": pron}
+            return {"texto": texto, "pron": pron, "conf": best.get("Confidence")}
 
         except Exception as e:
             print(f"❌ Error con Azure Speech: {e}. Uso Groq Whisper.")
@@ -387,6 +387,9 @@ def _ruta_transcripcion(stt: SpeechToText, archivo: str, *, sensei_activo: bool,
                 print(f"⚠️ al_oir falló: {e}")
         res = stt.transcribir_con_pronunciacion(archivo)
         if res is not None:
+            # Línea fija para calibrar luego un umbral: grep "📊 ASR" en los logs de la Pi
+            # (confianza de Azure + lo que oyó Whisper frente a lo que oyó Azure).
+            print(f"📊 ASR conf={res.get('conf')} whisper=«{crudo}» azure=«{res['texto']}»")
             return res["texto"], res.get("pron")
         print("↩️  Azure no disponible → Groq Whisper (ja) de reserva, sin evaluación")
         return stt.transcribir(archivo, idioma="ja"), None

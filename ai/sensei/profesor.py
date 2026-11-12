@@ -31,6 +31,7 @@ from ai.sensei.clase import (
     ACIERTOS_PRACTICA,
     ACIERTOS_TAREA,
     FALLOS_MAX,
+    LIBRE_TURNOS_TEMA,
     NUEVOS_POR_ANTIGUO,
     errores,
     presentar,
@@ -333,8 +334,7 @@ class ProfesorJapones:
             return ("Laura se despide. Despídete con cariño en una o dos frases, recordándole "
                     "en media frase lo que ha practicado hoy. No le pidas nada más.")
         if st["fase"] == "libre" or not cd:
-            return ("Ya ha conseguido todo lo que toca por ahora. Charla con ella de lo que quiera, "
-                    "usando en japonés solo lo que ya sabe.")
+            return self._charla_guiada()
         if st["fase"] in ("presentar", "repaso"):
             return "Responde en una frase a lo que te diga. Luego: " + self._abrir(
                 cd, st.get("tipo") or ("nuevo" if st["fase"] == "presentar" else "pendiente"))
@@ -388,6 +388,28 @@ class ProfesorJapones:
             vuelta = "vuelve a plantearle la misma situación que le planteaste, sin cambiarla."
         return ("Laura habla en español: responde a lo que dice o pregunta, corto (si pregunta "
                 f"algo de japonés, explícaselo). Luego retoma: {vuelta}")
+
+    def _charla_guiada(self):
+        """Modo libre: charla que, cada LIBRE_TURNOS_TEMA turnos, empuja a Laura a usar
+        un can-do ya trabajado (el más antiguo primero), sin examen ni nota."""
+        st = self.clase
+        st["libre_turnos"] = st.get("libre_turnos", 0) + 1
+        base = ("Ya ha conseguido todo lo que toca por ahora. Charla con ella de lo que quiera, "
+                "usando en japonés solo lo que ya sabe.")
+        if (st["libre_turnos"] - 1) % LIBRE_TURNOS_TEMA:
+            return base
+        prog = self._progreso()
+        vistos = set(st.get("charlados", []))
+        viejos = sorted((cd for u in CURRICULUM for cd in u.get("can_dos", [])
+                         if cd["id"] in _POR_ID and cd["id"] not in vistos
+                         and prog.get(cd["id"], {}).get("estado") in ("dominado", "en_progreso")),
+                        key=lambda cd: prog[cd["id"]].get("ultima_sesion") or 0)
+        if not viejos:
+            return base
+        st.setdefault("charlados", []).append(viejos[0]["id"])
+        return (base + f" Lleva la charla hacia algo que le haga usar esto, que ya trabajasteis: "
+                f"{viejos[0]['texto']}. Una pregunta abierta sobre su vida, natural, sin anunciarlo "
+                "como repaso ni examen y sin explicárselo.")
 
     def _ayuda(self, cd):
         """Laura dice que no sabe, no se acuerda o pide que se lo expliquen. Un profesor
@@ -599,7 +621,9 @@ class ProfesorJapones:
         # Determinista, no depende de ningún LLM: cuenta como "usado en sensei"
         # cualquier palabra/gramática de la BD que aparezca en el transcript.
         try:
-            self.jap_memory.marcar_usos_en_sensei(transcript)
+            # solo lo que dice Laura: que Kaito diga una palabra no es que ella la use
+            solo_laura = "\n".join(l for l in transcript.splitlines() if l.startswith("Laura:"))
+            self.jap_memory.marcar_usos_en_sensei(solo_laura)
         except Exception as e:
             print(f"⚠️ Error marcando usos en sensei: {e}")
 

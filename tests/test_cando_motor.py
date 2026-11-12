@@ -311,3 +311,18 @@ def test_tras_5_fallos_da_modelo_y_pasa_al_siguiente():
     assert "varios intentos" in prof._instruccion("これは ちがいます")
     assert prof.clase["cd"] != primero
     assert jm.can_dos_progreso()[primero]["estado"] == "en_progreso"   # parcial: se verá otro día
+
+
+def test_charla_libre_guiada_hacia_lo_antiguo():
+    """En modo libre, cada 3 turnos se guía hacia un can-do ya trabajado, sin repetir."""
+    jm = _jm()
+    prof = _profesor(jm)
+    cds = CURRICULUM[0]["can_dos"]
+    jm.set_can_do(cds[0]["id"], "conseguido", 1)   # en_progreso
+    prof.entrar()
+    if prof.timer:
+        prof.timer.cancel()
+    prof.clase.update(cd=None, fase="libre")
+    out = [prof._instruccion("hola") for _ in range(4)]
+    assert cds[0]["texto"] in out[0] and cds[0]["texto"] not in out[1] + out[2]
+    assert cds[0]["texto"] not in out[3]           # ya charlado: no se repite
