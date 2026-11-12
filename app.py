@@ -94,16 +94,25 @@ def chat():
         respuesta, lento_extra = brain.responder(mensaje)
 
         # Emitir mensaje (sin cambiar estado todavía)
-        socketio.emit("mensaje", {"texto": respuesta})
-        emitir_japones_sensei(respuesta)
+        # Texto y tarjeta salen cuando EMPIEZA la voz (si no, se ven con Kaito callado)
+        mostrado = []
+
+        def mostrar():
+            if mostrado:
+                return
+            mostrado.append(True)
+            socketio.emit("mensaje", {"texto": respuesta})
+            emitir_japones_sensei(respuesta)
 
         # Callback que se ejecuta cuando el audio empieza de verdad
         def al_iniciar_audio():
+            mostrar()
             state.cambiar("speaking")
             socketio.emit("estado", {"estado": "speaking"})
 
         def hablar_y_volver():
             tts.hablar(respuesta, lento_extra=lento_extra, on_start=al_iniciar_audio)
+            mostrar()
             if brain._emitir_desactivar_sensei:
                 brain._emitir_desactivar_sensei = False
                 socketio.emit("modo_sensei", {"activo": False})
@@ -166,16 +175,25 @@ def grabar():
         respuesta, lento_extra = brain.responder(texto, pron_contexto=pron_ctx)
 
         # Emitir mensaje (sin cambiar estado todavía)
-        socketio.emit("mensaje", {"texto": respuesta})
-        emitir_japones_sensei(respuesta)
+        # Texto y tarjeta salen cuando EMPIEZA la voz (si no, se ven con Kaito callado)
+        mostrado = []
+
+        def mostrar():
+            if mostrado:
+                return
+            mostrado.append(True)
+            socketio.emit("mensaje", {"texto": respuesta})
+            emitir_japones_sensei(respuesta)
 
         # Callback que se ejecuta cuando el audio empieza de verdad
         def al_iniciar_audio():
+            mostrar()
             state.cambiar("speaking")
             socketio.emit("estado", {"estado": "speaking"})
 
         def hablar_y_volver():
             tts.hablar(respuesta, lento_extra=lento_extra, on_start=al_iniciar_audio)
+            mostrar()
             if brain._emitir_desactivar_sensei:
                 brain._emitir_desactivar_sensei = False
                 socketio.emit("modo_sensei", {"activo": False})

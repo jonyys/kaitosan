@@ -298,3 +298,38 @@ def test_hablar_por_trozos_avisa_al_empezar_y_al_acabar_y_callar_lo_corta():
     t._generar_trozos = nada
     t._hablar_por_trozos("...", on_start=lambda: llamadas.append("start"), on_stop=lambda: llamadas.append("stop"))
     assert llamadas == ["stop"]
+
+
+def test_texto_y_tarjeta_salen_cuando_empieza_la_voz_no_antes():
+    """Si la tarjeta de kana se ve mientras se genera el audio, Kaito parece colgado."""
+    from core import listener as mod
+
+    orden = []
+    estado = {"v": "idle"}
+    state = mock.Mock(get=lambda: estado["v"], cambiar=lambda v: estado.update(v=v))
+    profesor = mock.Mock(modo_conv=False, ultima_frase_objetivo=None)
+    profesor.esta_activo.return_value = True
+    brain = mock.Mock(profesor=profesor, ultimo_turno_ts=0.0, asunto_cerrado=False,
+                      _emitir_desactivar_sensei=False)
+    brain.responder.return_value = ("【こんにちは】, Laura", False)
+
+    class Tts(TtsFalso):
+        def hablar(self, texto, lento_extra=False, on_start=None):
+            orden.append("generando audio")
+            on_start()
+            orden.append("suena")
+
+    socketio = mock.Mock()
+    socketio.emit.side_effect = lambda ev, *a, **k: orden.append(ev)
+    v = mod.VoiceListener.__new__(mod.VoiceListener)
+    v.recorder = mock.Mock(record_vad=lambda timeout_inicio_seg=0: "a.wav")
+    v.stt = mock.Mock()
+    v.brain, v.tts, v.state, v.socketio = brain, Tts(), state, socketio
+    with mock.patch.object(mod, "transcribir_para_turno", return_value=("hola", None)):
+        v._ciclo_voz()
+    for _ in range(100):  # la voz va en su hilo
+        if "suena" in orden:
+            break
+        time.sleep(0.01)
+    assert orden.index("generando audio") < orden.index("mensaje") < orden.index("suena")
+    assert orden.index("generando audio") < orden.index("sensei_japones")

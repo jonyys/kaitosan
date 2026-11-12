@@ -110,23 +110,34 @@ class VoiceListener:
         # como en modo conversación normal — que se calle y quede en idle hasta
         # el próximo "kaito".
         salio_de_sensei = sensei_estaba_activo and not self.brain.profesor.esta_activo()
-        self.socketio.emit("mensaje", {"texto": respuesta})
-        if self.brain.profesor.esta_activo():
-            # En modo sensei, muestra en la cara la frase objetivo (o los 【…】
-            # sueltos si no hay), siempre en solo kana (nunca kanji).
-            objetivo = getattr(self.brain.profesor, "ultima_frase_objetivo", None)
-            self.socketio.emit(
-                "sensei_japones",
-                {"frases": frases_para_card(respuesta, objetivo)},
-            )
+        # El texto y la tarjeta de kana salen cuando EMPIEZA la voz, no antes: si se ven
+        # mientras se genera el audio (1-3 s), parece que Kaito se ha quedado pillado.
+        en_sensei = self.brain.profesor.esta_activo()
+        objetivo = getattr(self.brain.profesor, "ultima_frase_objetivo", None)
+        mostrado = []
+
+        def mostrar():
+            if mostrado:
+                return
+            mostrado.append(True)
+            self.socketio.emit("mensaje", {"texto": respuesta})
+            if en_sensei:
+                # En modo sensei, muestra en la cara la frase objetivo (o los 【…】
+                # sueltos si no hay), siempre en solo kana (nunca kanji).
+                self.socketio.emit(
+                    "sensei_japones",
+                    {"frases": frases_para_card(respuesta, objetivo)},
+                )
 
         def al_iniciar_audio():
+            mostrar()
             self.state.cambiar("speaking")
             self.socketio.emit("estado", {"estado": "speaking"})
 
         def hablar_y_volver():
             texto_audio = re.sub(r'https?://\S+', '', respuesta).strip()
             self.tts.hablar(texto_audio, lento_extra=lento_extra, on_start=al_iniciar_audio)
+            mostrar()  # si no llegó a sonar (error, callado), que al menos se vea
             if self.brain._emitir_desactivar_sensei:
                 self.brain._emitir_desactivar_sensei = False
                 self.socketio.emit("modo_sensei", {"activo": False})
