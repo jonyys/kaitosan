@@ -1,0 +1,55 @@
+{# Formulario único para añadir / editar una card. Se incluye con
+   {% with kind='vocabulario'|'gramatica'|'kanji' %}. Uso: cardForm.nueva() y
+   cardForm.editar({jp, reading, meaning, ...}). Guarda en /japones/card/<kind>/guardar. #}
+{%- if kind == 'kanji' -%}
+  {%- set _campos = [('jp','Kanji',0),('meaning','Significado',0),('on','Lectura on',0),('kun','Lectura kun',0),('trazos','Trazos',0),('radical','Radical',0),('ejemplo','Ejemplo',1),('vocab_ejemplo','Vocabulario (ej: 日本 にほん Japón · 日曜日 にちようび domingo)',1)] -%}
+{%- elif kind == 'gramatica' -%}
+  {%- set _campos = [('jp','Punto gramatical',0),('meaning','Significado / descripción',1),('tipo','Tipo',0),('ejemplo','Ejemplo',1),('literal','Traducción literal',1),('uso','Cuándo se usa',1)] -%}
+{%- else -%}
+  {%- set _campos = [('jp','Japonés',0),('reading','Lectura (hiragana)',0),('meaning','Significado',0),('tipo','Tipo (sustantivo, verbo…)',0),('ejemplo','Ejemplo',1),('literal','Traducción literal',1),('uso','Cuándo se usa',1)] -%}
+{%- endif %}
+<style>
+  #card-edit { position: fixed; box-sizing: border-box; text-align: left; max-width: 460px;
+    width: calc(100vw - 24px); max-height: 88vh; overflow-y: auto; overflow-x: hidden; }
+  #card-edit h3 { margin: 0 0 14px; color: var(--rosa-tinta); }
+  #card-edit label { display: block; margin-bottom: 10px; font-size: 12px; font-weight: 700; color: var(--text-soft); }
+  #card-edit input, #card-edit textarea { display: block; width: 100%; box-sizing: border-box; margin-top: 4px; font-weight: 400; }
+  #card-edit textarea { min-height: 54px; }
+  #card-edit input[readonly] { opacity: .65; }
+  #card-edit .cf-actions { display: flex; gap: 8px; margin-top: 14px; }
+</style>
+<dialog id="card-edit" class="flash-pop">
+  <form method="POST" action="/japones/card/{{ kind }}/guardar">
+    <input type="hidden" name="nuevo" value="1" />
+    <h3 id="card-edit-titulo"></h3>
+    {% for name, label, grande in _campos %}
+    <label>{{ label }}
+      {% if grande %}<textarea name="{{ name }}" rows="2"></textarea>
+      {% else %}<input type="text" name="{{ name }}" autocomplete="off" {% if name in ('jp', 'meaning') %}required{% endif %} />{% endif %}
+    </label>
+    {% endfor %}
+    <div class="cf-actions">
+      <button type="submit" class="btn btn-yellow">Guardar</button>
+      <button type="button" class="btn btn-ghost" id="card-edit-cancel">Cancelar</button>
+    </div>
+  </form>
+</dialog>
+<script>
+  (function () {
+    var d = document.getElementById("card-edit");
+    var f = d.querySelector("form");
+    function abrir(nuevo, datos) {
+      f.reset();
+      f.elements.nuevo.value = nuevo ? "1" : "0";
+      f.elements.jp.readOnly = !nuevo; // el texto japonés es la clave del progreso
+      document.getElementById("card-edit-titulo").textContent = nuevo ? "Nueva card" : "Editar card";
+      Object.keys(datos || {}).forEach(function (k) {
+        if (f.elements[k]) f.elements[k].value = datos[k] || "";
+      });
+      d.showModal();
+    }
+    window.cardForm = { nueva: function () { abrir(true); }, editar: function (x) { abrir(false, x); } };
+    document.getElementById("card-edit-cancel").addEventListener("click", function () { d.close(); });
+    d.addEventListener("click", function (e) { if (e.target === d) d.close(); });
+  })();
+</script>

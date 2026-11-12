@@ -384,6 +384,7 @@
           >
             <svg class="ico"><use href="#i-help" /></svg>
           </button>
+          <button type="button" class="btn btn-yellow hdr-btn" style="font-size: 13px" title="Añadir kanji" aria-label="Añadir kanji" onclick="cardForm.nueva()"><svg class="ico"><use href="#i-plus" /></svg></button>
           {% endset %}
           {% include 'partials/_japones_nav.html' %}
         </div>
@@ -546,6 +547,13 @@
         <p>{{ selected.mnemo or '—' }}</p>
       </div>
 
+      {% set _ed = {'jp': selected.kanji, 'meaning': sig, 'on': '' if selected.on == '—' else selected.on, 'kun': '' if selected.kun == '—' else selected.kun,
+        'trazos': selected.trazos, 'radical': selected.radical, 'ejemplo': selected.ejemplo,
+        'vocab_ejemplo': selected.vocab_ejemplo} %}
+      <div style="margin-top: 14px; text-align: center">
+        <button type="button" class="btn btn-ghost" style="font-size: 12px"
+          onclick='document.getElementById("kanji-ficha-pop").close(); cardForm.editar({{ _ed | tojson }})'>Editar card</button>
+      </div>
       {% if selected.dominado %}
       <p
         style="
@@ -761,6 +769,7 @@
     </dialog>
     {% endif %}
 
+    {% with kind='kanji' %}{% include 'partials/_card_form.html' %}{% endwith %}
     <script>
       (function () {
         var helpPop = document.getElementById("kanji-help-pop");

@@ -27,7 +27,7 @@ from core.emociones import es_solo_gracias, gesto_para_gracias
 from werkzeug.security import check_password_hash, generate_password_hash
 from core.settings_store import settings_get, settings_set
 from core import system_settings
-from core import japanese_items
+from core import japanese_items, cards_propias
 from flask import flash, redirect, url_for, session, request
 from functools import wraps
 from datetime import timedelta, date
@@ -53,6 +53,7 @@ app.permanent_session_lifetime = timedelta(minutes=30)
 # Inicializar módulos
 state = StateManager(socketio)
 brain = Brain(state, socketio)
+cards_propias.aplicar(brain.jap_memory)   # ediciones/altas de cards sobre el temario
 recorder = Recorder()
 stt = SpeechToText()
 tts = TextToSpeech()
@@ -1318,6 +1319,26 @@ def japones():
         sessions=sessions,
     )
 
+@app.before_request
+def _sincronizar_kanjis_propios():
+    # los kanji añadidos a mano viven en KANJI_N5 mientras sigan en la BD
+    if request.path.startswith("/japones/kanjis"):
+        cards_propias.sincronizar_kanji(brain.jap_memory)
+
+
+@app.route("/japones/card/<kind>/guardar", methods=["POST"])
+@login_requerido
+def japones_card_guardar(kind):
+    """Alta (nuevo=1) o edición de una card de vocabulario, gramática o kanji."""
+    if kind not in cards_propias.CAMPOS:
+        abort(404)
+    error = cards_propias.guardar(brain.jap_memory, kind, request.form)
+    flash(f"❌ {error}" if error else "✅ Card guardada", "error" if error else "success")
+    destino = {"vocabulario": "japones_vocabulario", "gramatica": "japones_gramatica",
+               "kanji": "japones_kanjis"}[kind]
+    return redirect(url_for(destino))
+
+
 @app.route("/japones/kanjis")
 @login_requerido
 def japones_kanjis():
@@ -1443,13 +1464,16 @@ def _temario_unidades(kind):
                              "items": items})
 
     _mean_key = "description" if kind == "gramatica" else "meaning"
+    _ov = cards_propias.todas(brain.jap_memory, kind)
     extra = [{
         "jp": jp,
-        "reading": "",
-        "romaji": romaji(jp),
+        "reading": _ov.get(jp, {}).get("reading", ""),
+        "romaji": romaji(_ov.get(jp, {}).get("reading") or jp),
         "meaning": (r[_mean_key] or "").strip(),
-        "tipo": "" if kind == "gramatica" else (r["type"] or "").strip(),
-        "ejemplo": "", "literal": "", "uso": "",
+        "tipo": _ov.get(jp, {}).get("tipo") or ("" if kind == "gramatica" else (r["type"] or "").strip()),
+        "ejemplo": _ov.get(jp, {}).get("ejemplo", ""),
+        "literal": _ov.get(jp, {}).get("literal", ""),
+        "uso": _ov.get(jp, {}).get("uso", ""),
         "estado": estado(jp),
     } for jp, r in db_rows.items()
         if jp not in vistos and (kind == "gramatica" or r["type"] != "kanji")]

@@ -13,6 +13,10 @@
         .jp-wrap .acc-list { max-width: none; }
         .tabla-scroll { overflow-x: auto; }
 
+        /* Tarjetas de progreso: toda la tarjeta lleva a su página. */
+        a.card-link { display: block; color: inherit; text-decoration: none; transition: border-color .12s ease, transform .12s ease; }
+        a.card-link:hover { border-color: var(--rosa-accion); transform: translateY(-1px); }
+        a.card-link:focus-visible { outline: 2px solid var(--rosa-accion); outline-offset: 2px; }
         .progress-row {
             display: flex;
             align-items: center;
@@ -133,7 +137,7 @@
 {% include 'partials/_panel_scripts.html' %}
 
 {% if candos_corpus > 0 %}
-<div class="card full" style="margin-bottom:20px;">
+<a href="/japones/boletin" class="card full card-link" style="margin-bottom:20px;">
     <h2>Progreso de can-dos</h2>
     {% set cd_sin = candos_by_estado.get('sin', 0) %}
     {% set cd_prog = candos_by_estado.get('en_progreso', 0) %}
@@ -159,13 +163,13 @@
         </div>
         <span class="progress-count">{{ cd_dom }}/{{ candos_corpus }}</span>
     </div>
-</div>
+</a>
 {% endif %}
 
 {# ── Progreso vocabulario ── (sobre el total de palabras que hay, no solo las
    que ya tienen ficha en BD) #}
 {% if vocab_corpus > 0 %}
-<div class="card full" style="margin-bottom:20px;">
+<a href="/japones/vocabulario" class="card full card-link" style="margin-bottom:20px;">
     <h2>Progreso del vocabulario</h2>
     {% set n_learning = vocab_by_status.get('learning', 0) %}
     {% set n_learned  = vocab_by_status.get('learned', 0) %}
@@ -191,11 +195,11 @@
         </div>
         <span class="progress-count">{{ n_mastered }}/{{ vocab_corpus }}</span>
     </div>
-</div>
+</a>
 {% endif %}
 
 {% if gram_corpus > 0 %}
-<div class="card full" style="margin-bottom:20px;">
+<a href="/japones/gramatica" class="card full card-link" style="margin-bottom:20px;">
     <h2>Progreso de gramática</h2>
     {% set gr_learning = grammar_by_status.get('learning', 0) %}
     {% set gr_learned  = grammar_by_status.get('learned', 0) %}
@@ -221,11 +225,11 @@
         </div>
         <span class="progress-count">{{ gr_mastered }}/{{ gram_corpus }}</span>
     </div>
-</div>
+</a>
 {% endif %}
 
 {% if kanji_corpus > 0 %}
-<div class="card full" style="margin-bottom:20px;">
+<a href="/japones/kanjis" class="card full card-link" style="margin-bottom:20px;">
     <h2>Progreso de kanjis</h2>
     {% set k_learning = kanji_by_status.get('learning', 0) %}
     {% set k_learned  = kanji_by_status.get('learned', 0) %}
@@ -251,7 +255,7 @@
         </div>
         <span class="progress-count">{{ k_mastered }}/{{ kanji_corpus }}</span>
     </div>
-</div>
+</a>
 {% endif %}
 
 {# ── Última sesión ── #}
