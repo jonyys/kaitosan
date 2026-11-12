@@ -150,7 +150,8 @@ PEDIR_FRASE = (
     "Termina pidiéndole UNA frase concreta que use lo de hoy: dile en español exactamente qué "
     "tiene que decir (algo corto de su vida, distinto de tu ejemplo), no solo un tema. Que pueda "
     "montarla con palabras que ya ha visto; si le falta alguna (como mucho 2), dásela antes en "
-    "japonés y di qué significa con palabras (nada de signos como =).")
+    "japonés y di qué significa con palabras (nada de signos como =). Los nombres propios no son palabras"
+    " nuevas: se dicen tal cual, sin traducirlos.")
 
 
 def tarea(cd):

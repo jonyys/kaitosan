@@ -407,3 +407,29 @@ def test_la_lista_de_palabras_vistas_tiene_tope_y_prioriza_las_usadas():
     assert "las 60 más usadas; conoce 140 más" in linea
     assert linea.count("(m") == 60 and "w3 (m3)" in linea and "w199 (m199)" in linea  # usada y reciente
     assert "w0 (m0)" not in linea   # vieja y sin uso: fuera
+
+
+def test_paso_a_lo_siguiente_lo_escribe_whisper_con_o():
+    """Log 17:29 (12-nov): «Paso a lo siguiente, ya te he dicho 5 veces» no se reconoció."""
+    from ai.sensei.profesor import _RE_SIGUIENTE
+    for s in ["Paso a lo siguiente", "Pasa a lo siguiente, ya me lo sé", "pasemos a lo siguiente", "ya lo sé"]:
+        assert _RE_SIGUIENTE.search(s), s
+    for s in ["Paso por la oficina", "¿qué sigue?", "dime la frase siguiente"]:
+        assert not _RE_SIGUIENTE.search(s), s
+
+
+def test_los_nombres_propios_no_entran_al_vocabulario(tmp_path):
+    """12-nov: el extractor registró ジョナサン como vocabulario."""
+    import json
+    from core.japanese_memory import JapaneseMemory
+    jm = JapaneseMemory(str(tmp_path / "j.db"))
+    p = ProfesorJapones(jm, MagicMock(), MagicMock(), MagicMock())
+    p._extraer_resumen_basico = lambda t: "resumen"
+    p._llamar_extractor = lambda h, **k: json.dumps({
+        "summary": "s", "sin_corregir": [], "episodios": [], "kaito_dijo": [], "nota_profe": "",
+        "new_items": [{"category": "vocabulario", "jp": jp, "es": es} for jp, es in
+                      [("ジョナサン", "Jonathan"), ("マリサさん", "Marisa"), ("ラウラ", "Laura"),
+                       ("Ana", "Ana"), ("ありがとう", "gracias")]]})
+    p._foco_unidad = next(u for u in CURRICULUM if u["id"] == "saludos_basicos")
+    p._ejecutar_extraccion(7, [{"role": "user", "content": "x"}, {"role": "assistant", "content": "y"}])
+    assert set(jm.vocab_rows()) == {"ありがとう"}

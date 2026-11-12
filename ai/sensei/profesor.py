@@ -48,6 +48,7 @@ from core.config import (
     EXTRACCION_PAUSA_LLAMADAS_SEG,
     EXTRACCION_RETRASO_SEG,
     MAX_TOKENS_EXPLICACION,
+    NOMBRES_PROPIOS,
     REASONING_EFFORT_SENSEI,
     TEMPERATURE_SENSEI,
     THROTTLE_DUE,
@@ -63,8 +64,8 @@ _RE_NO_SE = re.compile(
     r"ense[ñn]ad|muchas cosas|pidiendo mucho|demasiad|dif[ií]cil", re.IGNORECASE)  # «cómo se dice X» es solo vocabulario: no cuenta
 # Laura quiere pasar a lo siguiente / dice que ya lo sabe: no hay que insistir.
 _RE_SIGUIENTE = re.compile(
-    r"pas(a|ar|emos)( a| con)? (lo|el|la) siguiente|vamos a lo siguiente|"
-    r"siguiente (tema|lecci[oó]n|cosa|ejercicio)|ya (me )?lo s[eé]|"
+    r"pas(a|o|ar|emos)( a| con)? (lo|el|la) siguiente|vamos a lo siguiente|"
+    r"siguiente (tema|lecci[oó]n|cosa|ejercicio)|\bya (me )?lo s[eé]\b|"
     r"cambia(r|mos)? de (tema|lecci[oó]n)|otra (cosa|lecci[oó]n)", re.IGNORECASE)
 # Vocabulario del temario por forma escrita (jp y lectura, sin 〜 ni glosas): sirve para saber qué
 # palabras dijo Kaito. ponytail: solo palabras de 2+ kana y como token entero (con o sin partícula
@@ -770,8 +771,8 @@ class ProfesorJapones:
             jp = _CANONICO.get((item.get("jp") or "").strip(), (item.get("jp") or "").strip())
             es = (item.get("es") or "").strip()
             category = (item.get("category") or "vocabulario").lower()
-            if not jp:
-                continue
+            if not jp or re.sub(r"(さん|ちゃん|くん)$", "", jp.lower()) in NOMBRES_PROPIOS:
+                continue  # los nombres propios no son vocabulario (ジョナサン entró el 12-nov)
             kind = "gramatica" if "gram" in category else "vocabulario"
             try:
                 self.jap_memory.add_item(kind, jp, meaning=es, session_id=session_id)

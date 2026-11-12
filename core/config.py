@@ -167,6 +167,13 @@ ADMIN_USER = os.getenv("ADMIN_USER", "laura")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "kaito123")
 
 # Sensei — ritmo de introducción
+# Nombres propios de la vida de Laura: Kaito los dice tal cual y NO son vocabulario (no se
+# registran ni se traducen). En minúsculas, en español y en katakana; se quita さん/ちゃん/くん.
+# Añade aquí los que falten (mascotas, lugares…).
+NOMBRES_PROPIOS = {
+    "laura", "ラウラ", "ローラ", "jose", "josé", "ホセ", "ジョゼ", "ジョセ",
+    "marisa", "マリサ", "ana", "アナ", "jonathan", "ジョナサン", "ジョナタン",
+}
 MAX_ITEMS_NUEVOS = 2   # ítems (estado 'nuevo') que el can-do activo introduce por sesión
 # Fase 09: el profesor ya no orquesta por cola SRS. La cola `due` de vocab/gram
 # solo la mueve el juego web (Bloque IV) y el SRS de kanji; el profesor no la
