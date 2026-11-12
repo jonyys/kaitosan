@@ -133,6 +133,10 @@ def test_no_se_ayuda_en_vez_de_repetir_y_no_llama_al_juez_en_español():
     out = p._instruccion("¿Cómo se dice jugar?")
     assert "misma situación" in out and p.clase["fallos"] == 0
     assert llamadas == []   # ningún mensaje en español llegó al juez
+    # Logs de la Pi (12-nov): la queja de que no se lo ha enseñado también es «no sé»
+    p.clase = {"cd": "comida_gustos", "fase": "tarea", "tipo": "pendiente", "aciertos": 0, "fallos": 0}
+    out = p._instruccion("Me estás pidiendo mucho sin habérmelo enseñado antes.")
+    assert "no se acuerda" in out and p.clase["fase"] == "practicar"
 
 
 def test_silencio_no_se_convierte_en_acierto():

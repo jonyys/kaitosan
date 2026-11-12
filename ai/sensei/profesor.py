@@ -58,7 +58,9 @@ MAX_TURNOS = 8  # pares user/assistant conservados en el contexto del LLM
 # Laura dice que no sabe / no se acuerda / pide ayuda (en español): hay que ayudarla.
 _RE_NO_SE = re.compile(
     r"\bno (lo )?s[eé]\b|no me acuerdo|no recuerdo|no entiendo|expl[ií]ca|ay[uú]da|"
-    r"c[oó]mo se (hace|usa)|no s[eé] c[oó]mo", re.IGNORECASE)  # «cómo se dice X» es solo vocabulario: no cuenta
+    r"c[oó]mo se (hace|usa)|no s[eé] c[oó]mo|"
+    # Quejas de que le pide demasiado («sin habérmelo enseñado», «muchas cosas»): igual.
+    r"ense[ñn]ad|muchas cosas|pidiendo mucho|demasiad|dif[ií]cil", re.IGNORECASE)  # «cómo se dice X» es solo vocabulario: no cuenta
 # Todos los can-dos con datos de clase, por id (la cola puede cruzar unidades).
 _POR_ID = {cd["id"]: cd for u in CURRICULUM for cd in u.get("can_dos", [])
            if cd.get("explicacion") and cd.get("tarea")}

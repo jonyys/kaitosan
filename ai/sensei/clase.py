@@ -136,9 +136,11 @@ def que_hacer(cd):
 def tarea_nueva(cd):
     """Tarea de repaso: Kaito no ve la situación original, así que la inventa."""
     return ("Plantéale EN ESPAÑOL una situación cotidiana nueva, inventada por ti, en la que "
-            f"Laura tenga que: {que_hacer(cd)} Situación breve (2 frases como máximo, sin añadir más "
-            "acciones de las que pide). Empieza directamente por ella, haz tú tu parte y no le "
-            "des la respuesta ni un ejemplo. Háblale a ella de tú. Ella contesta en japonés.")
+            f"Laura tenga que: {que_hacer(cd)} Situación de UNA sola frase y UNA sola acción, que "
+            "pueda contar con palabras que ya ha visto (nada de historias con varios pasos). Empieza "
+            "directamente por ella, haz tú tu parte y no le des la respuesta ni un ejemplo; si le "
+            "falta alguna palabra (como mucho 2), dásela suelta en japonés con su significado. "
+            "Háblale a ella de tú. Ella contesta en japonés.")
 
 
 def cortar_frases(texto, minimo=25, final=False):
