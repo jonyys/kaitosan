@@ -173,6 +173,7 @@ ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "kaito123")
 NOMBRES_PROPIOS = {
     "laura", "ラウラ", "ローラ", "jose", "josé", "ホセ", "ジョゼ", "ジョセ",
     "marisa", "マリサ", "ana", "アナ", "jonathan", "ジョナサン", "ジョナタン",
+    "troy", "トロイ", "thor", "ソー", "トール",  # los perros
 }
 MAX_ITEMS_NUEVOS = 2   # ítems (estado 'nuevo') que el can-do activo introduce por sesión
 # Fase 09: el profesor ya no orquesta por cola SRS. La cola `due` de vocab/gram

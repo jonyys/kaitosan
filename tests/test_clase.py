@@ -429,7 +429,7 @@ def test_los_nombres_propios_no_entran_al_vocabulario(tmp_path):
         "summary": "s", "sin_corregir": [], "episodios": [], "kaito_dijo": [], "nota_profe": "",
         "new_items": [{"category": "vocabulario", "jp": jp, "es": es} for jp, es in
                       [("ジョナサン", "Jonathan"), ("マリサさん", "Marisa"), ("ラウラ", "Laura"),
-                       ("Ana", "Ana"), ("ありがとう", "gracias")]]})
+                       ("Ana", "Ana"), ("Troy", "Troy"), ("ソー", "Thor"), ("ありがとう", "gracias")]]})
     p._foco_unidad = next(u for u in CURRICULUM if u["id"] == "saludos_basicos")
     p._ejecutar_extraccion(7, [{"role": "user", "content": "x"}, {"role": "assistant", "content": "y"}])
     assert set(jm.vocab_rows()) == {"ありがとう"}

@@ -19,7 +19,7 @@ Reglas:
   soltó en una lista sin que Laura lo practicara. Ante la duda, fuera.
   Para gramática usa el jp canónico del patrón (〜て, 〜た, る動詞…).
   NUNCA incluyas nombres propios (personas, mascotas, lugares, empresas: Laura, José, Marisa,
-  Ana, Jonathan…): no son vocabulario.
+  Ana, Jonathan, Troy, Thor…): no son vocabulario.
 - sin_corregir: errores que Laura cometió y el profesor dejó pasar sin comentarlos
   (los que sí corrigió NO van aquí). Descríbelos en español y corto: "usó は donde va が",
   "dijo たべる en vez de たべます". Si no quedó ninguno, sin_corregir = [].
