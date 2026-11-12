@@ -151,6 +151,34 @@ def test_japones_que_whisper_tomo_por_español_cuenta():
     assert p.clase["aciertos"] == 1 and len(vistos) == 1
     p._instruccion("¿Y al mediodía qué se dice?")   # una pregunta no va al juez
     assert len(vistos) == 1 and p.clase["aciertos"] == 1
+    # Logs (12-nov, 2.ª clase): «Ohio con Bang Bang, Hoy Azul». El STT lo vuelve a oír
+    # forzando japonés y el juez valora primero esa versión, solo en ese turno.
+    p.oir_japones("おはよう こんばんは おやすみ")
+    p._instruccion("Ohio con Bang Bang, Hoy Azul.")
+    assert vistos[-1] == "おはよう こんばんは おやすみ"
+    p._instruccion("Ohio con Bang Bang, Hoy Azul.")
+    assert vistos[-1] == "Ohio con Bang Bang, Hoy Azul."
+
+
+def test_stt_vuelve_a_oir_en_japones_lo_que_tomo_por_español():
+    from ai.speech_to_text import _ruta_transcripcion
+
+    class Stt:
+        def __init__(self, crudo):
+            self.crudo, self.llamadas = crudo, []
+
+        def transcribir(self, a, idioma=None):
+            self.llamadas.append(idioma)
+            return self.crudo if idioma is None else "おはよう、こんばんは、おやすみ"
+
+    oido = []
+    kw = dict(sensei_activo=True, modo_conv=False, espera_japones=True, al_oir_ja=oido.append)
+    assert _ruta_transcripcion(Stt("Ohio con Bang Bang, Hoy Azul."), "a.wav", **kw) == (
+        "Ohio con Bang Bang, Hoy Azul.", None)
+    assert oido == ["おはよう、こんばんは、おやすみ"]
+    s = Stt("¿Cómo se dice tarde?")   # una pregunta: ni segunda pasada
+    _ruta_transcripcion(s, "a.wav", **kw)
+    assert s.llamadas == [None] and len(oido) == 1
 
 
 def test_silencio_no_se_convierte_en_acierto():

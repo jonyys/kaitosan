@@ -132,6 +132,7 @@ class ProfesorJapones:
         # y persistidos al cerrar (_ejecutar_extraccion).
         self._foco_nuevos = []
         self._foco_unidad = None
+        self._ja_alt = None  # el turno oído forzando japonés (oir_japones), solo para este turno
 
     # ── Ciclo de vida ─────────────────────────────────────────────────────────
 
@@ -159,6 +160,10 @@ class ProfesorJapones:
         clave = (cd["id"], fase, self._clave_juez(texto))
         if clave not in self._juez_previo:
             self._juez_previo[clave] = self._pool_juez.submit(self.juez, cd, texto, fase)
+
+    def oir_japones(self, texto):
+        """El STT: este turno, que Whisper tomó por español, oído forzando japonés."""
+        self._ja_alt = texto
 
     def _juzgar(self, cd, mensaje, fase):
         fut = self._juez_previo.get((cd["id"], fase, self._clave_juez(mensaje)))
@@ -335,6 +340,7 @@ class ProfesorJapones:
 
     def _instruccion(self, mensaje):
         st, cd = self.clase, self._cd()
+        ja_alt, self._ja_alt = self._ja_alt, None  # vale solo para este turno
         if any(d in mensaje.lower() for d in _DESPEDIDAS_LAURA):
             return ("Laura se despide. Despídete con cariño en una o dos frases, recordándole "
                     "en media frase lo que ha practicado hoy. No le pidas nada más.")
@@ -374,14 +380,19 @@ class ProfesorJapones:
         # Las conjugaciones (te/ta/…) no se pueden juzgar sobre letras mal transcritas.
         if ("?" not in mensaje and "¿" not in mensaje
                 and cd.get("patron") not in ("te", "ta", "tekudasai", "llano")
-                and self.juez_romaji(cd, mensaje, st["fase"])):
+                # Primero lo oído forzando japonés, solo (mezclado con el español el juez
+                # se lía); si no, el texto de Whisper con letras españolas.
+                and any(self.juez_romaji(cd, m, st["fase"]) for m in ([ja_alt] if ja_alt else []) + [mensaje])):
             return self._acierto(cd)
         if st["fase"] != "tarea":
             vuelta = "pídele una frase con lo de hoy. " + PEDIR_FRASE
         else:  # la MISMA situación, no una nueva en cada turno
             vuelta = "vuelve a plantearle la misma situación que le planteaste, sin cambiarla."
-        return ("Laura habla en español: responde a lo que dice o pregunta, corto (si pregunta "
-                f"algo de japonés, explícaselo). Luego retoma: {vuelta}")
+        return ("Laura habla en español (o es japonés que el reconocimiento de voz no ha "
+                "entendido: si lo que llega no tiene sentido en español, NO le digas que ha "
+                "hablado en español; dile que no la has oído bien y que lo repita despacio). "
+                "Responde a lo que dice o pregunta, corto (si pregunta algo de japonés, "
+                f"explícaselo). Luego retoma: {vuelta}")
 
     def _acierto(self, cd):
         """Laura ha hecho lo de hoy: cuenta el acierto y dice qué toca después."""

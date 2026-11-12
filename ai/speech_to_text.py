@@ -303,7 +303,7 @@ def _es_alucinacion_ja(texto: str) -> bool:
 
 def transcribir_para_turno(stt: SpeechToText, archivo: str, *, sensei_activo: bool,
                            modo_conv: bool, espera_japones: bool = False,
-                           segundos_desde_turno: float = None, al_oir=None):
+                           segundos_desde_turno: float = None, al_oir=None, al_oir_ja=None):
     """Transcribe un turno y descarta la alucinación de agradecimiento de Whisper.
 
     Si `segundos_desde_turno` (tiempo desde la última pregunta/respuesta) supera
@@ -312,7 +312,7 @@ def transcribir_para_turno(stt: SpeechToText, archivo: str, *, sensei_activo: bo
     """
     texto, pron = _ruta_transcripcion(
         stt, archivo, sensei_activo=sensei_activo, modo_conv=modo_conv,
-        espera_japones=espera_japones, al_oir=al_oir)
+        espera_japones=espera_japones, al_oir=al_oir, al_oir_ja=al_oir_ja)
     if sensei_activo and _es_alucinacion_ja(texto):
         print(f"🙅 Ignorada alucinación de Whisper en japonés: «{texto}»")
         return "", None
@@ -346,10 +346,13 @@ def _es_pregunta_libre(texto: str) -> bool:
 
 
 def _ruta_transcripcion(stt: SpeechToText, archivo: str, *, sensei_activo: bool,
-                        modo_conv: bool, espera_japones: bool = False, al_oir=None):
+                        modo_conv: bool, espera_japones: bool = False, al_oir=None,
+                        al_oir_ja=None):
     """Enruta la transcripción de un turno. `al_oir(texto)`, si se pasa, se llama con
     lo que dijo Whisper justo antes de la llamada a Azure (el profesor lo usa para ir
-    adelantando el veredicto del juez mientras Azure transcribe).
+    adelantando el veredicto del juez mientras Azure transcribe). `al_oir_ja(texto)`
+    recibe el mismo audio transcrito forzando japonés cuando Whisper lo tomó por
+    español sin preguntar nada (puede ser su respuesta, mal reconocida).
 
     - Sensei y Kaito espera japonés (fases de práctica y tarea): SIEMPRE una
       pasada de Groq Whisper primero, dure lo que dure el audio (un «sí» o un
@@ -379,6 +382,18 @@ def _ruta_transcripcion(stt: SpeechToText, archivo: str, *, sensei_activo: bool,
             return crudo, None
         if _es_pregunta_libre(crudo) or tiene_espanol(crudo):
             print(f"💬 Español (o mezcla) en turno de práctica, sin puntuar: «{crudo}»")
+            # Logs (12-nov): «Ohio con Bang Bang, Hoy Azul» eran おはよう, こんばんは y
+            # おやすみ. Sin pregunta, se vuelve a oír forzando japonés para el juez (~1 s).
+            t = crudo.lower()
+            if al_oir_ja and "?" not in t and "¿" not in t and not any(
+                    p in t for p in TRIGGERS_PREGUNTA_LIBRE_SENSEI):
+                ja = stt.transcribir(archivo, idioma="ja")
+                if re.search(r"[぀-ヿ一-鿿]", ja or "") and not _es_alucinacion_ja(ja):
+                    print(f"🎌 Forzando japonés oye: «{ja}»")
+                    try:
+                        al_oir_ja(ja)
+                    except Exception as e:  # noqa: BLE001
+                        print(f"⚠️ al_oir_ja falló: {e}")
             return crudo, None
         if al_oir and re.search(r"[぀-ヿ一-鿿]", crudo):
             try:
