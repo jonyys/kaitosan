@@ -13,7 +13,7 @@ y el sensei ven el cambio sin tocar ningún otro consumidor.
 """
 import json
 
-from ai.sensei.curriculum import CURRICULUM
+from ai.sensei.curriculum import CURRICULUM, ITEM_POR_JP
 from ai.sensei.kanji_n5 import KANJI_N5, _item as _kanji_item
 from core import japanese_items
 
@@ -23,6 +23,9 @@ CAMPOS = {
     "kanji": ("meaning", "on", "kun", "trazos", "radical", "ejemplo", "vocab_ejemplo"),
 }
 CAT_PROPIOS = ("propios", "Mis kanjis")
+# "unidad" (unidad del temario o categoría de kanji) se guarda junto a los campos,
+# pero no es un campo de la ficha: solo se usa al crear.
+
 _COL_SIGNIFICADO = {"vocabulario": "meaning", "gramatica": "description", "kanji": "meaning"}
 
 
@@ -60,6 +63,29 @@ def _en_bd(jm, kind, jp):
                          (jp,)).fetchone() is not None
 
 
+def opciones_unidad(kind):
+    """[(id, nombre)] donde se puede colocar una card nueva de ese tipo."""
+    if kind == "kanji":
+        vistos = {}
+        for k in KANJI_N5:
+            if not k.get("propio"):
+                vistos.setdefault(k["categoria"], k["categoria_nombre"].split("—")[-1].strip())
+        return list(vistos.items())
+    return [(u["id"], u["nombre"]) for u in CURRICULUM
+            if not all(it.get("tipo") == "kanji" for it in u.get("items", [])) or not u.get("items")]
+
+
+def _colocar(jm, kind, jp, datos):
+    """Mete una card (vocabulario/gramática) de la BD en la unidad elegida del
+    temario en memoria. Los kanji los coloca sincronizar_kanji."""
+    u = next((u for u in CURRICULUM if u["id"] == datos.get("unidad")), None)
+    if kind == "kanji" or not u or _items_temario(kind, jp) or not _en_bd(jm, kind, jp):
+        return
+    it = {"kind": kind, "jp": jp, "reading": datos.get("reading") or jp, "propio": True}
+    u["items"].append(it)
+    ITEM_POR_JP.setdefault(jp, it)
+
+
 def _parchear(kind, jp, datos):
     """Aplica `datos` sobre los dicts del temario (en el sitio)."""
     if kind == "kanji":
@@ -69,7 +95,7 @@ def _parchear(kind, jp, datos):
                 jp, datos["meaning"], ra("on"), ra("kun"), ra("trazos"),
                 ra("radical"), datos.get("ejemplo", ""), it.get("literal", ""),
                 it.get("mnemo", ""), datos.get("vocab_ejemplo", "")))
-            nuevo.update({k: it[k] for k in ("categoria", "categoria_nombre") if k in it})
+            nuevo.update({k: it[k] for k in ("categoria", "categoria_nombre", "propio") if k in it})
             it.clear()
             it.update(nuevo)
         return
@@ -87,6 +113,8 @@ def guardar(jm, kind, form):
     if not (jp and datos["meaning"]):
         return "El texto japonés y el significado son obligatorios"
     nuevo = form.get("nuevo") == "1"
+    if nuevo:
+        datos["unidad"] = (form.get("unidad") or "").strip()
     existe = bool(_items_temario(kind, jp)) or _en_bd(jm, kind, jp)
     if nuevo and existe:
         return f"'{jp}' ya existe: ábrela y edítala"
@@ -106,6 +134,8 @@ def guardar(jm, kind, form):
                       "reading = COALESCE(NULLIF(?, ''), reading), "
                       "type = COALESCE(NULLIF(?, ''), type) WHERE word = ?",
                       (datos["reading"], datos["tipo"], jp))
+    if nuevo:
+        _colocar(jm, kind, jp, datos)
     _parchear(kind, jp, datos)
     if kind == "kanji":
         sincronizar_kanji(jm)
@@ -115,7 +145,8 @@ def guardar(jm, kind, form):
 def sincronizar_kanji(jm):
     """Deja en KANJI_N5 los kanji propios que siguen en la BD (borrar la fila en
     el panel los quita de la web) y reaplica las ediciones del temario."""
-    KANJI_N5[:] = [k for k in KANJI_N5 if k.get("categoria") != CAT_PROPIOS[0]]
+    KANJI_N5[:] = [k for k in KANJI_N5 if not k.get("propio")]
+    cats = dict(opciones_unidad("kanji"))
     for jp, datos in todas(jm, "kanji").items():
         if _items_temario("kanji", jp):
             continue
@@ -124,8 +155,9 @@ def sincronizar_kanji(jm):
                               datos.get("kun") or "—", datos.get("trazos") or "—",
                               datos.get("radical") or "—", datos.get("ejemplo", ""),
                               "", "", datos.get("vocab_ejemplo", "")))
-            KANJI_N5.append(dict(it, categoria=CAT_PROPIOS[0],
-                                 categoria_nombre=CAT_PROPIOS[1]))
+            cat = datos.get("unidad") if datos.get("unidad") in cats else CAT_PROPIOS[0]
+            KANJI_N5.append(dict(it, propio=True, categoria=cat,
+                                 categoria_nombre=cats.get(cat, CAT_PROPIOS[1])))
 
 
 def aplicar(jm):
@@ -133,6 +165,7 @@ def aplicar(jm):
     for (kind, jp), datos in todas(jm).items():
         if kind == "kanji" and not _items_temario("kanji", jp):
             continue                                    # propio: lo gestiona sincronizar
+        _colocar(jm, kind, jp, datos)
         _parchear(kind, jp, datos)
     sincronizar_kanji(jm)
 
@@ -148,6 +181,14 @@ if __name__ == "__main__":
     assert guardar(jm, "vocabulario", {**f, "jp": "ぜんぜんないよ", "nuevo": "1"}) is not None
     assert guardar(jm, "kanji", {"jp": "鬱", "meaning": "melancolía", "nuevo": "1"}) is None
     assert any(k["jp"] == "鬱" for k in KANJI_N5)
+    uid, _ = opciones_unidad("vocabulario")[0]
+    assert guardar(jm, "vocabulario", {**f, "jp": "ぜんぜん2", "nuevo": "1", "unidad": uid}) is None
+    assert any(it["jp"] == "ぜんぜん2" for it in next(u for u in CURRICULUM if u["id"] == uid)["items"])
+    cid, cn = opciones_unidad("kanji")[0]
+    assert guardar(jm, "kanji", {"jp": "鯨", "meaning": "ballena", "nuevo": "1", "unidad": cid}) is None
+    assert next(k for k in KANJI_N5 if k["jp"] == "鯨")["categoria"] == cid
+    assert guardar(jm, "kanji", {"jp": "鯨", "meaning": "ballena2"}) is None
+    assert sum(k["jp"] == "鯨" for k in KANJI_N5) == 1
     k0 = KANJI_N5[0]
     assert guardar(jm, "kanji", {"jp": k0["jp"], "meaning": "otro", "on": "X"}) is None and k0["meaning"] == "otro (kanji)"
     print("ok")

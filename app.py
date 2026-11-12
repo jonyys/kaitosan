@@ -1326,6 +1326,9 @@ def _sincronizar_kanjis_propios():
         cards_propias.sincronizar_kanji(brain.jap_memory)
 
 
+app.add_template_global(cards_propias.opciones_unidad, "cards_unidades")
+
+
 @app.route("/japones/card/<kind>/guardar", methods=["POST"])
 @login_requerido
 def japones_card_guardar(kind):

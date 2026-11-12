@@ -13,7 +13,7 @@
     width: calc(100vw - 24px); max-height: 88vh; overflow-y: auto; overflow-x: hidden; }
   #card-edit h3 { margin: 0 0 14px; color: var(--rosa-tinta); }
   #card-edit label { display: block; margin-bottom: 10px; font-size: 12px; font-weight: 700; color: var(--text-soft); }
-  #card-edit input, #card-edit textarea { display: block; width: 100%; box-sizing: border-box; margin-top: 4px; font-weight: 400; }
+  #card-edit input, #card-edit textarea, #card-edit select { display: block; width: 100%; box-sizing: border-box; margin-top: 4px; font-weight: 400; }
   #card-edit textarea { min-height: 54px; }
   #card-edit input[readonly] { opacity: .65; }
   #card-edit .cf-actions { display: flex; gap: 8px; margin-top: 14px; }
@@ -22,6 +22,12 @@
   <form method="POST" action="/japones/card/{{ kind }}/guardar">
     <input type="hidden" name="nuevo" value="1" />
     <h3 id="card-edit-titulo"></h3>
+    <label id="card-edit-unidad">{{ 'Categoría' if kind == 'kanji' else 'Unidad' }}
+      <select name="unidad">
+        <option value="">{{ 'Mis kanjis' if kind == 'kanji' else 'Extra (sin unidad)' }}</option>
+        {% for uid, unombre in cards_unidades(kind) %}<option value="{{ uid }}">{{ unombre }}</option>{% endfor %}
+      </select>
+    </label>
     {% for name, label, grande in _campos %}
     <label>{{ label }}
       {% if grande %}<textarea name="{{ name }}" rows="2"></textarea>
@@ -42,6 +48,7 @@
       f.reset();
       f.elements.nuevo.value = nuevo ? "1" : "0";
       f.elements.jp.readOnly = !nuevo; // el texto japonés es la clave del progreso
+      document.getElementById("card-edit-unidad").hidden = !nuevo; // solo al crear
       document.getElementById("card-edit-titulo").textContent = nuevo ? "Nueva card" : "Editar card";
       Object.keys(datos || {}).forEach(function (k) {
         if (f.elements[k]) f.elements[k].value = datos[k] || "";
