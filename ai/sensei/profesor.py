@@ -32,6 +32,7 @@ from ai.sensei.clase import (
     ACIERTOS_TAREA,
     FALLOS_MAX,
     LIBRE_TURNOS_TEMA,
+    PEDIR_FRASE,
     NUEVOS_POR_ANTIGUO,
     errores,
     presentar,
@@ -370,7 +371,7 @@ class ProfesorJapones:
                         + self._cerrar_cd(cd, "conseguido"))
             otra = ("plantéale otra situación distinta y corta, inventada por ti, en la que tenga que: "
                     + que_hacer(cd) if st["fase"] == "tarea"
-                    else "pídele otra frase con lo mismo, sobre otro tema (sin repetir «dime una frase tuya»)")
+                    else "pídele otra frase con lo mismo, sobre otro tema. " + PEDIR_FRASE)
             return (f"Ha acertado. Celébralo en media frase, con calidez y sin repetir fórmulas, "
                     f"y {otra}, sin darle la respuesta. Lo que dice Laura viene de reconocimiento "
                     "de voz y puede estar mal transcrito: NO corrijas nada más (ni partículas "
@@ -383,7 +384,7 @@ class ProfesorJapones:
         if _RE_NO_SE.search(mensaje):
             return self._fallo(cd, self._ayuda(cd))
         if st["fase"] != "tarea":
-            vuelta = "pídele una frase suya con lo de hoy."
+            vuelta = "pídele una frase con lo de hoy. " + PEDIR_FRASE
         else:  # la MISMA situación, no una nueva en cada turno
             vuelta = "vuelve a plantearle la misma situación que le planteaste, sin cambiarla."
         return ("Laura habla en español: responde a lo que dice o pregunta, corto (si pregunta "
@@ -514,6 +515,16 @@ class ProfesorJapones:
                 f"{k}: {v}" for k, v in perfil_jap["vocab_by_status"].items()
             )
             lineas_r.append(f"Vocabulario por estado: {estados}")
+
+        # Qué palabras concretas ha visto: sin esto Kaito le pide frases con palabras
+        # que nunca le ha enseñado. ponytail: tope de 80 (las más repasadas primero).
+        try:
+            filas = sorted(self.jap_memory.vocab_rows().values(), key=lambda r: -r["reps"])
+            vistas = [f"{a_kana(r['reading'] or r['word'])} ({r['meaning']})"
+                      for r in filas[:80] if r.get("meaning")]
+        except Exception:  # noqa: BLE001 — memoria sin vocabulario (tests, BD vieja)
+            vistas = []
+        lineas_r.append("Palabras que Laura ya ha visto: " + (", ".join(vistas) or "casi ninguna todavía"))
 
         if perfil_jap.get("last_sessions"):
             lineas_r.append("Últimas sesiones:")

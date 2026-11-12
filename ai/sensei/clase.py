@@ -107,9 +107,17 @@ def presentar(cd):
         f"Preséntale lo de hoy: {cd['texto']}. Explicación (elige solo lo imprescindible para "
         f"empezar y dilo natural, sin recitarla; el resto lo verá al corregirla): {cd['explicacion']} "
         "Como máximo 2 o 3 cosas japonesas nuevas en total (el ejemplo cuenta); el resto, en los "
-        "siguientes turnos. Todo en unos 15 segundos hablado: explicación de 1-2 frases cortas. Pon un ejemplo con algo de su vida y termina pidiéndole que diga ella una frase suya "
-        "con esto. No le pidas que repita tu ejemplo."
+        "siguientes turnos. Todo en unos 15 segundos hablado: explicación de 1-2 frases cortas. Pon un ejemplo con algo de su vida. "
+        + PEDIR_FRASE
     )
+
+
+# Laura no puede decir una frase con palabras que nunca ha visto: Kaito le pide algo
+# concreto y le da antes lo que le falte (la lista está en «Palabras que Laura ya ha visto»).
+PEDIR_FRASE = (
+    "Termina pidiéndole UNA frase concreta (dile en español qué tiene que decir, algo corto de "
+    "su vida, distinto de tu ejemplo) que pueda montar con palabras que ya ha visto. Si le falta "
+    "alguna palabra (como mucho 2), dásela antes en japonés con su significado.")
 
 
 def tarea(cd):
