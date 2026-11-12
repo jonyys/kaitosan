@@ -114,6 +114,8 @@ class TextToSpeech:
             (r'\bshite\b', 'shte'),
             (r'\bashita\b', 'ashta'),
             (r'[ー一]', ''),
+            # «【しごと】 = trabajo»: la voz leía «igual». Pausa en su lugar.
+            (r'\s*[=→]\s*', ', '),
         ]
         for patron, reemplazo in reemplazos:
             texto = re.sub(patron, reemplazo, texto, flags=re.IGNORECASE)

@@ -115,9 +115,10 @@ def presentar(cd):
 # Laura no puede decir una frase con palabras que nunca ha visto: Kaito le pide algo
 # concreto y le da antes lo que le falte (la lista está en «Palabras que Laura ya ha visto»).
 PEDIR_FRASE = (
-    "Termina pidiéndole UNA frase concreta (dile en español qué tiene que decir, algo corto de "
-    "su vida, distinto de tu ejemplo) que pueda montar con palabras que ya ha visto. Si le falta "
-    "alguna palabra (como mucho 2), dásela antes en japonés con su significado.")
+    "Termina pidiéndole UNA frase concreta que use lo de hoy: dile en español exactamente qué "
+    "tiene que decir (algo corto de su vida, distinto de tu ejemplo), no solo un tema. Que pueda "
+    "montarla con palabras que ya ha visto; si le falta alguna (como mucho 2), dásela antes en "
+    "japonés y di qué significa con palabras (nada de signos como =).")
 
 
 def tarea(cd):
