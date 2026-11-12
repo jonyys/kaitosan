@@ -61,6 +61,11 @@ _RE_NO_SE = re.compile(
     r"c[oó]mo se (hace|usa)|no s[eé] c[oó]mo|"
     # Quejas de que le pide demasiado («sin habérmelo enseñado», «muchas cosas»): igual.
     r"ense[ñn]ad|muchas cosas|pidiendo mucho|demasiad|dif[ií]cil", re.IGNORECASE)  # «cómo se dice X» es solo vocabulario: no cuenta
+# Laura quiere pasar a lo siguiente / dice que ya lo sabe: no hay que insistir.
+_RE_SIGUIENTE = re.compile(
+    r"pas(a|ar|emos)( a| con)? (lo|el|la) siguiente|vamos a lo siguiente|"
+    r"siguiente (tema|lecci[oó]n|cosa|ejercicio)|ya (me )?lo s[eé]|"
+    r"cambia(r|mos)? de (tema|lecci[oó]n)|otra (cosa|lecci[oó]n)", re.IGNORECASE)
 # Todos los can-dos con datos de clase, por id (la cola puede cruzar unidades).
 _POR_ID = {cd["id"]: cd for u in CURRICULUM for cd in u.get("can_dos", [])
            if cd.get("explicacion") and cd.get("tarea")}
@@ -301,6 +306,11 @@ class ProfesorJapones:
         st.update(cd=cd["id"], tipo=tipo, aciertos=0, fallos=0)
         if tipo == "nuevo":
             st["fase"] = "practicar"
+            # Boletín: ◐ desde que se empieza a enseñar, no solo al acertar ni al cerrarlo.
+            try:
+                self.jap_memory.set_can_do(cd["id"], "empezado", self.session_id)
+            except Exception as e:  # noqa: BLE001 — guardar el progreso no debe romper el turno
+                print(f"⚠️ No se pudo guardar el can-do empezado: {e}")
             return presentar(cd)
         st["fase"] = "tarea"
         return (f"Esto ya lo trabajasteis otro día ({cd['texto']}): dile en media frase que "
@@ -352,6 +362,14 @@ class ProfesorJapones:
                     "en media frase lo que ha practicado hoy. No le pidas nada más.")
         if st["fase"] == "libre" or not cd:
             return self._charla_guiada()
+        if (st["fase"] in ("practicar", "tarea") and not _RE_JP_CHAR.search(mensaje)
+                and _RE_SIGUIENTE.search(mensaje)):
+            # Sin marcarlo como conseguido (no se ha comprobado): queda en progreso y vuelve
+            # en un repaso. Un repaso de algo ya dominado no cambia de estado.
+            resultado = "no_intentado" if st.get("tipo") == "antiguo" else "parcial"
+            return ("Laura quiere pasar a lo siguiente. Dile en media frase que vale, que lo "
+                    "volveréis a ver otro día en un repaso rápido, sin discutir ni explicarle nada "
+                    "más de esto. " + self._cerrar_cd(cd, resultado))
         if st["fase"] in ("presentar", "repaso"):
             return "Responde en una frase a lo que te diga. Luego: " + self._abrir(
                 cd, st.get("tipo") or ("nuevo" if st["fase"] == "presentar" else "pendiente"))

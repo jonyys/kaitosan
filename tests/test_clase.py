@@ -28,7 +28,10 @@ def test_fases_de_teforma():
     p._instruccion("コーヒーを のんで、でかけました")
     out = p._instruccion("シャワーを あびて、ねました")
     assert "Felicítala" in out and p.clase["cd"] == "teforma_pedir"
-    p.jap_memory.set_can_do.assert_called_once()
+    # cierra teforma_encadenar y empieza a enseñar el siguiente (guarda «empezado»)
+    assert [c.args[:2] for c in p.jap_memory.set_can_do.call_args_list] == [
+        ("teforma_encadenar", "empezado"), ("teforma_encadenar", "conseguido"),
+        ("teforma_pedir", "empezado")]
     assert "español" in p._instruccion("¿y eso por qué?")
     assert "se despide" in p._instruccion("me voy a cenar, じゃあね")
 
@@ -309,3 +312,61 @@ def test_stream_de_openrouter_conserva_tildes_y_japones(monkeypatch):
     prov = mod.OpenRouterProvider(modelos=["m"])
     assert "".join(prov.completar_stream([{"role": "user", "content": "hola"}])) == \
         "Ayer, después del trabajo jugaste 【あそびました】."
+
+
+def test_en_progreso_desde_que_se_empieza_a_ensenar(tmp_path):
+    """Boletín (12-nov): tres sesiones sin cerrar el can-do y todo seguía en ○. Se marca ◐
+    al empezar a enseñarlo, y el «conseguido» de esa misma sesión sigue sumando."""
+    from core.japanese_memory import JapaneseMemory
+    jm = JapaneseMemory(str(tmp_path / "j.db"))
+    p = ProfesorJapones(jm, MagicMock(), MagicMock(), MagicMock())
+    p.activo, p.session_id = True, 7
+    p.clase = {"cd": "saludos_saludar", "fase": "presentar", "tipo": "nuevo", "aciertos": 0, "fallos": 0}
+    p._instruccion("vamos allá")
+    assert jm.can_dos_progreso()["saludos_saludar"]["estado"] == "en_progreso"
+    jm.set_can_do("saludos_saludar", "conseguido", 7)
+    assert jm.can_dos_progreso()["saludos_saludar"]["veces_ok"] == 1
+    # un repaso (ya en progreso) o un dominado no se tocan al abrirlo
+    p.clase = {"cd": "saludos_saludar", "fase": "repaso", "tipo": "pendiente", "aciertos": 0, "fallos": 0}
+    p._instruccion("vamos allá")
+    assert jm.can_dos_progreso()["saludos_saludar"]["veces_ok"] == 1
+
+
+def test_pasa_a_lo_siguiente_cierra_como_parcial_y_abre_el_siguiente(tmp_path):
+    """Logs (12-nov): «pasa a lo siguiente, que ya me lo sé» se trató como «no sé» y Kaito
+    volvió a explicar. Ahora pasa al siguiente, sin darlo por conseguido."""
+    from core.japanese_memory import JapaneseMemory
+    jm = JapaneseMemory(str(tmp_path / "j.db"))
+    p = ProfesorJapones(jm, MagicMock(), MagicMock(), MagicMock())
+    p.activo, p.session_id = True, 7
+    p._foco_unidad = next(u for u in CURRICULUM if u["id"] == "saludos_basicos")
+    p.clase = {"cd": "saludos_saludar", "fase": "tarea", "tipo": "nuevo", "aciertos": 0, "fallos": 0,
+               "nuevos": 0, "hechos": []}
+    out = p._instruccion("Pasa a lo siguiente, que ya me lo sé")
+    assert "pasar a lo siguiente" in out and "Luego:" in out
+    assert p.clase["cd"] != "saludos_saludar" and "saludos_saludar" in p.clase["hechos"]
+    assert jm.can_dos_progreso()["saludos_saludar"]["estado"] == "en_progreso"
+    # en la presentación no aplica (aún no se ha enseñado nada) y con japonés tampoco
+    p.clase = {"cd": "saludos_gracias", "fase": "presentar", "tipo": "nuevo", "aciertos": 0, "fallos": 0}
+    assert "pasar a lo siguiente" not in p._instruccion("ya me lo sé")
+
+
+def test_el_juez_solo_ve_la_frase_de_kaito_en_las_tareas(monkeypatch):
+    """12-nov: con la frase de Kaito el juez de la práctica rechazaba «おはよう、朝日» (1/3)
+    cuando sin ella aprobaba (3/3)."""
+    import ai.sensei.clase as clase
+
+    class Prov:
+        prompts = []
+
+        def completar(self, mensajes, **kw):
+            self.prompts.append(mensajes[0]["content"])
+            return '{"cumple": true}'
+
+    monkeypatch.setenv("JUEZ_MODELO", "x/y")
+    monkeypatch.setenv("OPENROUTER_API_KEY", "k")
+    monkeypatch.setattr(clase, "_juez_prov", Prov())
+    cd = {"texto": "t", "explicacion": "e", "tarea": "Laura tiene que: saludar"}
+    assert clase.juez_cumple(cd, "おはよう", "practicar", contexto="PREGUNTA_DE_KAITO") is True
+    assert clase.juez_cumple(cd, "おはよう", "tarea", contexto="PREGUNTA_DE_KAITO") is True
+    assert "PREGUNTA_DE_KAITO" not in Prov.prompts[0] and "PREGUNTA_DE_KAITO" in Prov.prompts[1]

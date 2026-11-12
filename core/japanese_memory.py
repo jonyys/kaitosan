@@ -654,7 +654,10 @@ class JapaneseMemory:
     def set_can_do(self, can_do_id: str, resultado: str, session_id, nota: str = None):
         """Registra el resultado de un can-do en una sesión y recalcula su estado.
 
-        resultado: 'conseguido' | 'parcial' | 'error' | 'no_intentado'
+        resultado: 'empezado' | 'conseguido' | 'parcial' | 'error' | 'no_intentado'
+        - 'empezado' (Kaito empieza a enseñarlo) → 'en_progreso' si era 'no_intentado'.
+          NO toca veces_ok ni ultima_sesion: con 'parcial' el 'conseguido' de esa misma
+          sesión no sumaría (ultima_sesion == session_id) y tardaría una sesión más en dominarse.
         - 'conseguido' en 2 sesiones distintas (session_id distinto) → 'dominado'
         - un solo 'conseguido' → 'en_progreso', veces_ok = 1
         - 'parcial' sobre un can-do 'no_intentado' → 'en_progreso' (lo intentó
@@ -682,6 +685,16 @@ class JapaneseMemory:
                 estado = "en_progreso"
             elif resultado in ("error", "parcial") and estado == "dominado":
                 estado = "en_progreso"
+
+            if resultado == "empezado":
+                if estado == "no_intentado":
+                    conn.execute(
+                        """INSERT INTO can_do_progreso (can_do_id, estado, veces_ok)
+                           VALUES (?, 'en_progreso', 0)
+                           ON CONFLICT(can_do_id) DO UPDATE SET estado = 'en_progreso'""",
+                        (can_do_id,),
+                    )
+                return
 
             nota_final = nota if nota else nota_prev
 

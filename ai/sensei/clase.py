@@ -91,7 +91,9 @@ def juez_cumple(cd, mensaje, fase="tarea", romaji=False, contexto=None):
         p = _PROMPT_JUEZ.format(texto=cd["texto"], explicacion=cd.get("explicacion", ""),
                                 tarea=tarea, criterio=criterio, msg=mensaje,
                                 romaji=_NOTA_ROMAJI if romaji else "",
-                                contexto=_contexto_juez(contexto))
+                                # Solo en tareas: en la práctica basta con usar lo que se enseña
+                                # (con la frase de Kaito el juez se volvía estricto: 17:02 y 17:03).
+                                contexto=_contexto_juez(contexto) if fase == "tarea" else "")
         # Esquema obligatorio: con solo «json_object», haiku a veces se ponía a analizar en
         # voz alta las letras españolas y no llegaba al veredicto (2 de cada 4).
         r = _juez_prov.completar([{"role": "user", "content": p}], max_tokens=30, temperature=0,
