@@ -120,6 +120,7 @@
         </div>
 
         <div class="kp-readings">
+          <div><span>significado</span>{{ k.meaning | replace(' (kanji)', '') }}</div>
           {% if k.on and k.on != '—' %}<div><span>on</span>{{ k.on }}</div>{% endif %}
           {% if k.kun and k.kun != '—' %}<div><span>kun</span>{{ k.kun }}</div>{% endif %}
           {% if k.reading_card %}<div><span>lectura</span>{{ k.reading_card }}</div>{% endif %}
@@ -133,9 +134,6 @@
         </div>
 
         <div class="kp-hints" id="kp-hints" hidden>
-          <div class="kp-hint" id="hint-significado" hidden>
-            <span>Significado:</span> {{ k.meaning | replace(' (kanji)', '') }}
-          </div>
           <div class="kp-hint" id="hint-memoria" hidden>
             <span>Memoria:</span> {{ k.mnemo or '—' }}
           </div>
@@ -176,9 +174,6 @@
       <div class="cp-ask">
         <p class="cp-msg">¿Qué pista quieres ver?</p>
         <div class="practice-options">
-          <button type="button" class="practice-option" data-hint="significado">
-            Significado en español
-          </button>
           <button
             type="button"
             class="practice-option"

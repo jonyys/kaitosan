@@ -191,7 +191,7 @@
                 <button
                   type="submit"
                   class="cd-mark"
-                  title="{% if cd.estado == 'dominado' %}Quitar dominado{% else %}Marcar como dominado{% endif %}"
+                  title="{% if cd.estado == 'dominado' %}Quitar dominado{% elif cd.estado == 'en_progreso' %}Marcar como dominado{% else %}Marcar en progreso{% endif %}"
                 >
                   {{ cd.simbolo }}
                 </button>

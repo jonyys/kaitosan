@@ -553,6 +553,10 @@
       <div style="margin-top: 14px; text-align: center">
         <button type="button" class="btn btn-ghost" style="font-size: 12px"
           onclick='document.getElementById("kanji-ficha-pop").close(); cardForm.editar({{ _ed | tojson }})'>Editar card</button>
+        <form method="POST" action="/japones/card/kanji/borrar" class="js-borrar" style="display: inline">
+          <input type="hidden" name="jp" value="{{ selected.kanji }}" />
+          <button type="submit" class="btn btn-ghost" style="font-size: 12px; color: var(--peligro-tinta)">Eliminar card</button>
+        </form>
       </div>
       {% if selected.dominado %}
       <p

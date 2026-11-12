@@ -1329,6 +1329,19 @@ def _sincronizar_kanjis_propios():
 app.add_template_global(cards_propias.opciones_unidad, "cards_unidades")
 
 
+@app.route("/japones/card/<kind>/borrar", methods=["POST"])
+@login_requerido
+def japones_card_borrar(kind):
+    if kind not in cards_propias.CAMPOS:
+        abort(404)
+    jp = (request.form.get("jp") or "").strip()
+    if jp:
+        cards_propias.borrar(brain.jap_memory, kind, jp)
+        flash("✅ Card eliminada", "success")
+    return redirect(url_for({"vocabulario": "japones_vocabulario", "gramatica": "japones_gramatica",
+                             "kanji": "japones_kanjis"}[kind]))
+
+
 @app.route("/japones/card/<kind>/guardar", methods=["POST"])
 @login_requerido
 def japones_card_guardar(kind):

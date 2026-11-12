@@ -712,10 +712,10 @@ class JapaneseMemory:
             )
 
     def toggle_can_do(self, can_do_id: str) -> str:
-        """Alterna a mano un can-do entre 'dominado' y 'no_intentado' (marcar
-        desde el boletín, como 'Aprendida al 100%' en vocab/gram). Al marcarlo
-        dominado deja veces_ok >= 2 para que cuadre con la regla de las 2
-        sesiones. Devuelve el nuevo estado, o '' si el id no está en el temario.
+        """Cicla a mano un can-do desde el boletín: no_intentado -> en_progreso
+        (un clic) -> dominado (dos) -> no_intentado. veces_ok queda en 1 / >= 2
+        para que cuadre con la regla de las 2 sesiones. Devuelve el nuevo
+        estado, o '' si el id no está en el temario.
         """
         from ai.sensei.curriculum import CURRICULUM
         ids_validos = {cd["id"] for u in CURRICULUM for cd in u.get("can_dos", [])}
@@ -729,8 +729,10 @@ class JapaneseMemory:
             estado, veces_ok = row if row else ("no_intentado", 0)
             if estado == "dominado":
                 nuevo, veces_ok = "no_intentado", 0
-            else:
+            elif estado == "en_progreso":
                 nuevo, veces_ok = "dominado", max(veces_ok, 2)
+            else:
+                nuevo, veces_ok = "en_progreso", max(veces_ok, 1)
             conn.execute(
                 """INSERT INTO can_do_progreso (can_do_id, estado, veces_ok)
                    VALUES (?, ?, ?)

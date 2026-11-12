@@ -11,6 +11,7 @@ y el sensei ven el cambio sin tocar ningún otro consumidor.
   campos extra aquí. Las de vocabulario/gramática salen en la unidad «extra»;
   las de kanji en la categoría «Mis kanjis» (`sincronizar_kanji`).
 """
+import hashlib
 import json
 
 from ai.sensei.curriculum import CURRICULUM, ITEM_POR_JP
@@ -67,9 +68,9 @@ def opciones_unidad(kind):
     """[(id, nombre)] donde se puede colocar una card nueva de ese tipo."""
     if kind == "kanji":
         vistos = {}
-        for k in KANJI_N5:
-            if not k.get("propio"):
-                vistos.setdefault(k["categoria"], k["categoria_nombre"].split("—")[-1].strip())
+        for k in sorted(KANJI_N5, key=lambda k: bool(k.get("propio"))):
+            vistos.setdefault(k["categoria"], k["categoria_nombre"].split("—")[-1].strip())
+        vistos.pop(CAT_PROPIOS[0], None)       # la de por defecto es la opción vacía
         return list(vistos.items())
     return [(u["id"], u["nombre"]) for u in CURRICULUM
             if not all(it.get("tipo") == "kanji" for it in u.get("items", [])) or not u.get("items")]
@@ -78,8 +79,15 @@ def opciones_unidad(kind):
 def _colocar(jm, kind, jp, datos):
     """Mete una card (vocabulario/gramática) de la BD en la unidad elegida del
     temario en memoria. Los kanji los coloca sincronizar_kanji."""
+    if kind == "kanji" or _items_temario(kind, jp) or not _en_bd(jm, kind, jp):
+        return
     u = next((u for u in CURRICULUM if u["id"] == datos.get("unidad")), None)
-    if kind == "kanji" or not u or _items_temario(kind, jp) or not _en_bd(jm, kind, jp):
+    if not u and datos.get("unidad_nombre"):       # unidad nueva creada a mano
+        u = {"id": datos["unidad"], "nombre": datos["unidad_nombre"], "funcion": "",
+             "frases_hechas": [], "prerequisito": None, "umbral_prereq": 0.75,
+             "items": [], "propio": True}
+        CURRICULUM.append(u)
+    if not u:
         return
     it = {"kind": kind, "jp": jp, "reading": datos.get("reading") or jp, "propio": True}
     u["items"].append(it)
@@ -115,6 +123,12 @@ def guardar(jm, kind, form):
     nuevo = form.get("nuevo") == "1"
     if nuevo:
         datos["unidad"] = (form.get("unidad") or "").strip()
+        nombre = (form.get("unidad_nueva") or "").strip()
+        if nombre:                                  # unidad/categoría nueva (o la que ya se llame así)
+            previa = next((i for i, n in opciones_unidad(kind) if n.lower() == nombre.lower()), None)
+            datos["unidad"] = previa or "propia_" + hashlib.md5(nombre.lower().encode()).hexdigest()[:8]
+            if not previa:
+                datos["unidad_nombre"] = nombre
     existe = bool(_items_temario(kind, jp)) or _en_bd(jm, kind, jp)
     if nuevo and existe:
         return f"'{jp}' ya existe: ábrela y edítala"
@@ -142,13 +156,40 @@ def guardar(jm, kind, form):
     return None
 
 
+def _quitar(kind, jp):
+    """Saca la card del temario en memoria."""
+    if kind == "kanji":
+        KANJI_N5[:] = [k for k in KANJI_N5 if k["jp"] != jp]
+        for u in CURRICULUM:
+            u["items"][:] = [it for it in u["items"] if not (it["jp"] == jp and it.get("tipo") == "kanji")]
+        return
+    for u in CURRICULUM:
+        u["items"][:] = [it for it in u["items"] if not (
+            it["jp"] == jp and it.get("kind") == kind and it.get("tipo") != "kanji")]
+    ITEM_POR_JP.pop(jp, None)
+
+
+def borrar(jm, kind, jp):
+    """Elimina la card (y su progreso). Queda una marca `borrada` para que, si
+    venía del temario, no reaparezca al reiniciar; añadirla de nuevo la quita."""
+    cfg = japanese_items._CFG[kind]
+    with jm._conectar() as c:
+        _tabla(c)
+        c.execute("INSERT OR REPLACE INTO cards_editadas VALUES (?, ?, ?)",
+                  (kind, jp, json.dumps({"borrada": True})))
+        c.execute(f"DELETE FROM {cfg['tabla']} WHERE {cfg['col']} = ?", (jp,))
+    _quitar(kind, jp)
+
+
 def sincronizar_kanji(jm):
     """Deja en KANJI_N5 los kanji propios que siguen en la BD (borrar la fila en
     el panel los quita de la web) y reaplica las ediciones del temario."""
     KANJI_N5[:] = [k for k in KANJI_N5 if not k.get("propio")]
     cats = dict(opciones_unidad("kanji"))
+    cats.update({d["unidad"]: d["unidad_nombre"] for d in todas(jm, "kanji").values()
+                 if d.get("unidad_nombre")})
     for jp, datos in todas(jm, "kanji").items():
-        if _items_temario("kanji", jp):
+        if datos.get("borrada") or _items_temario("kanji", jp):
             continue
         if _en_bd(jm, "kanji", jp):
             it = _kanji_item((jp, datos["meaning"], datos.get("on") or "—",
@@ -163,6 +204,9 @@ def sincronizar_kanji(jm):
 def aplicar(jm):
     """Al arrancar: reaplica todas las ediciones sobre el temario en memoria."""
     for (kind, jp), datos in todas(jm).items():
+        if datos.get("borrada"):
+            _quitar(kind, jp)
+            continue
         if kind == "kanji" and not _items_temario("kanji", jp):
             continue                                    # propio: lo gestiona sincronizar
         _colocar(jm, kind, jp, datos)
@@ -189,6 +233,19 @@ if __name__ == "__main__":
     assert next(k for k in KANJI_N5 if k["jp"] == "鯨")["categoria"] == cid
     assert guardar(jm, "kanji", {"jp": "鯨", "meaning": "ballena2"}) is None
     assert sum(k["jp"] == "鯨" for k in KANJI_N5) == 1
+    n = len(CURRICULUM)
+    assert guardar(jm, "vocabulario", {**f, "jp": "ぜんぜん3", "nuevo": "1", "unidad_nueva": "Mi unidad"}) is None
+    assert CURRICULUM[-1]["nombre"] == "Mi unidad" and len(CURRICULUM) == n + 1
+    assert guardar(jm, "vocabulario", {**f, "jp": "ぜんぜん4", "nuevo": "1", "unidad_nueva": "mi UNIDAD"}) is None
+    assert len(CURRICULUM) == n + 1 and len(CURRICULUM[-1]["items"]) == 2
+    assert guardar(jm, "kanji", {"jp": "虹", "meaning": "arcoíris", "nuevo": "1", "unidad_nueva": "Cielo"}) is None
+    assert next(k for k in KANJI_N5 if k["jp"] == "虹")["categoria_nombre"] == "Cielo"
+    borrar(jm, "kanji", "虹")
+    assert not any(k["jp"] == "虹" for k in KANJI_N5)
+    borrar(jm, "vocabulario", "ぜんぜん3")
+    assert len(CURRICULUM[-1]["items"]) == 1
+    borrar(jm, "vocabulario", orig["jp"])
+    assert not _items_temario("vocabulario", orig["jp"])
     k0 = KANJI_N5[0]
     assert guardar(jm, "kanji", {"jp": k0["jp"], "meaning": "otro", "on": "X"}) is None and k0["meaning"] == "otro (kanji)"
     print("ok")

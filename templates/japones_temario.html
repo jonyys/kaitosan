@@ -388,6 +388,10 @@
       </form>
       <div style="margin-top: 14px; text-align: center">
         <button type="button" class="btn btn-ghost" id="voc-pop-edit" style="font-size: 12px">Editar card</button>
+        <form method="POST" action="/japones/card/{{ kind }}/borrar" class="js-borrar" style="display: inline">
+          <input type="hidden" name="jp" id="voc-pop-del-jp" />
+          <button type="submit" class="btn btn-ghost" style="font-size: 12px; color: var(--peligro-tinta)">Eliminar card</button>
+        </form>
       </div>
       <p
         id="voc-pop-done"
@@ -499,6 +503,7 @@
           document.getElementById("voc-pop-estado").textContent =
             ESTADO[d.estado] || d.estado;
           document.getElementById("voc-pop-word").value = d.jp;
+          document.getElementById("voc-pop-del-jp").value = d.jp;
           var aprendida = d.estado === "aprendida";
           document.getElementById("voc-pop-form").hidden = aprendida;
           document.getElementById("voc-pop-done").hidden = !aprendida;

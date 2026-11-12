@@ -26,7 +26,9 @@
       <select name="unidad">
         <option value="">{{ 'Mis kanjis' if kind == 'kanji' else 'Extra (sin unidad)' }}</option>
         {% for uid, unombre in cards_unidades(kind) %}<option value="{{ uid }}">{{ unombre }}</option>{% endfor %}
+        <option value="__nueva">＋ {{ 'Categoría' if kind == 'kanji' else 'Unidad' }} nueva…</option>
       </select>
+      <input type="text" name="unidad_nueva" placeholder="Nombre de la nueva" autocomplete="off" hidden />
     </label>
     {% for name, label, grande in _campos %}
     <label>{{ label }}
@@ -47,6 +49,7 @@
     function abrir(nuevo, datos) {
       f.reset();
       f.elements.nuevo.value = nuevo ? "1" : "0";
+      syncNueva();
       f.elements.jp.readOnly = !nuevo; // el texto japonés es la clave del progreso
       document.getElementById("card-edit-unidad").hidden = !nuevo; // solo al crear
       document.getElementById("card-edit-titulo").textContent = nuevo ? "Nueva card" : "Editar card";
@@ -55,6 +58,23 @@
       });
       d.showModal();
     }
+    var sel = f.elements.unidad, nueva = f.elements.unidad_nueva;
+    function syncNueva() {
+      nueva.hidden = sel.value !== "__nueva";
+      nueva.required = !nueva.hidden;
+      if (nueva.hidden) nueva.value = "";
+    }
+    sel.addEventListener("change", syncNueva);
+    f.addEventListener("submit", function () { if (sel.value === "__nueva") sel.value = ""; });
+    document.querySelectorAll("form.js-borrar").forEach(function (b) {
+      b.addEventListener("submit", function (e) {
+        if (b.dataset.ok === "1") return;
+        e.preventDefault();
+        var msg = "¿Eliminar esta card? Se borra también su progreso.";
+        (window.confirmar ? window.confirmar(msg, { ok: "Sí, eliminar" }) : Promise.resolve(window.confirm(msg)))
+          .then(function (ok) { if (ok) { b.dataset.ok = "1"; b.submit(); } });
+      });
+    });
     window.cardForm = { nueva: function () { abrir(true); }, editar: function (x) { abrir(false, x); } };
     document.getElementById("card-edit-cancel").addEventListener("click", function () { d.close(); });
     d.addEventListener("click", function (e) { if (e.target === d) d.close(); });
