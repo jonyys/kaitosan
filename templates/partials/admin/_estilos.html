@@ -584,6 +584,12 @@
     html[data-tema] details.acc > summary[style] { color: var(--peligro-tinta) !important; }
     html[data-tema] details.acc > summary[style] > .ico { background: var(--peligro-bg); color: var(--peligro-tinta); }
     html[data-tema] dialog.flash-pop::backdrop { background: var(--velo); }
+    /* Pop-ups (ficha, ayuda, formularios): fondo opaco aunque la superficie del tema sea
+       translúcida (cristal), para que se lea el texto; esquinas bien redondeadas. */
+    html :is(dialog.flash-pop, dialog.help-pop) {
+        background: linear-gradient(var(--surface), var(--surface)), var(--bg);
+        border-radius: 22px;
+    }
 
     /* Cristal: desenfoque tras las superficies y un reflejo fino en el borde de arriba */
     html[data-tema^="cristal"] :is(.navmenu-panel, .hdr-menu-panel, dialog.flash-pop) {
