@@ -20,8 +20,10 @@
   #mascotaDrawer .tabs button { height: 30px; padding: 0 12px; border: 1.5px solid var(--cristal-borde, #5a4020); border-radius: 15px; background: var(--cristal, #1d160d);
     color: var(--text-soft, #b99a68); font: 500 13px/1 system-ui, sans-serif; cursor: pointer; }
   #mascotaDrawer .tabs button.on { background: var(--rosa-accion, #e0a44d); border-color: var(--rosa-accion, #e0a44d); color: var(--on-acc, #15100a); }
-  #mascotaDrawer .objs { display: flex; gap: 4px; min-height: 50px; }
-  #mascotaDrawer .objs.tienda { flex-wrap: wrap; justify-content: center; width: 330px; gap: 6px 6px; }
+  #mascotaDrawer .objs { display: flex; gap: 8px; width: 300px; box-sizing: border-box; padding: 4px 6px 18px; min-height: 50px;
+    overflow-x: auto; overflow-y: hidden; scrollbar-width: none; touch-action: none; }
+  #mascotaDrawer .objs::-webkit-scrollbar { display: none; }
+  #mascotaDrawer .obj { flex: none; }
   #mascotaDrawer .yenes { justify-self: end; font: 500 12px/1 system-ui, sans-serif; color: var(--text-soft, #b99a68); }
   #mascotaDrawer .yenes b { color: #f7d774; font-weight: 700; font-variant-numeric: tabular-nums; }
   #mascotaDrawer .obj.compra { height: 64px; cursor: pointer; }
@@ -169,9 +171,9 @@
   <div class="grip"></div>
   <div class="stats">
     <div class="yenes">円 <b id="mascotaYenes">0</b></div>
+    <div class="stat">Sed<i><b data-stat="sed"></b></i></div>
     <div class="stat">Hambre<i><b data-stat="hambre"></b></i></div>
     <div class="stat">Ánimo<i><b data-stat="animo"></b></i></div>
-    <div class="stat">Sed<i><b data-stat="sed"></b></i></div>
   </div>
   <div class="tabs">
     <button data-cat="comida" class="on">Comida</button>
@@ -187,8 +189,9 @@
     const lista = document.getElementById("mascotaObjs");
     let activo = false, catalogo = [], cuantos = {}, yenes = 0, cat = "comida";
 
-    function dibuja() {
+    function dibuja(cambioPestana) {
       lista.innerHTML = "";
+      if (cambioPestana) lista.scrollLeft = 0;
       lista.classList.toggle("tienda", cat === "tienda");
       if (cat === "tienda") {
         // Tienda: toda la comida y bebida con su precio; tocar una la compra
@@ -236,10 +239,10 @@
       refrescar().then(() => { if (activo) { cajon.classList.add("abierto"); fondo.classList.add("abierto"); } });
     }
     // Lo que más le falta (por debajo de 50 empieza a notarse; a 0 es el máximo): cara + nube con la cosa
-    const NEC = { hambre: { icono: "o-onigiri", gesto: "tripa" }, sed: { icono: "o-mizu", gesto: "seco" }, animo: { icono: "o-temari", gesto: "aburrido" } };
+    const NEC = { sed: { icono: "o-mizu", gesto: "seco" }, hambre: { icono: "o-onigiri", gesto: "tripa" }, animo: { icono: "o-temari", gesto: "aburrido" } };
     function necesidad(e) {
       let tipo = null, nivel = 0;
-      if (e.activo) for (const k of ["hambre", "sed", "animo"]) {
+      if (e.activo) for (const k of ["sed", "hambre", "animo"]) {
         const n = Math.max(0, Math.min(1, (50 - (e[k] ?? 100)) / 50));
         if (n > nivel) { nivel = n; tipo = k; }
       }
@@ -260,15 +263,13 @@
     socket.on("yenes", (d) => { aviso("+" + d.cantidad + " 円"); refrescar(); });
     setInterval(refrescar, 60000); // las barras bajan solas: que la cara y la nube lo sigan
 
-    lista.addEventListener("click", (e) => {
-      const o = e.target.closest(".obj.compra");
-      if (!o) return;
+    function comprar(o) {
       fetch("/tamagotchi/comprar", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: "objeto=" + o.dataset.obj }).then((r) => r.json()).then((d) => {
         pinta({ activo: true, ...d });
         if (d.ok) aviso("−" + (catalogo.find((c) => c.id === o.dataset.obj) || {}).precio + " 円");
       }).catch(() => {});
-    });
+    }
 
     window.kaitoMascotaRefrescar = refrescar;
     refrescar();
@@ -276,7 +277,7 @@
     fondo.addEventListener("click", cerrar);
     cajon.querySelector(".tabs").addEventListener("click", (e) => {
       const b = e.target.closest("button");
-      if (b) { cat = b.dataset.cat; dibuja(); }
+      if (b) { cat = b.dataset.cat; dibuja(true); }
     });
 
     // Deslizar desde el borde de abajo abre el cajón; deslizar hacia abajo sobre él lo cierra
@@ -315,28 +316,48 @@
       setTimeout(() => { el.style.opacity = "0"; setTimeout(() => el.remove(), 320); }, ms);
     }
 
-    lista.addEventListener("pointerdown", (e) => {
-      const o = e.target.closest(".obj");
-      if (!o || cat === "tienda") return;
-      o.setPointerCapture(e.pointerId);
-      sx = e.clientX; sy = e.clientY;
+    // Un solo dedo, dos gestos: de lado desplaza la fila; sobre un objeto y hacia arriba lo arrastra a la cara.
+    // Tocar sin mover, en la tienda, compra.
+    let g0 = null;
+    function empezarArrastre(o, e) {
       arrastrando = true;
+      sx = e.clientX; sy = e.clientY;
       fantasma = document.createElement("div");
       fantasma.className = "mascota-arrastre";
       fantasma.innerHTML = `<svg viewBox="0 0 64 64"><use href="#o-${o.dataset.obj}"/></svg>`;
       document.body.appendChild(fantasma);
       mueve(e);
+    }
+    lista.addEventListener("pointerdown", (e) => {
+      lista.setPointerCapture(e.pointerId);
+      g0 = { x: e.clientX, y: e.clientY, sl: lista.scrollLeft, o: e.target.closest(".obj"), modo: null };
     });
     lista.addEventListener("pointermove", (e) => {
-      if (!fantasma) return;
-      mueve(e);
-      if (Math.hypot(e.clientX - sx, e.clientY - sy) > 14) cerrar();
+      if (!g0) return;
+      const dx = e.clientX - g0.x, dy = e.clientY - g0.y;
+      if (!g0.modo && Math.hypot(dx, dy) > 10) {
+        const objeto = g0.o && cat !== "tienda" && !g0.o.classList.contains("vacio");
+        const cabe = lista.scrollWidth <= lista.clientWidth;
+        g0.modo = objeto && (Math.abs(dy) >= Math.abs(dx) || cabe) ? "objeto" : "fila";
+        if (g0.modo === "objeto") empezarArrastre(g0.o, e);
+      }
+      if (g0.modo === "fila") lista.scrollLeft = g0.sl - dx;
+      else if (g0.modo === "objeto" && fantasma) {
+        mueve(e);
+        if (Math.hypot(e.clientX - sx, e.clientY - sy) > 14) cerrar();
+      }
     });
     const suelta = (e) => {
-      if (!fantasma) return;
-      const o = e.target.closest(".obj"), el = fantasma;
+      const g = g0; g0 = null;
+      if (!g) return;
+      if (!g.modo) { // un toque
+        if (g.o && g.o.classList.contains("compra") && e.type !== "pointercancel") comprar(g.o);
+        return;
+      }
+      if (g.modo !== "objeto" || !fantasma) return;
+      const o = g.o, el = fantasma;
       fantasma = null; arrastrando = false;
-      const dentro = o && sobreCara(e.clientX, e.clientY) && e.type !== "pointercancel";
+      const dentro = sobreCara(e.clientX, e.clientY) && e.type !== "pointercancel";
       if (!dentro) { el.remove(); dibuja(); return; }
       const tipo = o.dataset.cat;
       cerrar();
