@@ -400,6 +400,26 @@
       [2400, () => { m.bocaO.t = 0; m.sonrisa.t = 1; m.cabezaR.t = 0; m.cabezaY.v -= 40; m.ceja.v -= 40; }],
       [2800, () => { m.sonrisa.t = 0; m.inferior.t = 0; m.ceja.t = 0; m.cejaArco.t = 0; m.pupila.t = 1; }],
     ] },
+    // Beber: echa la cabeza atrás, traga cinco veces (la boca pequeña sube y baja) y acaba con un «ahh» contento.
+    beber: { dur: 3000, peso: 0, pasos: [
+      [0, () => { m.cabezaR.t = -5; m.cabezaY.t = 6; m.inferior.t = 0.4; m.ceja.t = -4; m.bocaMini.t = 0.6; }],
+      ...[450, 850, 1250, 1650, 2050].map((t, i) => [t, () => {
+        m.bocaMini.t = i % 2 ? 0.2 : 1;
+        m.cabezaY.v += 22;
+        m.aplasta.v += 0.5;
+      }]),
+      [2400, () => { m.bocaMini.t = 0; m.cabezaR.t = 0; m.cabezaY.t = 0; m.sonrisa.t = 1; m.cabezaY.v -= 40; m.ceja.v -= 40; }],
+      [2800, () => { m.sonrisa.t = 0; m.inferior.t = 0; m.ceja.t = 0; }],
+    ] },
+    // Jugar: ojos de estrella, mira el juguete y da tres saltitos con la cabeza.
+    jugar: { dur: 2800, peso: 0, pasos: [
+      [0, () => { m.abre.t = 1.12; m.pupila.t = 1.25; m.ceja.t = -8; m.cejaArco.t = 0.35; m.sonrisa.t = 1; m.inferior.t = 0.25; }],
+      ...[300, 900, 1500].map((t) => [t, () => {
+        m.aplasta.t = 0.07;
+        setTimeout(() => { m.aplasta.t = 0; m.aplasta.v -= 2.4; m.cabezaY.v -= 80; m.ceja.v -= 60; }, 140);
+      }]),
+      [2300, () => { m.abre.t = 1; m.pupila.t = 1; m.ceja.t = 0; m.cejaArco.t = 0; m.sonrisa.t = 0; m.inferior.t = 0; }],
+    ] },
     sorpresa: { dur: 1800, peso: 1, pasos: [
       [0, () => { m.abre.t = 1.16; m.abre.v += 1.6; m.ceja.t = -14; m.ceja.v -= 80; m.cejaArco.t = 0.5; m.bocaO.t = 1; m.pupila.t = 0.8; m.cabezaY.v -= 45; }],
       [1300, () => { m.abre.t = 1; m.ceja.t = 0; m.bocaO.t = 0; m.pupila.t = 1; }],
