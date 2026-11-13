@@ -200,3 +200,22 @@ def comprar(objeto: str, ahora: float = None) -> bool:
     e["objetos"][objeto] = e["objetos"].get(objeto, 0) + 1
     _guardar(e)
     return True
+
+
+# ── Trampas (Ajustes > Mascota): para probar el modo o echar una mano ─────────────────────────────
+def trampa(accion: str, ahora: float = None) -> bool:
+    """llenar: todo a 100 · vaciar: todo a 5 (para ver sus caras de necesidad) · yenes: +500 ·
+    objetos: +3 de cada comida y bebida (bogavante incluido). False si está apagado o no existe."""
+    if not activo() or accion not in ("llenar", "vaciar", "yenes", "objetos"):
+        return False
+    e = _cargar(ahora or time.time())
+    if accion in ("llenar", "vaciar"):
+        for k in BAJADA_H:
+            e[k] = 100.0 if accion == "llenar" else 5.0
+    elif accion == "yenes":
+        e["yenes"] += 500
+    else:
+        for k in GASTABLES:
+            e["objetos"][k] = e["objetos"].get(k, 0) + 3
+    _guardar(e)
+    return True

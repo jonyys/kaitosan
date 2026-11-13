@@ -868,6 +868,19 @@ def ajustes_mascota():
     flash("✅ Modo tamagotchi " + ("activado" if tamagotchi.activo() else "desactivado"), "success")
     return redirect(url_for("ajustes"))
 
+@app.route("/admin/ajustes/mascota/trampa", methods=["POST"])
+@login_requerido
+def ajustes_mascota_trampa():
+    accion = request.form.get("accion", "")
+    if tamagotchi.trampa(accion):
+        if accion == "yenes":
+            socketio.emit("yenes", {"cantidad": 500, "motivo": "trampa"})
+        socketio.emit("mascota", {})  # la cara de Kaito vuelve a leer sus barras
+        flash("✅ Hecho", "success")
+    else:
+        flash("⚠️ Activa antes el modo tamagotchi", "error")
+    return redirect(url_for("ajustes"))
+
 @app.route("/admin/ajustes/pantalla/noche", methods=["POST"])
 @login_requerido
 def ajustes_pantalla_noche():

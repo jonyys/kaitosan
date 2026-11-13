@@ -104,6 +104,16 @@ def test_hablarle_sube_el_animo():
     t.set_activo(True)
 
 
+def test_trampas():
+    _de_cero()
+    assert t.trampa("vaciar", B) and t.estado(B)["hambre"] == 5
+    assert t.trampa("llenar", B) and t.estado(B)["sed"] == 100
+    y = t.estado(B)["yenes"]
+    assert t.trampa("yenes", B) and t.estado(B)["yenes"] == y + 500
+    assert t.trampa("objetos", B) and t.estado(B)["objetos"]["ebigohan"] == 3
+    assert not t.trampa("nada", B)
+
+
 if __name__ == "__main__":
     for nombre, f in list(globals().items()):
         if nombre.startswith("test_"):
