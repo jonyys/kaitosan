@@ -749,6 +749,7 @@
   document.addEventListener(
     "pointerdown",
     (e) => {
+      if (e.target.closest("#mascota")) return; // arrastrar comida: ni caricia ni calla a Kaito
       // En el robot, tocar mientras piensa o habla lo calla (_kiosko.html): la cremallera
       // sale ya. Ese toque no cuenta como caricia ni le hace mirar al dedo.
       if ({{ 'true' if es_kiosko else 'false' }} && (estado === "speaking" || estado === "thinking") && !e.target.closest("#kioskoDrawer,#kioskoBackdrop")) {

@@ -284,7 +284,6 @@ def _kiosko_config():
     return {
         "screensaver_min": system_settings.pantalla_inactividad_get(),
         "volumen": system_settings.volumen_get(),
-        "tamagotchi": tamagotchi.activo(),
         "brillo": {"soportado": bool(b.get("soportado")), "pct": pct},
         **_kiosko_pantalla(),
     }
@@ -376,16 +375,9 @@ def kiosko_no_molestar():
     return jsonify(r)
 
 
-@app.route("/tamagotchi")
-def tamagotchi_pagina():
-    if not tamagotchi.activo():
-        return redirect("/")
-    return render_template("tamagotchi.html", objetos=tamagotchi.OBJETOS)
-
-
 @app.route("/tamagotchi/estado")
 def tamagotchi_estado():
-    return jsonify(tamagotchi.estado())
+    return jsonify({"activo": tamagotchi.activo(), **tamagotchi.estado()})
 
 
 @app.route("/tamagotchi/dar", methods=["POST"])
