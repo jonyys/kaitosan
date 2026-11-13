@@ -5,10 +5,15 @@
   #mascotaFondo.abierto { opacity: 1; pointer-events: auto; }
   #mascotaDrawer {
     position: fixed; bottom: 0; left: 0; z-index: 9997; width: var(--cara-ancho, var(--ancho, 100%)); box-sizing: border-box;
-    padding: 30px 0 78px; transform: translateY(106%); transition: transform .28s ease;
+    padding: 30px 0 70px; transform: translateY(106%); transition: transform .28s ease;
     background: var(--blobs, none), var(--bg, #15100a); border-radius: 40px 40px 0 0; border-top: 1.5px solid var(--border, #3a2a14);
-    display: flex; justify-content: center; gap: 14px; -webkit-user-select: none; user-select: none;
+    display: flex; flex-direction: column; align-items: center; gap: 14px; -webkit-user-select: none; user-select: none;
   }
+  #mascotaDrawer .stats { width: 220px; display: grid; gap: 7px; }
+  #mascotaDrawer .stat { display: grid; grid-template-columns: 58px 1fr; align-items: center; gap: 8px; font: 500 12px/1 system-ui, sans-serif; color: var(--text-soft, #b99a68); }
+  #mascotaDrawer .stat i { display: block; height: 8px; border-radius: 4px; background: var(--border-fuerte, #3a2a14); overflow: hidden; }
+  #mascotaDrawer .stat b { display: block; height: 100%; width: 0; border-radius: 4px; background: var(--rosa-accion, #e0a44d); transition: width .4s; }
+  #mascotaDrawer .objs { display: flex; gap: 14px; }
   #mascotaDrawer.abierto { transform: translateY(0); box-shadow: 0 -12px 34px rgba(0, 0, 0, .6); }
   #mascotaDrawer .grip { position: absolute; top: 12px; left: 50%; margin-left: -22px; width: 44px; height: 5px; border-radius: 3px; background: var(--border-fuerte, #5a4020); }
   #mascotaDrawer .obj { position: relative; width: 64px; height: 64px; touch-action: none; }
@@ -40,9 +45,16 @@
 <div id="mascotaFondo" data-no-tap></div>
 <div id="mascotaDrawer" data-no-tap>
   <div class="grip"></div>
-  <div class="obj vacio" data-obj="onigiri"><svg viewBox="0 0 64 64"><use href="#o-onigiri"/></svg><span class="n"></span></div>
-  <div class="obj vacio" data-obj="dango"><svg viewBox="0 0 64 64"><use href="#o-dango"/></svg><span class="n"></span></div>
-  <div class="obj vacio" data-obj="ocha"><svg viewBox="0 0 64 64"><use href="#o-ocha"/></svg><span class="n"></span></div>
+  <div class="stats">
+    <div class="stat">Hambre<i><b data-stat="hambre"></b></i></div>
+    <div class="stat">Ánimo<i><b data-stat="animo"></b></i></div>
+    <div class="stat">Energía<i><b data-stat="energia"></b></i></div>
+  </div>
+  <div class="objs">
+    <div class="obj vacio" data-obj="onigiri"><svg viewBox="0 0 64 64"><use href="#o-onigiri"/></svg><span class="n"></span></div>
+    <div class="obj vacio" data-obj="dango"><svg viewBox="0 0 64 64"><use href="#o-dango"/></svg><span class="n"></span></div>
+    <div class="obj vacio" data-obj="ocha"><svg viewBox="0 0 64 64"><use href="#o-ocha"/></svg><span class="n"></span></div>
+  </div>
 </div>
 <script>
   (function () {
@@ -50,6 +62,7 @@
     let activo = false;
     function pinta(e) {
       activo = !!e.activo;
+      cajon.querySelectorAll("[data-stat]").forEach((b) => { b.style.width = (e[b.dataset.stat] || 0) + "%"; });
       cajon.querySelectorAll(".obj").forEach((o) => {
         const n = (e.objetos || {})[o.dataset.obj] || 0;
         o.querySelector(".n").textContent = n;
@@ -115,7 +128,7 @@
         fetch("/tamagotchi/dar", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
           body: "objeto=" + o.dataset.obj }).then((r) => r.json()).then((d) => {
           pinta({ activo: true, ...d });
-          if (d.ok) hacerGesto("corazones", true);
+          if (d.ok) hacerGesto("comer", true);
         }).catch(() => {});
       };
       o.addEventListener("pointerup", suelta);

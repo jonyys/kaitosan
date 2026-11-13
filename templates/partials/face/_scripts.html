@@ -386,6 +386,20 @@
       [1050, () => { m.aplasta.v += 1.2; }],
       [1300, () => { m.sonrisa.t = 0; m.inferior.t = 0; }],
     ] },
+    // Comer (lo lanza la mascota al soltarle comida): abre la boca, mastica cinco veces con los mofletes
+    // hinchándose y la cabeza botando, y acaba contento y sonrojado. Peso 0: no sale solo.
+    comer: { dur: 3000, peso: 0, pasos: [
+      [0, () => { m.bocaO.t = 1; m.abre.t = 1.08; m.ceja.t = -6; m.cejaArco.t = 0.25; m.pupila.t = 1.1; }],
+      [450, () => { m.inferior.t = 0.5; m.abre.t = 1; m.ceja.t = -3; }],
+      ...[450, 850, 1250, 1650, 2050].map((t, i) => [t, () => {
+        m.bocaO.t = i % 2 ? 0.7 : 0.1;
+        m.aplasta.v += 0.9;
+        m.cabezaY.v -= 28;
+        m.cabezaR.t = i % 2 ? 3 : -3;
+      }]),
+      [2400, () => { m.bocaO.t = 0; m.sonrisa.t = 1; m.cabezaR.t = 0; m.cabezaY.v -= 40; m.ceja.v -= 40; }],
+      [2800, () => { m.sonrisa.t = 0; m.inferior.t = 0; m.ceja.t = 0; m.cejaArco.t = 0; m.pupila.t = 1; }],
+    ] },
     sorpresa: { dur: 1800, peso: 1, pasos: [
       [0, () => { m.abre.t = 1.16; m.abre.v += 1.6; m.ceja.t = -14; m.ceja.v -= 80; m.cejaArco.t = 0.5; m.bocaO.t = 1; m.pupila.t = 0.8; m.cabezaY.v -= 45; }],
       [1300, () => { m.abre.t = 1; m.ceja.t = 0; m.bocaO.t = 0; m.pupila.t = 1; }],
