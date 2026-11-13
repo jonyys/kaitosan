@@ -1,15 +1,22 @@
-{# Modo tamagotchi en la cara: la comida que Kaito tiene se ve abajo y se arrastra hasta su cara.
-   Solo aparece si el modo está activo (Ajustes > Mascota) y hay algo que dar. #}
+{# Modo tamagotchi en la cara: un cajón que sube desde el borde de abajo (como el de ajustes rápidos baja desde
+   arriba) con la comida de Kaito. Se arrastra hasta su cara. El modo se enciende en el cajón de arriba. #}
 <style>
-  #mascota { position: fixed; left: 50%; bottom: 46px; transform: translateX(-50%); z-index: 20; display: none; gap: 10px; }
-  #mascota.hay { display: flex; }
-  body:has(.face.sensei) #mascota { display: none; }
-  #mascota .obj { position: relative; width: 54px; height: 54px; touch-action: none; opacity: .92; }
-  #mascota .obj svg { width: 100%; height: 100%; display: block; }
-  #mascota .obj .n { position: absolute; right: -4px; bottom: -4px; min-width: 20px; height: 20px; border-radius: 10px; padding: 0 5px;
-    background: #e0a44d; color: #15100a; font: 700 12px/20px system-ui, sans-serif; text-align: center; }
-  #mascota .obj.vacio { opacity: .25; pointer-events: none; }
-  .mascota-arrastre { position: fixed; left: 0; top: 0; width: 84px; height: 84px; z-index: 99; pointer-events: none; }
+  #mascotaFondo { position: fixed; inset: 0; z-index: 9996; background: rgba(0, 0, 0, .45); opacity: 0; pointer-events: none; transition: opacity .28s ease; }
+  #mascotaFondo.abierto { opacity: 1; pointer-events: auto; }
+  #mascotaDrawer {
+    position: fixed; bottom: 0; left: 0; z-index: 9997; width: var(--cara-ancho, var(--ancho, 100%)); box-sizing: border-box;
+    padding: 30px 0 78px; transform: translateY(106%); transition: transform .28s ease;
+    background: var(--blobs, none), var(--bg, #15100a); border-radius: 40px 40px 0 0; border-top: 1.5px solid var(--border, #3a2a14);
+    display: flex; justify-content: center; gap: 14px; -webkit-user-select: none; user-select: none;
+  }
+  #mascotaDrawer.abierto { transform: translateY(0); box-shadow: 0 -12px 34px rgba(0, 0, 0, .6); }
+  #mascotaDrawer .grip { position: absolute; top: 12px; left: 50%; margin-left: -22px; width: 44px; height: 5px; border-radius: 3px; background: var(--border-fuerte, #5a4020); }
+  #mascotaDrawer .obj { position: relative; width: 64px; height: 64px; touch-action: none; }
+  #mascotaDrawer .obj svg { width: 100%; height: 100%; display: block; }
+  #mascotaDrawer .obj .n { position: absolute; right: -4px; bottom: -4px; min-width: 22px; height: 22px; border-radius: 11px; padding: 0 5px;
+    background: #e0a44d; color: #15100a; font: 700 13px/22px system-ui, sans-serif; text-align: center; }
+  #mascotaDrawer .obj.vacio { opacity: .25; pointer-events: none; }
+  .mascota-arrastre { position: fixed; left: 0; top: 0; width: 84px; height: 84px; z-index: 10001; pointer-events: none; }
   .mascota-arrastre svg { width: 100%; height: 100%; filter: drop-shadow(0 6px 8px rgba(0, 0, 0, .4)); }
 </style>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -30,51 +37,81 @@
     <path d="M50 32c9 0 9 14 0 14" fill="none" stroke="#d9c7a3" stroke-width="3" stroke-linecap="round"/>
   </symbol>
 </svg>
-<div id="mascota" data-no-tap>
+<div id="mascotaFondo" data-no-tap></div>
+<div id="mascotaDrawer" data-no-tap>
+  <div class="grip"></div>
   <div class="obj vacio" data-obj="onigiri"><svg viewBox="0 0 64 64"><use href="#o-onigiri"/></svg><span class="n"></span></div>
   <div class="obj vacio" data-obj="dango"><svg viewBox="0 0 64 64"><use href="#o-dango"/></svg><span class="n"></span></div>
   <div class="obj vacio" data-obj="ocha"><svg viewBox="0 0 64 64"><use href="#o-ocha"/></svg><span class="n"></span></div>
 </div>
 <script>
   (function () {
-    const bandeja = document.getElementById("mascota");
+    const cajon = document.getElementById("mascotaDrawer"), fondo = document.getElementById("mascotaFondo");
+    let activo = false;
     function pinta(e) {
-      bandeja.querySelectorAll(".obj").forEach((o) => {
+      activo = !!e.activo;
+      cajon.querySelectorAll(".obj").forEach((o) => {
         const n = (e.objetos || {})[o.dataset.obj] || 0;
         o.querySelector(".n").textContent = n;
         o.classList.toggle("vacio", n < 1);
       });
-      bandeja.classList.toggle("hay", !!e.activo);
+      if (!activo) cerrar();
     }
     function refrescar() {
-      fetch("/tamagotchi/estado").then((r) => r.json()).then(pinta).catch(() => {});
+      return fetch("/tamagotchi/estado").then((r) => r.json()).then(pinta).catch(() => {});
     }
-    refrescar();
+    function cerrar() { cajon.classList.remove("abierto"); fondo.classList.remove("abierto"); }
+    function abrir() {
+      // al mirar el estado se aplica el paso del tiempo (y el regalo del día, si toca)
+      refrescar().then(() => { if (activo) { cajon.classList.add("abierto"); fondo.classList.add("abierto"); } });
+    }
     window.kaitoMascotaRefrescar = refrescar;
-    socket.on("modo_sensei", (d) => { if (!d.activo) setTimeout(refrescar, 1500); }); // la clase puede haber dado comida
+    refrescar();
+    socket.on("modo_sensei", (d) => { if (d.activo) cerrar(); else setTimeout(refrescar, 1500); }); // la clase puede dar comida
+    fondo.addEventListener("click", cerrar);
 
-    // Arrastrar un objeto hasta la cara (pointer events: esta pantalla no manda eventos táctiles)
-    let fantasma = null;
+    // Deslizar desde el borde de abajo abre el cajón; deslizar hacia abajo sobre él lo cierra
+    // (pointer events: esta pantalla no manda eventos táctiles)
+    let y0 = null, x0 = 0, yc = null;
+    document.addEventListener("pointerdown", (e) => {
+      y0 = e.clientY >= window.innerHeight - 90 ? e.clientY : null;
+      x0 = e.clientX;
+    }, { passive: true });
+    document.addEventListener("pointermove", (e) => {
+      if (y0 === null) return;
+      if (y0 - e.clientY > 60 && Math.abs(e.clientX - x0) < 60 && !face.classList.contains("sensei")) { y0 = null; abrir(); }
+    }, { passive: true });
+    cajon.addEventListener("pointerdown", (e) => { yc = e.clientY; }, { passive: true });
+    cajon.addEventListener("pointermove", (e) => { if (yc !== null && e.clientY - yc > 40) { yc = null; cerrar(); } }, { passive: true });
+
+    // Arrastrar un objeto hasta la cara: al empezar a moverlo el cajón se esconde para verla entera
+    let fantasma = null, sx = 0, sy = 0;
     const sobreCara = (x, y) => {
       const r = face.getBoundingClientRect();
       return Math.hypot(x - (r.left + r.width / 2), y - (r.top + r.height / 2)) < 130;
     };
     const mueve = (e) => { fantasma.style.transform = `translate(${e.clientX - 42}px,${e.clientY - 60}px)`; };
-    bandeja.querySelectorAll(".obj").forEach((o) => {
+    cajon.querySelectorAll(".obj").forEach((o) => {
       o.addEventListener("pointerdown", (e) => {
         o.setPointerCapture(e.pointerId);
+        sx = e.clientX; sy = e.clientY;
         fantasma = document.createElement("div");
         fantasma.className = "mascota-arrastre";
         fantasma.innerHTML = `<svg viewBox="0 0 64 64"><use href="#o-${o.dataset.obj}"/></svg>`;
         document.body.appendChild(fantasma);
         mueve(e);
       });
-      o.addEventListener("pointermove", (e) => { if (fantasma) mueve(e); });
+      o.addEventListener("pointermove", (e) => {
+        if (!fantasma) return;
+        mueve(e);
+        if (Math.hypot(e.clientX - sx, e.clientY - sy) > 14) cerrar();
+      });
       const suelta = (e) => {
         if (!fantasma) return;
         const dentro = sobreCara(e.clientX, e.clientY);
         fantasma.remove(); fantasma = null;
         if (!dentro || e.type === "pointercancel") return;
+        cerrar();
         fetch("/tamagotchi/dar", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
           body: "objeto=" + o.dataset.obj }).then((r) => r.json()).then((d) => {
           pinta({ activo: true, ...d });

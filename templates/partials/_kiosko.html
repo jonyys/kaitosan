@@ -127,6 +127,7 @@
     height: 44px; padding: 0 12px; border: 1.5px solid var(--cristal-borde, #5a4020); border-radius: 22px;
     background: var(--cristal, #1d160d); color: var(--text, #ffffff); font: inherit; font-size: 16px; cursor: pointer;
   }
+  #kioskoDrawer .btns button.on { background: var(--rosa-accion, #e0a44d); border-color: var(--rosa-accion, #e0a44d); color: var(--on-acc, #15100a); font-weight: 500; }
   #kioskoDrawer .btns button:active { background: var(--border-fuerte, #3a2a14); }
   #kioskoDrawer .btns button[data-salir] { grid-column: 1 / -1; width: 150px; justify-self: center; border-color: var(--border, #3a2a14); color: var(--peligro-tinta, #e88a8a); }
   /* Alarma o temporizador sonando: pantalla completa, como la del iPhone */
@@ -327,12 +328,10 @@
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v11m0-4h18m0 4v-8a2 2 0 0 0-2-2h-8v6"/><circle cx="7" cy="10" r="1"/></svg>Noche</button>' +
         '<button class="cj-tile" id="kioskoNoMolestarSw" aria-label="No molestar">' +
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v4M8 21h8"/><path class="tacha" d="M3 3l18 18"/></svg>No molestar</button>' +
-        '<button class="cj-tile" id="kioskoMascota" aria-label="Mascota">' +
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-8-5.2-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.8-8 11-8 11z"/></svg>Mascota</button>' +
         "</div>" +
         '<div class="btns">' +
         '<button data-go="/admin/ajustes">Ajustes</button>' +
-        '<button data-go="/admin/ajustes#wifi">WiFi</button>' +
+        '<button data-mascota aria-label="Mascota">Mascota</button>' +
         '<button data-salir>Salir</button>' +
         "</div></div>";
 
@@ -395,8 +394,9 @@
         pintaNoMolestar();
       });
 
-      // Mascota: enciende o apaga el modo tamagotchi (la comida sale u oculta en la cara)
-      var mas = dw.querySelector("#kioskoMascota");
+      // Mascota (en el sitio del botón WiFi): enciende o apaga el modo tamagotchi. Apagado, Kaito no se
+      // cansa ni tiene hambre; encendido, la comida sale deslizando desde el borde de abajo de la cara.
+      var mas = dw.querySelector("[data-mascota]");
       mas.classList.toggle("on", !!cfg.tamagotchi);
       mas.setAttribute("aria-pressed", !!cfg.tamagotchi);
       mas.addEventListener("click", function () {
@@ -410,6 +410,7 @@
       });
 
       dw.querySelectorAll(".btns button").forEach(function (b) {
+        if (b.hasAttribute("data-mascota")) return;
         b.addEventListener("click", function () {
           if (b.hasAttribute("data-salir")) {
             if (confirm("¿Salir a la pantalla del sistema? Kaito se cerrará; " +
