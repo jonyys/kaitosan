@@ -7,15 +7,22 @@ set -u
 
 URL="http://localhost:5000"
 
-# Espera a que el servicio kaito responda (hasta ~2 min).
-for _ in $(seq 1 60); do
-  if command -v curl >/dev/null 2>&1; then
-    curl -sf -o /dev/null "$URL" && break
-  else
-    </dev/tcp/localhost/5000 && break
-  fi
-  sleep 2
-done 2>/dev/null
+# Pantalla de carga de la marca (deploy/arranque, la copia instalar-splash.sh):
+# se abre ya y ella sola pasa a la cara cuando el servicio responde, así no se
+# ve el escritorio mientras arranca. Sin ella, se espera al servicio (~2 min).
+ARRANQUE=/usr/local/share/kaito/arranque/index.html
+if [ -f "$ARRANQUE" ]; then
+  URL="file://$ARRANQUE"
+else
+  for _ in $(seq 1 60); do
+    if command -v curl >/dev/null 2>&1; then
+      curl -sf -o /dev/null "$URL" && break
+    else
+      </dev/tcp/localhost/5000 && break
+    fi
+    sleep 2
+  done 2>/dev/null
+fi
 
 # Chromium: "chromium-browser" en Bullseye, "chromium" en Bookworm.
 BIN="$(command -v chromium-browser || command -v chromium || true)"

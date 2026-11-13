@@ -1,0 +1,11 @@
+# Kaito: la sesión arranca SIN escritorio (sin barra, sin fondo de pantalla, sin avisos de red):
+# el robot es un producto, no un ordenador. Solo queda lo necesario (pantalla y el autostart
+# XDG, que abre el kiosko de Kaito).
+# Para tener el escritorio de Raspberry Pi a mano: touch ~/.config/kaito/escritorio  y reiniciar
+# (y quita XCURSOR_THEME=vacio de ~/.config/labwc/environment si quieres ver el ratón).
+if [ -e "$HOME/.config/kaito/escritorio" ]; then
+  /usr/bin/lwrespawn /usr/bin/pcmanfm-pi &
+  /usr/bin/lwrespawn /usr/bin/wf-panel-pi &
+fi
+/usr/bin/kanshi &
+/usr/bin/lxsession-xdg-autostart

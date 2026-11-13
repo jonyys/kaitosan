@@ -1,0 +1,62 @@
+# Anillo de Kaito (barato para la Pi). Al arrancar: fondo fijo y la perla y la tabla dando vueltas por el anillo.
+# Al apagar o reiniciar: solo «mata ne» (en kana) sobre los brillos, que tras unos segundos se apaga a negro.
+# La pantalla es de 480x480; se centra por si cambia la resolución.
+# Todo el estado va en `global.` (en Plymouth, lo que se asigna dentro de una función es local).
+Window.SetBackgroundTopColor(0.043, 0.031, 0.020);
+Window.SetBackgroundBottomColor(0.043, 0.031, 0.020);
+
+global.ox = Window.GetWidth() / 2 - 240;
+global.oy = Window.GetHeight() / 2 - 240;
+
+fun capa(nombre, z) {
+    s = Sprite(Image(nombre));
+    s.SetPosition(global.ox, global.oy, z);
+    return s;
+}
+
+global.velo = capa("negro.png", 9);
+global.velo.SetOpacity(0);
+global.opacidad_velo = 0;
+global.t = 0;
+
+if (Plymouth.GetMode() == "boot") {
+    global.fondo = capa("fondo.png", 1);   # con referencia: un sprite suelto puede liberarse y desaparecer
+    perla_img = Image("perla.png");
+    global.perla = Sprite(perla_img);
+    global.pw = perla_img.GetWidth() / 2;
+    global.ph = perla_img.GetHeight() / 2;
+    global.tablas = [];
+    for (i = 0; i < 36; i++) global.tablas[i] = Image("tabla" + i + ".png");
+    global.tabla = Sprite(global.tablas[0]);
+    global.tw = global.tablas[0].GetWidth() / 2;
+    global.th = global.tablas[0].GetHeight() / 2;
+
+}
+fun refrescar_arranque() {
+        global.t = global.t + 1;
+        vuelta = global.t / 200;                                  # una vuelta cada 200 cuadros (~4 s)
+        a = vuelta * 2 * Math.Pi;
+        global.perla.SetPosition(global.ox + 240 + 212 * Math.Sin(a) - global.pw,
+                                 global.oy + 240 - 212 * Math.Cos(a) - global.ph, 4);
+        b = a + Math.Pi;                                          # la tabla, enfrente
+        global.tabla.SetPosition(global.ox + 240 + 212 * Math.Sin(b) - global.tw,
+                                 global.oy + 240 - 212 * Math.Cos(b) - global.th, 3);
+        f = vuelta + 0.5;
+        f = f - Math.Int(f);
+        global.tabla.SetImage(global.tablas[Math.Int(f * 36)]);
+}
+
+fun refrescar_apagado() {
+    global.t = global.t + 1;
+    if (global.t > 150) {                                         # tras ~3 s se apaga a negro
+        global.opacidad_velo = global.opacidad_velo + 0.004;
+        if (global.opacidad_velo > 1) global.opacidad_velo = 1;
+        global.velo.SetOpacity(global.opacidad_velo);
+    }
+}
+
+if (Plymouth.GetMode() == "boot") Plymouth.SetRefreshFunction(refrescar_arranque);
+else {                                                            # apagando o reiniciando
+    global.fondo = capa("apagado.png", 1);
+    Plymouth.SetRefreshFunction(refrescar_apagado);
+}

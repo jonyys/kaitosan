@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=Kaito
+Description=Pantalla de arranque y apagado de Kaito
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/kaito
+ScriptFile=/usr/share/plymouth/themes/kaito/kaito.script

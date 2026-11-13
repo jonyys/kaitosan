@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kaito</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #0b0805; overflow: hidden; cursor: none; }
+  body { display: flex; align-items: center; justify-content: center; }
+  #stage { position: relative; width: 480px; height: 480px; flex: none; overflow: hidden; background: radial-gradient(300px 220px at 50% 106%, rgba(224, 164, 77, .26), transparent 72%), radial-gradient(250px 250px at 20% 18%, rgba(79, 209, 197, .17), transparent 70%), #0b0805; }
+  #stage > * { position: absolute; left: 0; top: 0; width: 480px; height: 480px; }
+  /* lo único que se mueve mientras carga: la capa de la perla y la tabla (a 24 cuadros/s: en la Pi cada cuadro cuesta) */
+  #orbita { transform-origin: 240px 240px; will-change: transform; animation: giro 4s steps(96) infinite; }
+  @keyframes giro { to { transform: rotate(360deg); } }
+  #kanji { will-change: opacity; }
+  #fin { background: #0b0805; opacity: 0; z-index: 9; will-change: opacity; }
+  /* cargado: el giro frena (lo hace el script) y 海斗 se apaga; luego fundido a negro */
+  #stage.cargado #kanji { opacity: 0; transition: opacity 1.2s ease-in-out 2.4s; }
+  #stage.cerrando #fin { opacity: 1; transition: opacity .8s; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <svg id="anillo" viewBox="0 0 480 480"><circle cx="240" cy="240" r="212" fill="none" stroke="#7fe3d8" stroke-opacity=".4" stroke-width="2"/></svg>
+  <svg id="kanji" viewBox="0 0 480 480"><path fill="#f0b24a" d="M154.1 221.9Q165 211.8 170.1 198.3Q171.9 193.4 172 190Q177.4 190.7 182.3 191.9Q184.3 192.3 184.3 193.5Q184.3 194.4 183.3 195.4Q181.6 197.1 180.8 199Q180.1 201 179.4 202.4H215.1L229.3 202.3Q230.2 202.3 230.3 202.5Q230.5 202.6 230.5 203.4V211.2Q230.5 212.1 230.2 212.3Q230.1 212.5 229.3 212.5L215.1 212.3H174.6Q172.9 215.4 170.4 218.9L184.1 219.1H207.9L221.5 218.9Q222.9 218.9 222.9 220.2Q222.5 225.7 222.3 229.5L221.8 241.6L231 241.4Q231.9 241.4 232.1 241.6Q232.3 241.8 232.3 242.6V250.2Q232.3 251 232.1 251.2Q231.9 251.4 231 251.4Q230.9 251.4 229.8 251.3Q225.9 251.2 221.1 251.2Q220.8 256.4 219.9 265.2L227.7 265Q228.7 265 228.9 265.2Q229.1 265.4 229.1 266.2V273.5Q229.1 274.3 228.9 274.5Q228.6 274.7 227.7 274.7Q227.6 274.7 226.5 274.6Q223 274.5 218.9 274.5L218.7 276.8Q217.8 284.1 214.1 287.2Q210.8 290 204.4 290Q199.9 290 198.6 289.9Q197.3 289.8 197 289.3Q196.7 288.8 196 286.4Q194.6 282 192.8 279.3Q197 279.8 203 279.8Q207.9 279.8 208.4 274.5H172Q171.2 278 170.6 280.5Q170.3 282.3 169 282.3Q168 282.3 164.7 281.6Q161.1 281 160.3 280.7Q159.4 280.4 159.4 279.9Q159.4 279.5 159.6 278.8Q161.2 274.6 162.2 270.2Q164.5 260.6 166 251.2Q162.2 251.2 159 251.3Q156.9 251.4 156.8 251.4Q156 251.4 155.8 251.2Q155.6 251 155.6 250.2V242.6Q155.6 241.7 155.9 241.6Q156 241.4 156.8 241.4L167.4 241.6Q168 237.1 168.9 227.9Q169.2 224.5 169.2 220.7Q167.1 223.6 164.1 227.1Q162.6 228.9 161.9 228.9Q161.3 228.9 159.7 227Q157.3 224 154.1 221.9ZM210.8 251.2H198.1Q197 260.6 196.3 265.2H209.6Q210.2 260.5 210.8 251.2ZM174 265.2H186Q186.8 260.6 187.9 251.2H176.3Q175.3 258 174 265.2ZM212 228.4H199.9L199 241.6H211.5Q211.9 232.5 212 228.4ZM178.8 228.4Q178.3 234.8 177.5 241.6H188.9Q189.3 237.3 189.8 228.4ZM132.3 283.2Q135.2 278.8 137.1 274.8Q143.1 262.3 146.5 248.4Q149.7 251.6 152.5 253.5Q154.9 255 154.9 256.3Q154.9 256.9 154.4 258.7Q151.8 268.7 145.6 283.6Q144.2 286.6 144.2 287.9Q144.2 289.7 143.1 289.7Q142.3 289.7 140.7 288.8Q137.1 286.8 132.3 283.2ZM139.5 219.9Q149.1 225.5 155.2 231Q155.7 231.5 155.7 232Q155.7 232.3 155.2 233.2L150.2 239.7Q149.4 240.8 149 240.8Q148.8 240.8 148 240.2Q141.6 233.7 132.7 228.2Q131.9 227.8 131.9 227.4Q131.9 227 132.6 226.2L137.3 220.5Q138 219.6 138.6 219.6Q138.9 219.6 139.5 219.9ZM144.2 192.8Q151.2 196.7 159.1 204Q159.7 204.4 159.7 204.9Q159.7 205.3 159 206.2L154.2 212.6Q153.5 213.6 153.1 213.6Q152.8 213.6 152.1 213.1Q144.5 205 137.2 200.8Q136.4 200.4 136.4 200Q136.4 199.7 137.1 198.8L142 193.3Q142.8 192.4 143.2 192.4Q143.6 192.4 144.2 192.8Z M311.6 190Q319.6 190.2 324.3 190.9Q326 191.1 326 192.1Q326 193 325.4 194.4Q324.5 196.5 324.5 206.4V250.1L332.3 249.2Q338.2 248.6 342.8 247.9Q343.2 247.8 345.2 247.5Q345.9 247.3 346.1 247.3L346.6 247.3Q347.3 247.3 347.4 248.6L348 257.8Q348.1 258.1 348.1 258.3Q348.1 259 346.9 259.1Q334.1 260.4 332.9 260.5L324.5 261.4V269.7L324.7 288.9Q324.7 290 323.5 290H313.4Q312.2 290 312.2 288.9L312.4 269.8V262.7L268.3 267.6Q262.4 268.2 257.9 268.8Q254.6 269.2 254.5 269.2Q254.1 269.2 253.9 269.2Q253.2 269.2 253.1 268.1L252.4 258.7Q252.3 258.3 252.3 258.1Q252.3 257.6 253.4 257.4Q253.6 257.4 255.5 257.3Q260.6 257 267.4 256.3L312.4 251.4V206.7Q312.4 196.3 311.6 190ZM271.1 221.2Q281.3 226.7 291.7 235.9Q292.2 236.5 292.2 236.9Q292.2 237.4 291.6 238.3L286.3 245.3Q285.5 246.3 285.1 246.3Q284.8 246.3 283.8 245.5Q273.4 235.6 263.7 230.3Q263 229.8 263 229.4Q263 229.1 263.8 228.1L268.8 221.8Q269.5 220.8 270.1 220.8Q270.4 220.8 271.1 221.2ZM282.6 196.7Q293.1 203.1 302.6 212.3Q303.2 212.9 303.2 213.2Q303.2 213.6 302.5 214.5L296.9 221.4Q296.2 222.5 295.7 222.5Q295.2 222.5 294.7 221.9Q287.1 213.3 275 205.6Q274.3 205.2 274.3 204.9Q274.3 204.5 275.1 203.5L280.4 197.2Q281.1 196.3 281.5 196.3Q281.9 196.3 282.6 196.7Z"/></svg>
+  <svg id="orbita" viewBox="0 0 480 480"><defs><radialGradient id="pg" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#fff"/><stop offset=".25" stop-color="#ffc9e1"/><stop offset=".7" stop-color="#ff8fc0"/><stop offset="1" stop-color="#7a2a55"/></radialGradient>
+<radialGradient id="ph"><stop offset="0" stop-color="#ff8fc0" stop-opacity=".5"/><stop offset="1" stop-color="#ff8fc0" stop-opacity="0"/></radialGradient></defs><path d="M98.1 82.5 A212 212 0 0 1 240 28" fill="none" stroke="#ff8fc0" stroke-opacity="0.12" stroke-width="3" stroke-linecap="round"/><path d="M147.1 49.5 A212 212 0 0 1 240 28" fill="none" stroke="#ff8fc0" stroke-opacity="0.22" stroke-width="3" stroke-linecap="round"/><path d="M195.9 32.6 A212 212 0 0 1 240 28" fill="none" stroke="#ff8fc0" stroke-opacity="0.4" stroke-width="3" stroke-linecap="round"/><g transform="translate(240 28) scale(0.6)"><circle r="34" fill="url(#ph)"/><circle r="13" fill="url(#pg)"/><ellipse cx="-4" cy="-5" rx="3.6" ry="2.1" fill="#fff" opacity=".85" transform="rotate(-30 -4 -5)"/></g><g transform="rotate(180 240 240)"><path d="M98.1 82.5 A212 212 0 0 1 240 28" fill="none" stroke="#f0b24a" stroke-opacity="0.12" stroke-width="3" stroke-linecap="round"/><path d="M147.1 49.5 A212 212 0 0 1 240 28" fill="none" stroke="#f0b24a" stroke-opacity="0.22" stroke-width="3" stroke-linecap="round"/><path d="M195.9 32.6 A212 212 0 0 1 240 28" fill="none" stroke="#f0b24a" stroke-opacity="0.4" stroke-width="3" stroke-linecap="round"/><g transform="translate(240 28) scale(0.5) rotate(-7)"><ellipse rx="58" ry="16" fill="#7a4a12" stroke="#f6c063" stroke-width="3"/><line x1="-32" x2="32" stroke="#f6c063" stroke-width="2.2" stroke-linecap="round" opacity=".8"/></g></g></svg>
+  <div id="fin"></div>
+</div>
+<script>
+  var stage = document.getElementById("stage"), orbita = document.getElementById("orbita");
+  function ajustar() { // la pantalla es de 480x480; en otras ventanas se escala
+    var s = Math.min(innerWidth, innerHeight) / 480;
+    if (Math.abs(s - 1) < 0.01) return;
+    stage.style.transform = "scale(" + s + ")";
+    stage.style.margin = (-(480 - 480 * s) / 2) + "px";
+  }
+  addEventListener("resize", ajustar); ajustar();
+
+  var URL_KAITO = "http://localhost:5000";
+  var FPS = /[?&]fps/.test(location.search); // medición: cuadros/s al log del servicio, sin salir
+  function terminar(fn) { // el giro frena con la perla arriba; 海斗 se apaga; fundido
+    var m = new DOMMatrix(getComputedStyle(orbita).transform);
+    var a = Math.atan2(m.b, m.a) * 180 / Math.PI; if (a < 0) a += 360;
+    orbita.style.animation = "none"; orbita.style.transform = "rotate(" + a + "deg)";
+    orbita.getBoundingClientRect(); // fija el punto de partida antes de la transición
+    orbita.style.transition = "transform 3s cubic-bezier(.2, .6, .3, 1)";
+    orbita.style.transform = "rotate(720deg)"; // un múltiplo de 360: acaba con la perla arriba
+    stage.classList.add("cargado");
+    setTimeout(function () { stage.classList.add("cerrando"); }, 4200);
+    setTimeout(fn, 5100);
+  }
+  function reiniciar() { orbita.style.cssText = ""; stage.className = ""; }
+  if (FPS) {
+    var n = 0, t0 = performance.now();
+    (function tic() { n++; requestAnimationFrame(tic); })();
+    setInterval(function () {
+      var dt = (performance.now() - t0) / 1000;
+      new Image().src = URL_KAITO + "/fps?fase=" + (stage.classList.contains("cargado") ? "frenada" : "carga") +
+                        "&fps=" + (n / dt).toFixed(1);
+      n = 0; t0 = performance.now();
+    }, 1000);
+    (function ciclo() {
+      reiniciar();
+      setTimeout(function () { terminar(function () { setTimeout(ciclo, 300); }); }, 4000);
+    })();
+  } else {
+    var minimo = Date.now() + 3000; // que se vea el anillo al menos un momento
+    (function probar() {
+      fetch(URL_KAITO, { mode: "no-cors", cache: "no-store" }).then(function () {
+        setTimeout(function () { terminar(function () { location.replace(URL_KAITO); }); },
+                   Math.max(0, minimo - Date.now()));
+      }).catch(function () { setTimeout(probar, 1000); });
+    })();
+  }
+</script>
+</body>
+</html>
