@@ -227,6 +227,41 @@ class Recorder:
             print(f"❌ Error grabando: {e}")
             return None
 
+    def record_mientras(self, soltado, filename=DEFAULT_PATH, max_seg=60, al_nivel=None) -> str:
+        """
+        Pulsar para hablar: graba hasta que `soltado` (threading.Event) se activa, sin cortar por
+        silencio (quien habla despacio o piensa entre frases sigue grabando). Tope: max_seg.
+        Devuelve None si se soltó casi al instante (menos de 0,3 s).
+        """
+        CHUNK = int(self.sample_rate * 0.02)  # chunks de 20ms
+        grabacion = []
+        try:
+            print("🎤 Escuchando mientras se mantiene el botón...")
+            with sd.InputStream(samplerate=self.sample_rate, channels=1, dtype='float32',
+                                device=self.device, blocksize=CHUNK) as stream:
+                for n_chunk in range(int(max_seg * self.sample_rate / CHUNK)):
+                    if soltado.is_set():
+                        break
+                    chunk, _ = stream.read(CHUNK)
+                    chunk = np.clip(chunk * GANANCIA_SW, -1.0, 1.0)
+                    grabacion.append(chunk.copy())
+                    if al_nivel and n_chunk % 3 == 0:
+                        try:
+                            al_nivel(min(1.0, float(np.sqrt(np.mean(chunk ** 2))) / (UMBRAL_RMS * 3)))
+                        except Exception:  # noqa: BLE001 — la pantalla nunca rompe la grabación
+                            pass
+            if len(grabacion) < 15:
+                print("❌ Botón soltado enseguida: no se grabó nada")
+                return None
+            audio_16k = self._convertir_sample_rate(
+                np.concatenate(grabacion, axis=0), orig_sr=self.sample_rate, target_sr=SAMPLE_RATE_STT)
+            sf.write(filename, audio_16k, SAMPLE_RATE_STT)
+            print(f"✅ Audio guardado: {filename}")
+            return filename
+        except Exception as e:
+            print(f"❌ Error grabando: {e}")
+            return None
+
     def reproducir(self, filename=DEFAULT_PATH):
         """
         Reproduce un archivo de audio.

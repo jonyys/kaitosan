@@ -12,6 +12,7 @@ from core.red import VigilanteRed
 from core.emociones import es_solo_gracias, gesto_para_gracias
 
 TIMEOUT_CONVERSACION_SEG = 3
+TOQUE_CORTO_SEG = 0.4  # en sensei, soltar antes de esto es un toque, no pulsar-para-hablar
 # La animación de la cara al entrar en sensei dura 1,9-2,3 s: el saludo no suena hasta que acaba.
 SENSEI_ENTRADA_SEG = float(os.getenv("SENSEI_ENTRADA_SEG", "2.4"))
 # Al salir: la despedida no suena hasta que la pizarra ha bajado y la cara está al frente
@@ -80,6 +81,31 @@ class VoiceListener:
         else:
             self._detector.disparar()
 
+    def boton_pulsado(self) -> bool:
+        """Botón apretado. En modo sensei empieza ya el pulsar-para-hablar (devuelve True: el botón
+        no apagará la Pi aunque se mantenga): se suelta el micro y se graba hasta soltarlo. Un toque
+        rápido sigue siendo la escucha normal. Fuera de sensei devuelve False y todo va como antes."""
+        if not (self.brain.profesor.esta_activo() and self.state.get() == "idle"):
+            return False
+        self._boton_t0, self._boton_suelto = time.monotonic(), threading.Event()
+        if self._detector.en_pausa():
+            threading.Thread(target=self._turno_mantenido, daemon=True).start()
+        else:
+            self._detector.disparar(self._turno_mantenido)
+        return True
+
+    def boton_soltado(self):
+        self._boton_dur = time.monotonic() - self._boton_t0  # lo que duró la pulsación, no lo que tarda el micro en soltarse
+        self._boton_suelto.set()
+
+    def _turno_mantenido(self):
+        suelto = self._boton_suelto
+        if suelto.is_set() and self._boton_dur < TOQUE_CORTO_SEG:
+            print("🔘 Toque corto en sensei: escucha normal")
+            return self._on_wakeword()
+        # Un turno por pulsación: quien lo mantiene decide cuándo acaba, sin modo conversación
+        self._ciclo_voz(mantenido=suelto)
+
     def _on_wakeword(self):
         # Primera interacción activada por wakeword
         if not self._ciclo_voz():
@@ -92,7 +118,7 @@ class VoiceListener:
                 print("💬 Fin de conversación (sin respuesta)")
                 break
 
-    def _ciclo_voz(self, timeout_inicio_seg=0) -> bool:
+    def _ciclo_voz(self, timeout_inicio_seg=0, mantenido=None) -> bool:
         """
         Un ciclo completo: graba → transcribe → responde → habla.
         Retorna True si se procesó algo y toca seguir escuchando; False si no
@@ -103,7 +129,10 @@ class VoiceListener:
             return False
 
         self.state.cambiar("listening")
-        archivo = self.recorder.record_vad(timeout_inicio_seg=timeout_inicio_seg, al_nivel=self._emitir_nivel)
+        if mantenido is not None:  # pulsar para hablar: graba hasta soltar el botón
+            archivo = self.recorder.record_mientras(mantenido, al_nivel=self._emitir_nivel)
+        else:
+            archivo = self.recorder.record_vad(timeout_inicio_seg=timeout_inicio_seg, al_nivel=self._emitir_nivel)
         if not archivo:
             self.state.cambiar("idle")
             return False

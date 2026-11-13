@@ -2133,7 +2133,8 @@ if __name__ == "__main__":
     voice_listener.iniciar()
     _aplicar_silencio()
     threading.Thread(target=_vigilar_silencio, daemon=True).start()
-    PowerButton(on_short_press=voice_listener.on_boton)
+    PowerButton(on_short_press=voice_listener.on_boton, on_press=voice_listener.boton_pulsado,
+                on_release=voice_listener.boton_soltado)
     state.cambiar("idle")
     try:
         # allow_unsafe_werkzeug: bajo systemd no hay TTY y Flask-SocketIO se niega

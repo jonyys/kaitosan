@@ -320,14 +320,16 @@ class WakeWordDetector:
         self._stop_event = threading.Event()
         self._pausa = threading.Event()  # "no molestar": no escucha, ni el micro queda abierto
         self._manual = threading.Event()  # el botón de la caja: soltar el micro y escuchar ya
+        self._accion = None
         self._thread = None
 
     def en_pausa(self) -> bool:
         return self._pausa.is_set()
 
-    def disparar(self):
+    def disparar(self, accion=None):
         """Como si se hubiera oído la palabra clave: el detector suelta el micro (si no, la
-        grabación falla con "Device unavailable") y llama a on_detected."""
+        grabación falla con "Device unavailable") y llama a `accion` (por defecto, on_detected)."""
+        self._accion = accion
         self._manual.set()
 
     def pausar(self):
@@ -376,8 +378,9 @@ class WakeWordDetector:
                     print(f"[WAKEWORD] '{detection.name}' detectado (confidence: {detection.confidence:.3f})")
                 else:
                     print("🔘 Botón: el detector suelta el micro y se escucha")
+                accion, self._accion = self._accion or self._on_detected, None
                 self._manual.clear()
-                await loop.run_in_executor(None, self._on_detected)
+                await loop.run_in_executor(None, accion)
             except Exception as e:
                 print(f"⚠️ WakeWord error: {e}")
                 await asyncio.sleep(1)
