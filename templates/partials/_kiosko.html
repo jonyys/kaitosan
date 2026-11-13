@@ -50,7 +50,8 @@
     background: #000; opacity: var(--atenua, 0); transition: opacity .8s ease;
   }
   #kioskoNoMolestar {
-    position: fixed; top: 22px; left: 50%; margin-left: -13px; z-index: 9000; width: 26px; height: 26px;
+    /* margin-left -18px y no -13: la tacha cae a la derecha del micro y la tinta quedaba 5 px descentrada (medido a 480 px) */
+    position: fixed; top: 22px; left: 50%; margin-left: -18px; z-index: 9000; width: 26px; height: 26px;
     color: #b98536; opacity: .75; display: none; pointer-events: none;
   }
   html.no-molestar #kioskoNoMolestar { display: block; }
