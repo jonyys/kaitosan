@@ -514,6 +514,12 @@
     vuelveAlReposo();
   }
 
+  // ── Aro de escucha ──────────────────────────────────────────────────────────
+  const aro = document.getElementById("aroEscucha");
+  const aroNivel = aro.firstElementChild;
+  let nivelObj = 0, nivelSuave = 0, aroOp = "";
+  socket.on("nivel_micro", (data) => { nivelObj = acotar(+(data && data.n) || 0, 0, 1); });
+
   // ── Bucle ───────────────────────────────────────────────────────────────────
   let previo = 0;
   // La respiración arranca en fase 0 en el primer cuadro: si cuenta desde que empezó a cargar la
@@ -586,6 +592,11 @@
       return f(v);
     }));
     poner(boca.svg, "style", `translate(${f(mx * 0.2 + ladoBoca)}px,${f(my * 0.1)}px) rotate(${f2(ladoBoca * 0.6)}deg)`);
+    // Aro de escucha: el volumen llega a saltos (~16/s); se suaviza para que no tiemble
+    nivelSuave += (nivelObj - nivelSuave) * Math.min(1, dt * 10);
+    poner(aroNivel, "style", `scale(${(1 + nivelSuave * 0.025).toFixed(3)})`);
+    const opAro = (0.3 + 0.7 * nivelSuave).toFixed(2);
+    if (opAro !== aroOp) aroNivel.style.opacity = aroOp = opAro;
     requestAnimationFrame(cuadro);
   }
 
@@ -654,6 +665,9 @@
   // ── Estados ─────────────────────────────────────────────────────────────────
   function aplicarEstado(nuevo) {
     if (!estados.includes(nuevo) || nuevo === estado) return;
+    aro.classList.toggle("activo", nuevo === "listening");
+    if (nuevo !== "listening") nivelObj = 0;
+    if (nuevo !== "idle") ocultarResumen(); // si le hablan, la tarjeta se va
     // Ya se ha callado: lo que llegue por detrás no interrumpe la cremallera
     if (gesto && gesto.nombre === "cremallera" && (nuevo === "idle" || nuevo === "speaking")) {
       estados.forEach((e) => face.classList.remove(e));
@@ -1083,6 +1097,38 @@
 
   socket.on("sensei_japones", (data) => mostrarJaponesSensei(data.frases));
 
+  // Resumen de la clase (sensei_resumen llega al salir, antes de modo_sensei false). null = la
+  // sesión no se cerró despidiéndose (inactividad): no hay celebración.
+  const resumenEl = document.getElementById("resumenClase");
+  let resumenClase = null, resumenTimer = 0;
+  socket.on("sensei_resumen", (data) => { resumenClase = data || {}; });
+  function ocultarResumen() {
+    clearTimeout(resumenTimer);
+    resumenEl.classList.remove("visible");
+  }
+  // Al acabar la transición de salida: estrellitas y, si hubo algo, la tarjeta unos 6,5 s
+  function celebrar() {
+    const r = resumenClase;
+    resumenClase = null;
+    if (!r) return;
+    hacerGesto("estrellitas");
+    const logros = r.logros || [], pals = r.palabras || [];
+    if (!logros.length && !pals.length) return;
+    // Dos líneas para no tapar la boca: «¡Buena clase! ✓ 2» y las palabras que quepan en una (≤ 12 kana)
+    const tit = resumenEl.querySelector(".rc-tit");
+    tit.textContent = r.titulo || "¡Buena clase!";
+    if (logros.length) tit.append(Object.assign(document.createElement("b"), { textContent: "✓ " + logros.length }));
+    let caben = 12;
+    const enLinea = pals.filter((p) => (caben -= p.jp.length) >= 0);
+    resumenEl.querySelector(".rc-pals").replaceChildren(...enLinea.map((p) =>
+      Object.assign(document.createElement("span"), { textContent: p.jp })));
+    clearTimeout(resumenTimer);
+    resumenTimer = setTimeout(() => {
+      resumenEl.classList.add("visible");
+      resumenTimer = setTimeout(ocultarResumen, 6500);
+    }, 500);
+  }
+
   // Quita o deja las que no gusten: se elige una al azar cada vez
   const CAMBIOS_SENSEI = ["pincel", "shoji", "petalos", "humo"];
   window.kaitoCambiarSensei = (activo, tipo) => {
@@ -1090,9 +1136,11 @@
       face.classList.toggle("sensei", activo);
       if (!activo) mostrarJaponesSensei(null);
     };
+    if (activo) { resumenClase = null; ocultarResumen(); }
     if (face.classList.contains("sensei") === activo) return cambiar();
     const elegido = tipo || CAMBIOS_SENSEI[Math.floor(Math.random() * CAMBIOS_SENSEI.length)];
-    const tapar = () => (window.KaitoTransicion ? window.KaitoTransicion.tapar(elegido, cambiar) : cambiar());
+    const tapar = () => Promise.resolve(window.KaitoTransicion ? window.KaitoTransicion.tapar(elegido, cambiar) : cambiar())
+      .then(() => { if (!activo) celebrar(); });
     // Al salir con la pizarra puesta: baja, la cara vuelve (~0.75 s) y solo entonces empieza la transición
     if (!activo && hayPizarra) {
       mostrarJaponesSensei(null);

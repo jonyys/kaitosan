@@ -303,9 +303,26 @@ class ProfesorJapones:
             self.timer.cancel()
             self.timer = None
         self.activo = False
+        # Antes de la extracción (que vacía el estado): la pantalla lo enseña al volver a la cara.
+        try:
+            self.socketio.emit("sensei_resumen", self.resumen_clase())
+        except Exception as e:  # noqa: BLE001 — un resumen fallido no debe romper la despedida
+            print(f"⚠️ No se pudo emitir el resumen de la clase: {e}")
         # La extracción tarda entre 5 y 15 s; que no bloquee la despedida.
         self.socketio.start_background_task(self.cerrar_sesion_y_extraer)
         print("🎌 Modo Sensei desactivado")
+
+    def resumen_clase(self) -> dict:
+        """Lo que se enseña al acabar la clase: can-dos conseguidos hoy y hasta 5 palabras
+        vistas, en kana (nunca kanji). Vacío ({}) si no hubo nada que celebrar."""
+        logros = [_POR_ID[i]["texto"] for i in (self.clase or {}).get("logros", []) if i in _POR_ID][:3]
+        palabras = []
+        for it in _vocab_dicho(self.mensajes or [])[:5]:
+            jp = re.sub(r"[（(].*?[)）]", "", it.get("reading") or it["jp"]).replace("〜", "").split(";")[0].strip()
+            palabras.append({"jp": a_kana(jp), "es": it.get("meaning", "")})
+        if not logros and not palabras:
+            return {}
+        return {"titulo": "¡Buena clase!", "logros": logros, "palabras": palabras}
 
     def esta_activo(self) -> bool:
         return self.activo
@@ -386,6 +403,8 @@ class ProfesorJapones:
         st = self.clase
         self.jap_memory.set_can_do(cd["id"], resultado, self.session_id)
         st.setdefault("hechos", []).append(cd["id"])
+        if resultado == "conseguido":
+            st.setdefault("logros", []).append(cd["id"])
         if resultado == "conseguido" and st.get("tipo", "nuevo") == "nuevo":
             st["nuevos"] = st.get("nuevos", 0) + 1
         sig, tipo = self._siguiente()

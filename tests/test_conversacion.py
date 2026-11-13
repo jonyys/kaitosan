@@ -83,7 +83,7 @@ def ciclo(asunto_cerrado=False, callado=False, salir_de_sensei=False):
     brain.responder.return_value = ("Respuesta", False)
 
     v = mod.VoiceListener.__new__(mod.VoiceListener)
-    v.recorder = mock.Mock(record_vad=lambda timeout_inicio_seg=0: "a.wav")
+    v.recorder = mock.Mock(record_vad=lambda timeout_inicio_seg=0, al_nivel=None: "a.wav")
     v.stt = mock.Mock()
     v.brain, v.tts, v.state, v.socketio = brain, TtsFalso(callado), state, mock.Mock()
     with mock.patch.object(mod, "transcribir_para_turno", return_value=("hola", None)):
@@ -337,7 +337,7 @@ def test_texto_y_tarjeta_salen_cuando_empieza_la_voz_no_antes():
     socketio = mock.Mock()
     socketio.emit.side_effect = lambda ev, *a, **k: orden.append(ev)
     v = mod.VoiceListener.__new__(mod.VoiceListener)
-    v.recorder = mock.Mock(record_vad=lambda timeout_inicio_seg=0: "a.wav")
+    v.recorder = mock.Mock(record_vad=lambda timeout_inicio_seg=0, al_nivel=None: "a.wav")
     v.stt = mock.Mock()
     v.brain, v.tts, v.state, v.socketio = brain, Tts(), state, socketio
     with mock.patch.object(mod, "transcribir_para_turno", return_value=("hola", None)):
@@ -389,7 +389,7 @@ def test_streaming_del_llm_la_voz_empieza_antes_que_el_final_y_la_tarjeta_espera
     socketio = mock.Mock()
     socketio.emit.side_effect = lambda ev, *a, **k: orden.append(ev)
     v = mod.VoiceListener.__new__(mod.VoiceListener)
-    v.recorder = mock.Mock(record_vad=lambda timeout_inicio_seg=0: "a.wav")
+    v.recorder = mock.Mock(record_vad=lambda timeout_inicio_seg=0, al_nivel=None: "a.wav")
     v.stt = mock.Mock()
     v.brain, v.tts, v.state, v.socketio = brain, tts, state, socketio
     with mock.patch.object(mod, "transcribir_para_turno", return_value=("hola", None)):
@@ -515,7 +515,7 @@ def test_listener_pasa_la_espera_de_la_animacion_solo_al_saludo_de_entrada():
                 recibido["no_antes_de"] = no_antes_de
                 on_start()
         v = mod.VoiceListener.__new__(mod.VoiceListener)
-        v.recorder = mock.Mock(record_vad=lambda timeout_inicio_seg=0: "a.wav")
+        v.recorder = mock.Mock(record_vad=lambda timeout_inicio_seg=0, al_nivel=None: "a.wav")
         v.stt = mock.Mock()
         v.brain, v.tts, v.state, v.socketio = brain, Tts(), state, mock.Mock()
         with mock.patch.object(mod, "transcribir_para_turno", return_value=("activa el modo sensei", None)):
@@ -560,7 +560,7 @@ def test_salir_del_sensei_se_despide_con_la_cara_sensei_y_luego_sale():
             super().hablar_frases(frases, on_start=al_sonar)
 
     v = mod.VoiceListener.__new__(mod.VoiceListener)
-    v.recorder = mock.Mock(record_vad=lambda timeout_inicio_seg=0: "a.wav")
+    v.recorder = mock.Mock(record_vad=lambda timeout_inicio_seg=0, al_nivel=None: "a.wav")
     v.stt = mock.Mock()
     v.brain, v.tts, v.state, v.socketio = brain, Tts(), state, socketio
     with mock.patch.object(mod, "transcribir_para_turno", return_value=("quiero salir del modo sensei", None)),             mock.patch.object(mod, "SENSEI_SALIDA_SEG", 0.3):

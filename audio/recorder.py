@@ -156,13 +156,15 @@ class Recorder:
 
     def record_vad(self, filename=DEFAULT_PATH,
                    silencio_seg=SILENCIO_SEG, max_seg=10,
-                   umbral_rms=UMBRAL_RMS, timeout_inicio_seg=0) -> str:
+                   umbral_rms=UMBRAL_RMS, timeout_inicio_seg=0,
+                   al_nivel=None) -> str:
         """
         Graba hasta detectar silencio sostenido.
         - silencio_seg: segundos de silencio para parar (default 1.5)
         - max_seg: tope máximo de grabación (default 10)
         - umbral_rms: energía por debajo de la cual se considera silencio
         - timeout_inicio_seg: si no hay voz en este tiempo retorna None (0 = sin límite)
+        - al_nivel: callable opcional; recibe el nivel del micro (0..1) cada 3 bloques (~16/s)
         """
         CHUNK = int(self.sample_rate * 0.02)  # chunks de 20ms
         max_chunks = int(max_seg * self.sample_rate / CHUNK)
@@ -183,12 +185,18 @@ class Recorder:
                 device=self.device,
                 blocksize=CHUNK
             ) as stream:
-                for _ in range(max_chunks):
+                for n_chunk in range(max_chunks):
                     chunk, _ = stream.read(CHUNK)
                     chunk = np.clip(chunk * GANANCIA_SW, -1.0, 1.0)
                     grabacion.append(chunk.copy())
 
                     rms = np.sqrt(np.mean(chunk ** 2))
+                    if al_nivel and n_chunk % 3 == 0:
+                        try:
+                            # 0 en silencio, 1 con voz fuerte (3x el umbral); tope en 1
+                            al_nivel(min(1.0, float(rms) / (umbral_rms * 3)))
+                        except Exception:  # noqa: BLE001 — la pantalla nunca rompe la grabación
+                            pass
                     if rms > umbral_rms:
                         hablando = True
                         chunks_silencio = 0

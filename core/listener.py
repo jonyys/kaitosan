@@ -8,6 +8,7 @@ from audio.wakeword import WakeWordDetector
 from ai.speech_to_text import transcribir_para_turno
 from ai.sensei.kana import frases_para_card
 from core.config import TRIGGERS_DESPEDIDA
+from core.red import VigilanteRed
 from core.emociones import es_solo_gracias, gesto_para_gracias
 
 TIMEOUT_CONVERSACION_SEG = 3
@@ -42,9 +43,18 @@ class VoiceListener:
         self.state = state
         self.socketio = socketio
         self._detector = WakeWordDetector(on_detected=self._on_wakeword)
+        self._red = VigilanteRed(socketio)
 
     def iniciar(self):
+        self._red.iniciar()  # idempotente
         self._detector.iniciar()
+
+    def _emitir_nivel(self, n):
+        """Volumen de la voz para el aro de la cara; nunca debe romper la grabación."""
+        try:
+            self.socketio.emit("nivel_micro", {"n": round(n, 2)})
+        except Exception:  # noqa: BLE001
+            pass
 
     def detener(self):
         self._detector.detener()
@@ -84,7 +94,7 @@ class VoiceListener:
             return False
 
         self.state.cambiar("listening")
-        archivo = self.recorder.record_vad(timeout_inicio_seg=timeout_inicio_seg)
+        archivo = self.recorder.record_vad(timeout_inicio_seg=timeout_inicio_seg, al_nivel=self._emitir_nivel)
         if not archivo:
             self.state.cambiar("idle")
             return False

@@ -384,6 +384,11 @@ def kiosko_salir():
         abort(403)
     return jsonify(system_settings.salir_al_escritorio())
 
+@app.route("/reloj/tiempo", methods=["GET"])
+def reloj_tiempo():
+    # El reloj lo pide después de pintar; con caché de 10 min en la skill
+    return jsonify(brain.dispatcher.weather.resumen_alcorcon() or {})
+
 @app.route("/reloj/alarmas", methods=["GET"])
 def reloj_alarmas_listar():
     return jsonify(brain.alarm._estado_serializable())

@@ -1,9 +1,52 @@
+import time
+
 import requests
+
+# Alcorcón (las de antes eran las de Madrid centro)
+ALCORCON = (40.3458, -3.8249)
+
+# Código WMO de Open-Meteo → estado que pinta el reloj (lo que no está aquí cuenta como nublado)
+_ESTADOS = (
+    ({0, 1}, "soleado"),
+    ({51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82}, "lluvia"),
+    ({71, 73, 75, 77, 85, 86}, "nieve"),
+    ({95, 96, 99}, "tormenta"),
+)
+
 
 class WeatherSkill:
     def __init__(self):
         self.base_url = "https://api.open-meteo.com/v1/forecast"
         self.geo_url = "https://geocoding-api.open-meteo.com/v1/search"
+        self._resumen = None       # último dato bueno del reloj
+        self._resumen_ts = 0.0
+
+    def resumen_alcorcon(self) -> dict | None:
+        """Tiempo de Alcorcón para el reloj, con caché de 10 min; si falla la red, el último bueno (o None)."""
+        if self._resumen and time.time() - self._resumen_ts < 600:
+            return self._resumen
+        try:
+            params = {
+                "latitude": ALCORCON[0], "longitude": ALCORCON[1],
+                "current": "temperature_2m,weather_code,is_day",
+                "daily": "temperature_2m_max,temperature_2m_min,precipitation_probability_max",
+                "timezone": "Europe/Madrid", "forecast_days": 1,
+            }
+            d = requests.get(self.base_url, params=params, timeout=5).json()
+            cur, dia = d["current"], d["daily"]
+            codigo = cur["weather_code"]
+            self._resumen = {
+                "temp": round(cur["temperature_2m"]),
+                "max": round(dia["temperature_2m_max"][0]),
+                "min": round(dia["temperature_2m_min"][0]),
+                "lluvia": round(dia["precipitation_probability_max"][0] or 0),
+                "estado": next((e for cs, e in _ESTADOS if codigo in cs), "nublado"),
+                "es_dia": bool(cur["is_day"]),
+            }
+            self._resumen_ts = time.time()
+        except Exception as e:
+            print(f"❌ Error obteniendo el tiempo para el reloj: {e}")
+        return self._resumen
 
     def _geocodificar(self, ciudad: str) -> dict | None:
         """Convierte un nombre de ciudad español en coordenadas."""
@@ -49,7 +92,7 @@ class WeatherSkill:
                 return f"No he encontrado {ciudad} en el mapa."
             lat, lon, nombre = geo["lat"], geo["lon"], geo["nombre"]
         else:
-            lat, lon, nombre = 40.4168, -3.7038, "Alcorcón"
+            (lat, lon), nombre = ALCORCON, "Alcorcón"
 
         # --- Interpretar "cuando" ---
         dias = 1

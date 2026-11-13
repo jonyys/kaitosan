@@ -77,6 +77,16 @@
     #hora { font-size: 76px; font-weight: 200; letter-spacing: -2px; line-height: 1; color: var(--text); font-variant-numeric: tabular-nums; }
     #fecha { font-size: 20px; line-height: 1; color: var(--text-soft); margin-top: 12px; text-transform: capitalize; letter-spacing: 1px; }
 
+    /* El tiempo de Alcorcón, bajo la fecha. El hueco está reservado desde el principio (alto fijo) y solo
+       cambia la opacidad: si apareciera empujando, la hora saltaría y la transición cara→reloj (que mide
+       dónde está la hora, transiciones.js) la dibujaría descuadrada. */
+    #tiempo { margin-top: 20px; height: 52px; text-align: center; color: var(--text-soft); opacity: 0; transition: opacity .6s ease; }
+    #tiempo.ver { opacity: 1; }
+    #tiempo .t1 { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 22px; line-height: 1; color: var(--text); }
+    #tiempo .t1 svg { width: 30px; height: 30px; fill: none; stroke: var(--rosa-tinta); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+    #tiempo .t1 b { font-weight: 300; font-size: 30px; letter-spacing: -1px; }
+    #tiempo .t2 { margin-top: 8px; font-size: 14px; letter-spacing: .5px; white-space: nowrap; }
+
     /* Páginas 1-3: un título grande, la lista (que se desliza dentro) y un botón redondo de más.
        Sin iconos ni cajas. Con la lista vacía, el más pasa al centro de la pantalla.
        La lista mide 296 px de ancho: dentro del círculo. */
@@ -204,6 +214,7 @@
     <div class="reloj-p">
       <div id="hora"></div>
       <div id="fecha"></div>
+      <div id="tiempo"></div>
       <script>
         // Puesta aquí mismo: si la página se pinta antes de que llegue el script grande, ya lleva la hora real
         const DIAS = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
@@ -313,6 +324,30 @@
   (function tic() { actualizarReloj(); setTimeout(tic, 1000 - (Date.now() % 1000) + 15); })();
   // Hay que pedirla: sin pintar nada, nadie la ha pedido y fonts.ready ya estaría resuelto
   document.fonts.load("200 76px 'M PLUS Rounded 1c'", "0123456789:").catch(() => {}).then(KaitoTransicion.guardarReloj);
+
+  // ── TIEMPO DE ALCORCÓN (después del primer pintado; cada 10 min) ─────────
+  const ICONOS_TIEMPO = {
+    sol: '<circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/>',
+    luna: '<path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/>',
+    nube: '<path d="M7 18a4 4 0 0 1-.6-7.96A5.5 5.5 0 0 1 17 9.5a4.2 4.2 0 0 1 0 8.5z"/>',
+    lluvia: '<path d="M7 15a4 4 0 0 1-.6-7.96A5.5 5.5 0 0 1 17 6.5a4.2 4.2 0 0 1 0 8.5z"/><path d="M8 18l-1 2.5M12 18l-1 2.5M16 18l-1 2.5"/>',
+    nieve: '<path d="M7 15a4 4 0 0 1-.6-7.96A5.5 5.5 0 0 1 17 6.5a4.2 4.2 0 0 1 0 8.5z"/><path d="M8 18.5v.01M12 20v.01M16 18.5v.01"/>',
+    tormenta: '<path d="M7 15a4 4 0 0 1-.6-7.96A5.5 5.5 0 0 1 17 6.5a4.2 4.2 0 0 1 0 8.5z"/><path d="M12.5 15l-2.5 3h3l-2 3"/>',
+  };
+  const TEXTO_TIEMPO = { soleado: 'Soleado', nublado: 'Nublado', lluvia: 'Lluvia', nieve: 'Nieve', tormenta: 'Tormenta' };
+  async function cargarTiempo() {
+    const el = document.getElementById('tiempo');
+    try {
+      const t = await (await fetch('/reloj/tiempo')).json();
+      if (!t || typeof t.temp !== 'number' || !TEXTO_TIEMPO[t.estado]) return; // sin datos: se queda oculto (o con el último)
+      const ico = t.estado === 'soleado' ? (t.es_dia ? 'sol' : 'luna') : t.estado === 'nublado' ? 'nube' : t.estado;
+      el.innerHTML = `<div class="t1"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONOS_TIEMPO[ico]}</svg><b>${t.temp}°</b><span>${TEXTO_TIEMPO[t.estado]}</span></div>` +
+        `<div class="t2">máx ${t.max}° · mín ${t.min}° · lluvia ${t.lluvia}%</div>`;
+      requestAnimationFrame(() => el.classList.add('ver'));
+    } catch (e) { /* sin red: no se enseña nada */ }
+  }
+  setTimeout(cargarTiempo, 1500);
+  setInterval(cargarTiempo, 600000);
 
   // ── SOCKET.IO ───────────────────────────────────────────────────────────
   const socket = io();

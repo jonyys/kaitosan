@@ -55,6 +55,15 @@
     color: #b98536; opacity: .75; display: none; pointer-events: none;
   }
   html.no-molestar #kioskoNoMolestar { display: block; }
+  /* Sin internet: mismo tamaño, color y opacidad que el micro. Solo: centrado (-13px). Con el micro, los dos
+     como pareja centrada (26 + 10 + 26 px): micro a la izquierda y wifi a la derecha. */
+  #kioskoSinRed {
+    position: fixed; top: 22px; left: 50%; margin-left: -13px; z-index: 9000; width: 26px; height: 26px;
+    color: #b98536; opacity: .75; display: none; pointer-events: none;
+  }
+  html.sin-red #kioskoSinRed { display: block; }
+  html.sin-red.no-molestar #kioskoNoMolestar { margin-left: -31px; }
+  html.sin-red.no-molestar #kioskoSinRed { margin-left: 5px; }
   ::view-transition-group(root), ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
   {% endif %}
   /* Cajón de ajustes: pensado para la pantalla redonda de 480 px, así que todo va en una columna
@@ -213,6 +222,7 @@
     }
     conSocket(function (s) {
       s.on("estado", irACara);
+      s.on("red", function (d) { document.documentElement.classList.toggle("sin-red", d && d.internet === false); });
       s.on("no_molestar", function (d) { window.__noMolestar = !!d.activo; pintaNoMolestar(); });
       s.on("sonando", pintaSonando);
     });
@@ -255,6 +265,11 @@
       ic.id = "kioskoNoMolestar";
       ic.innerHTML = '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 9v3a3 3 0 0 0 5.1 2.1M15 9.3V5a3 3 0 0 0-5.7-1.3M5 11a7 7 0 0 0 11.5 5.3M19 11a7 7 0 0 1-.5 2.6M12 18v3M3 3l18 18"/></svg>';
       document.documentElement.appendChild(ic);
+      // Sin internet (no funcionan ni la voz ni el LLM): wifi tachado, arriba como el micro
+      var wi = document.createElement("div");
+      wi.id = "kioskoSinRed";
+      wi.innerHTML = '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h.01M8.5 16.4a5 5 0 0 1 7 0M5 12.9a10 10 0 0 1 3.5-2.2M19 12.9a10 10 0 0 0-5.6-2.8M2 8.8a15 15 0 0 1 4.2-2.5M22 8.8a15 15 0 0 0-10-3.8M3 3l18 18"/></svg>';
+      document.documentElement.appendChild(wi);
     }
 
     // ── Fases 2 y 3: solo en la cara y el reloj ────────────────────────────
