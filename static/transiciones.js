@@ -35,16 +35,16 @@
     dia: { ambar: [224, 164, 77, 0.34], turquesa: [79, 209, 197, 0.2] },
     claro: { ambar: [240, 176, 80, 0.5], turquesa: [120, 205, 195, 0.4] },
   };
-  const RELOJ_GUARDADO = "kaito.reloj2"; // el 2: la distribución del reloj cambió con las páginas
+  const RELOJ_GUARDADO = "kaito.reloj3"; // el 3: la hora pasó a HH:MM con la fecha encima
   // ponytail: medidas de la pantalla de 480 px para el primer paso tras arrancar,
   // antes de haber visto el reloj; si la cara no encaja, ajustar aquí viéndolo en la Pi.
   const RELOJ_POR_DEFECTO = {
     familia: "'M PLUS Rounded 1c', 'Nunito', 'Segoe UI', system-ui, sans-serif",
-    peso: "200", tam: 76, espacio: "-2px", arriba: 157, alto: 106,
-    trozos: [[79, 90.3], [169.2, 25.7], [194.9, 90.3], [285.1, 25.7], [310.8, 90.3]],
-    fecha: { izq: 139.9, ancho: 200.3, arriba: 260, tam: "20px", espacio: "1px", familia: "'M PLUS Rounded 1c', 'Nunito', 'Segoe UI', system-ui, sans-serif" },
+    peso: "200", tam: 118, espacio: "-2px", arriba: 126, alto: 165,
+    trozos: [[77.2, 142.3], [219.5, 41], [260.5, 142.3]],
+    fecha: { izq: 173, ancho: 134, arriba: 118, tam: "19px", espacio: "3px", familia: "'M PLUS Rounded 1c', 'Nunito', 'Segoe UI', system-ui, sans-serif" },
     aviso: { izq: 0, arriba: 420, ancho: 480, tam: "14px", html: '<span data-ir="0" style="display:inline-block;width:12px;height:12px;border-radius:50%;margin:12px 7px;vertical-align:middle;background:#f6c063"></span><span data-ir="1" style="display:inline-block;width:8px;height:8px;border-radius:50%;margin:12px 7px;vertical-align:middle;background:#5a4020"></span><span data-ir="2" style="display:inline-block;width:8px;height:8px;border-radius:50%;margin:12px 7px;vertical-align:middle;background:#5a4020"></span><span data-ir="3" style="display:inline-block;width:8px;height:8px;border-radius:50%;margin:12px 7px;vertical-align:middle;background:#5a4020"></span>' },
-    baja: 8.9, punto: { r: 4.5, sep: 14.8, dx: 13.8 },
+    baja: 13.3, punto: { r: 7, sep: 23, dx: 21.4 },
   };
 
   let enCurso = false;
@@ -110,7 +110,7 @@
     const aviso = document.getElementById("scrollHint");
     const texto = hora && hora.firstChild;
     // El reloj solo se mide estando en su página (la 0 de la fila de páginas)
-    if (!texto || texto.length !== 8 || window.scrollY !== 0 || window.__paginaReloj) return null;
+    if (!texto || texto.length !== 5 || window.scrollY !== 0 || window.__paginaReloj) return null;
     const estilo = getComputedStyle(hora);
     const cajaDe = (a, b) => {
       const r = document.createRange();
@@ -118,13 +118,13 @@
       r.setEnd(texto, b);
       return r.getBoundingClientRect();
     };
-    const caja = cajaDe(0, 8);
+    const caja = cajaDe(0, 5);
     const estiloFecha = getComputedStyle(fecha);
     const cajaFecha = fecha.getBoundingClientRect();
     const datos = {
       familia: estilo.fontFamily, peso: estilo.fontWeight, tam: parseFloat(estilo.fontSize),
       espacio: estilo.letterSpacing, arriba: caja.top, alto: caja.height,
-      trozos: [[0, 2], [2, 3], [3, 5], [5, 6], [6, 8]].map(([a, b]) => {
+      trozos: [[0, 2], [2, 3], [3, 5]].map(([a, b]) => {
         const c = cajaDe(a, b);
         return [c.left, c.width];
       }),
@@ -134,13 +134,13 @@
     // canvas ampliado y se miden (centro, radio y separación de cada punto), para que los
     // ojos acaben justo ahí. Con constantes a ojo se veía un salto de unos píxeles.
     try {
-      const E = 8, tam = parseFloat(estilo.fontSize) * E, pad = 4 * E;
+      const E = 5, tam = parseFloat(estilo.fontSize) * E, pad = 4 * E;
       const cv = document.createElement("canvas");
       cv.width = Math.ceil(tam) + 2 * pad;
       cv.height = Math.ceil(tam * 1.6);
       const m = cv.getContext("2d", { willReadFrequently: true });
       m.font = `${estilo.fontWeight} ${tam}px ${estilo.fontFamily}`;
-      // Alto de la letra a su tamaño real (a 8x el redondeo de la caja no sería el de la página)
+      // Alto de la letra a su tamaño real (a 5x el redondeo de la caja no sería el de la página)
       const m1 = document.createElement("canvas").getContext("2d");
       m1.font = `${estilo.fontWeight} ${estilo.fontSize} ${estilo.fontFamily}`;
       const fm = m1.measureText(":");
@@ -188,8 +188,8 @@
     const dos = (n) => String(n).padStart(2, "0");
     const dia = DIAS[d.getDay()];
     return {
-      trozos: [dos(d.getHours()), ":", dos(d.getMinutes()), ":", dos(d.getSeconds())],
-      fecha: `${dia[0].toUpperCase()}${dia.slice(1)}, ${dos(d.getDate())}/${dos(d.getMonth() + 1)}/${d.getFullYear()}`,
+      trozos: [dos(d.getHours()), ":", dos(d.getMinutes())],
+      fecha: `${dia.toUpperCase()} ${d.getDate()}`, // igual que la de reloj.html (que la pone en mayúsculas con CSS)
     };
   }
 
@@ -220,7 +220,7 @@
       <rect data-k="brilloA" width="${ancho}" height="${alto}" fill="url(#ktBrA)" clip-path="url(#ktInunda)" display="none"/>
       <rect data-k="brilloT" width="${ancho}" height="${alto}" fill="url(#ktBrT)" clip-path="url(#ktInunda)" display="none"/>
       <g data-k="zetas" font-family="Nunito,'Varela Round','DejaVu Sans',sans-serif" font-weight="800" text-anchor="middle"><text font-size="24">z</text><text font-size="32">z</text><text font-size="42">Z</text></g>
-      <g data-k="puntos"><circle/><circle/><circle/><circle/></g>
+      <g data-k="puntos"><circle/><circle/></g>
     </svg>`;
   }
 
@@ -273,7 +273,7 @@
     const yPuntos = yDe + (R.baja || 0);
     const punto = R.punto || { r: R.tam * 0.053, sep: R.tam * 0.24, dx: R.trozos[1][1] / 2 };
     const sep = punto.sep, radio = punto.r;
-    const xPuntos = [R.trozos[1][0] + punto.dx, R.trozos[3][0] + punto.dx];
+    const xPunto = R.trozos[1][0] + punto.dx; // un solo «:»: los dos ojos acaban en sus dos puntos
     const y0 = (alto - 480) / 2;
 
     function pintaCara(f, k, op) {
@@ -311,7 +311,7 @@
     }
     function ponPie(f) {
       fecha.style.opacity = f;
-      fecha.style.transform = `translateY(${10 * (1 - f)}px)`;
+      fecha.style.transform = `translateY(${-10 * (1 - f)}px)`; // la fecha va encima: baja a su sitio
       if (aviso) aviso.style.opacity = f;
     }
 
@@ -328,29 +328,27 @@
       const r = p < 0.26 ? 0 : p < 0.4 ? 13 * tramo(p, 0.26, 0.4) : mezcla(13, radio, suave(tramo(p, 0.45, 0.72)));
       const color = mezclaColor("#c89b57", colores.texto, tramo(p, 0.42, 0.58));
       const ola = suave(tramo(p, 0.38, 0.8)) * 1.3 * Math.max(ancho, alto);
+      // Cada ojo es un punto del único «:»: el izquierdo acaba en el de arriba y el derecho en el de abajo
       [0, 1].forEach((i) => {
-        const x = mezcla(OJOS_X[i], xPuntos[i], t), y = mezcla(232 + y0, yPuntos, t);
+        const x = mezcla(OJOS_X[i], xPunto, t), y = mezcla(232 + y0, yPuntos, t);
         olas[i].setAttribute("cx", x);
         olas[i].setAttribute("cy", y);
         olas[i].setAttribute("r", ola);
-        [0, 1].forEach((j) => {
-          const c = puntos.children[i * 2 + j];
-          c.setAttribute("cx", x);
-          c.setAttribute("cy", y + (j ? s : -s));
-          c.setAttribute("r", r);
-          c.setAttribute("fill", color);
-        });
+        const c = puntos.children[i];
+        c.setAttribute("cx", x);
+        c.setAttribute("cy", y + (i ? s : -s));
+        c.setAttribute("r", r);
+        c.setAttribute("fill", color);
       });
       puntos.setAttribute("opacity", 1 - tramo(p, 0.92, 1));
       ponTrozo(1, "", tramo(p, 0.9, 1));
-      ponTrozo(3, "", tramo(p, 0.9, 1));
-      const sale = (i, desde, a, b) => {
+      // Las horas y los minutos salen de los dos puntos, cada uno hacia su lado
+      const sale = (i, a, b) => {
         const c = rebota(tramo(p, a, b));
-        ponTrozo(i, `translateX(${(desde - centro[i]) * (1 - c)}px) scale(${mezcla(0.2, 1, c)})`, tramo(p, a, a + 0.1));
+        ponTrozo(i, `translateX(${(centro[1] - centro[i]) * (1 - c)}px) scale(${mezcla(0.2, 1, c)})`, tramo(p, a, a + 0.1));
       };
-      sale(0, centro[1], 0.56, 0.84);
-      sale(2, centro[2], 0.6, 0.88);
-      sale(4, centro[3], 0.56, 0.84);
+      sale(0, 0.56, 0.84);
+      sale(2, 0.6, 0.88);
       ponPie(tramo(p, 0.8, 1));
     }
 
@@ -366,17 +364,17 @@
       // Al volver no le quedan zZz: se despierta en cuanto cargue la cara
       const entran = vuelta ? tramo(p, 0.03, 0.15) : 1;
       [...zetas.children].forEach((t, i) => {
-        const z = pasoZ(i, seg), destino = [centro[0], centro[2], centro[4]][i];
+        // Tres zetas y tres trozos: las horas, los dos puntos y los minutos
+        const z = pasoZ(i, seg), destino = centro[i];
         t.setAttribute("fill", mezclaColor("#fff3da", colores.texto, tramo(p, 0.3, 0.5)));
         t.setAttribute("opacity", mezcla(z.o, 1, tramo(p, 0, 0.08)) * fuera * entran);
         t.setAttribute("transform", `translate(${mezcla(z.x, destino, e)} ${mezcla(z.y, yDe + 15, e)}) rotate(${mezcla(z.r, 0, e)}) scale(${mezcla(z.s, 1.5, e)})`);
       });
-      [0, 2, 4].forEach((i, n) => {
+      [0, 2].forEach((i, n) => {
         const a = 0.5 + n * 0.03;
         ponTrozo(i, `scale(${mezcla(0.55, 1, rebota(tramo(p, a, a + 0.2)))})`, tramo(p, a, a + 0.08));
       });
       ponTrozo(1, "", tramo(p, 0.68, 0.78));
-      ponTrozo(3, "", tramo(p, 0.68, 0.78));
       ponPie(tramo(p, 0.8, 1));
     }
 

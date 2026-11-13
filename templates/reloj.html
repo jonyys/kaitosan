@@ -73,19 +73,22 @@
     .pagina { position: relative; flex: 0 0 var(--ancho); height: 100%; overflow: hidden; }
 
     /* Página 0: el reloj */
-    .reloj-p { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding-bottom: 28px; }
-    #hora { font-size: 76px; font-weight: 200; letter-spacing: -2px; line-height: 1; color: var(--text); font-variant-numeric: tabular-nums; }
-    #fecha { font-size: 20px; line-height: 1; color: var(--text-soft); margin-top: 12px; text-transform: capitalize; letter-spacing: 1px; }
+    /* Fecha corta encima, hora sin segundos y el tiempo en una pastilla de cristal debajo. Con estas
+       medidas la fecha cae en y=118, la hora en y=150 y la pastilla en y=306 (el relleno de arriba
+       centra el conjunto de 250 px en la pantalla de 480). */
+    .reloj-p { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding-top: 6px; }
+    #fecha { font-size: 19px; line-height: 1; color: var(--text-soft); margin-bottom: 13px; text-transform: uppercase; letter-spacing: 3px; }
+    #hora { font-size: 118px; font-weight: 200; letter-spacing: -2px; line-height: 1; color: var(--text); font-variant-numeric: tabular-nums; }
 
-    /* El tiempo de Alcorcón, bajo la fecha. El hueco está reservado desde el principio (alto fijo) y solo
+    /* El tiempo de Alcorcón, bajo la hora. El hueco está reservado desde el principio (alto fijo) y solo
        cambia la opacidad: si apareciera empujando, la hora saltaría y la transición cara→reloj (que mide
        dónde está la hora, transiciones.js) la dibujaría descuadrada. */
-    #tiempo { margin-top: 20px; height: 52px; text-align: center; color: var(--text-soft); opacity: 0; transition: opacity .6s ease; }
+    #tiempo { box-sizing: border-box; margin-top: 38px; width: 240px; height: 62px; border-radius: 31px; background: var(--cristal, rgba(255, 255, 255, .08)); border: 1px solid var(--cristal-borde, rgba(255, 255, 255, .16));
+      display: flex; align-items: center; justify-content: center; gap: 14px; white-space: nowrap; color: var(--text-soft); opacity: 0; transition: opacity .6s ease; }
     #tiempo.ver { opacity: 1; }
-    #tiempo .t1 { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 22px; line-height: 1; color: var(--text); }
-    #tiempo .t1 svg { width: 30px; height: 30px; fill: none; stroke: var(--rosa-tinta); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-    #tiempo .t1 b { font-weight: 300; font-size: 30px; letter-spacing: -1px; }
-    #tiempo .t2 { margin-top: 8px; font-size: 14px; letter-spacing: .5px; white-space: nowrap; }
+    #tiempo svg { width: 32px; height: 32px; fill: none; stroke: var(--rosa-tinta); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+    #tiempo b { font-weight: 300; font-size: 24px; line-height: 1; color: var(--text); }
+    #tiempo small { font-size: 15px; line-height: 1; color: var(--text-soft); }
 
     /* Páginas 1-3: un título grande, la lista (que se desliza dentro) y un botón redondo de más.
        Sin iconos ni cajas. Con la lista vacía, el más pasa al centro de la pantalla.
@@ -212,16 +215,20 @@
   <!-- 0 · RELOJ -->
   <section class="pagina">
     <div class="reloj-p">
-      <div id="hora"></div>
       <div id="fecha"></div>
+      <div id="hora"></div>
       <div id="tiempo"></div>
       <script>
         // Puesta aquí mismo: si la página se pinta antes de que llegue el script grande, ya lleva la hora real
         const DIAS = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
         function actualizarReloj() {
           const ahora = new Date(), dos = (n) => String(n).padStart(2, '0');
-          document.getElementById('hora').textContent = `${dos(ahora.getHours())}:${dos(ahora.getMinutes())}:${dos(ahora.getSeconds())}`;
-          document.getElementById('fecha').textContent = `${DIAS[ahora.getDay()]}, ${dos(ahora.getDate())}/${dos(ahora.getMonth() + 1)}/${ahora.getFullYear()}`;
+          const texto = { hora: `${dos(ahora.getHours())}:${dos(ahora.getMinutes())}`, fecha: `${DIAS[ahora.getDay()]} ${ahora.getDate()}` };
+          // Solo se toca el DOM cuando cambia el minuto (o el día): sin repintar cada segundo
+          for (const id in texto) {
+            const el = document.getElementById(id);
+            if (el.textContent !== texto[id]) el.textContent = texto[id];
+          }
           document.documentElement.classList.toggle('night', KaitoTransicion.esDeNoche());
         }
         actualizarReloj();
@@ -320,10 +327,10 @@
   let editandoId = null;   // null = alarma nueva
   let countdowns = {};     // id → intervalo de countdown
 
-  // Late justo al cambiar el segundo: así nunca va por detrás de la hora real (y casa con la réplica de la transición)
+  // Late justo al cambiar el segundo: así el minuto nunca llega tarde (y casa con la réplica de la transición)
   (function tic() { actualizarReloj(); setTimeout(tic, 1000 - (Date.now() % 1000) + 15); })();
   // Hay que pedirla: sin pintar nada, nadie la ha pedido y fonts.ready ya estaría resuelto
-  document.fonts.load("200 76px 'M PLUS Rounded 1c'", "0123456789:").catch(() => {}).then(KaitoTransicion.guardarReloj);
+  document.fonts.load("200 118px 'M PLUS Rounded 1c'", "0123456789:").catch(() => {}).then(KaitoTransicion.guardarReloj);
 
   // ── TIEMPO DE ALCORCÓN (después del primer pintado; cada 10 min) ─────────
   const ICONOS_TIEMPO = {
@@ -334,15 +341,14 @@
     nieve: '<path d="M7 15a4 4 0 0 1-.6-7.96A5.5 5.5 0 0 1 17 6.5a4.2 4.2 0 0 1 0 8.5z"/><path d="M8 18.5v.01M12 20v.01M16 18.5v.01"/>',
     tormenta: '<path d="M7 15a4 4 0 0 1-.6-7.96A5.5 5.5 0 0 1 17 6.5a4.2 4.2 0 0 1 0 8.5z"/><path d="M12.5 15l-2.5 3h3l-2 3"/>',
   };
-  const TEXTO_TIEMPO = { soleado: 'Soleado', nublado: 'Nublado', lluvia: 'Lluvia', nieve: 'Nieve', tormenta: 'Tormenta' };
   async function cargarTiempo() {
     const el = document.getElementById('tiempo');
     try {
       const t = await (await fetch('/reloj/tiempo')).json();
-      if (!t || typeof t.temp !== 'number' || !TEXTO_TIEMPO[t.estado]) return; // sin datos: se queda oculto (o con el último)
+      if (!t || typeof t.temp !== 'number') return; // sin datos: se queda oculto (o con el último)
       const ico = t.estado === 'soleado' ? (t.es_dia ? 'sol' : 'luna') : t.estado === 'nublado' ? 'nube' : t.estado;
-      el.innerHTML = `<div class="t1"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONOS_TIEMPO[ico]}</svg><b>${t.temp}°</b><span>${TEXTO_TIEMPO[t.estado]}</span></div>` +
-        `<div class="t2">máx ${t.max}° · mín ${t.min}° · lluvia ${t.lluvia}%</div>`;
+      if (!ICONOS_TIEMPO[ico]) return; // estado que no conocemos
+      el.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONOS_TIEMPO[ico]}</svg><b>${t.temp}°</b><small>${t.max}° · ${t.min}°</small>`;
       requestAnimationFrame(() => el.classList.add('ver'));
     } catch (e) { /* sin red: no se enseña nada */ }
   }
