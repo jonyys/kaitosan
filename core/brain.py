@@ -12,6 +12,7 @@ from ai.tools import TOOLS, ToolDispatcher
 
 from core.config import TRIGGERS_SALIR_SENSEI
 from core.emociones import extraer_cierre, extraer_emocion
+from core import tamagotchi
 from core.japanese_memory import JapaneseMemory
 from core.memory import DB_PATH, Memory
 from ai.sensei.profesor import ProfesorJapones, DESPEDIDAS
@@ -77,6 +78,7 @@ class Brain:
         """Devuelve siempre (respuesta, lento_extra). Marca el turno para el
         filtro de alucinación de Whisper (ver transcribir_para_turno)."""
         self.asunto_cerrado = False
+        tamagotchi.animar()  # hablarle le sube el ánimo (si el modo está activo)
         try:
             return self._responder(mensaje, pron_contexto=pron_contexto, on_frase=on_frase)
         finally:

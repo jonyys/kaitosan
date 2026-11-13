@@ -12,6 +12,9 @@ from core.settings_store import settings_get, settings_set
 
 # Lo que baja cada hora (puntos de 0 a 100): nunca se muere, solo se pone mustio.
 BAJADA_H = {"hambre": 4.0, "animo": 3.0, "energia": 2.0}
+# De noche (23:00-07:00) Kaito duerme: la energía se recupera en vez de bajar
+DORMIR_DESDE, DORMIR_HASTA, SUBE_DORMIDO_H = 23, 7, 5.0
+ANIMO_POR_CHARLA = 3  # cada vez que se le habla
 # Lo que sube cada objeto
 OBJETOS = {
     "onigiri": {"es": "Onigiri", "jp": "おにぎり", "sube": {"hambre": 30}},
@@ -33,6 +36,34 @@ def _acotar(v) -> float:
     return max(0.0, min(100.0, v))
 
 
+def _avanzar(e: dict, desde: float, hasta: float) -> None:
+    """Pasa el tiempo hora a hora (la energía depende de si es de noche). Más de 3 días da igual: todo está en el suelo."""
+    t = max(desde, hasta - 72 * 3600)
+    while t < hasta:
+        paso = min(hasta - t, 3600)
+        horas = paso / 3600
+        h = time.localtime(t).tm_hour
+        dormido = h >= DORMIR_DESDE or h < DORMIR_HASTA
+        for k, por_hora in BAJADA_H.items():
+            if k == "energia" and dormido:
+                e[k] = _acotar(e.get(k, 80) + SUBE_DORMIDO_H * horas)
+            else:
+                e[k] = _acotar(e.get(k, 80) - por_hora * horas)
+        t += paso
+
+
+def animar(n: int = ANIMO_POR_CHARLA, ahora: float = None) -> None:
+    """Hablarle le sube el ánimo. No hace nada con el modo apagado y nunca rompe una conversación."""
+    try:
+        if not activo():
+            return
+        e = _cargar(ahora or time.time())
+        e["animo"] = _acotar(e["animo"] + n)
+        _guardar(e)
+    except Exception as ex:  # noqa: BLE001
+        print(f"⚠️ tamagotchi: no se pudo subir el ánimo: {ex}")
+
+
 def _cargar(ahora: float) -> dict:
     try:
         e = json.loads(settings_get("tamagotchi_estado") or "")
@@ -40,9 +71,7 @@ def _cargar(ahora: float) -> dict:
     except Exception:  # noqa: BLE001 — sin estado o roto: se empieza de cero
         e = {**INICIAL, "objetos": dict(INICIAL["objetos"]), "ultima": ahora}
         _guardar(e)  # el reloj arranca ya: si no, nunca pasaría el tiempo
-    horas = max(0.0, (ahora - e.get("ultima", ahora)) / 3600)
-    for k, por_hora in BAJADA_H.items():
-        e[k] = _acotar(e.get(k, 80) - por_hora * horas)
+    _avanzar(e, e.get("ultima", ahora), ahora)
     e["ultima"] = ahora
     hoy = time.strftime("%Y-%m-%d", time.localtime(ahora))
     if e.get("dia") is None:

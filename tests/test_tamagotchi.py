@@ -31,6 +31,22 @@ def test_tamagotchi():
     antes = sum(t.estado(B + 500 * 3600)["objetos"].values())
     assert sum(t.estado(B + 501 * 3600)["objetos"].values()) == antes   # mismo día: sin regalo
     assert sum(t.estado(B + 530 * 3600)["objetos"].values()) == antes + 1  # día nuevo: 1 regalo
+    # de noche duerme: la energía sube (8:00 → 23:00 baja 2/h = 50; 23:00 → 07:00 sube 5/h = 90)
+    ss.settings_set("tamagotchi_estado", "")
+    assert t.estado(B)["energia"] == 80
+    assert t.estado(B + 15 * 3600)["energia"] == 50
+    assert t.estado(B + 23 * 3600)["energia"] == 90
+    # hablarle sube el ánimo (nunca pasa de 100)
+    ss.settings_set("tamagotchi_estado", "")
+    t.estado(B)
+    t.animar(3, B)
+    assert t.estado(B)["animo"] == 83
+    t.animar(50, B)
+    assert t.estado(B)["animo"] == 100
+    t.set_activo(False)
+    t.animar(3, B)  # apagado: no hace nada
+    t.set_activo(True)
+    assert t.estado(B)["animo"] == 100
 
 
 if __name__ == "__main__":
