@@ -26,7 +26,7 @@ from core.config import FLASK_SECRET_KEY
 from core.emociones import es_solo_gracias, gesto_para_gracias
 from werkzeug.security import check_password_hash, generate_password_hash
 from core.settings_store import settings_get, settings_set
-from core import system_settings
+from core import system_settings, tamagotchi
 from core import japanese_items, cards_propias
 from flask import flash, redirect, url_for, session, request
 from functools import wraps
@@ -284,6 +284,7 @@ def _kiosko_config():
     return {
         "screensaver_min": system_settings.pantalla_inactividad_get(),
         "volumen": system_settings.volumen_get(),
+        "tamagotchi": tamagotchi.activo(),
         "brillo": {"soportado": bool(b.get("soportado")), "pct": pct},
         **_kiosko_pantalla(),
     }
@@ -373,6 +374,26 @@ def kiosko_no_molestar():
     _aplicar_silencio()
     socketio.emit("no_molestar", {"activo": r["activo"]})
     return jsonify(r)
+
+
+@app.route("/tamagotchi")
+def tamagotchi_pagina():
+    if not tamagotchi.activo():
+        return redirect("/")
+    return render_template("tamagotchi.html", objetos=tamagotchi.OBJETOS)
+
+
+@app.route("/tamagotchi/estado")
+def tamagotchi_estado():
+    return jsonify(tamagotchi.estado())
+
+
+@app.route("/tamagotchi/dar", methods=["POST"])
+def tamagotchi_dar():
+    if not _solo_local():
+        abort(403)
+    ok = tamagotchi.dar(request.form.get("objeto", ""))
+    return jsonify({"ok": ok, **tamagotchi.estado()})
 
 
 @app.route("/kiosko/salir", methods=["POST"])
@@ -743,6 +764,7 @@ def ajustes():
         volumen=system_settings.volumen_get(),
         brillo=system_settings.brillo_get(),
         inactividad_min=system_settings.pantalla_inactividad_get(),
+        tamagotchi_on=tamagotchi.activo(),
         noche=system_settings.noche_get(),
         salud=system_settings.salud(),
         admin_user=settings_get("admin_user"),
@@ -820,6 +842,13 @@ def ajustes_pantalla_inactividad():
     _flash_resultado(
         system_settings.pantalla_inactividad_set(request.form.get("minutos", "")),
         "Tiempo de inactividad actualizado")
+    return redirect(url_for("ajustes"))
+
+@app.route("/admin/ajustes/pantalla/tamagotchi", methods=["POST"])
+@login_requerido
+def ajustes_pantalla_tamagotchi():
+    tamagotchi.set_activo(request.form.get("enabled") == "1")
+    flash("✅ Modo tamagotchi " + ("activado" if tamagotchi.activo() else "desactivado"), "success")
     return redirect(url_for("ajustes"))
 
 @app.route("/admin/ajustes/pantalla/noche", methods=["POST"])

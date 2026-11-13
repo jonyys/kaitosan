@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kaito — Mascota</title>
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+    <style>
+        :root { --bg: #15100a; --text: #f3e7d3; --text-soft: rgba(243, 231, 211, .64); --cristal: rgba(255, 255, 255, .07);
+                --cristal-borde: rgba(255, 255, 255, .16); --acc: #e0a44d; }
+        html[data-robot="claro"]:not(.night) { --bg: #f6eee3; --text: #2a1f12; --text-soft: rgba(42, 31, 18, .64);
+                --cristal: rgba(255, 255, 255, .6); --cristal-borde: rgba(120, 80, 20, .16); }
+        * { box-sizing: border-box; }
+        body { margin: 0; height: 100vh; background: var(--bg); color: var(--text); font-family: "M PLUS Rounded 1c", system-ui, sans-serif;
+               display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; overflow: hidden; }
+        /* cuadrado central seguro de la pantalla redonda */
+        .cara { width: 120px; height: 90px; position: relative; }
+        .ojo { position: absolute; top: 18px; width: 16px; height: 22px; border-radius: 50%; background: var(--text); }
+        .ojo.i { left: 26px; } .ojo.d { right: 26px; }
+        .boca { position: absolute; left: 50%; top: 58px; width: 28px; height: 14px; margin-left: -14px; border: 4px solid var(--text);
+                border-top: 0; border-radius: 0 0 28px 28px; transition: all .3s; }
+        .cara[data-c="triste"] .boca { border-radius: 28px 28px 0 0; border: 4px solid var(--text); border-bottom: 0; top: 64px; }
+        .cara[data-c="triste"] .ojo { height: 14px; top: 24px; }
+        .cara[data-c="normal"] .boca { height: 0; border-radius: 0; border-bottom: 4px solid var(--text); }
+        .barras { width: 240px; display: grid; gap: 8px; }
+        .barra { display: grid; grid-template-columns: 56px 1fr; align-items: center; gap: 8px; font-size: 13px; color: var(--text-soft); }
+        .barra i { display: block; height: 10px; border-radius: 6px; background: var(--cristal); border: 1px solid var(--cristal-borde); overflow: hidden; }
+        .barra b { display: block; height: 100%; width: 0; background: var(--acc); transition: width .4s; }
+        .objetos { display: flex; gap: 10px; }
+        .objetos button { width: 76px; padding: 8px 0; border-radius: 18px; border: 1.5px solid var(--cristal-borde); background: var(--cristal);
+                color: var(--text); font: inherit; font-size: 13px; line-height: 1.3; cursor: pointer; }
+        .objetos button:active { background: var(--cristal-borde); }
+        .objetos button[disabled] { opacity: .35; }
+        .objetos small { display: block; color: var(--text-soft); font-size: 11px; }
+        #atras { position: fixed; bottom: 26px; left: 50%; margin-left: -22px; width: 44px; height: 44px; border-radius: 50%;
+                 border: 1.5px solid var(--cristal-borde); background: var(--cristal); color: var(--text); font-size: 22px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="cara" id="cara" data-c="normal"><i class="ojo i"></i><i class="ojo d"></i><i class="boca"></i></div>
+    <div class="barras">
+        <div class="barra">Hambre<i><b id="b-hambre"></b></i></div>
+        <div class="barra">Ánimo<i><b id="b-animo"></b></i></div>
+        <div class="barra">Energía<i><b id="b-energia"></b></i></div>
+    </div>
+    <div class="objetos">
+        {% for k, o in objetos.items() %}
+        <button data-obj="{{ k }}">{{ o.es }}<small>{{ o.jp }} · <span id="n-{{ k }}">0</span></small></button>
+        {% endfor %}
+    </div>
+    <button id="atras" aria-label="Volver">‹</button>
+    <script>
+        function pinta(e) {
+            ["hambre", "animo", "energia"].forEach(function (k) { document.getElementById("b-" + k).style.width = e[k] + "%"; });
+            document.getElementById("cara").dataset.c = e.cara;
+            document.querySelectorAll("[data-obj]").forEach(function (b) {
+                var n = (e.objetos || {})[b.dataset.obj] || 0;
+                document.getElementById("n-" + b.dataset.obj).textContent = n;
+                b.disabled = n < 1;
+            });
+        }
+        fetch("/tamagotchi/estado").then(function (r) { return r.json(); }).then(pinta);
+        document.querySelectorAll("[data-obj]").forEach(function (b) {
+            b.addEventListener("click", function () {
+                fetch("/tamagotchi/dar", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: "objeto=" + b.dataset.obj }).then(function (r) { return r.json(); }).then(pinta);
+            });
+        });
+        document.getElementById("atras").addEventListener("click", function () { location.replace("/"); });
+    </script>
+    {% include 'partials/_kiosko.html' %}
+</body>
+</html>

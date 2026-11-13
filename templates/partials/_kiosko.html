@@ -128,6 +128,7 @@
     background: var(--cristal, #1d160d); color: var(--text, #ffffff); font: inherit; font-size: 16px; cursor: pointer;
   }
   #kioskoDrawer .btns button:active { background: var(--border-fuerte, #3a2a14); }
+  #kioskoDrawer .btns button[data-go="/tamagotchi"] { grid-column: 1 / -1; }
   #kioskoDrawer .btns button[data-salir] { grid-column: 1 / -1; width: 150px; justify-self: center; border-color: var(--border, #3a2a14); color: var(--peligro-tinta, #e88a8a); }
   /* Alarma o temporizador sonando: pantalla completa, como la del iPhone */
   #kioskoSonando {
@@ -331,6 +332,7 @@
         '<div class="btns">' +
         '<button data-go="/admin/ajustes">Ajustes</button>' +
         '<button data-go="/admin/ajustes#wifi">WiFi</button>' +
+        (cfg.tamagotchi ? '<button data-go="/tamagotchi">Mascota</button>' : "") +
         '<button data-salir>Salir</button>' +
         "</div></div>";
 

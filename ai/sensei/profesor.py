@@ -46,6 +46,7 @@ from ai.sensei.clase import (
     usa_patron,
 )
 from ai.sensei.curriculum import CURRICULUM, unidad_actual
+from core import tamagotchi
 from ai.sensei.kana import a_kana, bloques_japones, normalizar_bloques_jp, normalizar_japones, tiene_espanol
 from core.config import (
     EXTRACCION_PAUSA_LLAMADAS_SEG,
@@ -305,7 +306,10 @@ class ProfesorJapones:
         self.activo = False
         # Antes de la extracción (que vacía el estado): la pantalla lo enseña al volver a la cara.
         try:
-            self.socketio.emit("sensei_resumen", self.resumen_clase())
+            resumen = self.resumen_clase()
+            self.socketio.emit("sensei_resumen", resumen)
+            if resumen:  # clase con algo logrado: premio para Kaito (si el modo tamagotchi está activo)
+                tamagotchi.ganar("clase")
         except Exception as e:  # noqa: BLE001 — un resumen fallido no debe romper la despedida
             print(f"⚠️ No se pudo emitir el resumen de la clase: {e}")
         # La extracción tarda entre 5 y 15 s; que no bloquee la despedida.

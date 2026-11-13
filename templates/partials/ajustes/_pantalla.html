@@ -100,6 +100,20 @@
         <button class="btn btn-green" style="margin-top:10px">Guardar modo noche</button>
     </form>
 
+    {# --- Modo tamagotchi: Kaito tiene hambre/ánimo/energía y se le da de comer en la pantalla --- #}
+    <form method="POST" action="/admin/ajustes/pantalla/tamagotchi" style="margin-top:24px">
+        <label class="et" for="tama-on">Modo tamagotchi</label>
+        <p class="et" style="color:var(--text-soft); margin:4px 0 8px">
+            Kaito tiene hambre, ánimo y energía. Terminar una clase da comida y se la das
+            desde el cajón de la pantalla (Mascota).
+        </p>
+        <div class="fila">
+            <span class="et">Activado</span>
+            <input type="checkbox" name="enabled" id="tama-on" value="1" {% if tamagotchi_on %}checked{% endif %}>
+        </div>
+        <button class="btn btn-green" style="margin-top:10px">Guardar</button>
+    </form>
+
     {# --- Sitio reservado para más ajustes de pantalla --- #}
     <p class="et" style="color:var(--text-soft); margin-top:20px">
         Más ajustes de pantalla (rotación, tiempo hasta apagar) — próximamente.
