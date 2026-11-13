@@ -1,59 +1,203 @@
 {# Modo tamagotchi en la cara: un cajón que sube desde el borde de abajo (como el de ajustes rápidos baja desde
-   arriba) con las barras de Kaito y sus cosas: comida, bebida y juegos (todo japonés). Se arrastran hasta su
-   cara; la comida se la va comiendo a bocados. El modo se enciende en el cajón de arriba. #}
+   arriba) con las barras de Kaito (anillos), sus yenes y sus cosas: comida, bebida y juegos (todo japonés).
+   Se arrastran hasta su cara (él las sigue con los ojos y abre la boca al acercarlas); la comida se la va comiendo
+   a bocados con migas, la bebida a sorbos y los juguetes juegan delante de él. Los yenes que gana llegan en una
+   lluvia de monedas a un monedero arriba. Lo que le falta se ve en la cara, en una nube (tocarla abre el cajón)
+   y en adornos (gota de sudor, nubarrón, ぐぅ〜). Todo se anima solo con transform y opacity (la Pi lo agradece).
+   El modo se enciende en el cajón de arriba. #}
 <style>
-  #mascotaFondo { position: fixed; inset: 0; z-index: 9996; background: rgba(0, 0, 0, .45); opacity: 0; pointer-events: none; transition: opacity .28s ease; }
+  #mascotaFondo { position: fixed; inset: 0; z-index: 9996; background: rgba(0, 0, 0, .5); opacity: 0; pointer-events: none; transition: opacity .3s ease; }
   #mascotaFondo.abierto { opacity: 1; pointer-events: auto; }
+  /* 40 px de más por abajo: el muelle de abrir se pasa un poco hacia arriba y no debe verse el hueco */
   #mascotaDrawer {
-    position: fixed; bottom: 0; left: 0; z-index: 9997; width: var(--cara-ancho, var(--ancho, 100%)); box-sizing: border-box;
-    padding: 28px 0 64px; transform: translateY(106%); transition: transform .28s ease;
-    background: var(--blobs, none), var(--bg, #15100a); border-radius: 40px 40px 0 0; border-top: 1.5px solid var(--border, #3a2a14);
-    display: flex; flex-direction: column; align-items: center; gap: 12px; -webkit-user-select: none; user-select: none;
+    position: fixed; bottom: -40px; left: 0; z-index: 9997; width: var(--cara-ancho, var(--ancho, 100%)); box-sizing: border-box;
+    padding: 24px 0 78px; transform: translateY(110%); transition: transform .26s cubic-bezier(.5, 0, .75, 0);
+    background: var(--blobs, none), var(--bg, #15100a); border-radius: 46px 46px 0 0; border-top: 1.5px solid var(--border, #3a2a14);
+    box-shadow: 0 -14px 36px rgba(0, 0, 0, .55);
+    display: flex; flex-direction: column; align-items: center; gap: 10px; -webkit-user-select: none; user-select: none;
   }
-  #mascotaDrawer.abierto { transform: translateY(0); box-shadow: 0 -12px 34px rgba(0, 0, 0, .6); }
-  #mascotaDrawer .grip { position: absolute; top: 12px; left: 50%; margin-left: -22px; width: 44px; height: 5px; border-radius: 3px; background: var(--border-fuerte, #5a4020); }
-  #mascotaDrawer .stats { width: 220px; display: grid; gap: 6px; }
-  #mascotaDrawer .stat { display: grid; grid-template-columns: 58px 1fr; align-items: center; gap: 8px; font: 500 12px/1 system-ui, sans-serif; color: var(--text-soft, #b99a68); }
-  #mascotaDrawer .stat i { display: block; height: 8px; border-radius: 4px; background: var(--border-fuerte, #3a2a14); overflow: hidden; }
-  #mascotaDrawer .stat b { display: block; height: 100%; width: 0; border-radius: 4px; background: var(--rosa-accion, #e0a44d); transition: width .4s; }
-  #mascotaDrawer .tabs { display: flex; gap: 6px; }
-  #mascotaDrawer .tabs button { height: 30px; padding: 0 12px; border: 1.5px solid var(--cristal-borde, #5a4020); border-radius: 15px; background: var(--cristal, #1d160d);
-    color: var(--text-soft, #b99a68); font: 500 13px/1 system-ui, sans-serif; cursor: pointer; }
-  #mascotaDrawer .tabs button.on { background: var(--rosa-accion, #e0a44d); border-color: var(--rosa-accion, #e0a44d); color: var(--on-acc, #15100a); }
-  #mascotaDrawer .objs { display: flex; gap: 8px; width: 300px; box-sizing: border-box; padding: 4px 6px 18px; min-height: 50px;
-    overflow-x: auto; overflow-y: hidden; scrollbar-width: none; touch-action: none; }
+  #mascotaDrawer.abierto { transform: translateY(0); transition: transform .55s cubic-bezier(.2, 1.3, .35, 1); }
+  #mascotaDrawer.tirando { transition: none; }
+  #mascotaDrawer > * { opacity: 0; transform: translateY(18px); transition: opacity .15s, transform .15s; }
+  #mascotaDrawer.abierto > * { opacity: 1; transform: none; transition: opacity .35s ease, transform .55s cubic-bezier(.2, 1.4, .4, 1); }
+  #mascotaDrawer.abierto > .anillos { transition-delay: .05s; }
+  #mascotaDrawer.abierto > .tabs { transition-delay: .1s; }
+  #mascotaDrawer.abierto > .objs { transition-delay: .15s; }
+  #mascotaDrawer.abierto > .pie { transition-delay: .2s; }
+  #mascotaDrawer > .grip { position: absolute; top: 10px; left: 50%; margin-left: -22px; width: 44px; height: 5px; border-radius: 3px; background: var(--border-fuerte, #5a4020); }
+  .m-redonda { font-family: "M PLUS Rounded 1c", system-ui, sans-serif; }
+
+  /* Monedero del cajón */
+  #mascotaDrawer .bolsa { display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 13px 0 4px; border-radius: 15px;
+    background: linear-gradient(180deg, rgba(247, 215, 116, .24), rgba(247, 215, 116, .07)); border: 1.5px solid rgba(247, 215, 116, .5);
+    font: 800 16px/1 "M PLUS Rounded 1c", system-ui, sans-serif; color: #f7d774; font-variant-numeric: tabular-nums; }
+  html[data-robot="claro"]:not(.night) #mascotaDrawer .bolsa { color: #8a5a00; }
+  #mascotaDrawer .bolsa svg { width: 24px; height: 24px; }
+  .m-bump { animation: mBump .35s cubic-bezier(.3, 1.8, .5, 1); }
+  .m-no { animation: mNo .42s ease; }
+  @keyframes mBump { 40% { transform: scale(1.18); } }
+  @keyframes mNo { 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
+
+  /* Stats: anillos con su icono; por debajo de 30 se ponen rojos y laten */
+  #mascotaDrawer .anillos { display: flex; gap: 24px; }
+  #mascotaDrawer .anillo { display: flex; flex-direction: column; align-items: center; gap: 5px; font: 600 11px/1 system-ui, sans-serif; color: var(--text-soft, #b99a68); }
+  #mascotaDrawer .aro { position: relative; width: 56px; height: 56px; }
+  #mascotaDrawer .aro > svg:not(.ico) { width: 100%; height: 100%; transform: rotate(-90deg); } /* solo el anillo; el icono, derecho */
+  #mascotaDrawer .aro circle { fill: none; stroke-width: 5; }
+  #mascotaDrawer .aro .pista { stroke: var(--border-fuerte, #3a2a14); }
+  #mascotaDrawer .aro .valor { stroke: var(--c); stroke-linecap: round; stroke-dasharray: 113.1; stroke-dashoffset: 113.1;
+    transition: stroke-dashoffset 1s cubic-bezier(.3, 1.15, .4, 1), stroke .4s; }
+  #mascotaDrawer.quieto .aro .valor { transition: none; }
+  #mascotaDrawer .aro .ico { position: absolute; left: 14px; top: 14px; width: 28px; height: 28px; }
+  #mascotaDrawer .anillo.mal .valor { stroke: #ef6b5b; }
+  #mascotaDrawer .anillo.mal .aro { animation: mLatido 1.1s ease-in-out infinite; }
+  #mascotaDrawer .anillo.mal { color: #ef8b7b; }
+  @keyframes mLatido { 50% { transform: scale(1.08); } }
+
+  /* Pestañas con una marca que se desliza */
+  #mascotaDrawer .tabs { position: relative; display: grid; grid-template-columns: repeat(4, 68px); height: 34px; border-radius: 17px;
+    background: var(--cristal, #1d160d); border: 1.5px solid var(--cristal-borde, #5a4020); }
+  #mascotaDrawer .tabs .marca { position: absolute; top: 2px; left: 2px; width: calc((100% - 4px) / 4); height: calc(100% - 4px); border-radius: 14px;
+    background: var(--rosa-accion, #e0a44d); box-shadow: 0 2px 8px rgba(0, 0, 0, .3); transition: transform .45s cubic-bezier(.3, 1.4, .5, 1); }
+  #mascotaDrawer .tabs button { position: relative; border: 0; background: none; color: var(--text-soft, #b99a68); font: 600 12.5px/1 system-ui, sans-serif;
+    cursor: pointer; transition: color .25s; }
+  #mascotaDrawer .tabs button.on { color: var(--on-acc, #15100a); }
+
+  /* La fila de cosas: platitos redondos que entran de uno en uno */
+  #mascotaDrawer .objs { display: flex; gap: 10px; width: 316px; box-sizing: border-box; padding: 8px 10px 14px; min-height: 80px;
+    overflow-x: auto; overflow-y: hidden; scrollbar-width: none; touch-action: none;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 16px, #000 calc(100% - 16px), transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 16px, #000 calc(100% - 16px), transparent); }
   #mascotaDrawer .objs::-webkit-scrollbar { display: none; }
-  #mascotaDrawer .obj { flex: none; }
-  #mascotaDrawer .yenes { justify-self: end; font: 500 12px/1 system-ui, sans-serif; color: var(--text-soft, #b99a68); }
-  #mascotaDrawer .yenes b { color: #f7d774; font-weight: 700; font-variant-numeric: tabular-nums; }
-  #mascotaDrawer .obj.compra { height: 64px; cursor: pointer; }
-  #mascotaDrawer .obj .p { position: absolute; left: 50%; bottom: -15px; transform: translateX(-50%); font: 700 10px/1 system-ui, sans-serif; color: #f7d774; white-space: nowrap; }
-  #mascotaDrawer .obj.compra.raro svg { filter: drop-shadow(0 0 6px rgba(247, 215, 116, .8)); }
-  #mascotaDrawer .obj.compra.caro { opacity: .35; }
-  #mascotaToast { position: fixed; left: 50%; top: 96px; transform: translate(-50%, -8px); z-index: 9995; padding: 6px 14px; border-radius: 16px;
-    background: rgba(247, 215, 116, .95); color: #3a2a06; font: 700 15px/1 system-ui, sans-serif; opacity: 0; pointer-events: none; transition: opacity .3s, transform .3s; }
-  #mascotaToast.on { opacity: 1; transform: translate(-50%, 0); }
-  /* Lo que le falta: una nube con la cosa en cuestión, que late más cuanto peor está (solo en reposo) */
-  #necesidad { position: fixed; right: 84px; top: 66px; width: 58px; height: 58px; z-index: 30; border-radius: 50%; padding: 8px;
-    background: rgba(255, 247, 232, .93); box-shadow: 0 4px 14px rgba(0, 0, 0, .45); opacity: 0; pointer-events: none; transition: opacity .5s; }
-  #necesidad::before, #necesidad::after { content: ""; position: absolute; border-radius: 50%; background: rgba(255, 247, 232, .93); }
-  #necesidad::before { width: 13px; height: 13px; left: -10px; bottom: -4px; }
-  #necesidad::after { width: 8px; height: 8px; left: -20px; bottom: -14px; }
-  #necesidad svg { width: 100%; height: 100%; display: block; }
-  body:has(.face.idle:not(.sensei)) #necesidad.on { opacity: .95; animation: necLate 2.4s ease-in-out infinite; }
-  #necesidad.urge { animation-duration: 1.1s !important; }
-  @keyframes necLate { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
-  #mascotaDrawer .obj { position: relative; width: 48px; height: 48px; touch-action: none; }
-  #mascotaDrawer .obj svg { width: 100%; height: 100%; display: block; }
-  #mascotaDrawer .obj .n { position: absolute; right: -4px; bottom: -4px; min-width: 19px; height: 19px; border-radius: 10px; padding: 0 4px;
-    background: #e0a44d; color: #15100a; font: 700 11px/19px system-ui, sans-serif; text-align: center; }
-  #mascotaDrawer .obj.vacio { opacity: .25; pointer-events: none; }
-  /* El objeto soltado sobre la cara: va a la boca y, si es comida o bebida, se va comiendo de arriba abajo a bocados */
-  .mascota-arrastre { position: fixed; left: 0; top: 0; width: 84px; height: 84px; z-index: 10001; pointer-events: none; }
-  .mascota-arrastre svg { width: 100%; height: 100%; filter: drop-shadow(0 6px 8px rgba(0, 0, 0, .4)); }
-  .mascota-arrastre.suelto { transition: transform .25s ease, clip-path .35s linear, opacity .3s ease; transform-origin: 50% 50%; }
-  .mascota-arrastre.juega svg { animation: mascotaJuega .55s ease-in-out infinite; }
-  @keyframes mascotaJuega { 0%, 100% { transform: translateY(0) rotate(-8deg); } 50% { transform: translateY(-14px) rotate(8deg); } }
+  #mascotaDrawer .obj { position: relative; flex: none; width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center; touch-action: none;
+    background: radial-gradient(circle at 50% 38%, rgba(255, 255, 255, .14), rgba(255, 255, 255, .03) 72%); border: 1.5px solid var(--cristal-borde, rgba(255, 255, 255, .14));
+    transition: transform .25s cubic-bezier(.3, 1.6, .5, 1), opacity .2s; }
+  #mascotaDrawer .obj svg { width: 44px; height: 44px; display: block; pointer-events: none; }
+  #mascotaDrawer .obj.toca { transform: scale(1.13); }
+  #mascotaDrawer .objs.entra .obj { animation: mEntra .5s cubic-bezier(.3, 1.5, .5, 1) both; animation-delay: calc(var(--i) * 45ms); }
+  @keyframes mEntra { from { opacity: 0; transform: translateY(22px) scale(.5); } }
+  #mascotaDrawer .obj .n { position: absolute; right: -4px; top: -4px; min-width: 20px; height: 20px; border-radius: 10px; padding: 0 5px; box-sizing: border-box;
+    background: #e0a44d; color: #15100a; font: 800 11px/20px system-ui, sans-serif; text-align: center; box-shadow: 0 2px 5px rgba(0, 0, 0, .35); }
+  #mascotaDrawer .obj .n.pop { animation: mPop .5s cubic-bezier(.3, 1.8, .5, 1); }
+  @keyframes mPop { 0% { transform: scale(1); } 35% { transform: scale(1.6); background: #fff3da; } }
+  #mascotaDrawer .obj.vacio svg { opacity: .3; }
+  #mascotaDrawer .obj.vacio .n { background: var(--border-fuerte, #5a4020); color: var(--text-soft, #b99a68); }
+  /* El plato raro brilla */
+  #mascotaDrawer .obj.raro { border-color: rgba(247, 215, 116, .75); box-shadow: 0 0 14px rgba(247, 215, 116, .45); }
+  #mascotaDrawer .obj.raro::after { content: ""; position: absolute; left: 4px; top: 2px; width: 12px; height: 12px; background: #fff3c4;
+    clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); animation: mTitila 1.6s ease-in-out infinite; }
+  @keyframes mTitila { 0%, 100% { opacity: .2; transform: scale(.5) rotate(0); } 50% { opacity: 1; transform: scale(1) rotate(45deg); } }
+  /* Tienda: precio en una etiqueta dorada */
+  #mascotaDrawer .obj .p { position: absolute; left: 50%; bottom: -9px; transform: translateX(-50%); padding: 3px 6px; border-radius: 8px; white-space: nowrap;
+    background: #f7d774; color: #3a2a06; font: 800 10px/1 system-ui, sans-serif; box-shadow: 0 2px 5px rgba(0, 0, 0, .35); }
+  #mascotaDrawer .obj.caro svg { opacity: .4; }
+  #mascotaDrawer .obj.caro .p { background: var(--border-fuerte, #5a4020); color: var(--text-soft, #b99a68); }
+  #mascotaDrawer .obj.comprado { animation: mCompra .55s cubic-bezier(.3, 1.6, .5, 1); }
+  @keyframes mCompra { 30% { transform: scale(1.25) rotate(-8deg); } 60% { transform: scale(.95) rotate(5deg); } }
+
+  /* Lo que se está tocando, en kana y lo que le sube */
+  #mascotaDrawer .pie { height: 18px; max-width: 320px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; text-align: center;
+    font: 500 12px/18px system-ui, sans-serif; color: var(--text-soft, #b99a68); }
+  #mascotaDrawer .pie b { font: 700 14px/18px "M PLUS Rounded 1c", system-ui, sans-serif; color: var(--text, #fff3da); margin-right: 3px; }
+  #mascotaDrawer .pie .mas { color: #8fd17a; font-weight: 700; }
+  #mascotaDrawer .pie .menos { color: #ef8b7b; font-weight: 700; }
+  #mascotaDrawer .pie.cambia { animation: mPie .3s ease both; }
+  @keyframes mPie { from { opacity: 0; transform: translateY(6px); } }
+
+
+  /* El objeto arrastrado: grande, inclinado según hacia dónde va, y con un halo al estar sobre la cara */
+  .mascota-arrastre { position: fixed; left: 0; top: 0; width: 84px; height: 84px; z-index: 10001; pointer-events: none; will-change: transform; }
+  .mascota-arrastre .cuerpo { width: 100%; height: 100%; transition: transform .2s ease-out, clip-path .22s ease-out; }
+  .mascota-arrastre svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 8px 9px rgba(0, 0, 0, .45)); }
+  .mascota-arrastre::before { content: ""; position: absolute; inset: -16px; border-radius: 50%; opacity: 0; transition: opacity .2s;
+    background: radial-gradient(circle, rgba(247, 215, 116, .55), rgba(247, 215, 116, 0) 65%); }
+  .mascota-arrastre.cerca::before { opacity: 1; animation: mLatido .7s ease-in-out infinite; }
+  .mascota-arrastre.suelto { transition: transform .4s cubic-bezier(.3, 1.35, .5, 1), opacity .35s ease; }
+  .mascota-arrastre.suelto .cuerpo { transition: transform .35s cubic-bezier(.3, 1.4, .5, 1), clip-path .22s ease-out; }
+  .mascota-arrastre.vuelve { transition: transform .35s cubic-bezier(.5, 0, .3, 1), opacity .35s ease; }
+  /* Cada juguete juega a su manera */
+  .juega-temari svg { animation: jBota .42s cubic-bezier(.45, 0, .55, 1) infinite alternate; }
+  .juega-koma svg { animation: jPeonza .28s linear infinite; }
+  .juega-kendama svg { animation: jSalta .55s ease-in-out infinite; }
+  .juega-origami svg { animation: jAletea .32s ease-in-out infinite alternate; }
+  @keyframes jBota { from { transform: translateY(0) scale(1.12, .86); } 25% { transform: translateY(-8px) scale(.95, 1.06); } to { transform: translateY(-46px) scale(1); } }
+  @keyframes jPeonza { 0% { transform: rotate(-7deg) scaleX(1); } 25% { transform: rotate(0) scaleX(.55); } 50% { transform: rotate(7deg) scaleX(1); } 75% { transform: rotate(0) scaleX(.55); } 100% { transform: rotate(-7deg) scaleX(1); } }
+  @keyframes jSalta { 0%, 100% { transform: translateY(0) rotate(0); } 45% { transform: translateY(-30px) rotate(-14deg); } 60% { transform: translateY(-30px) rotate(10deg); } }
+  @keyframes jAletea { from { transform: scaleY(1) rotate(-6deg); } to { transform: scaleY(.7) rotate(6deg); } }
+
+  /* Partículas: migas, gotas, kana, fichas de stats, brillos y monedas (todas con la Web Animations API) */
+  #mascotaFx { position: fixed; inset: 0; z-index: 10002; pointer-events: none; overflow: hidden; }
+  .mfx { position: absolute; left: 0; top: 0; will-change: transform, opacity; }
+  .mfx.miga { width: 11px; height: 9px; border-radius: 4px; box-shadow: 0 1px 2px rgba(0, 0, 0, .35); }
+  .mfx.gotita { width: 9px; height: 13px; border-radius: 50% 50% 50% 50% / 62% 62% 38% 38%; }
+  .mfx.kana { font: 800 28px/1 "M PLUS Rounded 1c", system-ui, sans-serif; color: #fff1cf; white-space: nowrap;
+    text-shadow: 0 3px 0 #8a5a1e, 0 0 14px rgba(0, 0, 0, .75); }
+  .mfx.kana.grande { font-size: 32px; color: #ffe58f; }
+  .mfx.chip { display: flex; align-items: center; gap: 4px; height: 28px; padding: 0 11px 0 4px; border-radius: 14px; white-space: nowrap;
+    background: var(--c); color: #1a1006; font: 800 15px/1 "M PLUS Rounded 1c", system-ui, sans-serif; box-shadow: 0 4px 12px rgba(0, 0, 0, .4); }
+  .mfx.chip svg { width: 22px; height: 22px; }
+  .mfx.chip.baja { background: #4a3a2a; color: #f2c7b5; }
+  .mfx.estrella { width: 18px; height: 18px; background: #ffe58f;
+    clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); }
+  .mfx.moneda, #monedero .moneda { width: 34px; height: 34px; }
+  .mfx.moneda svg, #monedero .moneda svg { width: 100%; height: 100%; display: block; }
+  .mfx.moneda svg { animation: mGiro .45s linear infinite; }
+  @keyframes mGiro { 50% { transform: scaleX(.15); } }
+  .mfx.regalo { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .mfx.regalo svg { width: 76px; height: 76px; filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .5)); }
+  .mfx.regalo span { padding: 4px 10px; border-radius: 12px; background: #fff3da; color: #3a2a06; font: 800 14px/1 "M PLUS Rounded 1c", system-ui, sans-serif; white-space: nowrap; }
+
+  /* Monedero de arriba: aparece cuando gana yenes y las monedas caen dentro */
+  #monedero { position: fixed; left: calc(var(--cara-ancho, 100vw) / 2); top: 50px; z-index: 10003; pointer-events: none;
+    transform: translate(-50%, -100px) scale(.6); opacity: 0; transition: transform .5s cubic-bezier(.3, 1.5, .5, 1), opacity .25s; }
+  #monedero.on { transform: translate(-50%, 0) scale(1); opacity: 1; }
+  #monedero .caja { display: flex; align-items: center; gap: 8px; height: 42px; padding: 0 18px 0 7px; border-radius: 21px;
+    background: linear-gradient(180deg, #ffe9a3, #f2b93b); color: #4a2c00; font: 800 22px/1 "M PLUS Rounded 1c", system-ui, sans-serif;
+    font-variant-numeric: tabular-nums; box-shadow: 0 6px 18px rgba(0, 0, 0, .5), inset 0 -3px 0 rgba(160, 90, 0, .35); }
+  #monedero .moneda { width: 30px; height: 30px; }
+  #monedero small { display: block; margin-top: 7px; text-align: center; font: 700 13px/1 system-ui, sans-serif; color: #fff3da; white-space: nowrap;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, .8); }
+
+  /* Lo que le falta: una nube de pensamiento con la cosa; con urgencia, un «!» rojo y tiembla. Tocarla abre el cajón */
+  #necesidad { position: fixed; right: 76px; top: 56px; width: 68px; height: 62px; z-index: 30; opacity: 0; pointer-events: none;
+    transform: scale(.3); transform-origin: 0 100%; transition: opacity .35s, transform .55s cubic-bezier(.3, 1.6, .5, 1); cursor: pointer; }
+  body:has(.face.idle:not(.sensei)) #necesidad.on { opacity: 1; transform: scale(1); pointer-events: auto; }
+  #necesidad .cont { position: absolute; inset: 0; }
+  #necesidad .forma { position: absolute; inset: 0; width: 100%; height: 100%; fill: #fff7e8; filter: drop-shadow(0 4px 8px rgba(0, 0, 0, .45)); }
+  #necesidad .ico { position: absolute; left: 16px; top: 13px; width: 36px; height: 36px; animation: necFlota 2.4s ease-in-out infinite; }
+  #necesidad i { position: absolute; border-radius: 50%; background: #fff7e8; box-shadow: 0 2px 5px rgba(0, 0, 0, .35); animation: necPunto 2.4s ease-in-out infinite; }
+  #necesidad .p1 { width: 12px; height: 12px; left: -6px; bottom: -6px; animation-delay: .3s; }
+  #necesidad .p2 { width: 7px; height: 7px; left: -17px; bottom: -16px; }
+  #necesidad .alerta { position: absolute; right: -5px; top: -5px; width: 21px; height: 21px; border-radius: 50%; background: #ef5b4b; color: #fff;
+    font: 900 14px/21px system-ui, sans-serif; text-align: center; box-shadow: 0 2px 6px rgba(0, 0, 0, .4); transform: scale(0); transition: transform .4s cubic-bezier(.3, 1.8, .5, 1); }
+  #necesidad.urge .alerta { transform: scale(1); }
+  #necesidad.urge .cont { animation: necTiembla 2.2s ease-in-out infinite; }
+  @keyframes necFlota { 0%, 100% { transform: translateY(1px) rotate(-6deg); } 50% { transform: translateY(-3px) rotate(6deg); } }
+  @keyframes necPunto { 0%, 100% { transform: scale(1); } 50% { transform: scale(.75); } }
+  @keyframes necTiembla { 0%, 70%, 100% { transform: none; } 74%, 82%, 90% { transform: rotate(-7deg); } 78%, 86%, 94% { transform: rotate(7deg); } }
+
+  /* Adornos de necesidad en la propia cara (dentro de .cara-fx, se mueven con ella). Solo en reposo y sin gesto */
+  .nec-fx { position: absolute; opacity: 0; transition: opacity .6s; pointer-events: none; }
+  .nec-gota { width: 20px; right: 5%; top: 16%; }
+  .nec-gota svg { width: 100%; display: block; }
+  .nec-nubarron { width: 76px; left: 50%; margin-left: -38px; top: -17%; }
+  .nec-nubarron svg { width: 100%; display: block; fill: #7d7f8c; }
+  .nec-nubarron i { position: absolute; top: 30px; width: 3px; height: 11px; border-radius: 2px; background: #9fd8ff; opacity: 0; }
+  .nec-nubarron i:nth-of-type(1) { left: 22px; } .nec-nubarron i:nth-of-type(2) { left: 37px; animation-delay: .35s !important; } .nec-nubarron i:nth-of-type(3) { left: 52px; animation-delay: .7s !important; }
+  .nec-gu { left: -9%; top: 70%; font: 800 26px/1 "M PLUS Rounded 1c", system-ui, sans-serif; color: #fff3da; white-space: nowrap;
+    text-shadow: 0 2px 0 #8a5a1e, 0 0 10px rgba(0, 0, 0, .6); }
+  .face.idle:not(.sensei):not([class*="gesto-"]).nec-sed .nec-gota { opacity: 1; animation: necGota 2.6s ease-in infinite; }
+  .face.idle:not(.sensei):not([class*="gesto-"]).nec-animo .nec-nubarron { opacity: 1; animation: necNube 3s ease-in-out infinite; }
+  .face.idle:not(.sensei):not([class*="gesto-"]).nec-animo .nec-nubarron i { animation: necLluvia 1.05s linear infinite; }
+  .face.idle:not(.sensei):not([class*="gesto-"]).nec-hambre .nec-gu { opacity: 1; animation: necGu 3.6s ease-in-out infinite; }
+  .face.nec-urge .nec-fx, .face.nec-urge .nec-nubarron i { animation-duration: 1.6s !important; }
+  .face.nec-urge .nec-nubarron i { animation-duration: .7s !important; }
+  .face.nec-urge .nec-nubarron svg { fill: #5d5f6c; }
+  @keyframes necGota { 0% { opacity: 0; transform: translateY(-6px) scale(.4); } 15% { opacity: 1; transform: translateY(0) scale(1); } 70% { opacity: 1; transform: translateY(26px) scale(1, 1.1); } 100% { opacity: 0; transform: translateY(36px) scale(.8); } }
+  @keyframes necNube { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+  @keyframes necLluvia { 0% { opacity: 0; transform: translateY(0); } 20% { opacity: .9; } 100% { opacity: 0; transform: translateY(30px); } }
+  @keyframes necGu { 0% { opacity: 0; transform: scale(.4) rotate(-14deg); } 10% { opacity: 1; transform: scale(1.1) rotate(-14deg); }
+    16%, 28% { transform: scale(1) rotate(-8deg) translateX(-3px); } 22%, 34% { transform: scale(1) rotate(-18deg) translateX(3px); } 45% { opacity: 1; transform: scale(1) rotate(-12deg) translateY(-6px); } 58%, 100% { opacity: 0; transform: scale(.9) rotate(-12deg) translateY(-14px); } }
 </style>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <!-- comida -->
@@ -164,82 +308,226 @@
     <path d="M16 42 4 50l12-2z" fill="#f6a9c0" stroke="#e08aa6" stroke-width="1.5" stroke-linejoin="round"/>
   </symbol>
 </svg>
-<div id="necesidad" aria-hidden="true"><svg viewBox="0 0 64 64"><use id="necesidadIcono" href="#o-onigiri"/></svg></div>
-<div id="mascotaToast"></div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-moneda" viewBox="0 0 32 32">
+    <circle cx="16" cy="16.5" r="15" fill="#d18a12"/><circle cx="16" cy="15" r="14" fill="#ffd45e"/>
+    <circle cx="16" cy="15" r="10.5" fill="none" stroke="#e8a520" stroke-width="1.6"/>
+    <path d="M11.5 9.5 16 15l4.5-5.5M16 15v7M12.5 15.5h7M12.5 19h7" stroke="#b5700f" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M6.5 12a10 10 0 0 1 5.5-6" stroke="#fff6c8" stroke-width="2" stroke-linecap="round" fill="none"/>
+  </symbol>
+  <symbol id="i-gota" viewBox="0 0 64 64">
+    <path d="M32 6c8 14 20 24 20 36a20 20 0 0 1-40 0c0-12 12-22 20-36z" fill="#7cc8f0" stroke="#4fa5c0" stroke-width="2.5"/>
+    <ellipse cx="24" cy="42" rx="4.5" ry="8" fill="#fff" opacity=".6"/>
+  </symbol>
+  <symbol id="i-corazon" viewBox="0 0 64 64">
+    <path d="M32 56C14 44 5 34 5 22 5 13 12 7 20 7c5 0 9 3 12 8 3-5 7-8 12-8 8 0 15 6 15 15 0 12-9 22-27 34z" fill="#f58fae" stroke="#d9668a" stroke-width="2.5"/>
+    <ellipse cx="18" cy="20" rx="5" ry="3.5" fill="#fff" opacity=".55" transform="rotate(-30 18 20)"/>
+  </symbol>
+</svg>
+<div id="necesidad" data-no-tap aria-hidden="true">
+  <div class="cont">
+    <svg class="forma" viewBox="0 0 68 62"><circle cx="34" cy="35" r="22"/><circle cx="17" cy="30" r="14"/><circle cx="51" cy="30" r="14"/>
+      <circle cx="34" cy="18" r="16"/><circle cx="22" cy="45" r="12"/><circle cx="46" cy="45" r="12"/></svg>
+    <svg class="ico" viewBox="0 0 64 64"><use id="necesidadIcono" href="#o-onigiri"/></svg>
+    <b class="alerta">!</b>
+  </div>
+  <i class="p1"></i><i class="p2"></i>
+</div>
+<div id="mascotaFx"></div>
+<div id="monedero"><div class="caja"><span class="moneda"><svg viewBox="0 0 32 32"><use href="#i-moneda"/></svg></span><span id="monederoN">0</span></div><small id="monederoMotivo"></small></div>
 <div id="mascotaFondo" data-no-tap></div>
 <div id="mascotaDrawer" data-no-tap>
   <div class="grip"></div>
-  <div class="stats">
-    <div class="yenes">円 <b id="mascotaYenes">0</b></div>
-    <div class="stat">Sed<i><b data-stat="sed"></b></i></div>
-    <div class="stat">Hambre<i><b data-stat="hambre"></b></i></div>
-    <div class="stat">Ánimo<i><b data-stat="animo"></b></i></div>
+  <div class="bolsa" id="mascotaBolsa"><svg viewBox="0 0 32 32"><use href="#i-moneda"/></svg><span id="mascotaYenes">0</span></div>
+  <div class="anillos">
+    <div class="anillo" data-stat="sed" style="--c:#7cc8f0"><div class="aro"><svg viewBox="0 0 44 44"><circle class="pista" cx="22" cy="22" r="18"/><circle class="valor" cx="22" cy="22" r="18"/></svg><svg class="ico" viewBox="0 0 64 64"><use href="#i-gota"/></svg></div>Sed</div>
+    <div class="anillo" data-stat="hambre" style="--c:#f2b25c"><div class="aro"><svg viewBox="0 0 44 44"><circle class="pista" cx="22" cy="22" r="18"/><circle class="valor" cx="22" cy="22" r="18"/></svg><svg class="ico" viewBox="0 0 64 64"><use href="#o-onigiri"/></svg></div>Hambre</div>
+    <div class="anillo" data-stat="animo" style="--c:#f58fae"><div class="aro"><svg viewBox="0 0 44 44"><circle class="pista" cx="22" cy="22" r="18"/><circle class="valor" cx="22" cy="22" r="18"/></svg><svg class="ico" viewBox="0 0 64 64"><use href="#i-corazon"/></svg></div>Ánimo</div>
   </div>
   <div class="tabs">
+    <span class="marca"></span>
     <button data-cat="comida" class="on">Comida</button>
     <button data-cat="bebida">Bebida</button>
     <button data-cat="juego">Juegos</button>
     <button data-cat="tienda">Tienda</button>
   </div>
   <div class="objs" id="mascotaObjs"></div>
+  <div class="pie" id="mascotaPie"></div>
 </div>
 <script>
   (function () {
-    const cajon = document.getElementById("mascotaDrawer"), fondo = document.getElementById("mascotaFondo");
-    const lista = document.getElementById("mascotaObjs");
-    let activo = false, catalogo = [], cuantos = {}, yenes = 0, cat = "comida";
+    const $ = (id) => document.getElementById(id);
+    const cajon = $("mascotaDrawer"), fondo = $("mascotaFondo"), lista = $("mascotaObjs"), pie = $("mascotaPie"), capa = $("mascotaFx");
+    const bolsa = $("mascotaBolsa"), yenEl = $("mascotaYenes"), marca = cajon.querySelector(".marca"), nube = $("necesidad");
+    const CATS = ["comida", "bebida", "juego", "tienda"];
+    const STAT = { sed: { nombre: "sed", c: "#7cc8f0", ico: "i-gota" }, hambre: { nombre: "hambre", c: "#f2b25c", ico: "o-onigiri" },
+      animo: { nombre: "ánimo", c: "#f58fae", ico: "i-corazon" } };
+    const PISTA = { comida: "Arrastra la comida hasta su boca", bebida: "Arrastra la bebida hasta su boca",
+      juego: "Arrastra un juguete hasta Kaito", tienda: "Toca algo para comprarlo" };
+    // Colores de las migas y de las gotas de cada cosa
+    const MIGAS = { onigiri: ["#fff7e8", "#1f3a2b"], dango: ["#f6a9c0", "#fff7e8", "#9fd68a"], tamagoyaki: ["#ffd45e", "#e0a82b"],
+      takoyaki: ["#c4742f", "#f2d9a0", "#1f3a2b"], ramen: ["#f2cf85", "#e0a82b", "#fff"], ebigohan: ["#e0483a", "#fff7e8", "#f7d774"],
+      ocha: ["#8fbf6a"], mugicha: ["#b5702f"], mizu: ["#bfe6f5"], ramune: ["#7fd1e8"], matcha: ["#8fbf6a"] };
+    let activo = false, catalogo = [], porId = {}, cuantos = {}, yenes = 0, cat = "comida", ultimo = {};
 
-    function dibuja(cambioPestana) {
-      lista.innerHTML = "";
-      if (cambioPestana) lista.scrollLeft = 0;
-      lista.classList.toggle("tienda", cat === "tienda");
-      if (cat === "tienda") {
-        // Tienda: toda la comida y bebida con su precio; tocar una la compra
-        catalogo.filter((o) => o.cat !== "juego").forEach((o) => {
-          const d = document.createElement("div");
-          d.className = "obj compra" + (o.id === "ebigohan" ? " raro" : "") + (yenes < o.precio ? " caro" : "");
-          d.dataset.obj = o.id;
-          d.dataset.cat = "tienda";
-          d.title = o.es + " · " + o.jp;
-          d.innerHTML = `<svg viewBox="0 0 64 64"><use href="#o-${o.id}"/></svg><span class="n">${cuantos[o.id] || 0}</span><span class="p">${o.precio}円</span>`;
-          lista.appendChild(d);
-        });
-        cajon.querySelectorAll(".tabs button").forEach((b) => b.classList.toggle("on", b.dataset.cat === cat));
-        return;
+    const azarE = (a, b) => a + Math.random() * (b - a);
+    const T = (x, y, s = 1, r = 0) => `translate(-50%,-50%) translate(${x.toFixed(1)}px,${y.toFixed(1)}px) scale(${s}) rotate(${r.toFixed(1)}deg)`;
+    const ancho = () => document.body.clientWidth;
+    const arriba = () => [ancho() / 2 - 34, 58]; // hueco libre sobre las cejas (la nube va a la derecha)
+    function boca() {
+      const b = face.querySelector(".mouth-container").getBoundingClientRect();
+      return [b.left + b.width / 2, b.top + b.height / 2];
+    }
+    function centroCara() {
+      const r = face.getBoundingClientRect();
+      return [r.left + r.width / 2, r.top + r.height / 2, r];
+    }
+    // Una partícula suelta en (x, y) que sigue sus fotogramas y se borra sola
+    function particula(html, clase, x, y, fotos, ms, retraso = 0, curva = "cubic-bezier(.2,.7,.3,1)", estilo = "") {
+      const p = document.createElement("div");
+      p.className = "mfx " + clase;
+      p.innerHTML = html;
+      p.style.cssText = `left:${x}px;top:${y}px;opacity:0;${estilo}`;
+      capa.appendChild(p);
+      p.animate(fotos, { duration: ms, delay: retraso, easing: curva, fill: "both" }).onfinish = () => p.remove();
+      return p;
+    }
+    function texto(t, x, y, rot = 0, retraso = 0, clase = "") {
+      particula(t, "kana " + clase, x, y, [
+        { transform: T(0, 8, .3, rot - 10), opacity: 0 },
+        { transform: T(0, 0, 1.12, rot), opacity: 1, offset: .15 },
+        { transform: T(0, -6, 1, rot + 4), opacity: 1, offset: .3 },
+        { transform: T(0, -16, 1, rot - 4), opacity: 1, offset: .7 },
+        { transform: T(0, -34, .9, rot), opacity: 0 },
+      ], 1300, retraso);
+    }
+    function migas(x, y, colores, n = 5, retraso = 0, clase = "miga") {
+      for (let i = 0; i < n; i++) {
+        const dx = azarE(-46, 46), sube = azarE(-50, -18), r = azarE(-200, 200);
+        particula("", clase, x, y, [
+          { transform: T(0, 0, 1, 0), opacity: 1 },
+          { transform: T(dx * .6, sube, 1, r / 2), opacity: 1, offset: .35 },
+          { transform: T(dx, 70, .6, r), opacity: 0 },
+        ], azarE(650, 850), retraso, "cubic-bezier(.25,.6,.45,1)", `background:${colores[i % colores.length]}`);
       }
-      catalogo.filter((o) => o.cat === cat).forEach((o) => {
+    }
+    function brillos(x, y, n = 7, radio = 70, retraso = 0) {
+      for (let i = 0; i < n; i++) {
+        const a = (i / n) * Math.PI * 2 + azarE(-.3, .3), d = radio * azarE(.6, 1.1);
+        particula("", "estrella", x, y, [
+          { transform: T(0, 0, .2, 0), opacity: 0 },
+          { transform: T(Math.cos(a) * d * .6, Math.sin(a) * d * .6, 1.1, 90), opacity: 1, offset: .4 },
+          { transform: T(Math.cos(a) * d, Math.sin(a) * d, .2, 180), opacity: 0 },
+        ], 800, retraso + i * 25);
+      }
+    }
+    // Lo que le ha subido, en fichas de colores que flotan hacia arriba
+    function fichas(o, x, y, retraso = 0) {
+      const subes = Object.entries(o.sube || {}).filter(([, n]) => n);
+      subes.forEach(([k, n], i) => {
+        const dx = (i - (subes.length - 1) / 2) * 78;
+        particula(`<svg viewBox="0 0 64 64"><use href="#${STAT[k].ico}"/></svg>${n > 0 ? "+" : "−"}${Math.abs(n)}`, "chip" + (n < 0 ? " baja" : ""), x + dx, y, [
+          { transform: T(0, 20, .4), opacity: 0 },
+          { transform: T(0, -8, 1.12), opacity: 1, offset: .14 },
+          { transform: T(0, -16, 1), opacity: 1, offset: .3 },
+          { transform: T(0, -46, 1), opacity: 1, offset: .82 },
+          { transform: T(0, -62, .9), opacity: 0 },
+        ], 1700, retraso + i * 140, "ease-out", `--c:${STAT[k].c}`);
+      });
+    }
+    const sacude = (el) => { el.classList.remove("m-no"); void el.offsetWidth; el.classList.add("m-no"); };
+    const bota = (el) => { el.classList.remove("m-bump"); void el.offsetWidth; el.classList.add("m-bump"); };
+    function contar(el, desde, hasta, ms) {
+      cancelAnimationFrame(el._raf);
+      const t0 = performance.now();
+      const paso = (t) => {
+        const u = Math.min(1, (t - t0) / ms);
+        el.textContent = Math.round(desde + (hasta - desde) * (1 - (1 - u) ** 3));
+        if (u < 1) el._raf = requestAnimationFrame(paso);
+      };
+      el._raf = requestAnimationFrame(paso);
+    }
+
+    // ── El cajón ────────────────────────────────────────────────────────────
+    const nombre = (o) => `<b>${o.jp}</b>${o.es}`;
+    const efectos = (o) => Object.entries(o.sube || {}).filter(([, n]) => n)
+      .map(([k, n]) => `<span class="${n > 0 ? "mas" : "menos"}">${n > 0 ? "+" : "−"}${Math.abs(n)} ${STAT[k].nombre}</span>`).join(" · ");
+    function decir(html) {
+      pie.innerHTML = html;
+      pie.classList.remove("cambia"); void pie.offsetWidth; pie.classList.add("cambia");
+    }
+    function dibuja(animar) {
+      lista.innerHTML = "";
+      lista.classList.toggle("entra", !!animar);
+      if (animar) { lista.scrollLeft = 0; decir(PISTA[cat]); }
+      const tienda = cat === "tienda";
+      catalogo.filter((o) => (tienda ? o.cat !== "juego" : o.cat === cat)).forEach((o, i) => {
         const gasta = o.cat !== "juego", n = cuantos[o.id] || 0;
         const d = document.createElement("div");
-        d.className = "obj" + (gasta && n < 1 ? " vacio" : "");
+        d.className = "obj" + (tienda ? " compra" + (yenes < o.precio ? " caro" : "") : gasta && n < 1 ? " vacio" : "") + (o.id === "ebigohan" ? " raro" : "");
         d.dataset.obj = o.id;
-        d.dataset.cat = o.cat;
-        d.title = o.es + " · " + o.jp;
-        d.innerHTML = `<svg viewBox="0 0 64 64"><use href="#o-${o.id}"/></svg>` + (gasta ? `<span class="n">${n}</span>` : "");
+        d.style.setProperty("--i", i);
+        d.innerHTML = `<svg viewBox="0 0 64 64"><use href="#o-${o.id}"/></svg>` + (gasta ? `<span class="n">${n}</span>` : "")
+          + (tienda ? `<span class="p">${o.precio} ¥</span>` : "");
         lista.appendChild(d);
       });
+      marca.style.transform = `translateX(${CATS.indexOf(cat) * 100}%)`;
       cajon.querySelectorAll(".tabs button").forEach((b) => b.classList.toggle("on", b.dataset.cat === cat));
+    }
+    function anillos(e, vacios) {
+      cajon.querySelectorAll(".anillo").forEach((a) => {
+        const v = vacios ? 0 : Math.max(0, Math.min(100, e[a.dataset.stat] ?? 0));
+        a.querySelector(".valor").style.strokeDashoffset = (113.1 * (1 - v / 100)).toFixed(1);
+        a.classList.toggle("mal", !vacios && v < 30);
+      });
     }
     function pinta(e) {
       activo = !!e.activo;
-      cajon.querySelectorAll("[data-stat]").forEach((b) => { b.style.width = (e[b.dataset.stat] || 0) + "%"; });
-      if (e.catalogo) catalogo = e.catalogo;
+      if (e.catalogo) { catalogo = e.catalogo; porId = Object.fromEntries(catalogo.map((o) => [o.id, o])); }
+      const antes = cuantos;
       cuantos = e.objetos || {};
-      yenes = e.yenes || 0;
-      document.getElementById("mascotaYenes").textContent = yenes;
+      ultimo = e;
+      if (cajon.classList.contains("abierto")) anillos(e);
+      const y = e.yenes || 0;
+      if (y !== yenes) { contar(yenEl, yenes, y, 700); if (cajon.classList.contains("abierto")) bota(bolsa); }
+      else yenEl.textContent = y;
+      yenes = y;
       necesidad(e);
-      if (!arrastrando) dibuja();
+      if (!arrastrando) {
+        dibuja(false);
+        for (const id in cuantos) if (id in antes && antes[id] !== cuantos[id]) {
+          const n = lista.querySelector(`[data-obj="${id}"] .n`);
+          if (n) n.classList.add("pop");
+        }
+      }
       if (!activo) cerrar();
     }
     function refrescar() {
       return fetch("/tamagotchi/estado").then((r) => r.json()).then(pinta).catch(() => {});
     }
-    function cerrar() { cajon.classList.remove("abierto"); fondo.classList.remove("abierto"); }
-    function abrir() {
-      // al mirar el estado se aplica el paso del tiempo (y el regalo del día, si toca)
-      refrescar().then(() => { if (activo) { cajon.classList.add("abierto"); fondo.classList.add("abierto"); } });
+    function cerrar() {
+      cajon.classList.remove("abierto"); fondo.classList.remove("abierto");
     }
-    // Lo que más le falta (por debajo de 50 empieza a notarse; a 0 es el máximo): cara + nube con la cosa
-    const NEC = { sed: { icono: "o-mizu", gesto: "seco" }, hambre: { icono: "o-onigiri", gesto: "tripa" }, animo: { icono: "o-temari", gesto: "aburrido" } };
+    function abrir(nuevaCat) {
+      if (nuevaCat) cat = nuevaCat;
+      // al mirar el estado se aplica el paso del tiempo (y el regalo del día, si toca)
+      refrescar().then(() => {
+        if (!activo || face.classList.contains("sensei")) return;
+        // los anillos se llenan desde cero al abrir
+        cajon.classList.add("quieto"); anillos(ultimo, true); void cajon.offsetWidth; cajon.classList.remove("quieto");
+        dibuja(true);
+        cajon.classList.add("abierto"); fondo.classList.add("abierto");
+        setTimeout(() => anillos(ultimo), 160);
+      });
+    }
+
+    // ── Lo que más le falta (por debajo de 50 empieza a notarse; a 0 es el máximo) ──
+    const NEC = { sed: { icono: "o-mizu", gesto: "seco", cat: "bebida" }, hambre: { icono: "o-onigiri", gesto: "tripa", cat: "comida" },
+      animo: { icono: "o-temari", gesto: "aburrido", cat: "juego" } };
+    face.querySelector(".cara-fx").insertAdjacentHTML("beforeend",
+      `<span class="nec-fx nec-gota"><svg viewBox="0 0 40 56"><path fill="#9fd8ff" d="M20 2 C 26 18 38 28 38 38 C 38 48 30 54 20 54 C 10 54 2 48 2 38 C 2 28 14 18 20 2 Z"/><ellipse cx="13" cy="38" rx="4" ry="7" fill="#fff" opacity=".7"/></svg></span>` +
+      `<span class="nec-fx nec-nubarron"><svg viewBox="0 0 76 36"><circle cx="20" cy="22" r="12"/><circle cx="38" cy="16" r="16"/><circle cx="57" cy="22" r="12"/><rect x="20" y="20" width="37" height="14" rx="7"/></svg><i></i><i></i><i></i></span>` +
+      `<span class="nec-fx nec-gu">ぐぅ〜</span>`);
     function necesidad(e) {
       let tipo = null, nivel = 0;
       if (e.activo) for (const k of ["sed", "hambre", "animo"]) {
@@ -248,26 +536,100 @@
       }
       const antes = window.kaitoNecesidad;
       window.kaitoNecesidad = { tipo, nivel, gesto: tipo && NEC[tipo].gesto };
-      const nube = document.getElementById("necesidad");
-      if (tipo) document.getElementById("necesidadIcono").setAttribute("href", "#" + NEC[tipo].icono);
+      if (tipo) $("necesidadIcono").setAttribute("href", "#" + NEC[tipo].icono);
       nube.classList.toggle("on", nivel > 0.3);
       nube.classList.toggle("urge", nivel > 0.7);
+      for (const k in NEC) face.classList.toggle("nec-" + k, tipo === k && nivel > 0.3);
+      face.classList.toggle("nec-urge", nivel > 0.7);
       const cambio = antes.tipo !== tipo || Math.abs(antes.nivel - nivel) > 0.08;
       if (cambio && face.classList.contains("idle") && !gesto && !emocionActual) aplicarModo();
     }
-    function aviso(texto) {
-      const t = document.getElementById("mascotaToast");
-      t.textContent = texto; t.classList.add("on");
-      setTimeout(() => t.classList.remove("on"), 3200);
+    nube.addEventListener("click", () => { const t = window.kaitoNecesidad.tipo; if (t) abrir(NEC[t].cat); });
+    // Adornos de los gestos de necesidad (los lanza _scripts.html al empezar cualquier gesto)
+    window.kaitoAlGesto = (n) => {
+      const [, , r] = centroCara(), X = (f) => r.left + r.width * f, Y = (f) => r.top + r.height * f;
+      if (n === "tripa") { texto("ぐぅ〜", X(.12), Y(.82), -14, 450); texto("ぐぅ〜", X(.88), Y(.8), 12, 1150); }
+      else if (n === "seco") { texto("からから…", X(.2), Y(.08), -8, 250); migas(X(.82), Y(.2), ["#9fd8ff"], 3, 600, "gotita"); }
+      else if (n === "aburrido") { texto("ふぁ〜", X(.8), Y(.86), 10, 900); texto("はぁ…", X(.18), Y(.86), -8, 2500); }
+    };
+
+    // ── Yenes: lluvia de monedas hasta el monedero de arriba ─────────────────
+    const MOTIVO = { clase: "¡Clase terminada!", practica: "Práctica de japonés", acierto: "¡Bien dicho!" };
+    const mon = $("monedero"), monN = $("monederoN");
+    let monFin = 0, monVisto = 0, monSuma = 0;
+    function celebrar(d) {
+      const n = Math.round(d.cantidad || 0);
+      if (n <= 0) return;
+      const base = mon.classList.contains("on") ? monVisto : yenes;
+      if (!mon.classList.contains("on")) { monSuma = 0; monN.textContent = base; }
+      monSuma += n;
+      $("monederoMotivo").textContent = `+${monSuma} ¥ · ${MOTIVO[d.motivo] || "¡Yenes!"}`;
+      mon.classList.add("on");
+      const sensei = face.classList.contains("sensei");
+      const [ox, oy] = sensei ? [ancho() / 2, window.innerHeight * .55] : boca();
+      const tx = ancho() / 2 - 28, ty = 71; // la moneda del monedero (ya en su sitio)
+      const cuantas = Math.max(3, Math.min(14, Math.round(n / 6)));
+      for (let i = 0; i < cuantas; i++) {
+        const px = (tx - ox) * .3 + azarE(-90, 90), py = Math.min(0, ty - oy) - azarE(40, 90);
+        particula(`<svg viewBox="0 0 32 32"><use href="#i-moneda"/></svg>`, "moneda", ox, oy, [
+          { transform: T(0, 0, .3), opacity: 0 },
+          { transform: T(px * .5, py * .6, 1), opacity: 1, offset: .12 },
+          { transform: T(px, py, 1.15), opacity: 1, offset: .45 },
+          { transform: T(tx - ox, ty - oy, .8), opacity: 1, offset: .94 },
+          { transform: T(tx - ox, ty - oy, .5), opacity: 0 },
+        ], 820, 120 + i * 75, "cubic-bezier(.4,0,.6,1)");
+        setTimeout(() => {
+          monVisto = base + Math.round(n * (i + 1) / cuantas);
+          monN.textContent = monVisto;
+          bota(mon.querySelector(".caja"));
+        }, 120 + i * 75 + 790);
+      }
+      if (d.objeto && porId[d.objeto]) regalo(porId[d.objeto], 700);
+      if (!sensei && estado === "idle") hacerGesto(n >= 50 ? "estrellitas" : "feliz");
+      clearTimeout(monFin);
+      monFin = setTimeout(() => { mon.classList.remove("on"); refrescar(); }, 120 + cuantas * 75 + 2400);
     }
-    socket.on("yenes", (d) => { aviso("+" + d.cantidad + " 円"); refrescar(); });
+    // El regalo de la clase: aparece sobre la cara y baja hacia el cajón
+    function regalo(o, retraso) {
+      const [cx, cy] = centroCara();
+      particula(`<svg viewBox="0 0 64 64"><use href="#o-${o.id}"/></svg><span>¡Regalo! ${o.jp}</span>`, "regalo", cx, cy, [
+        { transform: T(0, 30, .2, -20), opacity: 0 },
+        { transform: T(0, -10, 1.15, 8), opacity: 1, offset: .15 },
+        { transform: T(0, 0, 1, 0), opacity: 1, offset: .25 },
+        { transform: T(0, 0, 1, 0), opacity: 1, offset: .75 },
+        { transform: T(0, 220, .4, 0), opacity: 0 },
+      ], 2600, retraso, "ease-in-out");
+      brillos(cx, cy, 9, 90, retraso + 300);
+    }
+    socket.on("yenes", celebrar);
     setInterval(refrescar, 60000); // las barras bajan solas: que la cara y la nube lo sigan
 
-    function comprar(o) {
+    // ── Tienda ──────────────────────────────────────────────────────────────
+    function comprar(card) {
+      const o = porId[card.dataset.obj];
+      if (!o) return;
+      if (yenes < o.precio) {
+        sacude(card); sacude(bolsa);
+        decir(`Te faltan <span class="menos">${o.precio - yenes} ¥</span> para ${nombre(o)}`);
+        return;
+      }
       fetch("/tamagotchi/comprar", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: "objeto=" + o.dataset.obj }).then((r) => r.json()).then((d) => {
-        pinta({ activo: true, ...d });
-        if (d.ok) aviso("−" + (catalogo.find((c) => c.id === o.dataset.obj) || {}).precio + " 円");
+        body: "objeto=" + o.id }).then((r) => r.json()).then((d) => {
+        if (!d.ok) { sacude(card); return pinta({ activo: true, ...d }); }
+        // tres monedas saltan del monedero al plato
+        const b = bolsa.getBoundingClientRect(), c = card.getBoundingClientRect();
+        const bx = b.left + 16, by = b.top + b.height / 2, dx = c.left + c.width / 2 - bx, dy = c.top + c.height / 2 - by;
+        for (let i = 0; i < 3; i++) particula(`<svg viewBox="0 0 32 32"><use href="#i-moneda"/></svg>`, "moneda", bx, by, [
+          { transform: T(0, 0, .6), opacity: 1 },
+          { transform: T(dx * .5, Math.min(dy, 0) - 40, 1), opacity: 1, offset: .45 },
+          { transform: T(dx, dy, .5), opacity: 0 },
+        ], 520, i * 80, "cubic-bezier(.4,0,.6,1)");
+        setTimeout(() => {
+          pinta({ activo: true, ...d });
+          const nueva = lista.querySelector(`[data-obj="${o.id}"]`);
+          if (nueva) { nueva.classList.add("comprado"); const r = nueva.getBoundingClientRect(); brillos(r.left + r.width / 2, r.top + r.height / 2, 6, 40); }
+          decir(`¡Comprado! <b>${o.jp}</b> · tienes ${d.objetos[o.id]}`);
+        }, 520);
       }).catch(() => {});
     }
 
@@ -277,60 +639,171 @@
     fondo.addEventListener("click", cerrar);
     cajon.querySelector(".tabs").addEventListener("click", (e) => {
       const b = e.target.closest("button");
-      if (b) { cat = b.dataset.cat; dibuja(true); }
+      if (b && b.dataset.cat !== cat) { cat = b.dataset.cat; dibuja(true); }
     });
 
-    // Deslizar desde el borde de abajo abre el cajón; deslizar hacia abajo sobre él lo cierra
-    // (pointer events: esta pantalla no manda eventos táctiles)
-    let y0 = null, x0 = 0, yc = null;
+    // Deslizar desde el borde de abajo abre el cajón (pointer events: esta pantalla no manda eventos táctiles)
+    let y0 = null, x0 = 0;
     document.addEventListener("pointerdown", (e) => {
-      y0 = e.clientY >= window.innerHeight - 90 ? e.clientY : null;
+      y0 = e.clientY >= window.innerHeight - 90 && !cajon.classList.contains("abierto") ? e.clientY : null;
       x0 = e.clientX;
     }, { passive: true });
     document.addEventListener("pointermove", (e) => {
       if (y0 === null) return;
       if (y0 - e.clientY > 60 && Math.abs(e.clientX - x0) < 60 && !face.classList.contains("sensei")) { y0 = null; abrir(); }
     }, { passive: true });
-    cajon.addEventListener("pointerdown", (e) => { yc = e.clientY; }, { passive: true });
-    cajon.addEventListener("pointermove", (e) => { if (yc !== null && e.clientY - yc > 40) { yc = null; cerrar(); } }, { passive: true });
-
-    // Arrastrar un objeto hasta la cara: al empezar a moverlo el cajón se esconde para verla entera
-    let fantasma = null, arrastrando = false, sx = 0, sy = 0;
-    const sobreCara = (x, y) => {
-      const r = face.getBoundingClientRect();
-      return Math.hypot(x - (r.left + r.width / 2), y - (r.top + r.height / 2)) < 130;
+    // Tirar del cajón hacia abajo: sigue al dedo; si se suelta lejos se cierra, si no vuelve con su muelle
+    let tiro = null;
+    cajon.addEventListener("pointerdown", (e) => { if (!e.target.closest(".objs")) tiro = { y: e.clientY, dy: 0, va: false }; });
+    cajon.addEventListener("pointermove", (e) => {
+      if (!tiro) return;
+      const dy = e.clientY - tiro.y;
+      if (!tiro.va && dy > 8) { tiro.va = true; cajon.setPointerCapture(e.pointerId); cajon.classList.add("tirando"); }
+      if (tiro.va) { tiro.dy = Math.max(0, dy); cajon.style.transform = `translateY(${tiro.dy}px)`; }
+    });
+    const sueltaTiro = () => {
+      const t = tiro; tiro = null;
+      if (!t || !t.va) return;
+      cajon.classList.remove("tirando");
+      cajon.style.transform = "";
+      if (t.dy > 70) cerrar();
     };
-    const mueve = (e) => { fantasma.style.transform = `translate(${e.clientX - 42}px,${e.clientY - 60}px)`; };
+    cajon.addEventListener("pointerup", sueltaTiro);
+    cajon.addEventListener("pointercancel", sueltaTiro);
 
-    // Soltado sobre la cara: va a la boca. Comida y bebida se van comiendo de arriba abajo, un bocado por
-    // cada masticada del gesto (450, 850… ms); los juguetes botan un rato y se van.
-    const BOCADOS = [450, 850, 1250, 1650, 2050];
-    function aLaBoca(el, tipo) {
-      const b = face.querySelector(".mouth-container").getBoundingClientRect();
-      el.classList.add("suelto");
-      el.style.transform = `translate(${b.left + b.width / 2 - 42}px,${b.top + b.height / 2 - 30}px)` + (tipo === "bebida" ? " rotate(-28deg)" : "");
-      if (tipo === "juego") { el.classList.add("juega"); return; }
-      BOCADOS.forEach((t, i) => setTimeout(() => { el.style.clipPath = `inset(${(i + 1) * 20}% 0 0 0)`; }, t));
+    // ── Arrastrar hasta la cara ─────────────────────────────────────────────
+    // Kaito sigue el objeto con los ojos; sobre su cara abre la boca (o sonríe si es un juguete).
+    let fantasma = null, arrastrando = false, ultX = 0, inclina = 0, cerca = false;
+    const sobreCara = (x, y) => { const [cx, cy] = centroCara(); return Math.hypot(x - cx, y - cy) < 130; };
+    function mirarA(x, y) {
+      if (estado !== "idle") return;
+      if (gesto && !["comer", "beber", "jugar"].includes(gesto.nombre)) terminarGesto();
+      const [cx, cy] = centroCara();
+      prox.gesto = Math.max(prox.gesto, ahora + 4000);
+      prox.mirada = ahora + 1500;
+      mirarSuave(acotar((x - cx) / 10, -13, 13), acotar((y - cy) / 12, -8, 11));
     }
-    function quitar(el, ms) {
-      setTimeout(() => { el.style.opacity = "0"; setTimeout(() => el.remove(), 320); }, ms);
+    function esperar(si, tipo) {
+      if (si === cerca || estado !== "idle") return;
+      cerca = si;
+      if (fantasma) fantasma.classList.toggle("cerca", si);
+      if (!si) return aplicarModo();
+      if (tipo === "juego") { m.sonrisa.t = 1; m.inferior.t = .3; } else m.bocaO.t = .85;
+      m.pupila.t = 1.25; m.ceja.t = -8; m.cejaArco.t = .35; m.abre.v += .7;
     }
-
-    // Un solo dedo, dos gestos: de lado desplaza la fila; sobre un objeto y hacia arriba lo arrastra a la cara.
-    // Tocar sin mover, en la tienda, compra.
-    let g0 = null;
+    function mueve(e) {
+      inclina = acotar(inclina * .6 + (e.clientX - ultX) * 1.4, -28, 28);
+      ultX = e.clientX;
+      fantasma.style.transform = `translate(${e.clientX - 42}px,${e.clientY - 60}px)`;
+      fantasma.firstChild.style.transform = `rotate(${inclina.toFixed(1)}deg) scale(1.15)`;
+      mirarA(e.clientX, e.clientY);
+      esperar(sobreCara(e.clientX, e.clientY), fantasma.dataset.cat);
+    }
     function empezarArrastre(o, e) {
       arrastrando = true;
-      sx = e.clientX; sy = e.clientY;
+      ultX = e.clientX; inclina = 0; cerca = false;
       fantasma = document.createElement("div");
       fantasma.className = "mascota-arrastre";
-      fantasma.innerHTML = `<svg viewBox="0 0 64 64"><use href="#o-${o.dataset.obj}"/></svg>`;
+      fantasma.dataset.cat = porId[o.dataset.obj].cat;
+      fantasma.innerHTML = `<div class="cuerpo"><svg viewBox="0 0 64 64"><use href="#o-${o.dataset.obj}"/></svg></div>`;
       document.body.appendChild(fantasma);
       mueve(e);
     }
+    // Soltado fuera: se encoge y el cajón vuelve
+    function devolver(el) {
+      el.classList.add("vuelve");
+      el.style.opacity = "0";
+      el.firstChild.style.transform = "scale(.3)";
+      setTimeout(() => el.remove(), 380);
+      if (estado === "idle") { aplicarModo(); mirarSuave(0, 0); }
+      abrir();
+    }
+    // El borde de arriba mordido: tres bocados redondos a la altura f (0 = entero, 1 = nada)
+    function mordisco(f) {
+      const pts = [];
+      for (let x = 0; x <= 100; x += 5) pts.push(`${x}% ${(f * 114 - 8 + 10 * Math.sin(Math.PI * ((x % 25) / 25))).toFixed(1)}%`);
+      return `polygon(${pts.join(",")},100% 100%,0% 100%)`;
+    }
+    // Comida y bebida van a la boca y se toman al ritmo del gesto (cada 400 ms desde 450); los juguetes juegan delante.
+    const BOCADOS = [450, 850, 1250, 1650, 2050];
+    function aLaBoca(el, o) {
+      const [mx, my] = boca(), c = el.firstChild;
+      el.classList.remove("cerca");
+      el.classList.add("suelto");
+      if (o.cat === "bebida") { el.style.transform = `translate(${mx - 8}px,${my - 52}px)`; c.style.transform = "rotate(-55deg)"; }
+      else if (o.cat === "juego") { const [cx, cy] = centroCara(); el.style.transform = `translate(${cx + 78}px,${cy + 10}px)`; c.style.transform = "scale(.95)"; }
+      else { el.style.transform = `translate(${mx - 42}px,${my - 54}px)`; c.style.transform = "scale(.92)"; c.style.clipPath = mordisco(-.1); }
+    }
+    function comer(el, o) {
+      const [mx, my] = boca(), c = el.firstChild, col = MIGAS[o.id] || ["#fff7e8"];
+      BOCADOS.forEach((t, i) => setTimeout(() => {
+        c.style.clipPath = mordisco((i + 1) / 5);
+        c.animate([{ transform: "scale(.92)" }, { transform: "scale(.8, 1)" }, { transform: "scale(.92)" }], { duration: 220, easing: "ease-out" });
+        migas(mx, my - 4, col, 7);
+        if (i === 0 || i === 2) texto("もぐ", mx + (i ? 64 : -64), my - 24, i ? 10 : -10);
+      }, t));
+      setTimeout(() => { el.remove(); brillos(mx, my - 10, o.id === "ebigohan" ? 12 : 6, o.id === "ebigohan" ? 110 : 60); }, 2250);
+      setTimeout(() => { texto(o.id === "ebigohan" ? "さいこう！" : "おいしい！", ...arriba(), -4, 0, "grande"); fichas(o, mx, my + 64, 250); }, 2400);
+      if (o.id === "ebigohan") setTimeout(() => hacerGesto("corazones", true), 3050);
+    }
+    function beber(el, o) {
+      const [mx, my] = boca(), c = el.firstChild, col = MIGAS[o.id] || ["#9fd8ff"];
+      BOCADOS.forEach((t, i) => setTimeout(() => {
+        c.style.transform = `rotate(${-55 - (i + 1) * 9}deg)`;
+        migas(mx - 8, my - 2, col, 2, 0, "gotita");
+        if (i % 2 === 0) texto("ごく", mx + (i === 2 ? -66 : 66), my - 30, i === 2 ? -8 : 8);
+      }, t));
+      setTimeout(() => {
+        el.classList.add("vuelve");
+        c.style.transform = "rotate(0) scale(.7)";
+        el.style.transform = `translate(${mx + 40}px,${my - 150}px)`;
+        el.style.opacity = "0";
+        setTimeout(() => el.remove(), 380);
+      }, 2300);
+      setTimeout(() => { texto("ぷはぁ〜", ...arriba(), -4, 0, "grande"); fichas(o, mx, my + 64, 250); }, 2450);
+    }
+    function jugar(el, o) {
+      const [cx, cy] = centroCara(), x0 = cx + 78, y0 = cy + 10;
+      el.classList.add("juega-" + o.id);
+      el.classList.remove("suelto");
+      // el juguete se mueve y Kaito no le quita ojo
+      const rutas = {
+        koma: [[x0, y0], [cx - 160, y0 + 20], [x0, y0]],
+        origami: [[x0, y0], [cx + 20, cy - 150], [cx - 170, cy - 40], [cx - 60, cy + 70], [x0, y0]],
+        temari: [[x0, y0], [cx - 150, y0], [x0, y0]],
+        kendama: [[x0, y0], [x0, y0]],
+      };
+      const ruta = rutas[o.id] || rutas.kendama;
+      el.animate(ruta.map(([x, y]) => ({ transform: `translate(${x}px,${y}px)` })), { duration: 2200, easing: "ease-in-out", fill: "forwards" });
+      const t0 = performance.now();
+      const sigue = () => {
+        const r = el.getBoundingClientRect();
+        mirarA(r.left + r.width / 2, r.top + r.height / 2);
+        if (performance.now() - t0 < 2200 && el.isConnected) requestAnimationFrame(sigue);
+      };
+      requestAnimationFrame(sigue);
+      texto("わーい！", ...arriba(), -4, 300, "grande");
+      [700, 1300, 1900].forEach((t) => setTimeout(() => {
+        const r = el.getBoundingClientRect();
+        brillos(r.left + r.width / 2, r.top + r.height / 2, 4, 45);
+      }, t));
+      setTimeout(() => {
+        const r = el.getBoundingClientRect();
+        el.remove();
+        brillos(r.left + r.width / 2, r.top + r.height / 2, 7, 60);
+        fichas(o, cx, boca()[1] + 64);
+        if (estado === "idle") mirarSuave(0, 0);
+      }, 2250);
+    }
+
+    // Un solo dedo, dos gestos: de lado desplaza la fila; sobre un objeto y hacia arriba lo arrastra a la cara.
+    // Tocar sin mover enseña su nombre en kana y lo que sube; en la tienda, además, lo compra.
+    let g0 = null;
     lista.addEventListener("pointerdown", (e) => {
       lista.setPointerCapture(e.pointerId);
-      g0 = { x: e.clientX, y: e.clientY, sl: lista.scrollLeft, o: e.target.closest(".obj"), modo: null };
+      const o = e.target.closest(".obj");
+      if (o) o.classList.add("toca");
+      g0 = { x: e.clientX, y: e.clientY, sl: lista.scrollLeft, o, modo: null };
     });
     lista.addEventListener("pointermove", (e) => {
       if (!g0) return;
@@ -339,35 +812,39 @@
         const objeto = g0.o && cat !== "tienda" && !g0.o.classList.contains("vacio");
         const cabe = lista.scrollWidth <= lista.clientWidth;
         g0.modo = objeto && (Math.abs(dy) >= Math.abs(dx) || cabe) ? "objeto" : "fila";
+        if (g0.o) g0.o.classList.remove("toca");
         if (g0.modo === "objeto") empezarArrastre(g0.o, e);
       }
       if (g0.modo === "fila") lista.scrollLeft = g0.sl - dx;
       else if (g0.modo === "objeto" && fantasma) {
         mueve(e);
-        if (Math.hypot(e.clientX - sx, e.clientY - sy) > 14) cerrar();
+        if (Math.hypot(dx, dy) > 14) cerrar();
       }
     });
     const suelta = (e) => {
       const g = g0; g0 = null;
       if (!g) return;
+      if (g.o) g.o.classList.remove("toca");
       if (!g.modo) { // un toque
-        if (g.o && g.o.classList.contains("compra") && e.type !== "pointercancel") comprar(g.o);
+        if (!g.o || e.type === "pointercancel") return;
+        const o = porId[g.o.dataset.obj];
+        if (g.o.classList.contains("compra")) return comprar(g.o);
+        decir(nombre(o) + " " + (g.o.classList.contains("vacio") ? '<span class="menos">no te queda: cómpralo en la tienda</span>' : efectos(o)));
         return;
       }
       if (g.modo !== "objeto" || !fantasma) return;
-      const o = g.o, el = fantasma;
-      fantasma = null; arrastrando = false;
-      const dentro = sobreCara(e.clientX, e.clientY) && e.type !== "pointercancel";
-      if (!dentro) { el.remove(); dibuja(); return; }
-      const tipo = o.dataset.cat;
+      const el = fantasma, o = porId[g.o.dataset.obj];
+      fantasma = null; arrastrando = false; cerca = false;
+      if (!sobreCara(e.clientX, e.clientY) || e.type === "pointercancel") return devolver(el);
       cerrar();
-      aLaBoca(el, tipo);
+      aLaBoca(el, o);
       fetch("/tamagotchi/dar", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: "objeto=" + o.dataset.obj }).then((r) => r.json()).then((d) => {
+        body: "objeto=" + o.id }).then((r) => r.json()).then((d) => {
         pinta({ activo: true, ...d });
-        if (d.ok) { hacerGesto(tipo === "comida" ? "comer" : tipo === "bebida" ? "beber" : "jugar", true); quitar(el, tipo === "juego" ? 2300 : 2250); }
-        else el.remove();
-      }).catch(() => el.remove());
+        if (!d.ok) return devolver(el);
+        hacerGesto(o.cat === "comida" ? "comer" : o.cat === "bebida" ? "beber" : "jugar", true);
+        (o.cat === "comida" ? comer : o.cat === "bebida" ? beber : jugar)(el, o);
+      }).catch(() => devolver(el));
     };
     lista.addEventListener("pointerup", suelta);
     lista.addEventListener("pointercancel", suelta);

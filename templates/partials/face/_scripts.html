@@ -566,6 +566,7 @@
     gesto = { nombre, g, ini: ahora, fin: ahora + g.dur, i: 0 };
     prox.gesto = gesto.fin + entre(CADA_GESTO);
     correrGesto(); // el primer paso, ya: el cuadro siguiente puede llevar una marca de tiempo anterior
+    if (window.kaitoAlGesto) window.kaitoAlGesto(nombre); // la mascota pone sus adornos (ぐぅ〜, gotas…)
     return true;
   }
 
@@ -824,7 +825,7 @@
   document.addEventListener(
     "pointerdown",
     (e) => {
-      if (e.target.closest("#mascotaDrawer,#mascotaFondo")) return; // arrastrar comida: ni caricia ni calla a Kaito
+      if (e.target.closest("#mascotaDrawer,#mascotaFondo,#necesidad")) return; // arrastrar comida: ni caricia ni calla a Kaito
       // En el robot, tocar mientras piensa o habla lo calla (_kiosko.html): la cremallera
       // sale ya. Ese toque no cuenta como caricia ni le hace mirar al dedo.
       if ({{ 'true' if es_kiosko else 'false' }} && (estado === "speaking" || estado === "thinking") && !e.target.closest("#kioskoDrawer,#kioskoBackdrop")) {

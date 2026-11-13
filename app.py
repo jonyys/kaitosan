@@ -376,6 +376,13 @@ def kiosko_no_molestar():
     return jsonify(r)
 
 
+def _yenes_practica(quality):
+    """Yenes para Kaito por una tarjeta de práctica; la cara del robot los celebra con monedas."""
+    n = tamagotchi.cobrar_practica(quality)
+    if n:
+        socketio.emit("yenes", {"cantidad": n, "motivo": "practica"})
+
+
 @app.route("/tamagotchi/estado")
 def tamagotchi_estado():
     return jsonify({"activo": tamagotchi.activo(), **tamagotchi.estado()})
@@ -1659,7 +1666,7 @@ def japones_vocabulario_practicar():
                 item_id = brain.jap_memory.get_item_id(jp, "vocabulario")
             if item_id is not None:
                 brain.jap_memory.review(item_id, quality, "vocabulario")
-                tamagotchi.cobrar_practica(quality)  # yenes para Kaito según la nota
+                _yenes_practica(quality)  # yenes para Kaito según la nota
         return redirect(url_for("japones_vocabulario_practicar", unidad=uid))
 
     # GET: siguiente ítem de la unidad — vencidos primero, luego nunca practicado
@@ -1774,7 +1781,7 @@ def japones_gramatica_practicar():
                 item_id = brain.jap_memory.get_item_id(jp, "gramatica")
             if item_id is not None:
                 brain.jap_memory.review(item_id, quality, "gramatica")
-                tamagotchi.cobrar_practica(quality)
+                _yenes_practica(quality)
         return redirect(url_for("japones_gramatica_practicar", unidad=uid))
 
     # GET: siguiente ítem de la unidad — vencidos primero, luego nunca practicado
@@ -1893,7 +1900,7 @@ def japones_kanjis_practicar():
                 item_id = brain.jap_memory.get_item_id(kanji, "kanji")
             if item_id is not None:
                 brain.jap_memory.review(item_id, quality, "kanji")
-                tamagotchi.cobrar_practica(quality)
+                _yenes_practica(quality)
         return redirect(url_for("japones_kanjis_practicar", categoria=cat or None))
 
     # GET: siguiente kanji por SRS (vencidos primero, luego nunca practicados)

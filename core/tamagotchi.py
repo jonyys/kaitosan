@@ -99,13 +99,14 @@ def _guardar(e: dict) -> None:
 
 def estado(ahora: float = None) -> dict:
     """Stats al día, yenes, lo que queda de cada cosa gastable y `catalogo` (lista ordenada con id, nombre,
-    kana, categoría y precio) para dibujar el cajón."""
+    kana, categoría, precio y lo que sube) para dibujar el cajón."""
     e = _cargar(ahora or time.time())
     return {
         **{k: round(e[k]) for k in BAJADA_H},
         "yenes": int(e["yenes"]),
         "objetos": {k: e["objetos"].get(k, 0) for k in GASTABLES},
-        "catalogo": [{"id": k, "es": o["es"], "jp": o["jp"], "cat": o["cat"], "precio": o.get("precio", 0)}
+        "catalogo": [{"id": k, "es": o["es"], "jp": o["jp"], "cat": o["cat"], "precio": o.get("precio", 0),
+                      "sube": o["sube"]}
                      for k, o in OBJETOS.items()],
     }
 
@@ -159,6 +160,17 @@ def cobrar_practica(calidad, ahora: float = None) -> int:
         return ganar_yenes(YENES_PRACTICA.get(int(calidad), 0), ahora)
     except Exception as ex:  # noqa: BLE001 — la práctica nunca puede fallar por esto
         print(f"⚠️ tamagotchi: no se pudo cobrar la práctica: {ex}")
+        return 0
+
+
+YENES_ACIERTO = 5  # cada acierto en clase: monedas al momento, además del pago al acabar
+
+
+def cobrar_acierto(ahora: float = None) -> int:
+    try:
+        return ganar_yenes(YENES_ACIERTO, ahora)
+    except Exception as ex:  # noqa: BLE001 — la clase nunca puede fallar por esto
+        print(f"⚠️ tamagotchi: no se pudo cobrar el acierto: {ex}")
         return 0
 
 

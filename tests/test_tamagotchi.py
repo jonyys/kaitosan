@@ -87,6 +87,10 @@ def test_yenes_y_tienda():
     assert t.comprar("mizu", B) and t.estado(B)["yenes"] == y - 10 and t.estado(B)["objetos"]["mizu"] == 2
     assert not t.comprar("kendama", B)                                  # los juegos no se venden
     assert not t.comprar("nada", B)
+    y = t.estado(B)["yenes"]
+    assert t.cobrar_acierto(B) == t.YENES_ACIERTO and t.estado(B)["yenes"] == y + t.YENES_ACIERTO
+    # el cajón enseña lo que sube cada cosa
+    assert next(o for o in t.estado(B)["catalogo"] if o["id"] == "onigiri")["sube"] == {"hambre": 30}
 
 
 def test_hablarle_sube_el_animo():
