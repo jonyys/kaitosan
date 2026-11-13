@@ -515,10 +515,36 @@
   }
 
   // ── Aro de escucha ──────────────────────────────────────────────────────────
+  // Una línea turquesa de radio 210 que se ondula con el volumen (llega a saltos, ~16/s, y se suaviza).
+  // Repintar el trazo cuesta en la Pi: se hace cada 50 ms y solo si suena algo; en silencio es un círculo quieto.
   const aro = document.getElementById("aroEscucha");
-  const aroNivel = aro.firstElementChild;
-  let nivelObj = 0, nivelSuave = 0, aroOp = "";
+  const aroOnda = aro.firstElementChild;
+  const ARO_R = 210, ARO_N = 96, ARO_AMP = 11;
+  const ARO_SIN = Array.from({ length: ARO_N + 1 }, (_, i) => Math.sin(i / ARO_N * 2 * Math.PI));
+  const ARO_COS = Array.from({ length: ARO_N + 1 }, (_, i) => Math.cos(i / ARO_N * 2 * Math.PI));
+  const ARO_QUIETO = "M" + [...ARO_SIN.keys()].map((i) => (240 + ARO_R * ARO_SIN[i]).toFixed(1) + " " + (240 - ARO_R * ARO_COS[i]).toFixed(1)).join("L") + "Z";
+  aroOnda.setAttribute("d", ARO_QUIETO);
+  let nivelObj = 0, nivelSuave = 0, aroT = 0, aroPintado = 0, aroQuieto = true;
   socket.on("nivel_micro", (data) => { nivelObj = acotar(+(data && data.n) || 0, 0, 1); });
+  function pintarAro(dt, ms) {
+    nivelSuave += (nivelObj - nivelSuave) * Math.min(1, dt * (nivelObj > nivelSuave ? 18 : 7));
+    aroT += dt;
+    if (nivelSuave < 0.02) { // en silencio, círculo quieto (una sola vez)
+      if (!aroQuieto) { aroOnda.setAttribute("d", ARO_QUIETO); aroQuieto = true; }
+      return;
+    }
+    if (ms - aroPintado < 50) return;
+    aroPintado = ms; aroQuieto = false;
+    const amp = nivelSuave * ARO_AMP;
+    let d = "";
+    for (let i = 0; i < ARO_N; i++) {
+      const a = i / ARO_N * 2 * Math.PI;
+      const o = 0.6 * Math.sin(7 * a + 3.2 * aroT) + 0.35 * Math.sin(11 * a - 4.4 * aroT) + 0.45 * Math.sin(4 * a + 1.7 * aroT);
+      const r = ARO_R + amp * o;
+      d += (i ? "L" : "M") + (240 + r * ARO_SIN[i]).toFixed(1) + " " + (240 - r * ARO_COS[i]).toFixed(1);
+    }
+    aroOnda.setAttribute("d", d + "Z");
+  }
 
   // ── Bucle ───────────────────────────────────────────────────────────────────
   let previo = 0;
@@ -592,11 +618,7 @@
       return f(v);
     }));
     poner(boca.svg, "style", `translate(${f(mx * 0.2 + ladoBoca)}px,${f(my * 0.1)}px) rotate(${f2(ladoBoca * 0.6)}deg)`);
-    // Aro de escucha: el volumen llega a saltos (~16/s); se suaviza para que no tiemble
-    nivelSuave += (nivelObj - nivelSuave) * Math.min(1, dt * 10);
-    poner(aroNivel, "style", `scale(${(1 + nivelSuave * 0.025).toFixed(3)})`);
-    const opAro = (0.3 + 0.7 * nivelSuave).toFixed(2);
-    if (opAro !== aroOp) aroNivel.style.opacity = aroOp = opAro;
+    pintarAro(dt, ms);
     requestAnimationFrame(cuadro);
   }
 
