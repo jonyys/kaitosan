@@ -319,7 +319,16 @@ class WakeWordDetector:
         self._on_detected = on_detected
         self._stop_event = threading.Event()
         self._pausa = threading.Event()  # "no molestar": no escucha, ni el micro queda abierto
+        self._manual = threading.Event()  # el botón de la caja: soltar el micro y escuchar ya
         self._thread = None
+
+    def en_pausa(self) -> bool:
+        return self._pausa.is_set()
+
+    def disparar(self):
+        """Como si se hubiera oído la palabra clave: el detector suelta el micro (si no, la
+        grabación falla con "Device unavailable") y llama a on_detected."""
+        self._manual.set()
 
     def pausar(self):
         self._pausa.set()
@@ -350,15 +359,24 @@ class WakeWordDetector:
                 continue
             try:
                 async with _WakeWordListener(model, threshold=_umbral_actual()) as listener:
+                    self._manual.clear()  # un botón pulsado mientras no había micro abierto no cuenta
                     # Se espera la detección sin bloquear: si entra "no molestar" se suelta el micro
                     espera = asyncio.ensure_future(listener.wait_for_detection())
-                    while not espera.done() and not self._pausa.is_set():
+                    while not espera.done() and not self._pausa.is_set() and not self._manual.is_set():
                         await asyncio.sleep(0.2)
-                    if not espera.done():
+                    detection = None
+                    if espera.done():
+                        detection = espera.result()
+                    else:
                         espera.cancel()
-                        continue
-                    detection = espera.result()
-                print(f"[WAKEWORD] '{detection.name}' detectado (confidence: {detection.confidence:.3f})")
+                        if not self._manual.is_set():  # "no molestar": no hay nada que atender
+                            continue
+                    # Al salir del `async with` se cierra el micro: ya se puede grabar con él
+                if detection:
+                    print(f"[WAKEWORD] '{detection.name}' detectado (confidence: {detection.confidence:.3f})")
+                else:
+                    print("🔘 Botón: el detector suelta el micro y se escucha")
+                self._manual.clear()
                 await loop.run_in_executor(None, self._on_detected)
             except Exception as e:
                 print(f"⚠️ WakeWord error: {e}")

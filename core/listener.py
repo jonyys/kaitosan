@@ -71,6 +71,15 @@ class VoiceListener:
         """Punto de entrada público para un único ciclo (usado por /grabar)."""
         self._ciclo_voz()
 
+    def on_boton(self):
+        """Pulsación corta del botón de la caja: escuchar ya, sin decir la palabra clave.
+        Con el detector escuchando, él tiene el micro USB abierto y la grabación fallaría
+        (Device unavailable): hay que pedirle que lo suelte. En "no molestar" ya está suelto."""
+        if self._detector.en_pausa():
+            self._on_wakeword()
+        else:
+            self._detector.disparar()
+
     def _on_wakeword(self):
         # Primera interacción activada por wakeword
         if not self._ciclo_voz():
