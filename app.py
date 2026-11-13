@@ -844,9 +844,9 @@ def ajustes_pantalla_inactividad():
         "Tiempo de inactividad actualizado")
     return redirect(url_for("ajustes"))
 
-@app.route("/admin/ajustes/pantalla/tamagotchi", methods=["POST"])
+@app.route("/admin/ajustes/mascota", methods=["POST"])
 @login_requerido
-def ajustes_pantalla_tamagotchi():
+def ajustes_mascota():
     tamagotchi.set_activo(request.form.get("enabled") == "1")
     flash("✅ Modo tamagotchi " + ("activado" if tamagotchi.activo() else "desactivado"), "success")
     return redirect(url_for("ajustes"))
