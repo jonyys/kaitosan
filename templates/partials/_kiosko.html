@@ -327,6 +327,8 @@
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v11m0-4h18m0 4v-8a2 2 0 0 0-2-2h-8v6"/><circle cx="7" cy="10" r="1"/></svg>Noche</button>' +
         '<button class="cj-tile" id="kioskoNoMolestarSw" aria-label="No molestar">' +
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v4M8 21h8"/><path class="tacha" d="M3 3l18 18"/></svg>No molestar</button>' +
+        '<button class="cj-tile" id="kioskoMascota" aria-label="Mascota">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-8-5.2-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.8-8 11-8 11z"/></svg>Mascota</button>' +
         "</div>" +
         '<div class="btns">' +
         '<button data-go="/admin/ajustes">Ajustes</button>' +
@@ -391,6 +393,20 @@
         post("/kiosko/no-molestar", { enabled: nuevo ? 1 : 0 });
         window.__noMolestar = nuevo;
         pintaNoMolestar();
+      });
+
+      // Mascota: enciende o apaga el modo tamagotchi (la comida sale u oculta en la cara)
+      var mas = dw.querySelector("#kioskoMascota");
+      mas.classList.toggle("on", !!cfg.tamagotchi);
+      mas.setAttribute("aria-pressed", !!cfg.tamagotchi);
+      mas.addEventListener("click", function () {
+        var nuevo = !mas.classList.contains("on");
+        mas.classList.toggle("on", nuevo);
+        mas.setAttribute("aria-pressed", nuevo);
+        fetch("/kiosko/mascota", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: "enabled=" + (nuevo ? 1 : 0) }).then(function () {
+          if (window.kaitoMascotaRefrescar) window.kaitoMascotaRefrescar();
+        });
       });
 
       dw.querySelectorAll(".btns button").forEach(function (b) {

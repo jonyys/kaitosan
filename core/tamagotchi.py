@@ -1,7 +1,7 @@
 """Modo tamagotchi: Kaito tiene hambre, ánimo y energía que bajan con las horas.
 
-Los objetos (comida) se ganan terminando una clase y se le dan desde la pantalla
-táctil. El estado se calcula al leerlo (`ahora - ultima`), sin hilos, y se guarda
+Los objetos (comida) se ganan terminando una clase (y 1 de regalo cada día) y se
+arrastran hasta su cara en la pantalla. El estado se calcula al leerlo (`ahora - ultima`), sin hilos, y se guarda
 como JSON en `app_settings`. Con el ajuste apagado nada de esto hace nada.
 """
 import json
@@ -44,6 +44,14 @@ def _cargar(ahora: float) -> dict:
     for k, por_hora in BAJADA_H.items():
         e[k] = _acotar(e.get(k, 80) - por_hora * horas)
     e["ultima"] = ahora
+    hoy = time.strftime("%Y-%m-%d", time.localtime(ahora))
+    if e.get("dia") is None:
+        e["dia"] = hoy
+    elif e["dia"] != hoy:  # regalo del día: nunca se queda sin nada que dar
+        e["dia"] = hoy
+        obj = random.choice(list(OBJETOS))
+        e["objetos"][obj] = e["objetos"].get(obj, 0) + 1
+        _guardar(e)
     return e
 
 

@@ -8,7 +8,7 @@
   #mascota .obj svg { width: 100%; height: 100%; display: block; }
   #mascota .obj .n { position: absolute; right: -4px; bottom: -4px; min-width: 20px; height: 20px; border-radius: 10px; padding: 0 5px;
     background: #e0a44d; color: #15100a; font: 700 12px/20px system-ui, sans-serif; text-align: center; }
-  #mascota .obj.vacio { display: none; }
+  #mascota .obj.vacio { opacity: .25; pointer-events: none; }
   .mascota-arrastre { position: fixed; left: 0; top: 0; width: 84px; height: 84px; z-index: 99; pointer-events: none; }
   .mascota-arrastre svg { width: 100%; height: 100%; filter: drop-shadow(0 6px 8px rgba(0, 0, 0, .4)); }
 </style>
@@ -39,19 +39,18 @@
   (function () {
     const bandeja = document.getElementById("mascota");
     function pinta(e) {
-      let hay = false;
       bandeja.querySelectorAll(".obj").forEach((o) => {
         const n = (e.objetos || {})[o.dataset.obj] || 0;
         o.querySelector(".n").textContent = n;
         o.classList.toggle("vacio", n < 1);
-        hay = hay || n > 0;
       });
-      bandeja.classList.toggle("hay", !!e.activo && hay);
+      bandeja.classList.toggle("hay", !!e.activo);
     }
     function refrescar() {
       fetch("/tamagotchi/estado").then((r) => r.json()).then(pinta).catch(() => {});
     }
     refrescar();
+    window.kaitoMascotaRefrescar = refrescar;
     socket.on("modo_sensei", (d) => { if (!d.activo) setTimeout(refrescar, 1500); }); // la clase puede haber dado comida
 
     // Arrastrar un objeto hasta la cara (pointer events: esta pantalla no manda eventos táctiles)

@@ -284,6 +284,7 @@ def _kiosko_config():
     return {
         "screensaver_min": system_settings.pantalla_inactividad_get(),
         "volumen": system_settings.volumen_get(),
+        "tamagotchi": tamagotchi.activo(),
         "brillo": {"soportado": bool(b.get("soportado")), "pct": pct},
         **_kiosko_pantalla(),
     }
@@ -386,6 +387,15 @@ def tamagotchi_dar():
         abort(403)
     ok = tamagotchi.dar(request.form.get("objeto", ""))
     return jsonify({"ok": ok, **tamagotchi.estado()})
+
+
+@app.route("/kiosko/mascota", methods=["POST"])
+def kiosko_mascota():
+    """El interruptor «Mascota» del cajón: enciende o apaga el modo tamagotchi."""
+    if not _solo_local():
+        abort(403)
+    tamagotchi.set_activo(request.form.get("enabled") == "1")
+    return jsonify({"ok": True, "activo": tamagotchi.activo()})
 
 
 @app.route("/kiosko/salir", methods=["POST"])
