@@ -200,7 +200,7 @@
     const ceja = (t) => `<g data-k="ceja"><path transform="translate(${t},83.9) scale(${t > 200 ? -1.331 : 1.331},1.331) translate(-105.25,-165.48)" d="${CEJA}" fill="url(#ktCeja)"/></g>`;
     return `<svg style="position:absolute;inset:0" width="${ancho}" height="${alto}" aria-hidden="true">
       <defs>
-        <radialGradient id="ktHalo"><stop offset="0" stop-color="#966224" stop-opacity=".34"/><stop offset=".45" stop-color="#966224" stop-opacity=".2"/><stop offset=".75" stop-color="#966224" stop-opacity=".07"/><stop offset="1" stop-color="#966224" stop-opacity="0"/></radialGradient>
+        <radialGradient id="ktHalo"><stop offset="0" stop-color="#966224" stop-opacity=".55"/><stop offset=".45" stop-color="#966224" stop-opacity=".34"/><stop offset=".75" stop-color="#966224" stop-opacity=".12"/><stop offset="1" stop-color="#966224" stop-opacity="0"/></radialGradient>
         <radialGradient id="ktPiel" cx=".5" cy=".5" r=".62"><stop offset="0" stop-color="#a87c3e"/><stop offset=".55" stop-color="#6e4d25"/><stop offset="1" stop-color="#33220f"/></radialGradient>
         <linearGradient id="ktInf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6e4d25"/><stop offset="1" stop-color="#33220f"/></linearGradient>
         <linearGradient id="ktSombra" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a1604" stop-opacity=".55"/><stop offset="1" stop-color="#2a1604" stop-opacity="0"/></linearGradient>

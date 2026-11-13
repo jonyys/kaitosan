@@ -83,12 +83,14 @@
     /* El tiempo de Alcorcón, bajo la hora. El hueco está reservado desde el principio (alto fijo) y solo
        cambia la opacidad: si apareciera empujando, la hora saltaría y la transición cara→reloj (que mide
        dónde está la hora, transiciones.js) la dibujaría descuadrada. */
-    #tiempo { box-sizing: border-box; margin-top: 38px; width: 240px; height: 62px; border-radius: 31px; background: var(--cristal, rgba(255, 255, 255, .08)); border: 1px solid var(--cristal-borde, rgba(255, 255, 255, .16));
-      display: flex; align-items: center; justify-content: center; gap: 14px; white-space: nowrap; color: var(--text-soft); opacity: 0; transition: opacity .6s ease; }
+    #tiempo { box-sizing: border-box; margin-top: 44px; width: 300px; height: 56px; border-radius: 28px; background: var(--cristal, rgba(255, 255, 255, .08)); border: 1px solid var(--cristal-borde, rgba(255, 255, 255, .16));
+      display: flex; align-items: center; justify-content: center; gap: 16px; white-space: nowrap; font-size: 17px; color: var(--text-soft); opacity: 0; transition: opacity .6s ease; }
     #tiempo.ver { opacity: 1; }
-    #tiempo svg { width: 32px; height: 32px; fill: none; stroke: var(--rosa-tinta); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-    #tiempo b { font-weight: 300; font-size: 24px; line-height: 1; color: var(--text); }
-    #tiempo small { font-size: 15px; line-height: 1; color: var(--text-soft); }
+    #tiempo .d { display: flex; align-items: center; gap: 5px; line-height: 1; }
+    #tiempo svg { width: 24px; height: 24px; fill: none; stroke: var(--rosa-tinta); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+    #tiempo .d:last-child svg { width: 20px; height: 20px; }
+    #tiempo b { font-weight: 300; font-size: 22px; line-height: 1; color: var(--text); }
+    #tiempo i { width: 1px; height: 20px; background: var(--cristal-borde, rgba(255, 255, 255, .2)); }
 
     /* Páginas 1-3: un título grande, la lista (que se desliza dentro) y un botón redondo de más.
        Sin iconos ni cajas. Con la lista vacía, el más pasa al centro de la pantalla.
@@ -340,6 +342,7 @@
     lluvia: '<path d="M7 15a4 4 0 0 1-.6-7.96A5.5 5.5 0 0 1 17 6.5a4.2 4.2 0 0 1 0 8.5z"/><path d="M8 18l-1 2.5M12 18l-1 2.5M16 18l-1 2.5"/>',
     nieve: '<path d="M7 15a4 4 0 0 1-.6-7.96A5.5 5.5 0 0 1 17 6.5a4.2 4.2 0 0 1 0 8.5z"/><path d="M8 18.5v.01M12 20v.01M16 18.5v.01"/>',
     tormenta: '<path d="M7 15a4 4 0 0 1-.6-7.96A5.5 5.5 0 0 1 17 6.5a4.2 4.2 0 0 1 0 8.5z"/><path d="M12.5 15l-2.5 3h3l-2 3"/>',
+    gota: '<path d="M12 3c3 4.5 6 7.2 6 10.5a6 6 0 0 1-12 0C6 10.2 9 7.5 12 3z"/>',
   };
   async function cargarTiempo() {
     const el = document.getElementById('tiempo');
@@ -348,7 +351,9 @@
       if (!t || typeof t.temp !== 'number') return; // sin datos: se queda oculto (o con el último)
       const ico = t.estado === 'soleado' ? (t.es_dia ? 'sol' : 'luna') : t.estado === 'nublado' ? 'nube' : t.estado;
       if (!ICONOS_TIEMPO[ico]) return; // estado que no conocemos
-      el.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONOS_TIEMPO[ico]}</svg><b>${t.temp}°</b><small>${t.max}° · ${t.min}°</small>`;
+      const sv = (n) => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONOS_TIEMPO[n]}</svg>`;
+      // Una sola fila: tiempo actual | máxima / mínima | probabilidad de lluvia
+      el.innerHTML = `<span class="d">${sv(ico)}<b>${t.temp}°</b></span><i></i><span class="d">${t.max}° / ${t.min}°</span><i></i><span class="d">${sv('gota')}${t.lluvia}%</span>`;
       requestAnimationFrame(() => el.classList.add('ver'));
     } catch (e) { /* sin red: no se enseña nada */ }
   }
