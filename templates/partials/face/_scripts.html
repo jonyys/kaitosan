@@ -515,11 +515,11 @@
   }
 
   // ── Aro de escucha ──────────────────────────────────────────────────────────
-  // Una línea turquesa de radio 210 que se ondula con el volumen (llega a saltos, ~16/s, y se suaviza).
+  // Una línea turquesa de radio 222 que se ondula con el volumen (llega a saltos, ~16/s, y se suaviza).
   // Repintar el trazo cuesta en la Pi: se hace cada 50 ms y solo si suena algo; en silencio es un círculo quieto.
   const aro = document.getElementById("aroEscucha");
   const aroOnda = aro.firstElementChild;
-  const ARO_R = 210, ARO_N = 96, ARO_AMP = 11;
+  const ARO_R = 222, ARO_N = 96, ARO_AMP = 9; // cerca del borde: 222 + 9*1,4 (suma máxima de las tres ondas) = 234,6 < 240
   const ARO_SIN = Array.from({ length: ARO_N + 1 }, (_, i) => Math.sin(i / ARO_N * 2 * Math.PI));
   const ARO_COS = Array.from({ length: ARO_N + 1 }, (_, i) => Math.cos(i / ARO_N * 2 * Math.PI));
   const ARO_QUIETO = "M" + [...ARO_SIN.keys()].map((i) => (240 + ARO_R * ARO_SIN[i]).toFixed(1) + " " + (240 - ARO_R * ARO_COS[i]).toFixed(1)).join("L") + "Z";
