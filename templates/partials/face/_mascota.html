@@ -21,6 +21,26 @@
     color: var(--text-soft, #b99a68); font: 500 13px/1 system-ui, sans-serif; cursor: pointer; }
   #mascotaDrawer .tabs button.on { background: var(--rosa-accion, #e0a44d); border-color: var(--rosa-accion, #e0a44d); color: var(--on-acc, #15100a); }
   #mascotaDrawer .objs { display: flex; gap: 4px; min-height: 50px; }
+  #mascotaDrawer .objs.tienda { flex-wrap: wrap; justify-content: center; width: 330px; gap: 6px 6px; }
+  #mascotaDrawer .yenes { justify-self: end; font: 500 12px/1 system-ui, sans-serif; color: var(--text-soft, #b99a68); }
+  #mascotaDrawer .yenes b { color: #f7d774; font-weight: 700; font-variant-numeric: tabular-nums; }
+  #mascotaDrawer .obj.compra { height: 64px; cursor: pointer; }
+  #mascotaDrawer .obj .p { position: absolute; left: 50%; bottom: -15px; transform: translateX(-50%); font: 700 10px/1 system-ui, sans-serif; color: #f7d774; white-space: nowrap; }
+  #mascotaDrawer .obj.compra.raro svg { filter: drop-shadow(0 0 6px rgba(247, 215, 116, .8)); }
+  #mascotaDrawer .obj.compra.caro { opacity: .35; }
+  #mascotaToast { position: fixed; left: 50%; top: 96px; transform: translate(-50%, -8px); z-index: 9995; padding: 6px 14px; border-radius: 16px;
+    background: rgba(247, 215, 116, .95); color: #3a2a06; font: 700 15px/1 system-ui, sans-serif; opacity: 0; pointer-events: none; transition: opacity .3s, transform .3s; }
+  #mascotaToast.on { opacity: 1; transform: translate(-50%, 0); }
+  /* Lo que le falta: una nube con la cosa en cuestión, que late más cuanto peor está (solo en reposo) */
+  #necesidad { position: fixed; right: 84px; top: 66px; width: 58px; height: 58px; z-index: 30; border-radius: 50%; padding: 8px;
+    background: rgba(255, 247, 232, .93); box-shadow: 0 4px 14px rgba(0, 0, 0, .45); opacity: 0; pointer-events: none; transition: opacity .5s; }
+  #necesidad::before, #necesidad::after { content: ""; position: absolute; border-radius: 50%; background: rgba(255, 247, 232, .93); }
+  #necesidad::before { width: 13px; height: 13px; left: -10px; bottom: -4px; }
+  #necesidad::after { width: 8px; height: 8px; left: -20px; bottom: -14px; }
+  #necesidad svg { width: 100%; height: 100%; display: block; }
+  body:has(.face.idle:not(.sensei)) #necesidad.on { opacity: .95; animation: necLate 2.4s ease-in-out infinite; }
+  #necesidad.urge { animation-duration: 1.1s !important; }
+  @keyframes necLate { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
   #mascotaDrawer .obj { position: relative; width: 48px; height: 48px; touch-action: none; }
   #mascotaDrawer .obj svg { width: 100%; height: 100%; display: block; }
   #mascotaDrawer .obj .n { position: absolute; right: -4px; bottom: -4px; min-width: 19px; height: 19px; border-radius: 10px; padding: 0 4px;
@@ -142,10 +162,13 @@
     <path d="M16 42 4 50l12-2z" fill="#f6a9c0" stroke="#e08aa6" stroke-width="1.5" stroke-linejoin="round"/>
   </symbol>
 </svg>
+<div id="necesidad" aria-hidden="true"><svg viewBox="0 0 64 64"><use id="necesidadIcono" href="#o-onigiri"/></svg></div>
+<div id="mascotaToast"></div>
 <div id="mascotaFondo" data-no-tap></div>
 <div id="mascotaDrawer" data-no-tap>
   <div class="grip"></div>
   <div class="stats">
+    <div class="yenes">円 <b id="mascotaYenes">0</b></div>
     <div class="stat">Hambre<i><b data-stat="hambre"></b></i></div>
     <div class="stat">Ánimo<i><b data-stat="animo"></b></i></div>
     <div class="stat">Sed<i><b data-stat="sed"></b></i></div>
@@ -154,6 +177,7 @@
     <button data-cat="comida" class="on">Comida</button>
     <button data-cat="bebida">Bebida</button>
     <button data-cat="juego">Juegos</button>
+    <button data-cat="tienda">Tienda</button>
   </div>
   <div class="objs" id="mascotaObjs"></div>
 </div>
@@ -161,10 +185,25 @@
   (function () {
     const cajon = document.getElementById("mascotaDrawer"), fondo = document.getElementById("mascotaFondo");
     const lista = document.getElementById("mascotaObjs");
-    let activo = false, catalogo = [], cuantos = {}, cat = "comida";
+    let activo = false, catalogo = [], cuantos = {}, yenes = 0, cat = "comida";
 
     function dibuja() {
       lista.innerHTML = "";
+      lista.classList.toggle("tienda", cat === "tienda");
+      if (cat === "tienda") {
+        // Tienda: toda la comida y bebida con su precio; tocar una la compra
+        catalogo.filter((o) => o.cat !== "juego").forEach((o) => {
+          const d = document.createElement("div");
+          d.className = "obj compra" + (o.id === "ebigohan" ? " raro" : "") + (yenes < o.precio ? " caro" : "");
+          d.dataset.obj = o.id;
+          d.dataset.cat = "tienda";
+          d.title = o.es + " · " + o.jp;
+          d.innerHTML = `<svg viewBox="0 0 64 64"><use href="#o-${o.id}"/></svg><span class="n">${cuantos[o.id] || 0}</span><span class="p">${o.precio}円</span>`;
+          lista.appendChild(d);
+        });
+        cajon.querySelectorAll(".tabs button").forEach((b) => b.classList.toggle("on", b.dataset.cat === cat));
+        return;
+      }
       catalogo.filter((o) => o.cat === cat).forEach((o) => {
         const gasta = o.cat !== "juego", n = cuantos[o.id] || 0;
         const d = document.createElement("div");
@@ -182,6 +221,9 @@
       cajon.querySelectorAll("[data-stat]").forEach((b) => { b.style.width = (e[b.dataset.stat] || 0) + "%"; });
       if (e.catalogo) catalogo = e.catalogo;
       cuantos = e.objetos || {};
+      yenes = e.yenes || 0;
+      document.getElementById("mascotaYenes").textContent = yenes;
+      necesidad(e);
       if (!arrastrando) dibuja();
       if (!activo) cerrar();
     }
@@ -193,6 +235,41 @@
       // al mirar el estado se aplica el paso del tiempo (y el regalo del día, si toca)
       refrescar().then(() => { if (activo) { cajon.classList.add("abierto"); fondo.classList.add("abierto"); } });
     }
+    // Lo que más le falta (por debajo de 50 empieza a notarse; a 0 es el máximo): cara + nube con la cosa
+    const NEC = { hambre: { icono: "o-onigiri", gesto: "tripa" }, sed: { icono: "o-mizu", gesto: "seco" }, animo: { icono: "o-temari", gesto: "aburrido" } };
+    function necesidad(e) {
+      let tipo = null, nivel = 0;
+      if (e.activo) for (const k of ["hambre", "sed", "animo"]) {
+        const n = Math.max(0, Math.min(1, (50 - (e[k] ?? 100)) / 50));
+        if (n > nivel) { nivel = n; tipo = k; }
+      }
+      const antes = window.kaitoNecesidad;
+      window.kaitoNecesidad = { tipo, nivel, gesto: tipo && NEC[tipo].gesto };
+      const nube = document.getElementById("necesidad");
+      if (tipo) document.getElementById("necesidadIcono").setAttribute("href", "#" + NEC[tipo].icono);
+      nube.classList.toggle("on", nivel > 0.3);
+      nube.classList.toggle("urge", nivel > 0.7);
+      const cambio = antes.tipo !== tipo || Math.abs(antes.nivel - nivel) > 0.08;
+      if (cambio && face.classList.contains("idle") && !gesto && !emocionActual) aplicarModo();
+    }
+    function aviso(texto) {
+      const t = document.getElementById("mascotaToast");
+      t.textContent = texto; t.classList.add("on");
+      setTimeout(() => t.classList.remove("on"), 3200);
+    }
+    socket.on("yenes", (d) => { aviso("+" + d.cantidad + " 円"); refrescar(); });
+    setInterval(refrescar, 60000); // las barras bajan solas: que la cara y la nube lo sigan
+
+    lista.addEventListener("click", (e) => {
+      const o = e.target.closest(".obj.compra");
+      if (!o) return;
+      fetch("/tamagotchi/comprar", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: "objeto=" + o.dataset.obj }).then((r) => r.json()).then((d) => {
+        pinta({ activo: true, ...d });
+        if (d.ok) aviso("−" + (catalogo.find((c) => c.id === o.dataset.obj) || {}).precio + " 円");
+      }).catch(() => {});
+    });
+
     window.kaitoMascotaRefrescar = refrescar;
     refrescar();
     socket.on("modo_sensei", (d) => { if (d.activo) cerrar(); else setTimeout(refrescar, 1500); }); // la clase puede dar comida
@@ -240,7 +317,7 @@
 
     lista.addEventListener("pointerdown", (e) => {
       const o = e.target.closest(".obj");
-      if (!o) return;
+      if (!o || cat === "tienda") return;
       o.setPointerCapture(e.pointerId);
       sx = e.clientX; sy = e.clientY;
       arrastrando = true;

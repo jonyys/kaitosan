@@ -214,6 +214,23 @@
     m.sonrisa.t = m.bocaO.t = m.bocaMini.t = m.aplasta.t = 0;
     m.cierraIzq.t = m.cierraDer.t = 0;
     m.triste.t = m.agacha.t = m.bocaX.t = 0;
+    if (estado === "idle" && !emocionActual) aplicarNecesidad();
+  }
+
+  // ── Mascota: lo que le falta se nota en la cara de reposo, más cuanto más bajo ─────────────
+  // La pone la mascota (_mascota.html) con {tipo: hambre | sed | animo, nivel: 0..1, gesto}.
+  // Hambre: cejas tristes y ojos de cachorro. Sed: párpados pesados y labios secos. Ánimo: aburrido, cabeza gacha.
+  window.kaitoNecesidad = { tipo: null, nivel: 0, gesto: null };
+  function aplicarNecesidad() {
+    const { tipo, nivel: n } = window.kaitoNecesidad;
+    if (!tipo || n <= 0) return;
+    if (tipo === "hambre") {
+      m.ceja.t += 12 * n; m.cejaRot.t -= 16 * n; m.triste.t = n; m.agacha.t = 7 * n; m.pupila.t += 0.28 * n; m.cabezaR.t -= 3 * n;
+    } else if (tipo === "sed") {
+      m.parpado.t = Math.max(m.parpado.t, 0.36 * n); m.inferior.t += 0.25 * n; m.bocaMini.t = 0.8 * n; m.cabezaR.t += 5 * n; m.agacha.t = 3 * n; m.cejaRot.t -= 4 * n;
+    } else {
+      m.parpado.t = Math.max(m.parpado.t, 0.3 * n); m.agacha.t = 9 * n; m.triste.t = 0.85 * n; m.cejaRot.t -= 10 * n; m.ceja.t += 6 * n;
+    }
   }
 
   // ── Gestos de cuando no pasa nada ───────────────────────────────────────────
@@ -264,6 +281,11 @@
     }
     if (ahora < prox.gesto) return;
     prox.gesto = ahora + entre(CADA_GESTO);
+    const nec = window.kaitoNecesidad;
+    if (nec.nivel > 0.25) {
+      prox.gesto = ahora + entre([12000, 20000]);
+      if (Math.random() < 0.4 + 0.5 * nec.nivel && hacerGesto(nec.gesto)) return;
+    }
     // Mitad de las veces uno de los kawaii, mitad uno de los pequeños
     if (Math.random() < 0.5 && hacerGesto(sortearKawaii())) return;
     prox.finGesto = ahora + GESTOS[Math.floor(Math.random() * GESTOS.length)]();
@@ -419,6 +441,25 @@
         setTimeout(() => { m.aplasta.t = 0; m.aplasta.v -= 2.4; m.cabezaY.v -= 80; m.ceja.v -= 60; }, 140);
       }]),
       [2300, () => { m.abre.t = 1; m.pupila.t = 1; m.ceja.t = 0; m.cejaArco.t = 0; m.sonrisa.t = 0; m.inferior.t = 0; }],
+    ] },
+    // Le suenan las tripas: mira al suelo con cara de pena y se le encoge la tripa tres veces.
+    tripa: { dur: 3000, peso: 0, pasos: [
+      [0, () => { mirarSuave(0, 10); m.ceja.t = 6; m.cejaRot.t = -10; m.triste.t = 0.7; m.cabezaY.t = 4; }],
+      ...[500, 1200, 1900].map((t) => [t, () => { m.aplasta.v += 1.1; m.cabezaY.v += 18; m.bocaMini.t = 0.4; }]),
+      [2500, () => { mirarSuave(0, 0); m.triste.t = 0; m.ceja.t = 0; m.cejaRot.t = 0; m.bocaMini.t = 0; m.cabezaY.t = 0; }],
+    ] },
+    // Tiene sed: ojos pesados, labios secos y traga saliva dos veces.
+    seco: { dur: 2800, peso: 0, pasos: [
+      [0, () => { m.parpado.t = 0.3; m.inferior.t = 0.3; m.bocaMini.t = 0.9; m.cabezaR.t = -4; m.ceja.t = 3; }],
+      ...[700, 1500].map((t) => [t, () => { m.aplasta.v += 0.7; m.cabezaY.v += 14; m.bocaMini.t = 0.2; setTimeout(() => { m.bocaMini.t = 0.9; }, 300); }]),
+      [2300, () => { m.parpado.t = 0; m.inferior.t = 0; m.bocaMini.t = 0; m.cabezaR.t = 0; m.ceja.t = 0; }],
+    ] },
+    // Se aburre: mira de lado, bosteza y suspira.
+    aburrido: { dur: 3600, peso: 0, pasos: [
+      [0, () => { mirarSuave(-10, 3); m.cabezaR.t = 5; m.parpado.t = 0.25; m.cejaRot.t = -6; m.ceja.t = 2; }],
+      [900, () => { m.bocaO.t = 1; m.parpado.t = 0.7; m.abre.t = 1.06; m.cabezaY.v -= 30; }],
+      [2200, () => { m.bocaO.t = 0; m.abre.t = 1; m.parpado.t = 0.25; m.cabezaY.v += 20; }],
+      [3100, () => { mirarSuave(0, 0); m.cabezaR.t = 0; m.parpado.t = 0; m.cejaRot.t = 0; m.ceja.t = 0; }],
     ] },
     sorpresa: { dur: 1800, peso: 1, pasos: [
       [0, () => { m.abre.t = 1.16; m.abre.v += 1.6; m.ceja.t = -14; m.ceja.v -= 80; m.cejaArco.t = 0.5; m.bocaO.t = 1; m.pupila.t = 0.8; m.cabezaY.v -= 45; }],

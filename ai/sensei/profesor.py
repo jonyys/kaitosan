@@ -308,8 +308,13 @@ class ProfesorJapones:
         try:
             resumen = self.resumen_clase()
             self.socketio.emit("sensei_resumen", resumen)
-            if resumen:  # clase con algo logrado: premio para Kaito (si el modo tamagotchi está activo)
+            if resumen:  # clase con algo logrado: comida y yenes para Kaito (si el modo tamagotchi está activo)
                 tamagotchi.ganar("clase")
+                cl = self.clase or {}
+                yenes = tamagotchi.cobrar_clase(len(cl.get("logros", [])), cl.get("nuevos", 0),
+                                                len(resumen.get("palabras", [])))
+                if yenes:
+                    self.socketio.emit("yenes", {"cantidad": yenes, "motivo": "clase"})
         except Exception as e:  # noqa: BLE001 — un resumen fallido no debe romper la despedida
             print(f"⚠️ No se pudo emitir el resumen de la clase: {e}")
         # La extracción tarda entre 5 y 15 s; que no bloquee la despedida.
