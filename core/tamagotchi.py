@@ -11,9 +11,9 @@ import time
 
 from core.settings_store import settings_get, settings_set
 
-# Lo que baja cada hora (puntos de 0 a 100): hambre llega a 0 en 3 días, sed en 2 y ánimo en 5.
+# Lo que baja cada hora (puntos de 0 a 100): hambre llega a 0 en 4 días, sed en 3 y ánimo en 7.
 # Nunca se muere, solo se pone mustio.
-BAJADA_H = {"hambre": 100 / 72, "animo": 100 / 120, "sed": 100 / 48}
+BAJADA_H = {"hambre": 100 / 96, "animo": 100 / 168, "sed": 100 / 72}
 ANIMO_POR_CHARLA = 3  # cada vez que se le habla
 PROB_BOGAVANTE_CLASE = 0.03  # el plato raro: casi solo se compra
 

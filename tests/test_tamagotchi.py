@@ -30,13 +30,13 @@ def test_apagado_no_hace_nada():
 
 
 def test_ritmos_de_bajada():
-    # de 100 a 0: hambre en 3 días, sed en 2 y ánimo en 5
-    assert round(100 / t.BAJADA_H["hambre"]) == 72
-    assert round(100 / t.BAJADA_H["sed"]) == 48
-    assert round(100 / t.BAJADA_H["animo"]) == 120
+    # de 100 a 0: hambre en 4 días, sed en 3 y ánimo en 7
+    assert round(100 / t.BAJADA_H["hambre"]) == 96
+    assert round(100 / t.BAJADA_H["sed"]) == 72
+    assert round(100 / t.BAJADA_H["animo"]) == 168
     _de_cero()
     e = t.estado(B + 12 * H)
-    assert e["hambre"] == round(80 - 12 * 100 / 72) and e["sed"] == round(80 - 12 * 100 / 48)
+    assert e["hambre"] == round(80 - 12 * 100 / 96) and e["sed"] == round(80 - 12 * 100 / 72)
     assert all(t.estado(B + 500 * H)[k] == 0 for k in ("hambre", "sed", "animo"))   # nunca baja de 0
 
 
