@@ -30,8 +30,16 @@ signal.signal(signal.SIGUSR1, _usr1)
 dec = subprocess.Popen(["ffmpeg", "-nostdin", "-loglevel", "quiet", "-i", sys.argv[1],
                         "-f", "s16le", "-ar", str(RATE), "-ac", str(CH), "-"],
                        stdout=subprocess.PIPE)
-out = subprocess.Popen(["aplay", "-q", "-D", DEV, "-t", "raw", "-f", "S16_LE",
-                        "-r", str(RATE), "-c", str(CH)], stdin=subprocess.PIPE)
+# Arranca con el sistema, antes de que exista la tarjeta: reintenta hasta que aplay
+# se quede abierto (la tarjeta tarda unos segundos en aparecer).
+for _ in range(100):
+    out = subprocess.Popen(["aplay", "-q", "-D", DEV, "-t", "raw", "-f", "S16_LE",
+                            "-r", str(RATE), "-c", str(CH)], stdin=subprocess.PIPE)
+    time.sleep(0.25)
+    if out.poll() is None:
+        break
+else:
+    sys.exit(1)
 try:
     while True:
         buf = dec.stdout.read(CHUNK)
