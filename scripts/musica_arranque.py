@@ -5,14 +5,31 @@ Suena entera; si recibe SIGUSR1 (la cara ya está en pantalla) baja el volumen
 hasta cero en FADE s y termina. Decodifica con ffmpeg y toca con aplay: el DAC
 no tiene mezclador, así que el fundido se hace sobre las muestras.
 """
+import os
 import signal
+import sqlite3
 import subprocess
 import sys
 import time
 
 import numpy as np
 
-VOLUMEN = 0.7  # la música suena al 70 %; la voz de saludo va a tope
+DB = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "kaito.db")
+
+
+def volumen_guardado() -> float:
+    """El volumen de Ajustes (guardado antes de apagar), con la misma curva que la voz
+    (core/system_settings.volumen_factor): (porcentaje/100)². 1.0 si no hay nada guardado."""
+    try:
+        con = sqlite3.connect(f"file:{DB}?mode=ro", uri=True, timeout=2)
+        fila = con.execute("SELECT value FROM app_settings WHERE key='volumen_sw'").fetchone()
+        con.close()
+        return (max(0.0, min(100.0, float(fila[0]))) / 100) ** 2 if fila else 1.0
+    except Exception:  # noqa: BLE001 — sin BD o sin tabla: a todo volumen, como antes
+        return 1.0
+
+
+VOLUMEN = 0.7 * volumen_guardado()  # la música, un 70 % del volumen de Ajustes
 FADE = 5.0  # el baile de la cara dura 4,5 s: acaba antes que la música
 DEV = "hw:CARD=sndrpihifiberry,DEV=0"
 RATE, CH = 48000, 2

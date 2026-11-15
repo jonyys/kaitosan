@@ -2239,11 +2239,11 @@ def _al_conectar():
         _musica_de_carga("-USR1")  # empieza el fundido a la vez que el baile
         # La voz se prepara ya y suena justo cuando la música acaba (FADE de
         # musica_arranque.py: 5 s); entonces la cara pone ojos de estrellitas.
-        # Pregrabado (sin internet) y al 100 %, sin el volumen de Ajustes.
+        # Pregrabado (sin internet) y con el volumen de Ajustes guardado antes de apagar.
         hola = os.path.join(app.static_folder, "audio", "hola_laura.wav")
         print("👋 Saludo de arranque: Hola Laura")
         fin = time.monotonic() + 5.1  # el fundido dura 5 s; 0,1 s de margen para que suelte el altavoz
-        threading.Thread(target=lambda: tts.decir_grabado(hola, volumen=1.0, no_antes_de=fin),
+        threading.Thread(target=lambda: tts.decir_grabado(hola, no_antes_de=fin),
                          daemon=True).start()
         socketio.sleep(5.1)
         # Las estrellitas duran lo que la voz y medio segundo más

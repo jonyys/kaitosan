@@ -514,9 +514,9 @@ class TextToSpeech:
         except Exception as e:
             print(f"❌ Error en TTS: {e}")
 
-    def decir_grabado(self, ruta: str, volumen=1.0, no_antes_de=None) -> None:
+    def decir_grabado(self, ruta: str, volumen=None, no_antes_de=None) -> None:
         """Reproduce un audio ya grabado (wav/mp3) moviendo la boca, sin red ni sintetizador.
-        `volumen` 0..1 sustituye al volumen de Ajustes (1.0 = a tope); `no_antes_de`
+        `volumen` 0..1 sustituye al volumen de Ajustes (None = el de Ajustes); `no_antes_de`
         (time.monotonic) retrasa el inicio, igual que en hablar()."""
         data, fs = sf.read(ruta)
         data = data.astype(np.float32)
