@@ -1,0 +1,15 @@
+# Música de carga: suena desde el encendido hasta que sale la cara; entonces app.py
+# le manda SIGUSR1 (fundido de 4 s, scripts/musica_arranque.py). Corre como el
+# usuario de la app para poder señalarla. Va después del silencio que abre el DAC.
+[Unit]
+Description=Kaito: música mientras carga
+After=kaito-audio-init.service sound.target
+
+[Service]
+Type=simple
+User=kaitosan
+SupplementaryGroups=audio
+ExecStart=/home/kaitosan/robot/venv/bin/python /home/kaitosan/robot/scripts/musica_arranque.py /home/kaitosan/robot/static/audio/arranque.mp3
+
+[Install]
+WantedBy=multi-user.target

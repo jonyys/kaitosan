@@ -3,6 +3,7 @@ import hashlib
 import os
 import random
 import signal
+import subprocess
 import sys
 import tempfile
 import threading
@@ -77,6 +78,8 @@ def emitir_japones_sensei(respuesta: str):
 
 @app.route("/")
 def index():
+    if not _solo_local():
+        return redirect(url_for("admin"))  # la cara es de la pantalla del robot
     return render_template("face.html")
 
 @app.route("/chat", methods=["POST"])
@@ -240,6 +243,8 @@ def grabar():
 
 @app.route("/reloj")
 def reloj():
+    if not _solo_local():
+        return redirect(url_for("admin"))  # el reloj es de la pantalla del robot
     return render_template("reloj.html", noche=system_settings.noche_estado())
 
 
@@ -2188,6 +2193,19 @@ def _on_sigterm(signum, frame):
 
 atexit.register(_apagar)
 signal.signal(signal.SIGTERM, _on_sigterm)
+
+
+# Música de carga (deploy/kaito-arranque.service): cuando sale la cara baila y la
+# música se apaga con un fundido (FADE de scripts/musica_arranque.py). Si no suena, nada.
+@socketio.on("connect")
+def _al_conectar():
+    try:
+        if subprocess.run(["pkill", "-USR1", "-f", "musica_arranque.py"],
+                          check=False).returncode == 0:
+            socketio.start_background_task(lambda: (socketio.sleep(1.0),
+                                                    socketio.emit("gesto", {"gesto": "bailar"})))
+    except OSError:  # sin pkill (Windows de desarrollo)
+        pass
 
 
 if __name__ == "__main__":
