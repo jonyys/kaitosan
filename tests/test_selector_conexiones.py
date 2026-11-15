@@ -34,8 +34,8 @@ def test_unidad_actual_avanza_cuando_los_can_dos_estan_dominados():
     assert unidad_actual(jap)["id"] == primera["id"]
 
     for cd in primera["can_dos"]:
-        jap.set_can_do(cd["id"], "conseguido", "s1")
-        jap.set_can_do(cd["id"], "conseguido", "s2")  # 2 sesiones distintas -> dominado
+        for s in ("s1", "s2", "s3"):  # 3 sesiones distintas -> dominado
+            jap.set_can_do(cd["id"], "conseguido", s)
 
     assert jap.fraccion_can_dos(primera["id"]) == 1.0
     assert unidad_actual(jap)["id"] != primera["id"]

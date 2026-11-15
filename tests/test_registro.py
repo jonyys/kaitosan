@@ -40,7 +40,8 @@ def test_el_prompt_llega_al_sistema_sin_placeholders():
 
 def test_explicar_no_esta_vetado():
     prompt = cargar_prompt("sensei_clase")
-    assert "Si Laura te pregunta algo, contéstale" in prompt
+    assert "Si Laura te pregunta algo de japonés" in prompt and "contéstale YA" in prompt
+    assert "No enseñes gramática que la instrucción no pida" not in prompt  # aplazaba sus dudas (15-nov)
 
 
 def test_lo_que_no_se_corrige_vuelve_en_la_sesion_siguiente():

@@ -449,17 +449,16 @@ def test_paso_a_lo_siguiente_con_los_textos_reales_de_la_pi():
         assert "pasar a lo siguiente" in p._instruccion(s), s
 
 
-def test_sin_fallos_basta_un_acierto_por_fase_y_con_fallos_siguen_dos():
+def test_lo_nuevo_pide_dos_aciertos_por_fase_y_el_repaso_uno():
+    """Simulación 15-nov: con 1+1 (si no había fallado) se cerraban ~12 can-dos por clase."""
     p = ProfesorJapones(MagicMock(), MagicMock(), MagicMock(), MagicMock())
     cd = {"id": "x", "texto": "t", "tarea": "Situación: s. Laura tiene que: algo."}
     p.clase = {"cd": "x", "fase": "practicar", "tipo": "nuevo", "aciertos": 0, "fallos": 0, "fallos_cd": 0}
     p._cerrar_cd = lambda cd, r: "CERRADO"
-    assert "Plantéale" in p._acierto(cd) and p.clase["fase"] == "tarea"   # 1 en práctica
-    assert "Felicítala" in p._acierto(cd)                                 # 1 en tarea
-    p.clase.update(fase="practicar", aciertos=0)
-    p._fallo(cd, "x")                                                      # un fallo: 2 y 2
-    assert "Plantéale" not in p._acierto(cd) and "Plantéale" in p._acierto(cd)
-    assert "Felicítala" not in p._acierto(cd) and "Felicítala" in p._acierto(cd)
+    assert "Plantéale" not in p._acierto(cd) and "Plantéale" in p._acierto(cd)    # 2 en práctica
+    assert "Felicítala" not in p._acierto(cd) and "Felicítala" in p._acierto(cd)  # 2 en tarea
+    p.clase.update(fase="tarea", tipo="pendiente", aciertos=0)
+    assert "Felicítala" in p._acierto(cd)                                          # repaso: 1
 
 
 def test_pizarra_se_separa_del_texto_y_se_parsea():

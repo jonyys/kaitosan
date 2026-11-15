@@ -11,10 +11,12 @@ from ai.sensei.curriculum import ITEM_POR_JP
 
 ACIERTOS_PRACTICA = 2
 ACIERTOS_TAREA = 2
-ACIERTOS_SIN_FALLOS = 1  # si no ha fallado ni una vez en el can-do: 1 acierto en práctica y 1 en tarea
+# Simulación 15-nov: con 1+1 aciertos (si no había fallado) se cerraban ~12 can-dos por clase sin
+# consolidar nada, y el temario de dos unidades se acababa a los ~37 turnos.
+NUEVOS_POR_TANDA = 3  # can-dos nuevos seguidos; luego, refuerzo de esos (sin tocar el boletín) y otra tanda
 ACIERTOS_ANTIGUO = 1  # repaso de algo ya dominado: basta con ver que lo recuerda
 LIBRE_TURNOS_TEMA = 3  # en charla libre, cada 3 turnos se guía hacia un can-do ya trabajado
-NUEVOS_POR_ANTIGUO = 4 # 1 repaso de lo antiguo por cada 4 objetivos nuevos (~20 %)
+NUEVOS_POR_ANTIGUO = 2  # 1 repaso de lo ya dominado por cada 2 objetivos nuevos (con 3 por clase, 1 por clase)
 FALLOS_MAX = 5  # intentos seguidos sin acierto → modelo de respuesta y a lo siguiente
 _RE_JP_CHAR = re.compile(r"[぀-ゟ゠-ヿ一-鿿]")
 
@@ -73,8 +75,8 @@ def _contexto_juez(kaito):
         return ""
     kaito = kaito.strip()[-500:]  # la pregunta va al final
     # Kaito pide UNA sola cosa por turno: se valora esa, aunque la tarea de arriba tenga varias
-    return (f"Lo último que dijo Kaito (manda sobre la tarea de arriba; valora solo lo que pide ahí, "
-            f"aunque la tarea tenga más): «{kaito}»\n")
+    return (f"Lo último que dijo Kaito (valora solo lo que pide ahí; si le pregunta algo, una "
+            f"respuesta natural vale aunque no repita la palabra de la pregunta): «{kaito}»\n")
 
 
 def juez_cumple(cd, mensaje, fase="tarea", romaji=False, contexto=None):
@@ -96,7 +98,12 @@ def juez_cumple(cd, mensaje, fase="tarea", romaji=False, contexto=None):
         if modelo not in _juez_prov:
             from ai.openrouter_provider import OpenRouterProvider
             _juez_prov[modelo] = OpenRouterProvider(modelos=[modelo])
-        if fase == "tarea":
+        if fase == "tarea" and contexto:
+            # Kaito adapta la tarea (una sola cosa, sin los «tres bolsos» del texto): con la tarea
+            # escrita delante el juez exigía lo que Kaito no había pedido (simulación 15-nov:
+            # rechazó «それが すきです» 6 veces seguidas a «¿cuál te gusta?»).
+            tarea, criterio = "", "hace claramente lo que le pide Kaito o usa lo que se enseña."
+        elif fase == "tarea":
             # Solo lo que tiene que hacer: en los repasos la situación la inventa Kaito.
             tarea = "Laura tiene que: " + que_hacer(cd)
             criterio = "hace claramente lo que pide la tarea o usa lo que se enseña."
@@ -183,8 +190,8 @@ def tarea(cd):
     return (f"Plantéale esta tarea EN ESPAÑOL, empezando directamente por la situación (nada de «la tarea es»), haciendo tú tu parte, sin "
             f"darle la respuesta ni un ejemplo. {cd['tarea']} Si para contestar le falta alguna palabra "
             "que no ha visto (como mucho 2), dásela suelta en japonés y di qué significa. Todo en 2 frases cortas como máximo, "
-            "y pídele UNA sola cosa de lo que dice «Laura tiene que» (si hay varias, solo la primera; las "
-            "demás, otro día), en una sola situación, sin «y luego…» y sin darle la frase. Háblale a ella de tú (nunca "
+            "y pídele UNA sola cosa de lo que dice «Laura tiene que» (si hay varias, solo la primera)"
+            ", en una sola situación, sin «y luego…» y sin darle la frase. Háblale a ella de tú (nunca "
             "digas «Laura tiene que»: eso es para ti). Ella contesta en japonés.")
 
 

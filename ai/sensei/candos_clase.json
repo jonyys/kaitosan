@@ -556,7 +556,7 @@
    "その",
    "あの"
   ],
-  "explicacion": "Los tres demostrativos dependen de la distancia respecto a los dos que hablan: これ es lo que está cerca de mí, それ lo que está cerca de ti (o lo que acabas de mencionar) y あれ lo que está lejos de los dos. Van solos como pronombre: これはペンです。 それはほんですか。 Delante de un nombre se usan この・その・あの: このペン, そのほん, あのくるま. Nunca se dice これペン ni これの ペン: este grupo no puede ir pegado a un nombre. OJO, cuenta desde quien habla: cuando habla Laura, これ es lo que tiene ella cerca y それ lo que tiene Kaito cerca (Kaito es quien escucha); cuando habla Kaito, al revés.",
+  "explicacion": "Los tres demostrativos dependen de la distancia respecto a los dos que hablan: これ es lo que está cerca de mí, それ lo que está cerca de ti (o lo que acabas de mencionar) y あれ lo que está lejos de los dos. Van solos como pronombre: これはペンです。 それはほんですか。 Delante de un nombre se usan この・その・あの: このペン, そのほん, あのくるま. Nunca se dice これペン ni これの ペン: este grupo no puede ir pegado a un nombre. OJO, cuenta desde quien habla, y aquí sois Kaito y Laura: cuando hablas TÚ (Kaito), lo que tienes tú cerca es これ y lo que tiene Laura cerca (su café, su móvil, sus perros) es それ. Cuando habla LAURA, lo que tiene ella cerca es これ y lo que tienes tú cerca es それ. Lo que está lejos de los dos es あれ siempre. Tus ejemplos y tus correcciones, siempre con esta regla.",
   "tarea": "Situación: Kaito te señala tres objetos imaginarios: uno cerca de él, uno cerca de ti y uno lejos de los dos. Laura tiene que: nombrarlos con la palabra correcta para cada distancia (hablando ella: lo suyo これ, lo de Kaito それ, lo lejano あれ)."
  },
  "demo_preguntar_que": {
@@ -578,7 +578,7 @@
    "こちら",
    "あちら"
   ],
-  "explicacion": "Los lugares siguen la misma lógica que これ・それ・あれ: ここ es el sitio del que habla, そこ el del oyente y あそこ el lejano (hablando Laura: donde está ella ここ, donde está Kaito そこ); どこ pregunta dónde. El patrón es: lugar + は + どこですか。 トイレはどこですか。 Respuesta: あそこです。 Para señalar con cortesía se usan こちら・そちら・あちら: こちらです('por aquí'). Con amigos se oye こっち・あっち. No uses あっち con un cliente o un jefe.",
+  "explicacion": "Los lugares siguen la misma lógica que これ・それ・あれ: ここ es el sitio del que habla, そこ el del oyente y あそこ el lejano (hablando tú, Kaito: donde estás tú ここ, donde está Laura そこ; hablando Laura, al revés); どこ pregunta dónde. El patrón es: lugar + は + どこですか。 トイレはどこですか。 Respuesta: あそこです。 Para señalar con cortesía se usan こちら・そちら・あちら: こちらです('por aquí'). Con amigos se oye こっち・あっち. No uses あっち con un cliente o un jefe.",
   "tarea": "Situación: Kaito hace de cliente de un restaurante y te pregunta dónde está el baño. Laura tiene que: indicárselo y entender lo que te responde."
  },
  "demo_elegir": {
@@ -589,7 +589,7 @@
    "どちら"
   ],
   "explicacion": "Para elegir entre tres o más cosas se usa どれ: どれがいいですか。 Con un nombre detrás es どの: どのかばんですか。 Para elegir entre solo dos opciones se usa どっち, o どちら en tono cortés: コーヒーとおちゃ、どちらがいいですか。 Respuesta: こっちです / これです / どちらでもいいです. どの siempre necesita un nombre detrás; どれ va solo.",
-  "tarea": "Situación: Kaito te enseña tres bolsos y te pregunta cuál prefieres; luego te pone a elegir entre solo dos cafeterías. Laura tiene que: decirle cuál de los tres bolsos prefieres y cuál de las dos cafeterías eliges."
+  "tarea": "Situación: estáis en una tienda con tres bolsos delante y luego tenéis que elegir entre dos cafeterías. Laura tiene que: preguntarle a Kaito cuál prefiere él (de los tres bolsos, con どれ; de las dos cafeterías, con どっち)."
  },
  "demo_indefinido": {
   "items": [
@@ -1013,7 +1013,7 @@
    "交差点"
   ],
   "explicacion": "Para preguntar: えきは どこですか o えきまで どう いきますか. Para dar indicaciones: まっすぐ いってください (siga recto), みぎに まがって ください (gire a la derecha), ひだりに まがります (giro a la izquierda). さいしょの かどを みぎに まがります (en la primera esquina a la derecha). こうさてんを わたります es cruzar el cruce. 右 es みぎ y 左 es ひだり.",
-  "tarea": "Situación: Kaito te pregunta cómo llegar a la estación desde donde estás. Laura tiene que: darle las indicaciones con giros a derecha e izquierda."
+  "tarea": "Situación: estás perdida buscando la estación y Kaito hace de señor que pasa por la calle. Laura tiene que: preguntarle cómo se llega a la estación y, cuando te lo explique, repetirle lo que has entendido (みぎ, ひだり, まっすぐ)."
  },
  "viaje_sitios": {
   "items": [
@@ -1042,7 +1042,7 @@
    "開く"
   ],
   "explicacion": "Los verbos intransitivos dicen que algo ocurre solo, sin que se nombre a quien lo hace, y el sujeto lleva が: じゅぎょうが はじまります (la clase empieza), ドアが しまります (la puerta se cierra), みせが あきます (la tienda abre). No llevan を. Se usan mucho para horarios y avisos: えいがは ３じに はじまります (la película empieza a las tres). La pareja transitiva es はじめる, しめる y あける, donde alguien hace la acción.",
-  "tarea": "Situación: Kaito te pregunta a qué hora empieza tu clase o tu serie favorita y a qué hora abre y cierra la tienda de tu barrio. Laura tiene que: contestarle las horas."
+  "tarea": "Situación: Kaito te pregunta a qué hora empieza tu clase o tu serie favorita y a qué hora abre y cierra la tienda de tu barrio. Laura tiene que: contestarle diciendo qué empieza, abre o cierra y a qué hora, con el verbo (はじまります, あきます, しまります), no solo la hora."
  },
  "transint_yo_hago": {
   "items": [

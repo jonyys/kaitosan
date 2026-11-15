@@ -2,6 +2,8 @@ import sqlite3
 from datetime import datetime
 from ai.sensei.srs import sm2
 
+VECES_PARA_DOMINAR = 3  # clases distintas con el can-do conseguido para darlo por dominado
+
 # Sesiones DISTINTAS en las que un ítem debe haber salido hablando con el
 # profesor para darlo por "sabido" sin haber pasado por el juego SRS (mismo
 # "2" que ya usan reps>=2 y can_do veces_ok>=2 en este archivo).
@@ -659,7 +661,8 @@ class JapaneseMemory:
         - 'empezado' (Kaito empieza a enseñarlo) → 'en_progreso' si era 'no_intentado'.
           NO toca veces_ok ni ultima_sesion: con 'parcial' el 'conseguido' de esa misma
           sesión no sumaría (ultima_sesion == session_id) y tardaría una sesión más en dominarse.
-        - 'conseguido' en 2 sesiones distintas (session_id distinto) → 'dominado'
+        - 'conseguido' en 3 sesiones distintas (session_id distinto) → 'dominado' (con 2 bastaba
+          y el boletín daba por dominado lo que Laura no sabía: simulación 15-nov)
         - un solo 'conseguido' → 'en_progreso', veces_ok = 1
         - 'parcial' sobre un can-do 'no_intentado' → 'en_progreso' (lo intentó
           con ayuda: ya está empezado, aunque no lo lograra sola).
@@ -681,7 +684,7 @@ class JapaneseMemory:
             if resultado == "conseguido":
                 if session_id != ultima:
                     veces_ok += 1
-                estado = "dominado" if veces_ok >= 2 else "en_progreso"
+                estado = "dominado" if veces_ok >= VECES_PARA_DOMINAR else "en_progreso"
             elif resultado == "parcial" and estado == "no_intentado":
                 estado = "en_progreso"
             elif resultado in ("error", "parcial") and estado == "dominado":
@@ -713,8 +716,8 @@ class JapaneseMemory:
 
     def toggle_can_do(self, can_do_id: str) -> str:
         """Cicla a mano un can-do desde el boletín: no_intentado -> en_progreso
-        (un clic) -> dominado (dos) -> no_intentado. veces_ok queda en 1 / >= 2
-        para que cuadre con la regla de las 2 sesiones. Devuelve el nuevo
+        (un clic) -> dominado (dos) -> no_intentado. veces_ok queda en 1 / >= VECES_PARA_DOMINAR
+        para que cuadre con la regla de las sesiones. Devuelve el nuevo
         estado, o '' si el id no está en el temario.
         """
         from ai.sensei.curriculum import CURRICULUM
@@ -730,7 +733,7 @@ class JapaneseMemory:
             if estado == "dominado":
                 nuevo, veces_ok = "no_intentado", 0
             elif estado == "en_progreso":
-                nuevo, veces_ok = "dominado", max(veces_ok, 2)
+                nuevo, veces_ok = "dominado", max(veces_ok, VECES_PARA_DOMINAR)
             else:
                 nuevo, veces_ok = "en_progreso", max(veces_ok, 1)
             conn.execute(

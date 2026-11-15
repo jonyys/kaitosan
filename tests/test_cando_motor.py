@@ -67,12 +67,14 @@ def test_set_can_do():
     assert p["estado"] == "en_progreso" and p["veces_ok"] == 1
 
     jm.set_can_do("x", "conseguido", 2)
+    assert jm.can_dos_progreso()["x"]["estado"] == "en_progreso"  # 2 clases aún no bastan
+    jm.set_can_do("x", "conseguido", 3)
     assert jm.can_dos_progreso()["x"]["estado"] == "dominado"
 
-    jm.set_can_do("x", "error", 3)
+    jm.set_can_do("x", "error", 4)
     p = jm.can_dos_progreso()["x"]
     assert p["estado"] == "en_progreso"
-    assert p["ultima_sesion"] == 3
+    assert p["ultima_sesion"] == 4
 
     # dos 'conseguido' en la MISMA sesión no bastan para dominar
     jm2 = _jm()
@@ -149,8 +151,8 @@ def test_fraccion_can_dos():
     assert jm.fraccion_can_dos("unidad_inexistente") == 0.0
 
     for cid in ids[:2]:
-        jm.set_can_do(cid, "conseguido", 1)
-        jm.set_can_do(cid, "conseguido", 2)
+        for s in (1, 2, 3):
+            jm.set_can_do(cid, "conseguido", s)
     assert jm.fraccion_can_dos(unidad["id"]) == 0.5
 
 
@@ -182,7 +184,7 @@ def test_entrar_abre_el_primer_cando():
 
 
 def test_unidad_avanza_por_candos():
-    """Con el 80 % de los can-dos de la unidad en 'dominado' (2 sesiones cada
+    """Con el 80 % de los can-dos de la unidad en 'dominado' (3 sesiones cada
     uno), unidad_actual() pasa a la unidad siguiente."""
     from ai.sensei.curriculum import unidad_actual
 
@@ -190,10 +192,10 @@ def test_unidad_avanza_por_candos():
     u0 = CURRICULUM[0]
     assert unidad_actual(jm)["id"] == u0["id"]
 
-    # 4 can-dos → 80 % = los 4. 2 sesiones distintas 'conseguido' → 'dominado'.
+    # 4 can-dos → 80 % = los 4. 3 sesiones distintas 'conseguido' → 'dominado'.
     for cd in u0["can_dos"]:
-        jm.set_can_do(cd["id"], "conseguido", 1)
-        jm.set_can_do(cd["id"], "conseguido", 2)
+        for s in (1, 2, 3):
+            jm.set_can_do(cd["id"], "conseguido", s)
 
     assert jm.fraccion_can_dos(u0["id"]) >= 0.8
     assert unidad_actual(jm)["id"] == CURRICULUM[1]["id"]
@@ -273,28 +275,34 @@ def _avanza(prof, frase="これは ためしです"):
 
 
 def test_cola_pendientes_nuevos_y_repaso_antiguo():
-    """Primero lo pendiente (repaso, sin explicar), luego lo nuevo; cada 4 nuevos
-    conseguidos, 1 repaso de algo dominado; nunca se repite un can-do en la sesión."""
+    """Primero lo pendiente (repaso, sin explicar), luego lo nuevo por tandas de
+    NUEVOS_POR_TANDA, cada tanda seguida de un refuerzo de esos nuevos (sin tocar el boletín);
+    cada 2 nuevos conseguidos, 1 repaso de algo dominado; fuera del refuerzo, nunca se repite."""
     jm = _jm()
     prof = _profesor(jm)
     prof.juez = lambda cd, m, fase="tarea", **k: True
     u0 = CURRICULUM[0]["can_dos"]
-    jm.set_can_do(u0[0]["id"], "conseguido", -1)              # dominado (2 sesiones)
-    jm.set_can_do(u0[0]["id"], "conseguido", -2)
+    for s in (-1, -2, -3):                                     # dominado (3 sesiones)
+        jm.set_can_do(u0[0]["id"], "conseguido", s)
     jm.set_can_do(u0[1]["id"], "conseguido", -1)              # pendiente
     prof.entrar()
     if prof.timer:
         prof.timer.cancel()
     assert (prof.clase["cd"], prof.clase["tipo"]) == (u0[1]["id"], "pendiente")
     assert "inventada por ti" in prof._instruccion("hola")     # repaso: situación nueva
-    vistos = []
-    for _ in range(6):
+    vistos, boletin = [], []
+    for _ in range(9):
         vistos.append((prof.clase["cd"], prof.clase.get("tipo")))
+        boletin.append(jm.can_dos_progreso())
         _avanza(prof)
     tipos = [t for _, t in vistos]
-    assert tipos[0] == "pendiente" and tipos[1:5] == ["nuevo"] * 4 and tipos[5] == "antiguo"
-    assert vistos[5][0] == u0[0]["id"]
-    assert len({c for c, _ in vistos}) == len(vistos)          # sin repetir en la sesión
+    assert tipos == ["pendiente", "nuevo", "nuevo", "antiguo", "nuevo",
+                     "refuerzo", "refuerzo", "refuerzo", "nuevo"]
+    assert vistos[3][0] == u0[0]["id"]
+    assert [c for c, t in vistos[5:8]] == [c for c, t in vistos if t == "nuevo"][:3]  # refuerza la tanda
+    assert boletin[5] == boletin[6] == boletin[7]                # el refuerzo no toca el boletín
+    fuera = [c for c, t in vistos if t != "refuerzo"]
+    assert len(set(fuera)) == len(fuera)                       # sin repetir en la sesión
 
 
 def test_tras_5_fallos_da_modelo_y_pasa_al_siguiente():

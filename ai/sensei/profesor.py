@@ -3,10 +3,11 @@
 El código decide qué toca y comprueba; el LLM solo habla. Cada can-do (datos en
 ai/sensei/candos_clase.json) pasa por fases fijas:
   presentar → practicar (2 aciertos) → tarea (2 aciertos) → conseguido → siguiente.
-(Si no ha fallado ni una vez en el can-do, basta 1 acierto en práctica y 1 en tarea.)
-Orden de la sesión (_siguiente): primero los pendientes (conseguidos una vez otro
-día: repaso, solo tarea en una situación nueva), luego los nuevos de la unidad (y
-de la siguiente), con 1 repaso de algo ya dominado cada 4 nuevos. Tras 5 intentos
+Orden de la sesión (_siguiente): primero los pendientes (conseguidos otro día: repaso,
+solo tarea en una situación nueva, 1 acierto), luego los nuevos de la unidad (y de la
+siguiente) por tandas de NUEVOS_POR_TANDA, cada tanda seguida de un refuerzo de lo conseguido
+hoy (sin tocar el boletín), con 1 repaso de algo ya dominado cada 2 nuevos; sin nada más,
+charla guiada sobre lo trabajado. Tras 5 intentos
 seguidos sin acierto, Kaito da un modelo y se pasa a lo siguiente.
 Las conjugaciones (て, た) las comprueba ai/sensei/conjugar.py y el resto
 ai/sensei/clase.py, sin LLM. Al modelo le llega un prompt corto
@@ -30,12 +31,12 @@ from ai.sensei.clase import (
     ACIERTOS_ANTIGUO,
     cortar_frases,
     ACIERTOS_PRACTICA,
-    ACIERTOS_SIN_FALLOS,
     ACIERTOS_TAREA,
     FALLOS_MAX,
     LIBRE_TURNOS_TEMA,
     PEDIR_FRASE,
     NUEVOS_POR_ANTIGUO,
+    NUEVOS_POR_TANDA,
     errores,
     presentar,
     que_hacer,
@@ -186,12 +187,12 @@ _RE_JP_CHAR = re.compile(r'[぀-ゟ゠-ヿ一-鿿]')
 
 # Fase 17 — arco de sesión. Palabras con que Laura suele despedirse; heurística
 # a propósito simple (el gate real es calentamiento vs foco por turno).
-_DESPEDIDAS_LAURA = (
-    "adiós", "adios", "hasta luego", "hasta la próxima", "hasta la proxima",
-    "hasta mañana", "hasta manana", "hasta la semana", "me voy", "nos vemos",
-    "lo dejamos", "lo dejo aquí", "lo dejo aqui", "lo dejo por hoy",
-    "ya es suficiente", "suficiente por hoy", "ya está bien por hoy",
-)
+# Simulación 15-nov: «Bueno, lo dejamos» (el tema) y «…no me voy» cerraban la clase: sin «lo
+# dejamos» suelto y sin contar lo negado.
+_RE_DESPEDIDA_LAURA = re.compile(
+    r"(?<!no )\b(adi[oó]s|hasta luego|hasta la pr[oó]xima|hasta ma[ñn]ana|hasta la semana|me voy|"
+    r"nos vemos|lo dej(o|amos) (aqu[ií]|por hoy)|ya es suficiente|suficiente por hoy|"
+    r"ya est[aá] bien por hoy)\b", re.IGNORECASE)
 
 
 # Mezcla: dice en japonés lo que sabe y rellena en español lo que le falta. No cuenta como
@@ -410,7 +411,7 @@ class ProfesorJapones:
 
     def _siguiente(self):
         """Qué toca ahora: (can-do, tipo) o (None, None). Tipos: 'pendiente'
-        (conseguido una vez otro día), 'antiguo' (dominado, 1 cada 4 nuevos) y
+        (conseguido una vez otro día), 'antiguo' (dominado, 1 cada 2 nuevos) y
         'nuevo' (de la unidad abierta o, si se acabó, de la siguiente)."""
         st, prog = self.clase, self._progreso()
         hechos = set(st.get("hechos", []))
@@ -435,8 +436,21 @@ class ProfesorJapones:
             if viejos:
                 st["antiguo_en"] = n
                 return viejos[0], "antiguo"
+        # Por tandas: NUEVOS_POR_TANDA nuevos → refuerzo de los nuevos conseguidos (otra situación, sin
+        # tocar el boletín) → otra tanda. Simulación 15-nov: sin tandas se cerraban ~12 can-dos por
+        # clase sin consolidar; con un tope y charla después, 35 de 50 turnos sin un ejercicio.
         nuevos = candidatos(orden[idx:idx + 2], ("no_intentado",))
-        return (nuevos[0], "nuevo") if nuevos else (None, None)
+        if nuevos and st.get("abiertos", 0) < NUEVOS_POR_TANDA:
+            return nuevos[0], "nuevo"
+        reforzados = st.setdefault("reforzados", [])
+        ref = next((c for c in st.get("nuevos_ids", []) if c not in reforzados), None)
+        if ref:
+            reforzados.append(ref)
+            return _POR_ID[ref], "refuerzo"
+        if nuevos:  # tanda reforzada: la siguiente
+            st["abiertos"] = 0
+            return self._siguiente()
+        return None, None
 
     def _abrir(self, cd, tipo):
         """Pone la clase en ese can-do y devuelve qué tiene que hacer Kaito."""
@@ -444,6 +458,7 @@ class ProfesorJapones:
         st.update(cd=cd["id"], tipo=tipo, aciertos=0, fallos=0, fallos_cd=0)
         if tipo == "nuevo":
             st["fase"] = "practicar"
+            st["abiertos"] = st.get("abiertos", 0) + 1
             # Boletín: ◐ desde que se empieza a enseñar, no solo al acertar ni al cerrarlo.
             try:
                 self.jap_memory.set_can_do(cd["id"], "empezado", self.session_id)
@@ -451,20 +466,23 @@ class ProfesorJapones:
                 print(f"⚠️ No se pudo guardar el can-do empezado: {e}")
             return presentar(cd)
         st["fase"] = "tarea"
-        return (f"Esto ya lo trabajasteis otro día ({cd['texto']}): dile en media frase que "
-                "vais a ver si lo recuerda y, sin explicárselo, " + tarea_nueva(cd)[0].lower()
-                + tarea_nueva(cd)[1:])
+        cuando = "Esto lo habéis practicado hace un rato" if cd["id"] in st.get("logros", []) else (
+            "Esto ya lo trabajasteis otro día")
+        return (f"{cuando} ({cd['texto']}): dile en media frase que vais a ver si lo recuerda y, "
+                "sin explicárselo, " + tarea_nueva(cd)[0].lower() + tarea_nueva(cd)[1:])
 
     def _cerrar_cd(self, cd, resultado):
         """Guarda el resultado del can-do y pasa al siguiente. Devuelve la
         instrucción para abrirlo (o la de charla si no queda nada)."""
         st = self.clase
-        self.jap_memory.set_can_do(cd["id"], resultado, self.session_id)
-        st.setdefault("hechos", []).append(cd["id"])
-        if resultado == "conseguido":
-            st.setdefault("logros", []).append(cd["id"])
-        if resultado == "conseguido" and st.get("tipo", "nuevo") == "nuevo":
-            st["nuevos"] = st.get("nuevos", 0) + 1
+        if st.get("tipo") != "refuerzo":  # el refuerzo es práctica extra: el boletín no cambia
+            self.jap_memory.set_can_do(cd["id"], resultado, self.session_id)
+            st.setdefault("hechos", []).append(cd["id"])
+            if resultado == "conseguido":
+                st.setdefault("logros", []).append(cd["id"])
+            if resultado == "conseguido" and st.get("tipo", "nuevo") == "nuevo":
+                st["nuevos"] = st.get("nuevos", 0) + 1
+                st.setdefault("nuevos_ids", []).append(cd["id"])  # lo que reforzará la tanda
         sig, tipo = self._siguiente()
         if not sig:
             st.update(cd=None, fase="libre", aciertos=0)
@@ -500,7 +518,7 @@ class ProfesorJapones:
         st, cd = self.clase, self._cd()
         ja_alt, self._ja_alt = self._ja_alt, None  # vale solo para este turno
         self._falta = ""
-        if any(d in mensaje.lower() for d in _DESPEDIDAS_LAURA):
+        if _RE_DESPEDIDA_LAURA.search(mensaje):
             return ("Laura se despide. Despídete con cariño en una o dos frases, recordándole "
                     "en media frase lo que ha practicado hoy. No le pidas nada más.")
         if st["fase"] == "libre" or not cd:
@@ -600,21 +618,19 @@ class ProfesorJapones:
         st["fallos"] = 0
         if tamagotchi.cobrar_acierto():  # monedas al momento en la pantalla (si la mascota está activa)
             self.socketio.emit("yenes", {"cantidad": tamagotchi.YENES_ACIERTO, "motivo": "acierto"})
-        # Sin ningún fallo en este can-do basta 1 acierto por fase; con fallos, los de siempre.
-        limpio = not st.get("fallos_cd")
-        if st["fase"] == "practicar" and st["aciertos"] >= (ACIERTOS_SIN_FALLOS if limpio else ACIERTOS_PRACTICA):
+        if st["fase"] == "practicar" and st["aciertos"] >= ACIERTOS_PRACTICA:
             st.update(fase="tarea", aciertos=0)
             return ("Ha acertado. Celébralo en media frase, con calidez y sin repetir "
                     "fórmulas. Luego: " + tarea(cd))
-        meta = (ACIERTOS_ANTIGUO if st.get("tipo") == "antiguo"
-                else ACIERTOS_SIN_FALLOS if limpio else ACIERTOS_TAREA)
+        # Lo nuevo, a fondo (2+2); un repaso de otro día basta con ver que lo recuerda.
+        meta = ACIERTOS_ANTIGUO if st.get("tipo") in ("antiguo", "pendiente", "refuerzo") else ACIERTOS_TAREA
         if st["fase"] == "tarea" and st["aciertos"] >= meta:
             return (f"Felicítala: ya sabe hacer esto: {cd['texto']}. "
                     + self._cerrar_cd(cd, "conseguido"))
         # Logs (12-nov noche): con que_hacer(cd) entero pedía «una cosa que haces cada día Y otra que
         # nunca haces» en el mismo turno: solo UNA de las acciones.
         otra = ("plantéale otra situación distinta y corta, inventada por ti, en la que tenga que (pídele "
-                "UNA sola cosa; si aquí hay varias, solo una, y la otra otro día): "
+                "UNA sola cosa; si aquí hay varias, solo una): "
                 + que_hacer(cd) if st["fase"] == "tarea"
                 else "pídele otra frase con lo mismo, sobre otro tema. " + PEDIR_FRASE)
         return (f"Ha acertado. Celébralo en media frase, con calidez y sin repetir fórmulas, "
@@ -648,7 +664,7 @@ class ProfesorJapones:
         """Laura dice que no sabe, no se acuerda o pide que se lo expliquen. Un profesor
         da primero lo que falta y simplifica; si era un repaso, vuelve a explicarlo."""
         st = self.clase
-        if st.get("tipo") in ("pendiente", "antiguo") and st["fase"] == "tarea":
+        if st.get("tipo") in ("pendiente", "antiguo", "refuerzo") and st["fase"] == "tarea":
             st.update(fase="practicar", aciertos=0)  # no se acuerda: se vuelve a presentar
             return ("Laura no se acuerda de esto. Empieza por la palabra o frase que le falte, "
                     "en japonés y en español, y vuelve a explicárselo con calma. "
