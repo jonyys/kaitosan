@@ -6,7 +6,23 @@ import os
 import sounddevice as sd
 import soundfile as sf
 
-RUTA_ALARMA = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "audio", "alarma.flac")
+_AUDIO = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "audio")
+RUTA_ALARMA = os.path.join(_AUDIO, "alarma.flac")
+
+# Tonos a elegir en alarmas, temporizadores y recordatorios: id → (nombre, fichero). El primero es el de siempre.
+TONOS = {
+    "barbie": ("Barbie", RUTA_ALARMA),
+    "beautiful_wish": ("Beautiful Wish", os.path.join(_AUDIO, "tonos", "beautiful_wish.mp3")),
+    "taiyou_no_rakuen": ("Taiyou no Rakuen", os.path.join(_AUDIO, "tonos", "taiyou_no_rakuen.mp3")),
+    "mizuiro_no_senritsu": ("Mizuiro no Senritsu", os.path.join(_AUDIO, "tonos", "mizuiro_no_senritsu.mp3")),
+    "legend_of_mermaid": ("Legend of Mermaid", os.path.join(_AUDIO, "tonos", "legend_of_mermaid.mp3")),
+}
+TONO_DEFECTO = "barbie"
+
+
+def tono_valido(tono):
+    """El id si existe; si no (vacío, desconocido), el de por defecto."""
+    return tono if tono in TONOS else TONO_DEFECTO
 
 # Suena en bucle hasta que lo paren; por si nadie está, se calla solo pasado este tiempo.
 MAX_SONANDO_SEG = 300
@@ -41,6 +57,7 @@ class AlarmSkill:
         self.pospuestas = []         # alarmas pospuestas esperando a volver a sonar: {"id", "hora", "origen", "timer"}
         self.sonando = None          # {"tipo": "alarma"|"temporizador", "texto": ...} mientras suena
         self._parar = threading.Event()
+        self._previa = threading.Event()  # para la preview de un tono mientras se elige
 
     def _siguiente_id(self):
         id_actual = self._next_id
@@ -58,7 +75,7 @@ class AlarmSkill:
         return {
             "pospuestas": [{"id": p["id"], "hora": p["hora"], "origen": p["origen"]} for p in self.pospuestas],
             "alarmas": [
-                {"id": a["id"], "hora": a["hora"], "activa": a["activa"], "dias": a.get("dias", [])}
+                {"id": a["id"], "hora": a["hora"], "activa": a["activa"], "dias": a.get("dias", []), "tono": a["tono"]}
                 for a in self.alarmas
             ],
             "temporizadores": [
@@ -70,19 +87,23 @@ class AlarmSkill:
                     "inicio": t["inicio"],
                     "activo": t["activo"],
                     "pausado": t.get("pausado", False),
-                    "restante": t.get("restante", t["duracion_total"])
+                    "restante": t.get("restante", t["duracion_total"]),
+                    "tono": t["tono"],
                 }
                 for t in self.temporizadores
             ]
         }
 
-    def _sonar(self):
-        """Reproduce audio/alarma.flac (48 kHz estéreo) en bucle por el altavoz, con el volumen de
+    def _sonar(self, tono=TONO_DEFECTO, parar=None):
+        """Reproduce el tono (por defecto audio/alarma.flac, 48 kHz estéreo) en bucle por el altavoz, con el volumen de
         Kaito, hasta parar() o MAX_SONANDO_SEG. Se corta desde el propio callback, no con sd.stop():
         parar un stream desde otro hilo bloquea PortAudio en la Pi (ver TextToSpeech._sonar)."""
         from ai.text_to_speech import buscar_altavoz
         from core.system_settings import volumen_factor
-        data, sr = sf.read(RUTA_ALARMA, dtype="float32")
+        parar = parar or self._parar
+        data, sr = sf.read(TONOS[tono_valido(tono)][1], dtype="float32")
+        if data.ndim == 1:  # mono: el stream es estéreo
+            data = data[:, None]
         data = data * volumen_factor()
         pos = 0
         limite = time.monotonic() + MAX_SONANDO_SEG
@@ -90,7 +111,7 @@ class AlarmSkill:
 
         def rellenar(salida, frames, _tiempo, _estado):
             nonlocal pos
-            if self._parar.is_set() or time.monotonic() > limite:
+            if parar.is_set() or time.monotonic() > limite:
                 raise sd.CallbackStop
             salida[:] = data[(pos + np.arange(frames)) % len(data)]
             pos = (pos + frames) % len(data)
@@ -102,6 +123,23 @@ class AlarmSkill:
         stream.start()
         terminado.wait()
         stream.close()
+
+    def previsualizar(self, tono):
+        """Suena el tono (en bucle) hasta parar_previa(). Si ya suena una alarma, no hace nada."""
+        self.parar_previa()
+        if self.sonando:
+            return
+        parar = self._previa = threading.Event()
+
+        def run():
+            try:
+                self._sonar(tono, parar)
+            except Exception as e:  # noqa: BLE001
+                print(f"⚠️ Error en la preview del tono: {e}")
+        threading.Thread(target=run, daemon=True).start()
+
+    def parar_previa(self):
+        self._previa.set()
 
     def _emitir_sonando(self):
         if self.socketio:
@@ -118,7 +156,7 @@ class AlarmSkill:
         self.sonando = info
         self._emitir_sonando()
         try:
-            self._sonar()
+            self._sonar(info.get("tono"))
         except Exception as e:  # noqa: BLE001
             print(f"⚠️ Error sonando: {e}")
         finally:
@@ -177,7 +215,8 @@ class AlarmSkill:
                     a["activa"] = False
                 break
         self._emitir_estado()
-        self._empezar_a_sonar({"tipo": "alarma", "texto": hora_str})
+        tono = next((a["tono"] for a in self.alarmas if a["id"] == alarma_id), TONO_DEFECTO)
+        self._empezar_a_sonar({"tipo": "alarma", "texto": hora_str, "tono": tono})
 
     def _programar(self, h, m, dias, alarma_id):
         timer = threading.Timer(segundos_hasta(h, m, dias), self._alarma_sonar, args=[f"{h:02d}:{m:02d}", alarma_id])
@@ -185,7 +224,7 @@ class AlarmSkill:
         timer.start()
         return timer
 
-    def poner_alarma(self, hora: str, minuto: int = 0, dias=None) -> str:
+    def poner_alarma(self, hora: str, minuto: int = 0, dias=None, tono=None) -> str:
         try:
             partes = hora.replace(".", ":").split(":")
             h = int(partes[0])
@@ -199,6 +238,7 @@ class AlarmSkill:
                 "timer": self._programar(h, m, dias, alarma_id),
                 "activa": True,
                 "dias": dias,
+                "tono": tono_valido(tono),
             }
             self.alarmas.append(alarma_info)
             self._emitir_estado()
@@ -266,9 +306,10 @@ class AlarmSkill:
     def modificar_alarma(self, hora_actual: str, nueva_hora: str) -> str:
         previa = next((a for a in self.alarmas if a["hora"] == hora_actual.replace(".", ":").strip() and a["activa"]), None)
         dias = previa.get("dias") if previa else None
+        tono = previa["tono"] if previa else None
         resultado_cancelar = self.cancelar_alarma(hora=hora_actual)
         if "cancelada" in resultado_cancelar:
-            return self.poner_alarma(nueva_hora, dias=dias)
+            return self.poner_alarma(nueva_hora, dias=dias, tono=tono)
         return resultado_cancelar
 
     def listar_alarmas(self) -> str:
@@ -293,9 +334,9 @@ class AlarmSkill:
         self._emitir_estado()
         duracion = " ".join(x for x in (f"{t['minutos']} min" if t["minutos"] else "",
                                          f"{t['segundos']} s" if t["segundos"] else "") if x)
-        self._empezar_a_sonar({"tipo": "temporizador", "texto": duracion})
+        self._empezar_a_sonar({"tipo": "temporizador", "texto": duracion, "tono": t["tono"]})
 
-    def poner_temporizador(self, minutos: int = 0, segundos: int = 0) -> str:
+    def poner_temporizador(self, minutos: int = 0, segundos: int = 0, tono=None) -> str:
         retraso = minutos * 60 + segundos
         if retraso <= 0:
             return "Necesito un tiempo válido para el temporizador."
@@ -311,6 +352,7 @@ class AlarmSkill:
             "activo": True,
             "pausado": False,
             "restante": retraso,
+            "tono": tono_valido(tono),
         }
         self.temporizadores.append(temp_info)
         self._emitir_estado()

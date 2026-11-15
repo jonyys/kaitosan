@@ -169,9 +169,16 @@
     .dias-txt { position: absolute; left: 0; right: 0; top: 318px; text-align: center; font-size: 13px; color: var(--text-soft); }
     .chips { position: absolute; left: 0; right: 0; top: 274px; display: flex; justify-content: center; gap: 8px; }
     .chips button { height: 40px; white-space: nowrap; padding: 0 12px; border-radius: 20px; border: 1.5px solid var(--border-fuerte); background: transparent; color: var(--text); font: inherit; font-size: 15px; cursor: pointer; }
-    .hoja-acciones { position: absolute; left: 0; right: 0; top: 356px; display: flex; gap: 12px; justify-content: center; }
+    .hoja-acciones { position: absolute; left: 0; right: 0; top: 376px; display: flex; gap: 12px; justify-content: center; }
     .hoja-acciones .btn { min-height: 44px; padding: 0 26px; border-radius: 22px; }
-    .eliminar { position: absolute; left: 50%; top: 410px; transform: translateX(-50%); display: none; background: none; border: 0; color: var(--peligro-tinta); font: inherit; font-size: 15px; padding: 6px 12px; cursor: pointer; }
+    .tono { position: absolute; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 6px; max-width: 280px; height: 30px; padding: 0 14px; border-radius: 15px; border: 1.5px solid var(--border-fuerte); background: transparent; color: var(--text-soft); font: inherit; font-size: 14px; white-space: nowrap; cursor: pointer; }
+    #tonoMenu { display: none; position: absolute; inset: 0; z-index: 150; }
+    #tonoMenu.open { display: block; }
+    #tonoMenu .menu { position: absolute; left: 50%; transform: translateX(-50%); width: 250px; padding: 6px; border-radius: 18px; background: var(--bg); border: 1.5px solid var(--border-fuerte); box-shadow: 0 8px 24px rgba(0, 0, 0, .45); }
+    #tonoMenu .menu button { display: block; width: 100%; height: 36px; padding: 0 14px; border: 0; border-radius: 12px; background: transparent; color: var(--text); font: inherit; font-size: 16px; text-align: left; cursor: pointer; }
+    #tonoMenu .menu button.on { background: var(--rosa-accion); color: var(--on-acc, #15100a); font-weight: 500; }
+    .tono b { font-weight: 500; color: var(--rosa-accion); }
+    .eliminar { position: absolute; left: 50%; top: 424px; transform: translateX(-50%); display: none; background: none; border: 0; color: var(--peligro-tinta); font: inherit; font-size: 15px; padding: 6px 12px; cursor: pointer; }
     .eliminar.ver { display: block; }
 
     /* Teclado en pantalla (la pantalla del robot no tiene teclado) */
@@ -272,6 +279,7 @@
   </div>
   <div class="dias" id="dias-alarma"></div>
   <div class="dias-txt" id="dias-txt">Solo una vez</div>
+  <button class="tono" style="top:338px" onclick="abrirTonos(this)" aria-label="Elegir el tono">♪ <b></b> ▾</button>
   <div class="hoja-acciones">
     <button class="btn btn-yellow" onclick="cerrarModal()">Cancelar</button>
     <button class="btn btn-blue" onclick="guardarAlarma()">Guardar</button>
@@ -291,7 +299,8 @@
     <button onclick="fijarTemporizador(10)">10 min</button>
     <button onclick="fijarTemporizador(15)">15 min</button>
   </div>
-  <div class="hoja-acciones">
+  <button class="tono" style="top:322px" onclick="abrirTonos(this)" aria-label="Elegir el tono">♪ <b></b> ▾</button>
+  <div class="hoja-acciones" style="top:368px">
     <button class="btn btn-yellow" onclick="cerrarModal()">Cancelar</button>
     <button class="btn btn-blue" onclick="iniciarTemporizador()">Iniciar</button>
   </div>
@@ -310,11 +319,15 @@
   <div class="ruedas"><div class="banda" style="left:70px;right:70px"></div>
     <div class="rueda ancha" id="rueda-rd" style="width:150px"></div><div class="rueda" id="rueda-rh" style="width:66px"></div><span class="sep">:</span><div class="rueda" id="rueda-rm" style="width:66px"></div>
   </div>
-  <div class="hoja-acciones" style="top:300px">
+  <button class="tono" style="top:268px" onclick="abrirTonos(this)" aria-label="Elegir el tono">♪ <b></b> ▾</button>
+  <div class="hoja-acciones" style="top:318px">
     <button class="btn btn-yellow" onclick="abrirRecordatorio(true)">Atrás</button>
     <button class="btn btn-blue" onclick="guardarRecordatorio()">Guardar</button>
   </div>
 </div>
+
+<!-- Desplegable de tonos: se coloca encima del botón ♪ que lo abre -->
+<div id="tonoMenu" data-no-tap onclick="if (event.target === this) cerrarTonos()"><div class="menu"></div></div>
 
 <!-- Toast -->
 <div id="toast"></div>
@@ -327,6 +340,33 @@
   let pospuestas = [];
   let temporizadores = [];
   let editandoId = null;   // null = alarma nueva
+  // Tono del aviso que se está creando o editando: un toque en el botón ♪ pasa al siguiente
+  const TONOS = {{ tonos|tojson }}, TONO_DEFECTO = {{ tono_defecto|tojson }};
+  let tonoSel = TONO_DEFECTO;
+  function ponerTono(id) {
+    tonoSel = TONOS.some(t => t.id === id) ? id : TONO_DEFECTO;
+    document.querySelectorAll('.tono b').forEach(b => { b.textContent = TONOS.find(t => t.id === tonoSel).nombre; });
+  }
+  // Mientras el desplegable está abierto, el tono tocado suena (en el altavoz del robot) en bucle; al cerrarlo, se calla
+  function cerrarTonos() {
+    const m = document.getElementById('tonoMenu');
+    if (!m.classList.contains('open')) return;
+    m.classList.remove('open');
+    fetch('/reloj/tono/previa', {method: 'DELETE'}).catch(() => {});
+  }
+  function elegirTono(id) {
+    if (id === tonoSel) return cerrarTonos(); // tocar otra vez el elegido cierra
+    ponerTono(id);
+    document.querySelectorAll('#tonoMenu .menu button').forEach(b => b.classList.toggle('on', b.dataset.id === id));
+    fetch('/reloj/tono/previa', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({tono: id})}).catch(() => {});
+  }
+  function abrirTonos(btn) {
+    const menu = document.getElementById('tonoMenu'), caja = menu.querySelector('.menu');
+    caja.innerHTML = TONOS.map(t => `<button data-id="${t.id}" class="${t.id === tonoSel ? 'on' : ''}" onclick="elegirTono('${t.id}')">${t.nombre}</button>`).join('');
+    caja.style.top = Math.max(btn.getBoundingClientRect().top - TONOS.length * 36 - 20, 24) + 'px';
+    menu.classList.add('open');
+  }
+  ponerTono(TONO_DEFECTO);
   let countdowns = {};     // id → intervalo de countdown
 
   // Late justo al cambiar el segundo: así el minuto nunca llega tarde (y casa con la réplica de la transición)
@@ -405,7 +445,7 @@
       </li>
     `).join('');
     list.innerHTML = pos + alarmas.map(a => `
-      <li class="fila alarma temp${a.activa ? '' : ' off'}" data-accion="abrirModal" data-args='${JSON.stringify([a.id, a.hora, a.dias || []])}'>
+      <li class="fila alarma temp${a.activa ? '' : ' off'}" data-accion="abrirModal" data-args='${JSON.stringify([a.id, a.hora, a.dias || [], a.tono])}'>
         <div class="col"><div class="valor">${a.hora}</div><div class="etq">${etiquetaDias(a.dias)}</div></div>
         <button class="sw" role="switch" aria-checked="${a.activa}" aria-label="Alarma de las ${a.hora}" onclick="alternarAlarma(${a.id})"></button>
       </li>
@@ -615,7 +655,7 @@
   ruedaTs = Rueda(document.getElementById('rueda-ts'), 60, dos, { loop: true });
 
   function cerrarModal() {
-    editandoId = null;
+    editandoId = null; cerrarTonos();
     document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('open'));
   }
   function abrirHoja(id) { cerrarModal(); document.getElementById(id).classList.add('open'); }
@@ -628,18 +668,18 @@
     document.getElementById('edit-titulo').textContent = 'Nueva alarma';
     const ahora = new Date();
     ruedaH.poner(ahora.getHours()); ruedaM.poner(ahora.getMinutes()); // la hora de ahora
-    diasSel = []; pintarDias();
+    diasSel = []; pintarDias(); ponerTono(TONO_DEFECTO);
     abrirHoja('editModal');
   }
 
-  function abrirModal(id, hora, dias) {
+  function abrirModal(id, hora, dias, tono) {
     abrirHoja('editModal');
     editandoId = id;
     document.getElementById('edit-eliminar').classList.add('ver');
     document.getElementById('edit-titulo').textContent = 'Modificar alarma';
     const [h, m] = hora.split(':').map(Number);
     ruedaH.poner(h); ruedaM.poner(m);
-    diasSel = (dias || []).slice(); pintarDias();
+    diasSel = (dias || []).slice(); pintarDias(); ponerTono(tono);
   }
 
   async function guardarAlarma() {
@@ -649,7 +689,7 @@
       const res = await fetch(nueva ? '/reloj/alarmas' : `/reloj/alarmas/${editandoId}`, {
         method: nueva ? 'POST' : 'PUT',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({hora, dias: diasSel})
+        body: JSON.stringify({hora, dias: diasSel, tono: tonoSel})
       });
       const data = await res.json();
       aplicarEstado(data);
@@ -670,7 +710,7 @@
 
   // ── ACCIONES TEMPORIZADORES ─────────────────────────────────────────────
   function abrirTemporizador() {
-    ruedaTm.poner(5); ruedaTs.poner(0);
+    ruedaTm.poner(5); ruedaTs.poner(0); ponerTono(TONO_DEFECTO);
     abrirHoja('timerModal');
   }
   function fijarTemporizador(m) { ruedaTm.suave(m); ruedaTs.suave(0); }
@@ -682,7 +722,7 @@
       const res = await fetch('/reloj/temporizadores', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({minutos, segundos})
+        body: JSON.stringify({minutos, segundos, tono: tonoSel})
       });
       const data = await res.json();
       aplicarEstado(data);
@@ -713,7 +753,7 @@
 
   // ── CIERRE MODAL CON ESCAPE ──────────────────────────────────────────────
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') cerrarModal();
+    if (e.key === 'Escape') { cerrarTonos(); cerrarModal(); }
   });
 
   // ── RECORDATORIOS ────────────────────────────────────────────────────────
@@ -844,14 +884,14 @@
   let ruedaRd, ruedaRh, ruedaRm, diasRem = [];
   let editandoRem = null, remPreset = null; // al editar: id y "AAAA-MM-DD HH:MM" con que arrancan las ruedas
   function abrirRecordatorio(volver) {
-    if (!volver) { editandoRem = null; remPreset = null; teclado.reiniciar(); }
+    if (!volver) { editandoRem = null; remPreset = null; teclado.reiniciar(); ponerTono(TONO_DEFECTO); }
     document.getElementById('rem-titulo').textContent = editandoRem === null ? 'Nuevo recordatorio' : 'Editar recordatorio';
     abrirHoja('remTexto');
   }
   function editarRecordatorio(id) {
     const r = recordatorios.find(x => x.id === id);
     if (!r) return;
-    editandoRem = id; remPreset = r.fecha_hora;
+    editandoRem = id; remPreset = r.fecha_hora; ponerTono(r.tono);
     teclado.poner(r.texto);
     abrirRecordatorio(true);
   }
@@ -885,7 +925,7 @@
       const res = await fetch(editandoRem === null ? '/reloj/recordatorios' : `/reloj/recordatorios/${editandoRem}`, {
         method: editandoRem === null ? 'POST' : 'PUT',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({texto: teclado.texto().trim(), fecha_hora: fecha})
+        body: JSON.stringify({texto: teclado.texto().trim(), fecha_hora: fecha, tono: tonoSel})
       });
       const data = await res.json();
       if (data.error) { mostrarToast(data.error, 'err'); return; }

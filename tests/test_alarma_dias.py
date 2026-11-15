@@ -1,4 +1,5 @@
 """Alarmas con días de la semana: cuándo es la próxima vez que suenan."""
+import os
 import sys
 import threading
 import time
@@ -79,3 +80,17 @@ def test_suena_hasta_que_la_paran_y_la_alarma_se_pospone():
     timer.join(1)
     assert not timer.is_alive()          # anulada: ya no volverá a sonar
     assert not skill.cancelar_pospuesta(pid)
+
+
+def test_tonos():
+    from ai.skills.alarm import TONOS, tono_valido
+    assert tono_valido("legend_of_mermaid") == "legend_of_mermaid"
+    assert tono_valido(None) == tono_valido("raro") == "barbie"
+    assert all(os.path.exists(ruta) for _, ruta in TONOS.values())
+    a = AlarmSkill()
+    a.poner_alarma("07:00", tono="beautiful_wish")
+    a.poner_temporizador(1)
+    assert a._estado_serializable()["alarmas"][0]["tono"] == "beautiful_wish"
+    assert a._estado_serializable()["temporizadores"][0]["tono"] == "barbie"
+    for x in a.alarmas + a.temporizadores:
+        x["timer"].cancel()

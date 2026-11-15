@@ -52,6 +52,7 @@ from flask import flash, redirect, url_for, session, request
 from functools import wraps
 from datetime import timedelta, date
 from audio.recorder import Recorder
+from ai.skills.alarm import TONOS, TONO_DEFECTO, tono_valido
 from ai.speech_to_text import SpeechToText, transcribir_para_turno
 from ai.text_to_speech import TextToSpeech
 from ai.sensei.kana import frases_para_card, romaji
@@ -264,7 +265,8 @@ def grabar():
 def reloj():
     if not _solo_local():
         return redirect(url_for("admin"))  # el reloj es de la pantalla del robot
-    return render_template("reloj.html", noche=system_settings.noche_estado())
+    return render_template("reloj.html", noche=system_settings.noche_estado(),
+                           tonos=[{"id": k, "nombre": v[0]} for k, v in TONOS.items()], tono_defecto=TONO_DEFECTO)
 
 
 # ── KIOSKO: gestos y ajustes rápidos de la pantalla del propio robot ──────────
@@ -463,7 +465,7 @@ def reloj_alarma_crear():
     hora = data.get("hora", "")
     if not hora:
         return jsonify({"error": "Falta la hora"}), 400
-    resultado = brain.alarm.poner_alarma(hora, dias=data.get("dias"))
+    resultado = brain.alarm.poner_alarma(hora, dias=data.get("dias"), tono=data.get("tono"))
     return jsonify({"mensaje": resultado, **brain.alarm._estado_serializable()})
 
 @app.route("/reloj/alarmas/<int:alarma_id>", methods=["DELETE"])
@@ -487,7 +489,7 @@ def reloj_alarma_modificar(alarma_id):
         return jsonify({"error": "Alarma no encontrada"}), 404
     alarma["timer"].cancel()
     brain.alarm.alarmas.remove(alarma)
-    resultado = brain.alarm.poner_alarma(nueva_hora, dias=data.get("dias"))
+    resultado = brain.alarm.poner_alarma(nueva_hora, dias=data.get("dias"), tono=data.get("tono"))
     return jsonify({"mensaje": resultado, **brain.alarm._estado_serializable()})
 
 @app.route("/reloj/alarmas/<int:alarma_id>/activa", methods=["PUT"])
@@ -495,6 +497,16 @@ def reloj_alarma_activar(alarma_id):
     data = request.get_json()
     resultado = brain.alarm.activar_alarma(alarma_id, bool(data.get("activa")))
     return jsonify({"mensaje": resultado, **brain.alarm._estado_serializable()})
+
+@app.route("/reloj/tono/previa", methods=["POST"])
+def reloj_tono_previa():
+    brain.alarm.previsualizar(tono_valido((request.get_json() or {}).get("tono")))
+    return jsonify({"ok": True})
+
+@app.route("/reloj/tono/previa", methods=["DELETE"])
+def reloj_tono_previa_parar():
+    brain.alarm.parar_previa()
+    return jsonify({"ok": True})
 
 @app.route("/reloj/sonando", methods=["GET"])
 def reloj_sonando():
@@ -523,7 +535,7 @@ def reloj_temporizador_crear():
     segundos = int(data.get("segundos", 0))
     if minutos == 0 and segundos == 0:
         return jsonify({"error": "Tiempo inválido"}), 400
-    resultado = brain.alarm.poner_temporizador(minutos, segundos)
+    resultado = brain.alarm.poner_temporizador(minutos, segundos, tono=data.get("tono"))
     return jsonify({"mensaje": resultado, **brain.alarm._estado_serializable()})
 
 @app.route("/reloj/temporizadores/<int:temp_id>/estado", methods=["PUT"])
@@ -563,7 +575,7 @@ def reloj_recordatorio_crear():
     except ValueError:
         return jsonify({"error": "Formato de fecha inválido (usa YYYY-MM-DDTHH:MM)"}), 400
     db = brain.reminder._conectar()
-    db.execute("INSERT INTO reminders (texto, fecha_hora) VALUES (?, ?)", (texto, fecha_hora))
+    db.execute("INSERT INTO reminders (texto, fecha_hora, tono) VALUES (?, ?, ?)", (texto, fecha_hora, tono_valido(data.get("tono"))))
     db.commit()
     db.close()
     brain.reminder._emitir_estado()
@@ -582,7 +594,7 @@ def reloj_recordatorio_modificar(rem_id):
     except ValueError:
         return jsonify({"error": "Formato de fecha inválido (usa YYYY-MM-DDTHH:MM)"}), 400
     db = brain.reminder._conectar()
-    cur = db.execute("UPDATE reminders SET texto = ?, fecha_hora = ?, completado = 0 WHERE id = ?", (texto, fecha_hora, rem_id))
+    cur = db.execute("UPDATE reminders SET texto = ?, fecha_hora = ?, tono = ?, completado = 0 WHERE id = ?", (texto, fecha_hora, tono_valido(data.get("tono")), rem_id))
     db.commit()
     db.close()
     if not cur.rowcount:

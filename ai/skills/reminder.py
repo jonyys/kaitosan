@@ -4,6 +4,8 @@ import time
 from datetime import datetime, timedelta
 import os
 
+from ai.skills.alarm import tono_valido
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 DB_PATH = os.path.join(BASE_DIR, "data", "kaito.db")
 
@@ -23,6 +25,7 @@ class ReminderSkill:
     def __init__(self, sample_rate=48000, socketio=None):
         self.sample_rate = sample_rate
         self.socketio = socketio
+        self.alarm = None  # lo pone Brain: AlarmSkill, para hacer sonar el aviso
         self._inicializar_tabla()
         self._iniciar_comprobador()
 
@@ -40,6 +43,8 @@ class ReminderSkill:
                     completado BOOLEAN DEFAULT 0
                 )
             """)
+            if "tono" not in [c[1] for c in conn.execute("PRAGMA table_info(reminders)")]:
+                conn.execute("ALTER TABLE reminders ADD COLUMN tono TEXT")
 
     def _emitir_estado(self):
         if self.socketio:
@@ -51,7 +56,7 @@ class ReminderSkill:
     def _estado_serializable(self):
         with self._conectar() as conn:
             rows = conn.execute(
-                "SELECT id, texto, fecha_hora, creado, completado FROM reminders ORDER BY completado ASC, fecha_hora ASC"
+                "SELECT id, texto, fecha_hora, creado, completado, tono FROM reminders ORDER BY completado ASC, fecha_hora ASC"
             ).fetchall()
         return {
             "recordatorios": [
@@ -60,7 +65,8 @@ class ReminderSkill:
                     "texto": r[1],
                     "fecha_hora": r[2],
                     "creado": r[3],
-                    "completado": bool(r[4])
+                    "completado": bool(r[4]),
+                    "tono": tono_valido(r[5]),
                 }
                 for r in rows
             ]
@@ -148,13 +154,16 @@ class ReminderSkill:
                 ahora = datetime.now().strftime("%Y-%m-%d %H:%M")
                 with self._conectar() as conn:
                     pendientes = conn.execute(
-                        "SELECT id, texto FROM reminders WHERE fecha_hora <= ? AND completado = 0",
+                        "SELECT id, texto, tono FROM reminders WHERE fecha_hora <= ? AND completado = 0",
                         (ahora,)
                     ).fetchall()
 
                     if pendientes:
-                        for rid, texto in pendientes:
+                        for rid, texto, tono in pendientes:
                             print(f"📌 Recordatorio: {texto}")
+                            if self.alarm:  # suena con su tono hasta que lo paren (en otro hilo: el bucle no se bloquea)
+                                threading.Thread(target=self.alarm._empezar_a_sonar, daemon=True,
+                                                 args=({"tipo": "recordatorio", "texto": texto, "tono": tono_valido(tono)},)).start()
                             conn.execute(
                                 "UPDATE reminders SET completado = 1 WHERE id = ?",
                                 (rid,)

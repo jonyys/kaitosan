@@ -49,6 +49,7 @@ class Brain:
         # Acceso directo para compatibilidad con app.py
         self.reminder = self.dispatcher.reminder
         self.alarm = self.dispatcher.alarm
+        self.reminder.alarm = self.alarm
         # El profesor usa su propio proveedor: OpenRouter para los turnos (ver
         # Ajustes → Modelos), Groq gpt-oss-120b de reserva y para el extractor
         # de cierre. Ver ai/sensei_provider.py.
