@@ -5,7 +5,7 @@
   modelos fuertes en seguir el prompt (Qwen, GLM) sin el rate limit por
   tokens/min del tier gratis. Si OpenRouter falla del todo (o no está
   configurado), se cae a Groq `gpt-oss-120b` como último recurso.
-- Extractor de cierre (`strict=True`): OpenRouter con `EXTRACTOR_MODELO` (gpt-6-luna); Groq gpt-oss-120b
+- Extractor de cierre (`strict=True`): OpenRouter con `EXTRACTOR_MODELOS` (deepseek, luna de reserva); Groq gpt-oss-120b
   solo de reserva y sin rotar a sus modelos alternativos. Si ninguno responde, el
   guardrail de `profesor.py` guarda solo el resumen.
 
@@ -18,16 +18,17 @@ import os
 
 from core.config import OPENROUTER_API_KEY, groq_seleccion
 
-EXTRACTOR_MODELO = os.getenv("EXTRACTOR_MODELO", "openai/gpt-6-luna")
+# El más barato primero (15-nov: deepseek 0,05/0,20 $/M, luna 0,10/0,50); luna de reserva
+# por si deepseek devuelve vacío (con razonamiento lo hacía siempre: el extractor va sin él).
+EXTRACTOR_MODELOS = [m.strip() for m in os.getenv(
+    "EXTRACTOR_MODELOS", "deepseek/deepseek-v4.1-flash,openai/gpt-6-luna").split(",") if m.strip()]
 
 
 class SenseiProvider:
 
     def __init__(self):
         self.openrouter = OpenRouterProvider() if OPENROUTER_API_KEY else None
-        # El extractor de cierre va siempre a este modelo (15-nov: deepseek devolvía vacío
-        # con json_object en una clase de 40 min; gpt-6-luna dio JSON válido en 14 s).
-        self.extractor = (OpenRouterProvider(modelos=[EXTRACTOR_MODELO])
+        self.extractor = (OpenRouterProvider(modelos=EXTRACTOR_MODELOS)
                           if OPENROUTER_API_KEY else None)
         self.reserva = FallbackProvider(model=groq_seleccion()["sensei"])
         # `getattr(provider, "groq", None)` sigue funcionando por si algo lo mira.

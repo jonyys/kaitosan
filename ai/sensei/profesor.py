@@ -959,7 +959,9 @@ class ProfesorJapones:
             max_tokens=2000,
             response_format={"type": "json_object"},
             strict=strict,
-            reasoning_effort="low",
+            # 15-nov: con "low", deepseek gastaba los 2000 tokens razonando y devolvía vacío
+            # (3/3); con "off", JSON válido 3/3 en ~4 s.
+            reasoning_effort="off",
         )
 
     def _parsear_json_sesion(self, texto: str):
