@@ -62,7 +62,7 @@ try:
         if not buf:
             break
         if pausa:
-            out.stdin.close()
+            out.kill()  # no cerrar la entrada: aplay terminaría de tocar lo que tiene en cola
             out.wait()
             while pausa:
                 time.sleep(0.05)
