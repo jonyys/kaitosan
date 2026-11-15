@@ -50,7 +50,7 @@ def abrir():
     for _ in range(100):
         p = subprocess.Popen(["aplay", "-q", "-D", DEV, "-t", "raw", "-f", "S16_LE",
                               "-r", str(RATE), "-c", str(CH)], stdin=subprocess.PIPE)
-        time.sleep(0.25)
+        time.sleep(0.12)
         if p.poll() is None:
             print(f"música: suena a los {float(open('/proc/uptime').read().split()[0]):.1f} s del arranque", flush=True)
             return p
@@ -80,6 +80,8 @@ except BrokenPipeError:
     pass
 finally:
     dec.kill()
+    if fade_ini is not None:
+        out.kill()  # tras el fundido ya es silencio: que suelte el altavoz sin acabar de vaciar su cola
     try:
         out.stdin.close()
     except OSError:

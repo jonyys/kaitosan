@@ -29,7 +29,7 @@ def _musica_de_carga(senal):
 # ocupados: con la música sonando por el altavoz, la app arrancaría sin verlo y no
 # hablaría. Se pausa un instante la música (suelta el altavoz) mientras se importa.
 _musica_de_carga("-USR2")
-time.sleep(0.5)
+time.sleep(0.2)  # lo justo para que la música suelte el altavoz
 import sounddevice  # noqa: E402,F401
 import soundfile as sf  # noqa: E402
 _musica_de_carga("-HUP")
@@ -2242,10 +2242,10 @@ def _al_conectar():
         # Pregrabado (sin internet) y al 100 %, sin el volumen de Ajustes.
         hola = os.path.join(app.static_folder, "audio", "hola_laura.wav")
         print("👋 Saludo de arranque: Hola Laura")
-        fin = time.monotonic() + 5.0
+        fin = time.monotonic() + 5.1  # el fundido dura 5 s; 0,1 s de margen para que suelte el altavoz
         threading.Thread(target=lambda: tts.decir_grabado(hola, volumen=1.0, no_antes_de=fin),
                          daemon=True).start()
-        socketio.sleep(5.0)
+        socketio.sleep(5.1)
         # Las estrellitas duran lo que la voz y medio segundo más
         socketio.emit("gesto", {"gesto": "estrellitas",
                                 "dur": int((sf.info(hola).duration + 0.5) * 1000)})

@@ -526,6 +526,13 @@ class TextToSpeech:
             data = self._convertir_sample_rate(data, orig_sr=fs, target_sr=self.sample_rate_device)
         if no_antes_de:
             tmod.sleep(max(0.0, no_antes_de - tmod.monotonic()))
+        # Otro proceso (la música de arranque) puede estar soltando el altavoz: espera a que abra
+        for _ in range(30):
+            try:
+                sd.OutputStream(samplerate=self.sample_rate_device, device=self.device, channels=1).close()
+                break
+            except sd.PortAudioError:
+                tmod.sleep(0.1)
         self._reproducir_con_control_boca(data, self._detectar_intervalos_habla(data), volumen=volumen)
 
     def _cargar_trozo(self, ruta: str) -> np.ndarray:
