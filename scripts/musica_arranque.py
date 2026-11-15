@@ -51,6 +51,7 @@ def abrir():
                               "-r", str(RATE), "-c", str(CH)], stdin=subprocess.PIPE)
         time.sleep(0.25)
         if p.poll() is None:
+            print(f"música: suena a los {float(open('/proc/uptime').read().split()[0]):.1f} s del arranque", flush=True)
             return p
     sys.exit(1)
 

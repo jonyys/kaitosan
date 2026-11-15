@@ -3,10 +3,10 @@
 # usuario de la app para poder señalarla. Va después del silencio que abre el DAC.
 [Unit]
 Description=Kaito: música mientras carga
-# Sin dependencias por defecto: arranca en cuanto está el disco, durante la primera
-# pantalla de carga (Plymouth); el script espera a que aparezca la tarjeta.
+# Sin dependencias por defecto ni orden: arranca en el primer instante de systemd
+# (la raíz ya está montada desde el initramfs) y el script espera a que aparezca la
+# tarjeta de sonido, que es lo único que limita cuándo puede sonar.
 DefaultDependencies=no
-After=local-fs.target
 Conflicts=shutdown.target
 Before=shutdown.target
 
