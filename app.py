@@ -15,6 +15,24 @@ import time
 for _s in (sys.stdout, sys.stderr):
     if hasattr(_s, "reconfigure"):
         _s.reconfigure(line_buffering=True)
+
+
+def _musica_de_carga(senal):
+    """Pausa (USR2) o reanuda (HUP) la música de carga; sin ella, no hace nada."""
+    try:
+        subprocess.run(["pkill", senal, "-f", "musica_arranque.py"], check=False)
+    except OSError:  # sin pkill (Windows de desarrollo)
+        pass
+
+
+# PortAudio lista los dispositivos al importar sounddevice y se salta los que están
+# ocupados: con la música sonando por el altavoz, la app arrancaría sin verlo y no
+# hablaría. Se pausa un instante la música (suelta el altavoz) mientras se importa.
+_musica_de_carga("-USR2")
+time.sleep(0.5)
+import sounddevice  # noqa: E402,F401
+_musica_de_carga("-HUP")
+
 from flask import Flask, render_template, request, jsonify, Response, send_file, abort
 from werkzeug.utils import secure_filename
 from flask_socketio import SocketIO

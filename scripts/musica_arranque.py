@@ -26,25 +26,47 @@ def _usr1(*_):
         fade_ini = time.monotonic()
 
 
+def _pausa(*_):  # USR2: suelta el altavoz (la app lo necesita libre para detectarlo)
+    global pausa
+    pausa = True
+
+
+def _sigue(*_):  # HUP: vuelve a sonar
+    global pausa
+    pausa = False
+
+
+pausa = False
 signal.signal(signal.SIGUSR1, _usr1)
+signal.signal(signal.SIGUSR2, _pausa)
+signal.signal(signal.SIGHUP, _sigue)
 dec = subprocess.Popen(["ffmpeg", "-nostdin", "-loglevel", "quiet", "-i", sys.argv[1],
                         "-f", "s16le", "-ar", str(RATE), "-ac", str(CH), "-"],
                        stdout=subprocess.PIPE)
-# Arranca con el sistema, antes de que exista la tarjeta: reintenta hasta que aplay
-# se quede abierto (la tarjeta tarda unos segundos en aparecer).
-for _ in range(100):
-    out = subprocess.Popen(["aplay", "-q", "-D", DEV, "-t", "raw", "-f", "S16_LE",
-                            "-r", str(RATE), "-c", str(CH)], stdin=subprocess.PIPE)
-    time.sleep(0.25)
-    if out.poll() is None:
-        break
-else:
+def abrir():
+    """Arranca con el sistema, antes de que exista la tarjeta: reintenta hasta que
+    aplay se quede abierto (la tarjeta tarda unos segundos en aparecer)."""
+    for _ in range(100):
+        p = subprocess.Popen(["aplay", "-q", "-D", DEV, "-t", "raw", "-f", "S16_LE",
+                              "-r", str(RATE), "-c", str(CH)], stdin=subprocess.PIPE)
+        time.sleep(0.25)
+        if p.poll() is None:
+            return p
     sys.exit(1)
+
+
+out = abrir()
 try:
     while True:
         buf = dec.stdout.read(CHUNK)
         if not buf:
             break
+        if pausa:
+            out.stdin.close()
+            out.wait()
+            while pausa:
+                time.sleep(0.05)
+            out = abrir()
         if fade_ini is not None:
             g = 1 - (time.monotonic() - fade_ini) / FADE
             if g <= 0:
