@@ -2217,15 +2217,27 @@ signal.signal(signal.SIGTERM, _on_sigterm)
 
 # Música de carga (deploy/kaito-arranque.service): cuando sale la cara baila y la
 # música se apaga con un fundido (FADE de scripts/musica_arranque.py). Si no suena, nada.
+_baile_lanzado = False
+
+
 @socketio.on("connect")
 def _al_conectar():
+    global _baile_lanzado
+    if _baile_lanzado:
+        return
     try:
-        if subprocess.run(["pkill", "-USR1", "-f", "musica_arranque.py"],
-                          check=False).returncode == 0:
-            socketio.start_background_task(lambda: (socketio.sleep(1.0),
-                                                    socketio.emit("gesto", {"gesto": "bailar"})))
+        if subprocess.run(["pkill", "-0", "-f", "musica_arranque.py"], check=False).returncode:
+            return  # no suena
     except OSError:  # sin pkill (Windows de desarrollo)
-        pass
+        return
+    _baile_lanzado = True
+
+    def _baila_y_apaga():
+        socketio.sleep(0.5)  # a la página le da tiempo a registrar sus manejadores
+        socketio.emit("gesto", {"gesto": "bailar"})
+        _musica_de_carga("-USR1")  # empieza el fundido a la vez que el baile
+
+    socketio.start_background_task(_baila_y_apaga)
 
 
 if __name__ == "__main__":

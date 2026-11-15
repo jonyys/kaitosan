@@ -12,7 +12,7 @@ import time
 
 import numpy as np
 
-FADE = 4.0
+FADE = 5.0  # el baile de la cara dura 4,5 s: acaba antes que la música
 DEV = "hw:CARD=sndrpihifiberry,DEV=0"
 RATE, CH = 48000, 2
 CHUNK = RATE // 10 * CH * 2  # 0,1 s de s16

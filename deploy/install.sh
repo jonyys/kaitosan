@@ -204,7 +204,8 @@ fi
 log "systemd: daemon-reload + enable + restart"
 systemctl daemon-reload
 systemctl enable kaito.service >/dev/null 2>&1 || true
-systemctl enable kaito-audio-init.service >/dev/null 2>&1 || true
+# la música de carga ya abre el altavoz: el silencio de arranque estorbaría (se pelea por el DAC)
+systemctl disable kaito-audio-init.service >/dev/null 2>&1 || true
 systemctl enable kaito-arranque.service >/dev/null 2>&1 || true
 systemctl enable kaitosan-wifi-connect.service >/dev/null 2>&1 || true
 systemctl restart kaito.service || echo "  AVISO: kaito no arrancó — revisa 'journalctl -u kaito -n 50'"

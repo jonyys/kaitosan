@@ -435,11 +435,11 @@
     ] },
     // Bailar (lo lanza app.py al salir la cara con la música de carga sonando): contento,
     // balanceo de cabeza y botes al ritmo; el último segundo se calma y queda en reposo.
-    bailar: { dur: 5000, peso: 0, pasos: [
+    bailar: { dur: 4500, peso: 0, pasos: [
       [0, () => { m.sonrisa.t = 1; m.inferior.t = 0.4; m.ceja.t = -7; m.cejaArco.t = 0.3; m.pupila.t = 1.12; }],
-      [4500, () => { m.sonrisa.t = 0; m.inferior.t = 0; m.ceja.t = 0; m.cejaArco.t = 0; m.pupila.t = 1; m.cabezaR.t = 0; m.cabezaX.t = 0; m.cabezaY.t = 0; }],
+      [4000, () => { m.sonrisa.t = 0; m.inferior.t = 0; m.ceja.t = 0; m.cejaArco.t = 0; m.pupila.t = 1; m.cabezaR.t = 0; m.cabezaX.t = 0; m.cabezaY.t = 0; }],
     ], cadaCuadro(t) {
-      if (t > 4500) return;
+      if (t > 4000) return;
       const w = (t / 1000) * 2 * Math.PI * 1.1; // ~66 pulsos por minuto
       m.cabezaR.t = 6 * Math.sin(w);
       m.cabezaX.t = 9 * Math.sin(w / 2);
