@@ -556,8 +556,8 @@
    "その",
    "あの"
   ],
-  "explicacion": "Los tres demostrativos dependen de la distancia respecto a los dos que hablan: これ es lo que está cerca de mí, それ lo que está cerca de ti (o lo que acabas de mencionar) y あれ lo que está lejos de los dos. Van solos como pronombre: これはペンです。 それはほんですか。 Delante de un nombre se usan この・その・あの: このペン, そのほん, あのくるま. Nunca se dice これペン: este grupo no puede ir pegado a un nombre.",
-  "tarea": "Situación: Kaito te señala tres objetos imaginarios: uno cerca de él, uno cerca de ti y uno lejos de los dos. Laura tiene que: nombrarlos con la palabra correcta para cada distancia."
+  "explicacion": "Los tres demostrativos dependen de la distancia respecto a los dos que hablan: これ es lo que está cerca de mí, それ lo que está cerca de ti (o lo que acabas de mencionar) y あれ lo que está lejos de los dos. Van solos como pronombre: これはペンです。 それはほんですか。 Delante de un nombre se usan この・その・あの: このペン, そのほん, あのくるま. Nunca se dice これペン ni これの ペン: este grupo no puede ir pegado a un nombre. OJO, cuenta desde quien habla: cuando habla Laura, これ es lo que tiene ella cerca y それ lo que tiene Kaito cerca (Kaito es quien escucha); cuando habla Kaito, al revés.",
+  "tarea": "Situación: Kaito te señala tres objetos imaginarios: uno cerca de él, uno cerca de ti y uno lejos de los dos. Laura tiene que: nombrarlos con la palabra correcta para cada distancia (hablando ella: lo suyo これ, lo de Kaito それ, lo lejano あれ)."
  },
  "demo_preguntar_que": {
   "items": [
@@ -578,7 +578,7 @@
    "こちら",
    "あちら"
   ],
-  "explicacion": "Los lugares siguen la misma lógica que これ・それ・あれ: ここ es el sitio del que habla, そこ el del oyente y あそこ el lejano; どこ pregunta dónde. El patrón es: lugar + は + どこですか。 トイレはどこですか。 Respuesta: あそこです。 Para señalar con cortesía se usan こちら・そちら・あちら: こちらです('por aquí'). Con amigos se oye こっち・あっち. No uses あっち con un cliente o un jefe.",
+  "explicacion": "Los lugares siguen la misma lógica que これ・それ・あれ: ここ es el sitio del que habla, そこ el del oyente y あそこ el lejano (hablando Laura: donde está ella ここ, donde está Kaito そこ); どこ pregunta dónde. El patrón es: lugar + は + どこですか。 トイレはどこですか。 Respuesta: あそこです。 Para señalar con cortesía se usan こちら・そちら・あちら: こちらです('por aquí'). Con amigos se oye こっち・あっち. No uses あっち con un cliente o un jefe.",
   "tarea": "Situación: Kaito hace de cliente de un restaurante y te pregunta dónde está el baño. Laura tiene que: indicárselo y entender lo que te responde."
  },
  "demo_elegir": {

@@ -365,7 +365,7 @@ def test_el_juez_solo_ve_la_frase_de_kaito_en_las_tareas(monkeypatch):
 
     monkeypatch.setenv("JUEZ_MODELO", "x/y")
     monkeypatch.setenv("OPENROUTER_API_KEY", "k")
-    monkeypatch.setattr(clase, "_juez_prov", Prov())
+    monkeypatch.setattr(clase, "_juez_prov", {"x/y": Prov()})
     cd = {"texto": "t", "explicacion": "e", "tarea": "Laura tiene que: saludar"}
     assert clase.juez_cumple(cd, "おはよう", "practicar", contexto="PREGUNTA_DE_KAITO") is True
     assert clase.juez_cumple(cd, "おはよう", "tarea", contexto="PREGUNTA_DE_KAITO") is True
@@ -521,7 +521,7 @@ def test_el_juez_devuelve_el_motivo(monkeypatch):
 
     monkeypatch.setenv("JUEZ_MODELO", "x/y")
     monkeypatch.setenv("OPENROUTER_API_KEY", "k")
-    monkeypatch.setattr(clase, "_juez_prov", Prov())
+    monkeypatch.setattr(clase, "_juez_prov", {"x/y": Prov()})
     cd = {"texto": "t", "explicacion": "e", "tarea": "Laura tiene que: saludar"}
     assert clase.juez_cumple(cd, "のみます", "tarea") is False
     assert clase.MOTIVOS["のみます"] == 'solo dice el "verbo"'
@@ -539,7 +539,7 @@ def test_si_el_juez_dice_que_no_kaito_solo_dice_lo_que_falta_y_en_el_orden_dicho
         return False
     p.juez = juez
     instr = p._instruccion("私はコーヒーを飲みます。お酒を飲みません。")
-    assert "Falta (comprobado): solo dice el verbo" in instr
+    assert "Según el corrector falta: solo dice el verbo" in instr
     assert instr.index("のみます") < instr.index("のみません")      # en el orden en que lo dijo, en kana
     assert "No menciones nada que no esté ahí" in instr
     # sin motivo (el juez no lo da): no señala ningún error concreto

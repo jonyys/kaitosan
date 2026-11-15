@@ -58,7 +58,7 @@ _NOTA_ROMAJI = (
     "escritas como si fueran españolas (p. ej. «Ohio» u «o fallo» = おはよう, «con Bangwa» = "
     "こんばんは, «Yasumi» = おやすみ, «con un chihuahua» = こんにちは). Si se reconocen en ella las "
     "palabras japonesas que pide el objetivo, cumple aunque el resto esté en español.")
-_juez_prov = None
+_juez_prov = {}  # modelo → proveedor
 MOTIVOS = {}  # lo que el juez dijo que falta, por mensaje juzgado: profesor._instruccion se lo da a Kaito
 _VEREDICTO = {"type": "json_schema", "json_schema": {"name": "veredicto", "strict": True, "schema": {
     "type": "object", "properties": {"cumple": {"type": "boolean"}, "falta": {"type": "string"}},
@@ -81,18 +81,21 @@ def juez_cumple(cd, mensaje, fase="tarea", romaji=False, contexto=None):
     """¿Cumple el mensaje lo que pide el objetivo? Un modelo pequeño responde sí/no
     (~1 s). Medido sobre 387 frases: 4 falsos negativos y 15 falsos positivos, frente
     a 75 y 122 con palabras clave. None si no hay clave o falla → vale la comprobación
-    por palabras. JUEZ_MODELO (.env) cambia el modelo; JUEZ_MODELO=off lo apaga.
-    `contexto`: lo último que dijo Kaito. 12-nov, 17 casos ×3 con situación de Kaito:
-    haiku-5.5 50/51, gpt-6-luna 47, gemini-3.1-flash-lite 45 (rechazaba siempre
-    «おはようございます、こんばんは、おやすみなさい»), deepseek-v4.1-flash 44."""
-    global _juez_prov
-    modelo = os.getenv("JUEZ_MODELO", "anthropic/claude-haiku-5.5")
-    if modelo.lower() == "off" or not os.getenv("OPENROUTER_API_KEY"):
+    por palabras. JUEZ_MODELO / JUEZ_MODELO_ROMAJI (.env) cambian el modelo; JUEZ_MODELO=off lo apaga.
+    `contexto`: lo último que dijo Kaito. 12-nov, 17 casos ×3 (saludos, muchos mal transcritos):
+    haiku-5.5 50/51, gpt-6-luna 47, gemini-3.1-flash-lite 45, deepseek-v4.1-flash 44.
+    15-nov, 16 frases en kana de las clases simuladas ×3 (partículas, demostrativos): deepseek
+    41/48, haiku 27/48 (leía mal el kana: «わたしの あねは アナです» → «no usa は»), haiku con
+    razonamiento 34, gpt-6-luna 33, sonnet-5.5 27. Con japonés tomado por español («Ohio», «con
+    Bangwa»), haiku 21/21 y deepseek 18/21: por eso cada uno juzga lo suyo."""
+    modelo = (os.getenv("JUEZ_MODELO_ROMAJI", "anthropic/claude-haiku-5.5") if romaji
+              else os.getenv("JUEZ_MODELO", "deepseek/deepseek-v4.1-flash"))
+    if os.getenv("JUEZ_MODELO", "").lower() == "off" or not os.getenv("OPENROUTER_API_KEY"):
         return None
     try:
-        if _juez_prov is None:
+        if modelo not in _juez_prov:
             from ai.openrouter_provider import OpenRouterProvider
-            _juez_prov = OpenRouterProvider(modelos=[modelo])
+            _juez_prov[modelo] = OpenRouterProvider(modelos=[modelo])
         if fase == "tarea":
             # Solo lo que tiene que hacer: en los repasos la situación la inventa Kaito.
             tarea = "Laura tiene que: " + que_hacer(cd)
@@ -107,7 +110,7 @@ def juez_cumple(cd, mensaje, fase="tarea", romaji=False, contexto=None):
                                 contexto=_contexto_juez(contexto) if fase == "tarea" else "")
         # Esquema obligatorio: con solo «json_object», haiku a veces se ponía a analizar en
         # voz alta las letras españolas y no llegaba al veredicto (2 de cada 4).
-        r = _juez_prov.completar([{"role": "user", "content": p}], max_tokens=90, temperature=0,
+        r = _juez_prov[modelo].completar([{"role": "user", "content": p}], max_tokens=90, temperature=0,
                                  response_format=_VEREDICTO, reasoning_effort="off")
         v = re.findall(r'"cumple"\s*:\s*(true|false)', r)
         if not v:

@@ -47,7 +47,7 @@ from ai.sensei.clase import (
 )
 from ai.sensei.curriculum import CURRICULUM, unidad_actual
 from core import tamagotchi
-from ai.sensei.kana import a_kana, bloques_japones, normalizar_bloques_jp, normalizar_japones, tiene_espanol
+from ai.sensei.kana import a_kana, bloques_japones, normalizar_bloques_jp, normalizar_japones
 from core.config import (
     EXTRACCION_PAUSA_LLAMADAS_SEG,
     EXTRACCION_RETRASO_SEG,
@@ -78,6 +78,43 @@ def _texto_pizarra(entradas):
 def _sin_pizarra(texto):
     """Un mensaje del historial sin su línea PIZARRA (para el juez y para el extractor)."""
     return _RE_PIZARRA.split(texto or "", 1)[0].strip()
+
+
+_RE_FRASE = re.compile(r"(?<=[。．.!?！？:：])\s*|[¿¡\n]")
+_RE_LETRA = re.compile(r"[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]")
+_RE_TRAMO_JP = re.compile(r"[぀-ヿ一-鿿][぀-ヿ一-鿿ー\s、・]*[。．.！？!?]?")
+
+
+def _frases(texto):
+    return [f.strip() for f in _RE_FRASE.split(texto or "") if f and f.strip()]
+
+
+def _frases_japonesas(texto):
+    """Lo que Laura dijo en japonés, tal cual (con espacios y katakana), sin el español de
+    alrededor («Pero si lo he dicho: わたしの ちちは ホセです» → わたしの ちちは ホセです).
+    Simulación 15-nov: con el mensaje entero y normalizado el juez aceptó 6 de 42 frases buenas;
+    solo con el japonés, 27. Fuera: el kana citado en una duda en español («¿y どれ y どっち son lo
+    mismo?») y las palabras sueltas de 1-2 kana."""
+    tramos = []
+    for f in _frases(texto):
+        if "?" in f and len(_RE_LETRA.findall(f)) > len(_RE_JP_CHAR.findall(f)):
+            continue
+        tramos += [t.strip() for t in _RE_TRAMO_JP.findall(f) if len(_RE_JP_CHAR.findall(t)) >= 3]
+    # Con alguna frase terminada, solo esas: lo demás suele ser una palabra citada al comentarla
+    # («わたしの あねは アナです。 La の está entre わたし y あね» → sin el わたし suelto).
+    enteras = [t for t in tramos if t[-1] in "。．.！？!?"]
+    return " ".join(enteras or tramos)
+
+
+# ponytail: solo el caso inequívoco. Citar una palabra y comentarla («しごと ya lo sabía», «dije
+# それは ペンです. Lo que…») es lo normal y no es mezcla: en ~800 mensajes simulados, buscar español
+# entre japonés dio 39 positivos y casi ninguno lo era. «わたしは perro です» lo juzga el juez.
+_RE_MEZCLA_TE = re.compile(r"^[぀-ヿ一-鿿][぀-ヿ一-鿿ー\s、]*[てで][\s,、]+[A-Za-zÁÉÍÓÚáéíóúñ]")  # けさ おきて, y luego…
+
+
+def _frase_mezclada(texto):
+    """¿Deja una frase japonesa a medias en て/で y la acaba en español («けさ おきて, y luego desayuné»)?"""
+    return any("?" not in f and _RE_MEZCLA_TE.match(f.lstrip(" ,.…-")) for f in _frases(texto))
 # Laura quiere pasar a lo siguiente / dice que ya lo sabe: no hay que insistir.
 _RE_SIGUIENTE = re.compile(
     r"pas(a|o|ar|emos)( a| con)? (lo|el|la) siguiente|vamos a lo siguiente|"
@@ -157,10 +194,19 @@ _DESPEDIDAS_LAURA = (
 )
 
 
+# Mezcla: dice en japonés lo que sabe y rellena en español lo que le falta. No cuenta como
+# acierto, pero es la ocasión de darle la palabra.
+_MEZCLA = ("Laura ha mezclado: lo que sabe en japonés y en español lo que le falta. Dile en media "
+           "frase que la parte en japonés va bien, dale en japonés solo lo que dijo en español (corto) "
+           "y pídele que diga la frase entera en japonés.")
+
 # Cierre de las instrucciones que encadenan dos cosas (felicitar + abrir lo nuevo).
 _UNA_PETICION = " Todo el turno acaba con UNA sola petición (la de lo nuevo); nada de «luego» ni segunda tarea."
 
 _EXTRACCION_PROMPT = cargar_prompt("extraccion_sesion")
+# La familia de Laura: lo que «Kaito dijo de sí mismo» con ellos dentro es un ejemplo de ejercicio
+# o una confusión suya, no algo de Kaito que haya que recordar.
+_RE_FAMILIA_LAURA = re.compile(r"\b(jos[eé]|marisa|ana)\b|ホセ|マリサ|アナ", re.IGNORECASE)
 
 
 class ProfesorJapones:
@@ -223,6 +269,7 @@ class ProfesorJapones:
         if not cd or cd.get("patron") in ("te", "ta", "tekudasai", "llano"):
             return  # esos los decide el código, sin juez
         fase = self.clase["fase"]
+        texto = _frases_japonesas(texto) or normalizar_japones(texto)  # lo mismo que juzga _instruccion
         clave = (cd["id"], fase, self._clave_juez(texto))
         if clave not in self._juez_previo:
             self._juez_previo[clave] = (self._pool_juez.submit(
@@ -377,7 +424,9 @@ class ProfesorJapones:
                     and prog.get(cd["id"], {}).get("estado", "no_intentado") in estado]
 
         por_fecha = lambda cd: prog.get(cd["id"], {}).get("ultima_sesion") or 0
-        pend = sorted(candidatos(orden[:idx + 1], ("en_progreso",)), key=por_fecha)
+        # Hasta idx+1, igual que los nuevos: si no, lo empezado de la unidad siguiente no era ni
+        # pendiente ni nuevo y la 2.ª clase se quedaba en charla libre (simulación 15-nov: 38-41 de 50 turnos).
+        pend = sorted(candidatos(orden[:idx + 2], ("en_progreso",)), key=por_fecha)
         if pend:
             return pend[0], "pendiente"
         n = st.get("nuevos", 0)
@@ -468,26 +517,32 @@ class ProfesorJapones:
             return "Responde en una frase a lo que te diga. Luego: " + self._abrir(
                 cd, st.get("tipo") or ("nuevo" if st["fase"] == "presentar" else "pendiente"))
 
+        # Simulación 15-nov: cualquier comentario en español junto a una frase japonesa entera
+        # («Vale, a ver. これは…», «Bebo agua: みずを のみます») contaba como mezcla y Kaito pedía
+        # «dime la frase entera» sin que el juez la viera (~45 turnos). Ahora: mezcla solo si la
+        # MISMA frase empieza en japonés y sigue en español; el juez ve solo el japonés.
+        jp = _frases_japonesas(mensaje)  # su intento en japonés, sin los comentarios en español
+        mezcla = _frase_mezclada(mensaje)
+        # kana citado en una pregunta en español: no es un intento
+        cita = _RE_JP_CHAR.search(mensaje) and not jp and not mezcla
         mensaje = normalizar_japones(mensaje)  # romaji/katakana de Whisper → hiragana
-        errs = errores(cd, mensaje)
-        if errs:
-            dicho, bien, motivo = errs[0]
-            return self._fallo(cd, f"Laura ha dicho 【{dicho}】 y lo correcto es 【{bien}】 porque {motivo}. "
-                    "Si te ha preguntado algo, contéstalo primero en una frase. Corrige SOLO "
-                    "este error diciéndole el porqué (la regla, en español) y pídele que lo "
-                    "intente otra vez con otra frase suya (una sola petición, sin darle la frase hecha).")
-        if (_RE_JP_CHAR.search(mensaje) and tiene_espanol(mensaje)
-                and "?" not in mensaje and "¿" not in mensaje):
-            # Mezcla: dice en japonés lo que sabe y rellena en español lo que le
-            # falta. No cuenta como acierto, pero es la ocasión de darle la palabra.
-            return self._fallo(cd, "Laura ha mezclado: lo que sabe en japonés y en español lo que le falta. "
-                    "Dile en media frase que la parte en japonés va bien, dale en japonés solo "
-                    "lo que dijo en español (corto) y pídele que diga la frase entera en japonés.")
-        if _RE_JP_CHAR.search(mensaje) and usa_patron(
-                cd, mensaje, juez=lambda c, m: self._juzgar(c, m, st["fase"])):
-            return self._acierto(cd)
-        if _RE_JP_CHAR.search(mensaje):
-            return self._fallo(cd, self._instr_no_cumple(cd, mensaje))
+        intento = mensaje if mezcla else "" if cita else (normalizar_japones(jp) if jp else mensaje)
+        para_juez = jp or intento  # el juez lee el japonés tal cual: sin espacios se lía con las partículas
+        if _RE_JP_CHAR.search(intento):
+            errs = errores(cd, intento)
+            if errs:
+                dicho, bien, motivo = errs[0]
+                return self._fallo(cd, f"Laura ha dicho 【{dicho}】 y lo correcto es 【{bien}】 porque {motivo}. "
+                        "Si te ha preguntado algo, contéstalo primero en una frase. Corrige SOLO "
+                        "este error diciéndole el porqué (la regla, en español) y pídele que lo "
+                        "intente otra vez con otra frase suya (una sola petición, sin darle la frase hecha).")
+            if mezcla:
+                return self._fallo(cd, _MEZCLA)
+            if usa_patron(cd, intento, juez=lambda c, m: self._juzgar(c, para_juez, st["fase"])):
+                # Acierto con una duda al lado («¿y por qué が?»): antes la duda se quedaba sin contestar.
+                return (("Laura te ha preguntado algo: contéstaselo primero, corto y bien. "
+                         if "?" in mensaje or "¿" in mensaje else "") + self._acierto(cd))
+            return self._fallo(cd, self._instr_no_cumple(cd, para_juez))
         if _RE_NO_SE.search(mensaje):
             return self._fallo(cd, self._ayuda(cd))
         # «En español» sin preguntar nada: puede ser su respuesta en japonés que Whisper
@@ -527,7 +582,11 @@ class ProfesorJapones:
         noche): sin saber qué fallaba, se inventó un «じゃありません» que Laura no dijo y le dio la
         vuelta al orden de lo que dijo."""
         if self._falta:
-            causa = f"Falta (comprobado): {self._falta}. Dile solo eso, con el porqué. "
+            # No «comprobado»: el corrector también se equivoca (simulación 15-nov: con これ/それ al
+            # revés, Kaito lo repetía como verdad y enseñaba あれ para lo que tiene cerca quien escucha).
+            causa = (f"Según el corrector falta: {self._falta}. Si con lo que se enseña hoy ves que "
+                     "lo que dijo sí está bien, no le digas que está mal: pídele que lo diga otra vez "
+                     "entero. Si de verdad falta, dile solo eso, con el porqué. ")
         else:
             causa = "No se ha podido comprobar qué falla: no señales ningún error; pídele que lo repita entero y despacio. "
         return (f"Lo que ha dicho Laura aún no cumple lo de hoy ({cd['texto']}). Dijo, en su orden: "
@@ -895,7 +954,7 @@ class ProfesorJapones:
 
         # Ítems nuevos que introdujo la sesión: se registran en la BD de vocab/gram
         # (su progreso SRS ya no lo mueve el profesor — lo hará el juego web).
-        for item in data.get("new_items", []):
+        for item in data.get("new_items", [])[:10]:
             jp = _CANONICO.get((item.get("jp") or "").strip(), (item.get("jp") or "").strip())
             es = (item.get("es") or "").strip()
             category = (item.get("category") or "vocabulario").lower()
@@ -920,8 +979,11 @@ class ProfesorJapones:
         )
         # Memoria episódica: lo que Laura contó de su vida, y lo que Kaito
         # afirmó de sí mismo (para que no se contradiga entre sesiones).
-        self.jap_memory.guardar_episodios(session_id, data.get("episodios", []))
-        self.jap_memory.guardar_anecdotas_kaito(session_id, data.get("kaito_dijo", []))
+        # Topes en código: deepseek sin razonamiento no los respeta del prompt (15-nov: 29 ítems, y
+        # «Kaito suele comer con su vecina Marisa», que es la madre de Laura, como hecho de Kaito).
+        self.jap_memory.guardar_episodios(session_id, data.get("episodios", [])[:5])
+        self.jap_memory.guardar_anecdotas_kaito(session_id, [
+            a for a in data.get("kaito_dijo", []) if not _RE_FAMILIA_LAURA.search(a or "")][:5])
 
     def _construir_transcript(self, mensajes=None) -> str:
         lines = []
