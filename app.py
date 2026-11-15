@@ -2241,6 +2241,7 @@ def _al_conectar():
         # musica_arranque.py: 5 s); entonces la cara pone ojos de estrellitas.
         # Pregrabado (sin internet) y al 100 %, sin el volumen de Ajustes.
         hola = os.path.join(app.static_folder, "audio", "hola_laura.wav")
+        print("👋 Saludo de arranque: Hola Laura")
         fin = time.monotonic() + 5.0
         threading.Thread(target=lambda: tts.decir_grabado(hola, volumen=1.0, no_antes_de=fin),
                          daemon=True).start()
