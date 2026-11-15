@@ -72,10 +72,23 @@ class VoiceListener:
         """Punto de entrada público para un único ciclo (usado por /grabar)."""
         self._ciclo_voz()
 
+    def cancelar_escucha(self) -> bool:
+        """Deja de escuchar ya (segundo toque de pantalla o de botón). True si estaba escuchando."""
+        if self.state.get() != "listening":
+            return False
+        ev = getattr(self.recorder, "cancelar", None)
+        if ev is None:
+            return False
+        ev.set()
+        return True
+
     def on_boton(self):
         """Pulsación corta del botón de la caja: escuchar ya, sin decir la palabra clave.
+        Si ya está escuchando, la pulsación lo cancela.
         Con el detector escuchando, él tiene el micro USB abierto y la grabación fallaría
         (Device unavailable): hay que pedirle que lo suelte. En "no molestar" ya está suelto."""
+        if self.cancelar_escucha():
+            return
         if self._detector.en_pausa():
             self._on_wakeword()
         else:
@@ -128,6 +141,9 @@ class VoiceListener:
         if self.state.get() != "idle":
             return False
 
+        ev = getattr(self.recorder, "cancelar", None)
+        if ev is not None:
+            ev.clear()
         self.state.cambiar("listening")
         if mantenido is not None:  # pulsar para hablar: graba hasta soltar el botón
             archivo = self.recorder.record_mientras(mantenido, al_nivel=self._emitir_nivel)

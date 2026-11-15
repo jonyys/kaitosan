@@ -310,7 +310,7 @@ def kiosko_volumen():
 
 @app.route("/kiosko/callar", methods=["POST"])
 def kiosko_callar():
-    """Tocar la pantalla mientras piensa o habla lo calla; si no, nada. La cara pasa a
+    """Tocar la pantalla mientras piensa o habla lo calla, y mientras escucha deja de escuchar. La cara pasa a
     reposo ya, aunque el modelo tarde en contestar: el estado real sigue ocupado hasta
     entonces, para que no empiece otro turno por encima de este."""
     if not _solo_local():
@@ -318,6 +318,8 @@ def kiosko_callar():
     if state.get() in ("thinking", "speaking"):
         tts.callar()
         socketio.emit("estado", {"estado": "idle"})
+    else:
+        voice_listener.cancelar_escucha()  # escuchando: otro toque deja de escuchar
     return jsonify({"ok": True})
 
 

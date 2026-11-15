@@ -2,6 +2,7 @@ import sounddevice as sd
 import soundfile as sf
 import numpy as np
 import os
+import threading
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 DEFAULT_PATH = os.path.join(BASE_DIR, "audio", "input.wav")
@@ -52,6 +53,7 @@ class Recorder:
     def __init__(self, device=None, sample_rate=SAMPLE_RATE_DEVICE):
         self.device = device if device is not None else buscar_microfono()
         self.sample_rate = sample_rate
+        self.cancelar = threading.Event()  # la activa quien quiera que deje de escuchar (botón, pantalla)
 
     def record(self, filename=DEFAULT_PATH,
                duracion=5) -> str:
@@ -186,6 +188,9 @@ class Recorder:
                 blocksize=CHUNK
             ) as stream:
                 for n_chunk in range(max_chunks):
+                    if self.cancelar.is_set():
+                        print("✋ Escucha cancelada")
+                        return None
                     chunk, _ = stream.read(CHUNK)
                     chunk = np.clip(chunk * GANANCIA_SW, -1.0, 1.0)
                     grabacion.append(chunk.copy())
@@ -240,6 +245,9 @@ class Recorder:
             with sd.InputStream(samplerate=self.sample_rate, channels=1, dtype='float32',
                                 device=self.device, blocksize=CHUNK) as stream:
                 for n_chunk in range(int(max_seg * self.sample_rate / CHUNK)):
+                    if self.cancelar.is_set():
+                        print("✋ Escucha cancelada")
+                        return None
                     if soltado.is_set():
                         break
                     chunk, _ = stream.read(CHUNK)

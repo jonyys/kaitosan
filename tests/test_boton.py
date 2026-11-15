@@ -25,7 +25,25 @@ def _listener(en_pausa):
     vl._detector = mock.MagicMock()
     vl._detector.en_pausa.return_value = en_pausa
     vl._on_wakeword = mock.MagicMock()
+    vl.state = mock.MagicMock()
+    vl.state.get.return_value = "idle"
+    vl.recorder = mock.MagicMock()
     return vl
+
+
+def test_segundo_toque_mientras_escucha_cancela_la_grabacion():
+    vl = _listener(en_pausa=False)
+    vl.state.get.return_value = "listening"
+    vl.on_boton()
+    vl.recorder.cancelar.set.assert_called_once()
+    vl._detector.disparar.assert_not_called()
+    vl._on_wakeword.assert_not_called()
+
+
+def test_cancelar_escucha_sin_escuchar_no_hace_nada():
+    vl = _listener(en_pausa=False)
+    assert vl.cancelar_escucha() is False
+    vl.recorder.cancelar.set.assert_not_called()
 
 
 def test_boton_con_el_detector_escuchando_le_pide_soltar_el_micro():
