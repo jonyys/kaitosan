@@ -2236,6 +2236,12 @@ def _al_conectar():
         socketio.sleep(0.5)  # a la página le da tiempo a registrar sus manejadores
         socketio.emit("gesto", {"gesto": "bailar"})
         _musica_de_carga("-USR1")  # empieza el fundido a la vez que el baile
+        # La voz se prepara ya y suena justo cuando la música acaba (FADE de
+        # musica_arranque.py: 5 s); entonces la cara pone ojos de estrellitas.
+        fin = time.monotonic() + 5.0
+        threading.Thread(target=lambda: tts.hablar("Hola Laura", no_antes_de=fin), daemon=True).start()
+        socketio.sleep(5.0)
+        socketio.emit("gesto", {"gesto": "estrellitas"})
 
     socketio.start_background_task(_baila_y_apaga)
 
