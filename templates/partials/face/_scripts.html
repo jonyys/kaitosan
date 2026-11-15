@@ -567,9 +567,14 @@
   }
 
   // Lanza un gesto si está en reposo. Devuelve true si lo ha hecho.
-  function hacerGesto(nombre, forzar = false) {
-    const g = KAWAII[nombre];
+  function hacerGesto(nombre, forzar = false, durMs = 0) {
+    let g = KAWAII[nombre];
     if (!g || (estado !== "idle" && !forzar)) return false;
+    // Duración a medida (la pide el backend): los pasos del final se adelantan lo mismo
+    if (g && durMs > 0 && durMs < g.dur) {
+      const resta = g.dur - durMs;
+      g = { ...g, dur: durMs, pasos: g.pasos.map(([t, f]) => [t > durMs / 2 ? Math.max(0, t - resta) : t, f]) };
+    }
     terminarGesto();
     prox.finGesto = 0;
     aplicarModo();
@@ -1315,7 +1320,7 @@
   });
 
   // El backend puede pedir un gesto: socketio.emit("gesto", {"gesto": "corazones"})
-  socket.on("gesto", (data) => hacerGesto(data && data.gesto));
+  socket.on("gesto", (data) => hacerGesto(data && data.gesto, false, data && data.dur));
   window.kaitoGesto = hacerGesto; // para probar desde la consola
 
   // Prueba rápida en la pantalla: /?gesto=corazones (o ?gesto=todos para verlos seguidos)

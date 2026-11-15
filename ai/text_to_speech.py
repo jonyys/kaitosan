@@ -415,7 +415,7 @@ class TextToSpeech:
         """Corta la voz al instante, desde cualquier hilo (ver _sonar)."""
         self._callado.set()
 
-    def _sonar(self, data):
+    def _sonar(self, data, volumen=None):
         """Reproduce `data` hasta el final o hasta callar(), y no vuelve antes.
 
         No se usa sd.play + sd.stop: en la Pi, parar o cerrar el stream desde otro
@@ -423,7 +423,7 @@ class TextToSpeech:
         Al callar, el propio callback termina el stream, igual que al acabarse el audio.
         """
         from core.system_settings import volumen_factor
-        data = data * volumen_factor()
+        data = data * (volumen_factor() if volumen is None else volumen)
         pos = 0
         terminado = threading.Event()
 
@@ -513,6 +513,20 @@ class TextToSpeech:
 
         except Exception as e:
             print(f"❌ Error en TTS: {e}")
+
+    def decir_grabado(self, ruta: str, volumen=1.0, no_antes_de=None) -> None:
+        """Reproduce un audio ya grabado (wav/mp3) moviendo la boca, sin red ni sintetizador.
+        `volumen` 0..1 sustituye al volumen de Ajustes (1.0 = a tope); `no_antes_de`
+        (time.monotonic) retrasa el inicio, igual que en hablar()."""
+        data, fs = sf.read(ruta)
+        data = data.astype(np.float32)
+        if data.ndim > 1:
+            data = data.mean(axis=1)
+        if fs != self.sample_rate_device:
+            data = self._convertir_sample_rate(data, orig_sr=fs, target_sr=self.sample_rate_device)
+        if no_antes_de:
+            tmod.sleep(max(0.0, no_antes_de - tmod.monotonic()))
+        self._reproducir_con_control_boca(data, self._detectar_intervalos_habla(data), volumen=volumen)
 
     def _cargar_trozo(self, ruta: str) -> np.ndarray:
         """mp3 de un trozo → audio mono float32 a la frecuencia del altavoz."""
@@ -726,7 +740,7 @@ class TextToSpeech:
             intervalos.append((inicio, len(audio) / sr))
         return intervalos
 
-    def _reproducir_con_control_boca(self, data, intervalos, on_stop=None):
+    def _reproducir_con_control_boca(self, data, intervalos, on_stop=None, volumen=None):
         import time as tmod
 
         sio = getattr(self, 'socketio', None)
@@ -738,7 +752,7 @@ class TextToSpeech:
             return
 
         if not sio or not intervalos:
-            self._sonar(data)
+            self._sonar(data, volumen)
             if on_stop:
                 on_stop()
             return
@@ -772,6 +786,6 @@ class TextToSpeech:
 
         t = threading.Thread(target=control_boca, daemon=True)
         t.start()
-        self._sonar(data)
+        self._sonar(data, volumen)
         if on_stop:
             on_stop()

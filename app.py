@@ -31,6 +31,7 @@ def _musica_de_carga(senal):
 _musica_de_carga("-USR2")
 time.sleep(0.5)
 import sounddevice  # noqa: E402,F401
+import soundfile as sf  # noqa: E402
 _musica_de_carga("-HUP")
 
 from flask import Flask, render_template, request, jsonify, Response, send_file, abort
@@ -2238,10 +2239,15 @@ def _al_conectar():
         _musica_de_carga("-USR1")  # empieza el fundido a la vez que el baile
         # La voz se prepara ya y suena justo cuando la música acaba (FADE de
         # musica_arranque.py: 5 s); entonces la cara pone ojos de estrellitas.
+        # Pregrabado (sin internet) y al 100 %, sin el volumen de Ajustes.
+        hola = os.path.join(app.static_folder, "audio", "hola_laura.wav")
         fin = time.monotonic() + 5.0
-        threading.Thread(target=lambda: tts.hablar("Hola Laura", no_antes_de=fin), daemon=True).start()
+        threading.Thread(target=lambda: tts.decir_grabado(hola, volumen=1.0, no_antes_de=fin),
+                         daemon=True).start()
         socketio.sleep(5.0)
-        socketio.emit("gesto", {"gesto": "estrellitas"})
+        # Las estrellitas duran lo que la voz y medio segundo más
+        socketio.emit("gesto", {"gesto": "estrellitas",
+                                "dur": int((sf.info(hola).duration + 0.5) * 1000)})
 
     socketio.start_background_task(_baila_y_apaga)
 

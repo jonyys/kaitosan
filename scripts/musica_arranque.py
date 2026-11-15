@@ -12,6 +12,7 @@ import time
 
 import numpy as np
 
+VOLUMEN = 0.7  # la música suena al 70 %; la voz de saludo va a tope
 FADE = 5.0  # el baile de la cara dura 4,5 s: acaba antes que la música
 DEV = "hw:CARD=sndrpihifiberry,DEV=0"
 RATE, CH = 48000, 2
@@ -68,11 +69,12 @@ try:
             while pausa:
                 time.sleep(0.05)
             out = abrir()
+        g = VOLUMEN
         if fade_ini is not None:
-            g = 1 - (time.monotonic() - fade_ini) / FADE
+            g *= 1 - (time.monotonic() - fade_ini) / FADE
             if g <= 0:
                 break
-            buf = (np.frombuffer(buf, np.int16) * g).astype(np.int16).tobytes()
+        buf = (np.frombuffer(buf, np.int16) * g).astype(np.int16).tobytes()
         out.stdin.write(buf)
 except BrokenPipeError:
     pass
