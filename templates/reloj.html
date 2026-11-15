@@ -279,7 +279,7 @@
   </div>
   <div class="dias" id="dias-alarma"></div>
   <div class="dias-txt" id="dias-txt">Solo una vez</div>
-  <button class="tono" style="top:338px" onclick="abrirTonos(this)" aria-label="Elegir el tono">♪ <b></b> ▾</button>
+  <button class="tono" style="top:338px" onclick="abrirTonos(this)" aria-label="Elegir el tono"><b></b> ▾</button>
   <div class="hoja-acciones">
     <button class="btn btn-yellow" onclick="cerrarModal()">Cancelar</button>
     <button class="btn btn-blue" onclick="guardarAlarma()">Guardar</button>
@@ -299,7 +299,7 @@
     <button onclick="fijarTemporizador(10)">10 min</button>
     <button onclick="fijarTemporizador(15)">15 min</button>
   </div>
-  <button class="tono" style="top:322px" onclick="abrirTonos(this)" aria-label="Elegir el tono">♪ <b></b> ▾</button>
+  <button class="tono" style="top:322px" onclick="abrirTonos(this)" aria-label="Elegir el tono"><b></b> ▾</button>
   <div class="hoja-acciones" style="top:368px">
     <button class="btn btn-yellow" onclick="cerrarModal()">Cancelar</button>
     <button class="btn btn-blue" onclick="iniciarTemporizador()">Iniciar</button>
@@ -319,14 +319,14 @@
   <div class="ruedas"><div class="banda" style="left:70px;right:70px"></div>
     <div class="rueda ancha" id="rueda-rd" style="width:150px"></div><div class="rueda" id="rueda-rh" style="width:66px"></div><span class="sep">:</span><div class="rueda" id="rueda-rm" style="width:66px"></div>
   </div>
-  <button class="tono" style="top:268px" onclick="abrirTonos(this)" aria-label="Elegir el tono">♪ <b></b> ▾</button>
+  <button class="tono" style="top:268px" onclick="abrirTonos(this)" aria-label="Elegir el tono"><b></b> ▾</button>
   <div class="hoja-acciones" style="top:318px">
     <button class="btn btn-yellow" onclick="abrirRecordatorio(true)">Atrás</button>
     <button class="btn btn-blue" onclick="guardarRecordatorio()">Guardar</button>
   </div>
 </div>
 
-<!-- Desplegable de tonos: se coloca encima del botón ♪ que lo abre -->
+<!-- Desplegable de tonos: se coloca encima del botón de tono que lo abre -->
 <div id="tonoMenu" data-no-tap onclick="if (event.target === this) cerrarTonos()"><div class="menu"></div></div>
 
 <!-- Toast -->
@@ -340,7 +340,7 @@
   let pospuestas = [];
   let temporizadores = [];
   let editandoId = null;   // null = alarma nueva
-  // Tono del aviso que se está creando o editando: un toque en el botón ♪ pasa al siguiente
+  // Tono del aviso que se está creando o editando: el botón de tono abre el desplegable
   const TONOS = {{ tonos|tojson }}, TONO_DEFECTO = {{ tono_defecto|tojson }};
   let tonoSel = TONO_DEFECTO;
   function ponerTono(id) {
