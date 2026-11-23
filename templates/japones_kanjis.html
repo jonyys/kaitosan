@@ -30,6 +30,15 @@
         font-weight: 700;
         color: var(--text-suave, var(--text));
       }
+      .kanji-card.viaje { position: relative; }
+      .kanji-card.viaje::before {
+        content: "✈";
+        position: absolute;
+        top: 6px;
+        right: 8px;
+        font-size: 11px;
+        opacity: 0.6;
+      }
       .kanji-cat {
         flex: none;
         white-space: nowrap;
@@ -476,7 +485,7 @@
         <div class="kanji-grid">
           {% for item in kanjis %}
           <a
-            class="kanji-card {% if selected and selected.kanji == item.kanji %}active{% endif %} {% if item.dominado %}dominado{% endif %}"
+            class="kanji-card {% if selected and selected.kanji == item.kanji %}active{% endif %} {% if item.dominado %}dominado{% endif %} {% if item.categoria.startswith('viaje_') %}viaje{% endif %}"
             data-cat="{{ item.categoria }}"
             href="/japones/kanjis?kanji={{ item.kanji | urlencode }}"
           >
