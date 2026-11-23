@@ -79,8 +79,8 @@
         </div>
 
         <div class="cu-barra">
-          <button type="button" class="btn btn-ghost activo" id="cu-pluma">Bolígrafo</button>
-          <button type="button" class="btn btn-ghost" id="cu-goma">Goma</button>
+          <button type="button" class="btn btn-ghost activo" id="cu-pluma" title="Lápiz" aria-label="Lápiz"><svg class="ico"><use href="#i-pencil" /></svg></button>
+          <button type="button" class="btn btn-ghost" id="cu-goma" title="Goma" aria-label="Goma"><svg class="ico"><use href="#i-eraser" /></svg></button>
           <span class="cu-sep"></span>
           <button type="button" class="btn btn-ghost" id="cu-deshacer" title="Deshacer" aria-label="Deshacer"><svg class="ico"><use href="#i-undo" /></svg></button>
           <button type="button" class="btn btn-ghost cu-rehacer" id="cu-rehacer" title="Rehacer" aria-label="Rehacer"><svg class="ico"><use href="#i-undo" /></svg></button>
@@ -93,10 +93,6 @@
         </div>
 
         <div class="cu-opciones" id="cu-opciones" hidden>
-          <select class="cu-select" id="cu-estilo" aria-label="Tipo de trazo">
-            <option value="boli">Bolígrafo</option>
-            <option value="pluma">Pluma antigua</option>
-          </select>
           <input type="color" class="cu-color" id="cu-color" value="#000000" title="Color libre" aria-label="Color" />
           <button type="button" class="cu-muestra" data-c="#000000" style="background: #000000" aria-label="Negro"></button>
           <button type="button" class="cu-muestra" data-c="#e53935" style="background: #e53935" aria-label="Rojo"></button>
@@ -137,7 +133,7 @@
         var rehacer = [];
         var tarjetas = {{ tarjetas | tojson }};
         var fondo = {{ pagina.fondo | tojson }} || "liso";
-        var herramienta = "pluma", estilo = "boli", color = "#000000", ancho = 3;
+        var herramienta = "pluma", color = "#000000", ancho = 3;
         var usaLapiz = false; // si se ve un lápiz, el dedo/palma no dibuja
 
         var $ = function (id) { return document.getElementById(id); };
@@ -177,42 +173,9 @@
           cctx.arc(t.p[0][0] * esc, t.p[0][1] * esc, grosor(t, t.p[0]) * esc / 2, 0, 6.2832);
           cctx.fill();
         }
-        // Pluma antigua (punta ancha cortada en diagonal): cada tramo es el paralelogramo que barre la punta;
-        // el trazo sale grueso al cruzar la punta y casi un pelo al ir en su misma dirección.
-        var ANGULO_PUNTA = -0.7; // ~40° hacia arriba a la derecha
-        function puntaVec(t, p) {
-          var h = grosor(t, p) * esc / 2;
-          return [Math.cos(ANGULO_PUNTA) * h, Math.sin(ANGULO_PUNTA) * h];
-        }
-        function plumaTramo(t, i) {
-          var a = t.p[i - 1], b = t.p[i], na = puntaVec(t, a), nb = puntaVec(t, b);
-          var ax = a[0] * esc, ay = a[1] * esc, bx = b[0] * esc, by = b[1] * esc;
-          cctx.beginPath();
-          cctx.moveTo(ax - na[0], ay - na[1]);
-          cctx.lineTo(ax + na[0], ay + na[1]);
-          cctx.lineTo(bx + nb[0], by + nb[1]);
-          cctx.lineTo(bx - nb[0], by - nb[1]);
-          cctx.closePath();
-          cctx.fill();
-          cctx.lineWidth = Math.max(1, 0.8 * esc); // tapa las costuras entre tramos
-          cctx.stroke();
-        }
-        function plumaPunto(t) {
-          var a = t.p[0], n = puntaVec(t, a);
-          cctx.lineWidth = Math.max(1.5, 1.6 * esc);
-          cctx.beginPath();
-          cctx.moveTo(a[0] * esc - n[0], a[1] * esc - n[1]);
-          cctx.lineTo(a[0] * esc + n[0], a[1] * esc + n[1]);
-          cctx.stroke();
-        }
         function trazar(t) {
           if (!t.p || !t.p.length) return;
           pincel(t);
-          if (t.b) { // trazo de pluma antigua
-            if (t.p.length === 1) return plumaPunto(t);
-            for (var k = 1; k < t.p.length; k++) plumaTramo(t, k);
-            return;
-          }
           if (t.p.length === 1) return punto(t);
           for (var i = 1; i < t.p.length; i++) seg(t, i);
           cola(t);
@@ -348,9 +311,7 @@
           e.preventDefault();
           lienzo.setPointerCapture(e.pointerId);
           var goma = herramienta === "goma";
-          var pluma = !goma && estilo === "pluma";
-          actual = { c: color, w: goma ? ancho * 4 : pluma ? ancho * 3 : ancho, e: goma ? 1 : 0, b: pluma ? 1 : 0,
-                     p: [logico(e, e.pointerType === "pen")], id: e.pointerId };
+          actual = { c: color, w: goma ? ancho * 4 : ancho, e: goma ? 1 : 0, p: [logico(e, e.pointerType === "pen")], id: e.pointerId };
           redibujar();
         });
         lienzo.addEventListener("pointermove", function (e) {
@@ -363,7 +324,7 @@
             var p = logico(ev, pen), q = actual.p[actual.p.length - 1];
             if (Math.abs(p[0] - q[0]) + Math.abs(p[1] - q[1]) < 0.6) return; // punto repetido
             actual.p.push(p);
-            (actual.b ? plumaTramo : seg)(actual, actual.p.length - 1);
+            seg(actual, actual.p.length - 1);
           });
           componer();
         });
@@ -402,14 +363,6 @@
           this.setAttribute("aria-expanded", abrir);
           this.classList.toggle("activo", abrir);
         });
-        function ponerEstilo(v) {
-          estilo = v === "pluma" ? "pluma" : "boli";
-          $("cu-estilo").value = estilo;
-          $("cu-pluma").textContent = estilo === "pluma" ? "Pluma" : "Bolígrafo";
-          try { localStorage.setItem("cuEstilo", estilo); } catch (e) {}
-        }
-        $("cu-estilo").addEventListener("change", function () { ponerEstilo(this.value); usar("pluma"); });
-        try { ponerEstilo(localStorage.getItem("cuEstilo")); } catch (e) { ponerEstilo("boli"); }
         $("cu-pluma").addEventListener("click", function () { usar("pluma"); });
         $("cu-goma").addEventListener("click", function () { usar("goma"); });
         $("cu-deshacer").addEventListener("click", function () {
