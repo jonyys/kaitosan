@@ -603,7 +603,7 @@
           onclick='document.getElementById("kanji-ficha-pop").close(); cardForm.editar({{ _ed | tojson }})'>Editar card</button>
         <form method="POST" action="/japones/card/kanji/borrar" class="js-borrar" style="display: inline">
           <input type="hidden" name="jp" value="{{ selected.kanji }}" />
-          <button type="submit" class="btn btn-ghost" style="font-size: 12px; color: var(--peligro-tinta)">Eliminar card</button>
+          <button type="submit" class="btn" style="font-size: 12px; background: var(--peligro-fill); color: #fff; border: 0">Eliminar card</button>
         </form>
       </div>
       {% if selected.dominado %}
