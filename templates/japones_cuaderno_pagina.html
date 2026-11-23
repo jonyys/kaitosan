@@ -7,7 +7,10 @@
     {% include 'partials/admin/_estilos.html' %}
     <style>
       .cu-titulo { width: 100%; box-sizing: border-box; font-size: 16px; font-weight: 700; margin-bottom: 10px; }
-      .cu-ref { display: flex; gap: 10px; overflow-x: auto; margin-bottom: 12px; }
+      .cu-top { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+      .cu-top .btn { flex: none; font-size: 12px; padding: 8px 12px; }
+      .cu-top .btn .ico { width: 16px; height: 16px; }
+      .cu-ref { display: flex; flex: 0 1 auto; min-width: 0; gap: 10px; overflow-x: auto; }
       .cu-ref:empty { display: none; }
       .cu-ref-item { position: relative; flex: 0 0 auto; text-align: center; background: var(--surface-2); border: 1px solid var(--border-fuerte); border-radius: var(--radio-sm); padding: 8px 14px; }
       .cu-ref-item b { display: block; font-size: 40px; line-height: 1.15; color: var(--rosa-tinta); }
@@ -28,10 +31,19 @@
       .cu-ancho { width: 110px; }
       .cu-select option { background: var(--bg); color: var(--text); }
       .cu-select { font: inherit; font-size: 12px; color: var(--text); background: var(--surface-2); border: 1px solid var(--border-fuerte); border-radius: var(--radio-sm); padding: 8px; }
-      .cu-estado { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--text-soft); }
+      .cu-estado { font-size: 12px; font-weight: 700; color: var(--text-soft); }
+      .cu-der { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+      .cu-opciones { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 10px; margin-bottom: 10px; border: 1px solid var(--border-fuerte); border-radius: var(--radio-sm); background: var(--surface-2); }
+      .cu-opciones[hidden] { display: none; }
+      .cu-opciones .btn { font-size: 12px; padding: 8px 12px; }
+      .cu-opciones .btn .ico { width: 16px; height: 16px; }
 
       /* el papel es siempre blanco, como el de verdad (también en los temas oscuros) */
-      .cu-papel { position: relative; width: 100%; max-width: 720px; margin: 0 auto; aspect-ratio: 3 / 4; background: #fff; border: 1px solid var(--border-fuerte); border-radius: 6px; box-shadow: var(--sombra-sm); overflow: hidden; }
+      .cu-marco { position: relative; max-width: 720px; margin: 0 auto; }
+      .cu-visor { width: 100%; aspect-ratio: 3 / 4; overflow: hidden; touch-action: none; background: #fff; border: 1px solid var(--border-fuerte); border-radius: 6px; box-shadow: var(--sombra-sm); }
+      .cu-papel { position: relative; width: 100%; aspect-ratio: 3 / 4; background: #fff; }
+      .cu-zoom1 { position: absolute; top: 8px; right: 8px; font-size: 12px; padding: 6px 10px; background: rgba(20, 20, 20, 0.8); color: #fff; border-color: transparent; } /* sobre el papel blanco, no depende del tema */
+      .cu-zoom1[hidden] { display: none; }
       .cu-papel canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
 
 
@@ -63,7 +75,10 @@
       <div class="card full">
         <input type="text" class="cu-titulo" id="cu-titulo" maxlength="80" placeholder="Título (opcional)" autocomplete="off" value="{{ pagina.titulo }}" />
 
-        <div class="cu-ref" id="cu-ref" aria-label="Tarjetas para copiar"></div>
+        <div class="cu-top">
+          <div class="cu-ref" id="cu-ref" aria-label="Tarjetas para copiar"></div>
+          <button type="button" class="btn btn-ghost" id="cu-vincular" title="Vincula las tarjetas que practicas en esta página: salen aquí arriba y su ficha mostrará la página"><svg class="ico"><use href="#i-plus" /></svg> Vincular tarjetas</button>
+        </div>
 
         <div class="cu-barra">
           <button type="button" class="btn btn-ghost activo" id="cu-pluma">Pluma</button>
@@ -71,12 +86,16 @@
           <span class="cu-sep"></span>
           <button type="button" class="btn btn-ghost" id="cu-deshacer" title="Deshacer" aria-label="Deshacer"><svg class="ico"><use href="#i-undo" /></svg></button>
           <button type="button" class="btn btn-ghost cu-rehacer" id="cu-rehacer" title="Rehacer" aria-label="Rehacer"><svg class="ico"><use href="#i-undo" /></svg></button>
-          <button type="button" class="btn btn-ghost" id="cu-limpiar" title="Borrar toda la página" aria-label="Borrar toda la página"><svg class="ico"><use href="#i-trash" /></svg></button>
-          <button type="button" class="btn btn-ghost" id="cu-pdf" title="Descargar en PDF para imprimir" style="font-size: 12px">PDF</button>
-          <span class="cu-estado" id="cu-estado" aria-live="polite">Guardado</span>
+          <span class="cu-sep"></span>
+          <button type="button" class="btn btn-ghost" id="cu-opc-btn" aria-expanded="false" aria-controls="cu-opciones"><svg class="ico"><use href="#i-sliders" /></svg> Opciones</button>
+          <span class="cu-der">
+            <span class="cu-estado" id="cu-estado" aria-live="polite">Guardado</span>
+            <button type="button" class="btn btn-ghost" id="cu-pdf" title="Descargar la página en PDF (para imprimir)" aria-label="Descargar en PDF"><svg class="ico"><use href="#i-download" /></svg></button>
+          </span>
         </div>
-        <div class="cu-barra">
-          <input type="color" class="cu-color" id="cu-color" value="#000000" title="Color" aria-label="Color" />
+
+        <div class="cu-opciones" id="cu-opciones" hidden>
+          <input type="color" class="cu-color" id="cu-color" value="#000000" title="Color libre" aria-label="Color" />
           <button type="button" class="cu-muestra" data-c="#000000" style="background: #000000" aria-label="Negro"></button>
           <button type="button" class="cu-muestra" data-c="#e53935" style="background: #e53935" aria-label="Rojo"></button>
           <button type="button" class="cu-muestra" data-c="#1e66f5" style="background: #1e66f5" aria-label="Azul"></button>
@@ -84,19 +103,20 @@
           <button type="button" class="cu-muestra" data-c="#f0a000" style="background: #f0a000" aria-label="Ámbar"></button>
           <span class="cu-sep"></span>
           <input type="range" class="cu-ancho" id="cu-ancho" min="1" max="14" step="0.5" value="3" aria-label="Grosor" />
-          <select class="cu-select" id="cu-fondo" aria-label="Fondo del papel">
+          <select class="cu-select" id="cu-fondo" aria-label="Tipo de hoja">
             <option value="liso">Liso</option>
             <option value="rayas">Rayas</option>
             <option value="cuadricula">Cuadrícula</option>
             <option value="kanji">Cuadros de kanji</option>
             <option value="puntos">Puntos</option>
           </select>
+          <button type="button" class="btn btn-ghost" id="cu-limpiar"><svg class="ico"><use href="#i-trash" /></svg> Borrar página</button>
         </div>
 
-        <div class="cu-papel" id="cu-papel"><canvas id="cu-lienzo"></canvas></div>
-
-        <p class="empty" id="cu-sin-tarjetas" hidden>Vincula aquí las tarjetas que estás practicando: aparecerán arriba para copiarlas y su ficha mostrará esta página.</p>
-        <button type="button" class="btn btn-ghost" id="cu-vincular" style="margin-top: 12px; font-size: 12px">Vincular tarjetas</button>
+        <div class="cu-marco">
+          <div class="cu-visor" id="cu-visor"><div class="cu-papel" id="cu-papel"><canvas id="cu-lienzo"></canvas></div></div>
+          <button type="button" class="btn btn-ghost cu-zoom1" id="cu-zoom1" hidden title="Volver al tamaño normal">1:1</button>
+        </div>
       </div>
     </div>
 
@@ -120,7 +140,7 @@
         var usaLapiz = false; // si se ve un lápiz, el dedo/palma no dibuja
 
         var $ = function (id) { return document.getElementById(id); };
-        var papel = $("cu-papel"), lienzo = $("cu-lienzo"), ctx = lienzo.getContext("2d");
+        var visor = $("cu-visor"), papel = $("cu-papel"), lienzo = $("cu-lienzo"), ctx = lienzo.getContext("2d");
         var capa = document.createElement("canvas"), cctx = capa.getContext("2d"); // trazos sobre transparente (la goma borra aquí, no el papel)
         var esc = 1; // píxeles de canvas por unidad lógica
 
@@ -209,7 +229,7 @@
           componer();
         }
         function ajustar() {
-          var dpr = window.devicePixelRatio || 1, w = Math.round(papel.clientWidth * dpr);
+          var dpr = window.devicePixelRatio || 1, w = Math.min(2400, Math.round(papel.clientWidth * dpr)); // tope: los móviles no admiten canvas enormes
           if (!w) return;
           lienzo.width = capa.width = w;
           lienzo.height = capa.height = Math.round(w * H / W);
@@ -227,9 +247,71 @@
           if (pen && e.pressure > 0) p.push(Math.round(e.pressure * 100) / 100);
           return p;
         }
+        // ---------- zoom (dos dedos, ctrl+rueda) ----------
+        // La hoja se agranda cambiando su ancho dentro del visor (el canvas se redibuja nítido);
+        // durante el gesto solo se escala con transform para que vaya fluido.
+        var ZMAX = 4, zoom = 1, toques = {}, gesto = null;
+        function nToques() { return Object.keys(toques).length; }
+        function dosToques() { var k = Object.keys(toques); return [toques[k[0]], toques[k[1]]]; }
+        function medioToques(t) { return { x: (t[0].x + t[1].x) / 2, y: (t[0].y + t[1].y) / 2 }; }
+        function ponerZoom(z, sl, st) {
+          zoom = z < 1.03 ? 1 : z;
+          papel.style.width = zoom * 100 + "%";
+          visor.scrollLeft = zoom === 1 ? 0 : sl;
+          visor.scrollTop = zoom === 1 ? 0 : st;
+          $("cu-zoom1").hidden = zoom === 1;
+        }
+        function empezarGesto() {
+          if (actual) { actual = null; redibujar(); } // el primer dedo no deja trazo
+          var t = dosToques(), V = visor.getBoundingClientRect(), m = medioToques(t);
+          gesto = { d0: Math.hypot(t[0].x - t[1].x, t[0].y - t[1].y) || 1, Z0: zoom, V: V, f: 1, m: m,
+                    sx: visor.scrollLeft, sy: visor.scrollTop,
+                    cx: visor.scrollLeft + m.x - V.left, cy: visor.scrollTop + m.y - V.top };
+        }
+        function moverGesto() {
+          var t = dosToques(), g = gesto, m = medioToques(t);
+          var Z = Math.min(ZMAX, Math.max(1, g.Z0 * Math.hypot(t[0].x - t[1].x, t[0].y - t[1].y) / g.d0));
+          g.f = Z / g.Z0;
+          g.m = m;
+          papel.style.transformOrigin = "0 0";
+          papel.style.transform = "translate(" + (m.x - g.V.left + g.sx - g.cx * g.f) + "px," +
+                                  (m.y - g.V.top + g.sy - g.cy * g.f) + "px) scale(" + g.f + ")";
+        }
+        function acabarGesto() {
+          var g = gesto;
+          gesto = null;
+          papel.style.transform = "";
+          ponerZoom(g.Z0 * g.f, g.cx * g.f - (g.m.x - g.V.left), g.cy * g.f - (g.m.y - g.V.top));
+        }
+        visor.addEventListener("wheel", function (e) {
+          if (e.ctrlKey) { // pellizco del trackpad o ctrl + rueda
+            e.preventDefault();
+            var V = visor.getBoundingClientRect(), nz = Math.min(ZMAX, Math.max(1, zoom * Math.exp(-e.deltaY * 0.01)));
+            var f = nz / zoom, cx = visor.scrollLeft + e.clientX - V.left, cy = visor.scrollTop + e.clientY - V.top;
+            ponerZoom(nz, cx * f - (e.clientX - V.left), cy * f - (e.clientY - V.top));
+          } else if (zoom > 1) {
+            e.preventDefault();
+            visor.scrollLeft += e.deltaX;
+            visor.scrollTop += e.deltaY;
+          }
+        }, { passive: false });
+        ["gesturestart", "gesturechange"].forEach(function (n) { visor.addEventListener(n, function (e) { e.preventDefault(); }); }); // Safari: sin zoom de página
+        $("cu-zoom1").addEventListener("click", function () { ponerZoom(1, 0, 0); });
+        lienzo.addEventListener("pointermove", function (e) {
+          if (!toques[e.pointerId]) return;
+          toques[e.pointerId].x = e.clientX;
+          toques[e.pointerId].y = e.clientY;
+          if (gesto) moverGesto();
+        });
+
         lienzo.addEventListener("pointerdown", function (e) {
           if (e.pointerType === "pen") usaLapiz = true;
-          if (e.pointerType === "touch" && usaLapiz) return; // palma
+          if (e.pointerType === "touch") {
+            toques[e.pointerId] = { x: e.clientX, y: e.clientY };
+            if (nToques() >= 2) { if (!gesto) empezarGesto(); return; } // dos dedos: zoom, nunca dibujan
+            if (usaLapiz) return; // palma
+          }
+          if (gesto) return;
           if (e.pointerType === "mouse" && e.button !== 0) return;
           e.preventDefault();
           lienzo.setPointerCapture(e.pointerId);
@@ -252,6 +334,10 @@
           componer();
         });
         function soltar(e) {
+          if (toques[e.pointerId]) {
+            delete toques[e.pointerId];
+            if (gesto && nToques() < 2) acabarGesto();
+          }
           if (!actual || e.pointerId !== actual.id) return;
           var t = actual;
           actual = null;
@@ -276,6 +362,12 @@
           $("cu-pluma").classList.toggle("activo", h === "pluma");
           $("cu-goma").classList.toggle("activo", h === "goma");
         }
+        $("cu-opc-btn").addEventListener("click", function () {
+          var abrir = $("cu-opciones").hidden;
+          $("cu-opciones").hidden = !abrir;
+          this.setAttribute("aria-expanded", abrir);
+          this.classList.toggle("activo", abrir);
+        });
         $("cu-pluma").addEventListener("click", function () { usar("pluma"); });
         $("cu-goma").addEventListener("click", function () { usar("goma"); });
         $("cu-deshacer").addEventListener("click", function () {
@@ -411,7 +503,6 @@
             if (t.reading) hijo(r, "span", "rd", t.reading);
             hijo(r, "span", "", t.meaning);
           });
-          $("cu-sin-tarjetas").hidden = tarjetas.length > 0;
         }
         function enviar(ruta, t) {
           return fetch(BASE + "/" + ruta, { method: "POST", headers: { "Content-Type": "application/json" },
