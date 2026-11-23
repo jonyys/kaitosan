@@ -367,12 +367,251 @@ _CATEGORIAS = [
 ]
 
 
+# Palabras y carteles de viaje (Japón en abril). NO entran en el temario del sensei
+# (`unidades_kanji` solo mira _CATEGORIAS): solo en la página de kanjis y su práctica.
+# Compuestos: on "—", kun = lectura entera en hiragana, trazos = solo los de los kanji.
+_CATEGORIAS_VIAJE = [
+    (
+        "viaje_estacion", "Kanjis de viaje — Estación y transporte",
+        "moverte en tren y metro: salidas, andenes, billetes y tipos de tren",
+        [],
+        [
+            ("出口", "salida", "—", "でぐち", 8, "—", "出口は どこですか", "salida-TEMA / ¿dónde-está?",
+             "出 (salir) + 口 (boca): la boca por la que sales", "出口 でぐち salida · 東口 ひがしぐち salida este · 非常口 ひじょうぐち salida de emergencia"),
+            ("入口", "entrada", "—", "いりぐち", 5, "—", "入口は あちらです", "entrada-TEMA / por-allí-es",
+             "入 (entrar) + 口 (boca): la boca que te traga hacia dentro", "入口 いりぐち entrada · 入場 にゅうじょう entrar al recinto"),
+            ("改札", "puerta de validación", "—", "かいさつ", 12, "—", "改札を 出ます", "puerta-de-validación-OBJ / salgo",
+             "改 (cambiar) + 札 (ficha): ahí cambias tu billete por pasar al andén", "改札口 かいさつぐち zona de torniquetes · 北改札 きたかいさつ torniquetes norte"),
+            ("乗り場", "andén / parada (de subida)", "—", "のりば", 21, "—", "バスの 乗り場は どこですか", "bus-DE / parada-TEMA / ¿dónde-está?",
+             "乗 (subir) + り + 場 (lugar): el sitio donde te subes", "乗る のる subir (a un vehículo) · 乗り場 のりば andén/parada · 場所 ばしょ lugar"),
+            ("乗り換え", "transbordo", "—", "のりかえ", 21, "—", "新宿で 乗り換えます", "Shinjuku-EN / hago-transbordo",
+             "乗 (subir) + 換 (cambiar): subirte a otro; el cartel de los pasillos entre líneas", "乗り換え のりかえ transbordo · 乗換案内 のりかえあんない guía de transbordos"),
+            ("切符", "billete", "—", "きっぷ", 15, "—", "切符を 買います", "billete-OBJ / compro",
+             "切 (cortar) + 符 (ficha): el trozo de papel que te cortan y te permite pasar", "切符 きっぷ billete · 切符売り場 きっぷうりば taquilla · 切手 きって sello"),
+            ("券売機", "máquina expendedora de billetes", "—", "けんばいき", 31, "—", "券売機で 切符を 買います", "máquina-EN / billete-OBJ / compro",
+             "券 (billete) + 売 (vender) + 機 (máquina): la máquina que vende billetes", "券 けん billete/ticket · 売る うる vender · 機械 きかい máquina"),
+            ("特急", "tren exprés limitado", "—", "とっきゅう", 19, "—", "特急に 乗ります", "exprés-A / me-subo",
+             "特 (especial) + 急 (prisa): el tren especial con prisa que no para en todas", "特急 とっきゅう exprés · 急行 きゅうこう expreso · 急ぐ いそぐ darse prisa"),
+            ("普通", "tren local / ordinario", "—", "ふつう", 22, "—", "普通は 駅ごとに 止まります", "local-TEMA / estación-cada / para",
+             "普 (general) + 通 (pasar): el tren corriente que pasa por todas las estaciones", "普通 ふつう normal · 普通列車 ふつうれっしゃ tren local"),
+            ("新幹線", "tren bala", "—", "しんかんせん", 41, "—", "新幹線で 京都へ 行きます", "tren-bala-EN / Kioto-A / voy",
+             "新 (nuevo) + 幹 (tronco) + 線 (línea): la línea nueva y principal, el tronco del país", "新幹線 しんかんせん tren bala · 新宿 しんじゅく Shinjuku · 山手線 やまのてせん línea Yamanote"),
+            ("番線", "número de andén", "—", "ばんせん", 27, "—", "三番線から でます", "andén-3-DESDE / sale",
+             "番 (número) + 線 (línea): el número de la vía; 3番線 さんばんせん", "一番線 いちばんせん andén 1 · 番号 ばんごう número"),
+            ("行き", "con destino a", "—", "ゆき", 6, "—", "東京行きの 電車です", "Tokio-destino-DE / tren-es",
+             "行 (ir) + き: 'que va a'; el destino se pone delante: 東京行き", "東京行き とうきょうゆき con destino a Tokio · 行く いく ir"),
+            ("終電", "último tren", "—", "しゅうでん", 24, "—", "終電に まにあいました", "último-tren-A / llegué-a-tiempo",
+             "終 (fin) + 電 (tren eléctrico): el tren del final de la noche", "終電 しゅうでん último tren · 終点 しゅうてん última parada · 始発 しはつ primer tren"),
+            ("時刻表", "horario de trenes", "—", "じこくひょう", 26, "—", "時刻表を 見ます", "horario-OBJ / miro",
+             "時 (hora) + 刻 (grabar) + 表 (tabla): la tabla con las horas grabadas", "時刻 じこく hora · 時刻表 じこくひょう horario · 表 ひょう tabla"),
+            ("地下鉄", "metro", "—", "ちかてつ", 22, "—", "地下鉄で 行きましょう", "metro-EN / vayamos",
+             "地 (tierra) + 下 (debajo) + 鉄 (hierro): el hierro que corre bajo tierra", "地下鉄 ちかてつ metro · 地下 ちか sótano · 鉄道 てつどう ferrocarril"),
+            ("精算", "ajuste de tarifa", "—", "せいさん", 28, "—", "精算機で お金を 払います", "máquina-de-ajuste-EN / dinero-OBJ / pago",
+             "精 (preciso) + 算 (calcular): calcular al detalle lo que falta si pasaste de estación", "精算機 せいさんき máquina de ajuste · 計算 けいさん cálculo"),
+            ("指定席", "asiento reservado", "—", "していせき", 27, "—", "指定席を お願いします", "asiento-reservado-OBJ / por-favor",
+             "指 (señalar) + 定 (fijar) + 席 (asiento): el asiento que te señalan y queda fijado", "指定席 していせき reservado · 自由席 じゆうせき no reservado · 席 せき asiento"),
+            ("自由席", "asiento libre (sin reserva)", "—", "じゆうせき", 21, "—", "自由席は 何号車ですか", "asiento-libre-TEMA / ¿qué-vagón-es?",
+             "自 (uno mismo) + 由 (razón) + 席 (asiento): te sientas donde tú quieras", "自由 じゆう libre · 自由席 じゆうせき no reservado"),
+            ("優先席", "asiento preferente", "—", "ゆうせんせき", 33, "—", "優先席に 座りません", "asiento-preferente-EN / no-me-siento",
+             "優 (amable) + 先 (primero) + 席 (asiento): el asiento amable que se cede primero a quien lo necesita", "優先席 ゆうせんせき asiento preferente · 優しい やさしい amable"),
+            ("空港", "aeropuerto", "—", "くうこう", 20, "—", "空港まで 電車で 行きます", "aeropuerto-HASTA / tren-EN / voy",
+             "空 (cielo) + 港 (puerto): el puerto del cielo", "空港 くうこう aeropuerto · 港 みなと puerto"),
+        ],
+    ),
+    (
+        "viaje_tiendas", "Kanjis de viaje — Tiendas y precios",
+        "entender los carteles de tienda, las etiquetas de precio y qué estás pagando",
+        [],
+        [
+            ("営業中", "abierto (en horario)", "—", "えいぎょうちゅう", 29, "—", "この 店は 営業中です", "esta / tienda-TEMA / abierta-es",
+             "営 (gestionar) + 業 (negocio) + 中 (en curso): el negocio está funcionando ahora", "営業中 えいぎょうちゅう abierto · 営業時間 えいぎょうじかん horario"),
+            ("準備中", "cerrado (preparando)", "—", "じゅんびちゅう", 29, "—", "まだ 準備中です", "todavía / en-preparación-es",
+             "準 (preparar) + 備 (disponer) + 中 (en curso): aún están poniendo la tienda a punto, así que no abre", "準備中 じゅんびちゅう preparando · 準備 じゅんび preparativo"),
+            ("定休日", "día de cierre semanal", "—", "ていきゅうび", 18, "—", "定休日は 水曜日です", "día-de-cierre-TEMA / miércoles-es",
+             "定 (fijo) + 休 (descanso) + 日 (día): el día de descanso que siempre es el mismo", "定休日 ていきゅうび día de cierre · 年中無休 ねんじゅうむきゅう abierto todo el año"),
+            ("本日休業", "hoy cerrado", "—", "ほんじつきゅうぎょう", 28, "—", "本日休業の はりがみ", "hoy-cerrado-DE / cartel",
+             "本日 (hoy, formal) + 休業 (negocio en descanso): cartel de persiana bajada", "本日 ほんじつ hoy · 休業 きゅうぎょう cierre temporal"),
+            ("営業時間", "horario comercial", "—", "えいぎょうじかん", 47, "—", "営業時間は 何時から ですか", "horario-TEMA / ¿desde-qué-hora-es?",
+             "営業 (negocio) + 時間 (tiempo): el tiempo en que el negocio está abierto", "営業 えいぎょう negocio · 時間 じかん tiempo"),
+            ("税込", "IVA incluido", "—", "ぜいこみ", 17, "—", "税込で 千円です", "con-impuestos / 1000-yenes-es",
+             "税 (impuesto) + 込 (meter dentro): el impuesto ya está metido en el precio", "税込 ぜいこみ IVA incluido · 税抜 ぜいぬき sin IVA · 消費税 しょうひぜい impuesto al consumo"),
+            ("割引", "descuento", "—", "わりびき", 16, "—", "割引は ありますか", "descuento-TEMA / ¿hay?",
+             "割 (partir) + 引 (tirar): del precio se parte un trozo y se tira hacia abajo", "割引 わりびき descuento · 二割引 にわりびき 20% de descuento"),
+            ("半額", "mitad de precio", "—", "はんがく", 23, "—", "全部 半額です", "todo / mitad-de-precio-es",
+             "半 (mitad) + 額 (importe): el importe partido por la mitad", "半額 はんがく mitad de precio · 金額 きんがく importe"),
+            ("特売", "oferta especial", "—", "とくばい", 17, "—", "今日は 特売です", "hoy-TEMA / oferta-es",
+             "特 (especial) + 売 (vender): venta especial, el cartel rojo de los súpers", "特売 とくばい oferta · 特急 とっきゅう exprés"),
+            ("無料", "gratis", "—", "むりょう", 22, "—", "この 水は 無料です", "esta / agua-TEMA / gratis-es",
+             "無 (sin) + 料 (tarifa): sin tarifa, no pagas", "無料 むりょう gratis · 料金 りょうきん tarifa"),
+            ("有料", "de pago", "—", "ゆうりょう", 16, "—", "ここは 有料です", "aquí-TEMA / de-pago-es",
+             "有 (tener) + 料 (tarifa): tiene tarifa; es el opuesto de 無料", "有料 ゆうりょう de pago · 有料道路 ゆうりょうどうろ autopista de peaje"),
+            ("現金", "efectivo", "—", "げんきん", 19, "—", "現金だけ です", "efectivo-solo / es",
+             "現 (presente) + 金 (dinero): el dinero que tienes a mano ahora", "現金 げんきん efectivo · 現在 げんざい ahora"),
+            ("両替", "cambio de divisas", "—", "りょうがえ", 18, "—", "両替は どこですか", "cambio-de-divisas-TEMA / ¿dónde-está?",
+             "両 (los dos) + 替 (reemplazar): cambias una moneda por la otra, de dos en dos", "両替 りょうがえ cambio de divisas · 両替所 りょうがえじょ casa de cambio"),
+            ("免税", "libre de impuestos", "—", "めんぜい", 20, "—", "免税の カウンターは どこですか", "libre-de-impuestos-DE / mostrador-TEMA / ¿dónde-está?",
+             "免 (eximir) + 税 (impuesto): te libras del impuesto, el cartel Tax-free para turistas", "免税 めんぜい libre de impuestos · 免税店 めんぜいてん tienda tax-free"),
+            ("会計", "caja / la cuenta", "—", "かいけい", 15, "—", "お会計を お願いします", "la-cuenta-OBJ / por-favor",
+             "会 (reunir) + 計 (contar): se reúne y se cuenta todo lo consumido", "会計 かいけい caja · お会計 おかいけい la cuenta · 計算 けいさん cálculo"),
+            ("入場料", "precio de entrada", "—", "にゅうじょうりょう", 24, "—", "入場料は 五百円です", "precio-de-entrada-TEMA / 500-yenes-es",
+             "入 (entrar) + 場 (lugar) + 料 (tarifa): lo que pagas por entrar al sitio; en templos, museos y jardines", "入場料 にゅうじょうりょう entrada · 入場 にゅうじょう acceso · 入場無料 entrada gratis"),
+            ("売り切れ", "agotado", "—", "うりきれ", 11, "—", "すみません、売り切れです", "perdone / agotado-es",
+             "売る (vender) + 切れる (cortarse): se vendió hasta que se cortó, ya no queda", "売り切れ うりきれ agotado · 完売 かんばい todo vendido"),
+            ("予約", "reserva", "—", "よやく", 13, "—", "予約して いません", "reserva-haciendo / no-estoy",
+             "予 (antes) + 約 (promesa): una promesa hecha antes de llegar", "予約 よやく reserva · 予約席 よやくせき mesa reservada · 予約制 solo con reserva"),
+        ],
+    ),
+    (
+        "viaje_comida", "Kanjis de viaje — Comida y menús",
+        "pedir y leer una carta o un cartel de restaurante sin tener foto",
+        [],
+        [
+            ("定食", "menú del día / set", "—", "ていしょく", 17, "—", "焼き魚定食を ください", "pescado-a-la-plancha-menú / por-favor",
+             "定 (fijo) + 食 (comida): comida fija, ya viene con arroz, sopa y encurtidos", "定食 ていしょく menú · 定食屋 ていしょくや restaurante de menús"),
+            ("丼", "bol de arroz con encima", "トン・ドン", "どんぶり", 5, "丶 (てん)", "牛丼を ください", "bol-de-ternera / por-favor",
+             "un pozo (井) con una gota (丶) cayendo dentro: el cuenco hondo donde cae la comida sobre el arroz", "牛丼 ぎゅうどん bol de ternera · 親子丼 おやこどん bol de pollo y huevo · 天丼 てんどん bol de tempura"),
+            ("大盛り", "ración grande", "—", "おおもり", 14, "—", "大盛りに できますか", "ración-grande-A / ¿se-puede?",
+             "大 (grande) + 盛 (colmar): se llena el plato hasta arriba", "大盛り おおもり ración grande · 特盛 とくもり ración extra · 並盛 なみもり ración normal"),
+            ("食べ放題", "todo lo que puedas comer", "—", "たべほうだい", 35, "—", "食べ放題は 九十分です", "buffet-libre-TEMA / 90-minutos-es",
+             "食べ (comer) + 放題 (a discreción): sueltas el apetito sin límite", "食べ放題 たべほうだい buffet libre · 食べる たべる comer · 放題 ほうだい a discreción"),
+            ("飲み放題", "barra libre", "—", "のみほうだい", 38, "—", "飲み放題を つけます", "barra-libre-OBJ / añado",
+             "飲み (beber) + 放題 (a discreción): bebes sin límite durante un tiempo", "飲み放題 のみほうだい barra libre · 飲む のむ beber"),
+            ("生ビール", "cerveza de barril", "—", "なまビール", 5, "—", "生ビールを 二つ ください", "cerveza-de-barril-OBJ / dos / por-favor",
+             "生 (crudo/fresco) + ビール: cerveza sin pasteurizar, recién sacada del barril", "生ビール なまビール cerveza de barril · 生 なま crudo · 生卵 なまたまご huevo crudo"),
+            ("焼肉", "carne a la parrilla", "—", "やきにく", 18, "—", "焼肉を 食べに 行きましょう", "carne-a-la-parrilla-OBJ / comer-a / vayamos",
+             "焼 (asar) + 肉 (carne): carne asada ante tus ojos en la mesa", "焼肉 やきにく carne a la parrilla · 焼き鳥 やきとり brocheta de pollo"),
+            ("刺身", "sashimi", "—", "さしみ", 15, "—", "刺身は 好きですか", "sashimi-TEMA / ¿te-gusta?",
+             "刺 (pinchar) + 身 (carne): el pescado se pincha en la bandeja como carne cruda", "刺身 さしみ sashimi · 刺身定食 さしみていしょく menú de sashimi"),
+            ("寿司", "sushi", "—", "すし", 12, "—", "寿司を 食べます", "sushi-OBJ / como",
+             "寿 (larga vida) + 司 (encargado): ¡brindis por la larga vida del que te prepara el sushi!", "寿司 すし sushi · 回転寿司 かいてんずし sushi sobre cinta · 寿司屋 すしや sushería"),
+            ("弁当", "bento (caja de comida)", "—", "べんとう", 11, "—", "お弁当を 買います", "bento-OBJ / compro",
+             "弁 (dividir) + 当 (corresponder): la caja con cada cosa en su compartimento", "弁当 べんとう bento · 駅弁 えきべん bento de estación"),
+            ("蕎麦", "soba (fideos de trigo sarraceno)", "—", "そば", 22, "—", "冷たい お蕎麦を ください", "fría / soba-OBJ / por-favor",
+             "蕎 (hierba) + 麦 (trigo): la planta con la que se hace el fideo oscuro", "蕎麦 そば soba · 蕎麦屋 そばや restaurante de soba · 小麦 こむぎ trigo"),
+            ("辛口", "picante / seco", "—", "からくち", 10, "—", "辛口に して ください", "picante-A / hazlo / por-favor",
+             "辛 (picante) + 口 (boca): el que pica en la boca; también el sake o el vino secos", "辛口 からくち picante/seco · 辛い からい picante · 甘口 あまくち dulce/suave"),
+            ("持ち帰り", "para llevar", "—", "もちかえり", 19, "—", "持ち帰りで お願いします", "para-llevar-CON / por-favor",
+             "持 (llevar en la mano) + 帰 (volver): lo coges y te lo llevas a casa", "持ち帰り もちかえり para llevar · 持つ もつ llevar/tener · 帰る かえる volver"),
+            ("店内", "dentro del local", "—", "てんない", 12, "—", "店内で 食べます", "dentro-del-local-EN / como",
+             "店 (tienda) + 内 (dentro): para comer dentro; la pregunta típica es 店内ですか", "店内 てんない dentro del local · 案内 あんない guía"),
+            ("日替わり", "plato del día", "—", "ひがわり", 16, "—", "日替わりランチを ください", "plato-del-día-almuerzo-OBJ / por-favor",
+             "日 (día) + 替 (cambiar): el que cambia cada día", "日替わり ひがわり del día · 両替 りょうがえ cambio"),
+        ],
+    ),
+    (
+        "viaje_carteles", "Kanjis de viaje — Carteles y avisos",
+        "entender qué se puede y qué no se puede hacer: prohibiciones, peligros y avisos de uso",
+        [],
+        [
+            ("禁止", "prohibido", "—", "きんし", 17, "—", "ここは 撮影禁止です", "aquí-TEMA / fotos-prohibidas-es",
+             "禁 (vedar) + 止 (parar): vedado, así que detente", "禁止 きんし prohibido · 駐車禁止 ちゅうしゃきんし prohibido aparcar"),
+            ("禁煙", "prohibido fumar", "—", "きんえん", 26, "—", "ここは 禁煙です", "aquí-TEMA / prohibido-fumar-es",
+             "禁 (vedar) + 煙 (humo): el humo vedado", "禁煙 きんえん no fumar · 禁煙席 きんえんせき zona de no fumadores"),
+            ("喫煙所", "zona de fumadores", "—", "きつえんじょ", 33, "—", "喫煙所は どこですか", "zona-de-fumadores-TEMA / ¿dónde-está?",
+             "喫 (consumir) + 煙 (humo) + 所 (lugar): el único sitio donde consumes humo", "喫煙 きつえん fumar · 喫茶店 きっさてん cafetería"),
+            ("立入禁止", "prohibido el paso", "—", "たちいりきんし", 24, "—", "ここは 立入禁止です", "aquí-TEMA / prohibido-el-paso-es",
+             "立入 (ponerse de pie dentro) + 禁止 (prohibido): ni pongas el pie dentro", "立入禁止 たちいりきんし prohibido el paso · 立つ たつ ponerse de pie"),
+            ("撮影禁止", "prohibido fotografiar", "—", "さつえいきんし", 47, "—", "撮影禁止の 美術館です", "fotos-prohibidas-DE / museo-es",
+             "撮影 (hacer fotos) + 禁止 (prohibido): cámara guardada", "撮影 さつえい fotografiar · 撮影禁止 さつえいきんし no fotos"),
+            ("駐車禁止", "prohibido aparcar", "—", "ちゅうしゃきんし", 39, "—", "ここは 駐車禁止です", "aquí-TEMA / prohibido-aparcar-es",
+             "駐車 (aparcar) + 禁止 (prohibido): cartel de calle para el coche", "駐車 ちゅうしゃ aparcar · 駐車場 ちゅうしゃじょう aparcamiento"),
+            ("危険", "peligro", "—", "きけん", 17, "—", "危険ですから 入らないで ください", "peligro-porque / no-entres / por-favor",
+             "危 (arriesgado) + 険 (escarpado): un risco escarpado, peligro de caer", "危険 きけん peligro · 危ない あぶない peligroso"),
+            ("注意", "atención / cuidado", "—", "ちゅうい", 21, "—", "足元に ご注意ください", "a-los-pies / atención-por-favor",
+             "注 (verter) + 意 (mente): vierte tu mente en el entorno, ¡fíjate!", "注意 ちゅうい atención · 足元注意 あしもとちゅうい cuidado con el escalón"),
+            ("使用中", "en uso / ocupado", "—", "しようちゅう", 17, "—", "ただいま 使用中です", "ahora-mismo / en-uso-es",
+             "使 (usar) + 用 (utilidad) + 中 (en curso): se está usando ahora", "使用中 しようちゅう en uso · 使う つかう usar"),
+            ("故障中", "averiado", "—", "こしょうちゅう", 27, "—", "この 機械は 故障中です", "esta / máquina-TEMA / averiada-está",
+             "故 (causa) + 障 (obstáculo) + 中 (en curso): hay un obstáculo en la máquina, no funciona", "故障 こしょう avería · 故障中 こしょうちゅう averiado"),
+            ("工事中", "en obras", "—", "こうじちゅう", 15, "—", "この 道は 工事中です", "este / camino-TEMA / en-obras-está",
+             "工 (obra) + 事 (asunto) + 中 (en curso): obras en curso", "工事 こうじ obras · 工事中 こうじちゅう en obras"),
+            ("満員", "completo (lleno)", "—", "まんいん", 22, "—", "電車は 満員です", "tren-TEMA / lleno-está",
+             "満 (lleno) + 員 (miembro): ni un miembro más cabe", "満員 まんいん lleno · 満席 まんせき sin mesas libres"),
+        ],
+    ),
+    (
+        "viaje_banos", "Kanjis de viaje — Baños, puertas y salidas",
+        "no equivocarte de puerta ni de baño, y encontrar la salida de emergencia",
+        [],
+        [
+            ("お手洗い", "aseos", "—", "おてあらい", 13, "—", "お手洗いは どこですか", "aseos-TEMA / ¿dónde-está?",
+             "お + 手 (mano) + 洗い (lavar): el sitio donde te lavas las manos, forma educada de decir baño", "お手洗い おてあらい aseos · 手洗い てあらい lavarse las manos · 洗う あらう lavar"),
+            ("化粧室", "aseo / tocador", "—", "けしょうしつ", 25, "—", "化粧室は 二階です", "aseo-TEMA / primer-piso-es",
+             "化粧 (maquillaje) + 室 (sala): la sala donde te arreglas y maquillas; palabra elegante para baño", "化粧室 けしょうしつ tocador · 化粧 けしょう maquillaje · 教室 きょうしつ aula"),
+            ("男性", "hombres", "—", "だんせい", 15, "—", "男性用 トイレは こちらです", "para-hombres / baño-TEMA / por-aquí-es",
+             "男 (hombre) + 性 (género): lado de los hombres; el cartel azul", "男性 だんせい hombre · 男子 だんし chico"),
+            ("女性", "mujeres", "—", "じょせい", 11, "—", "女性用 トイレは あちらです", "para-mujeres / baño-TEMA / por-allí-es",
+             "女 (mujer) + 性 (género): lado de las mujeres; el cartel rojo", "女性 じょせい mujer · 女子 じょし chica"),
+            ("押", "empujar", "オウ", "お(す)", 8, "手 (てへん)", "ドアを 押して ください", "puerta-OBJ / empuja / por-favor",
+             "una mano (扌) con un trazo que se mete en la caja (甲): empujas la hoja de la puerta", "押す おす empujar · 押し入れ おしいれ armario empotrado"),
+            ("引", "tirar", "イン", "ひ(く)", 4, "弓 (ゆみ)", "ドアを 引いて ください", "puerta-OBJ / tira / por-favor",
+             "un arco (弓) con la cuerda tensada hacia atrás (丨): tiras hacia ti", "引く ひく tirar · 引っ越し ひっこし mudanza · 割引 わりびき descuento"),
+            ("開", "abrir", "カイ", "あ(く)・ひら(く)", 12, "門 (もんがまえ)", "ドアが 開きます", "puerta-SUJ / se-abre",
+             "las dos hojas de un portón (門) con un cerrojo (幵) que se quita: se abre", "開く あく abrirse · 開店 かいてん abrir la tienda · 開ける あける abrir"),
+            ("閉", "cerrar", "ヘイ", "し(まる)・と(じる)", 11, "門 (もんがまえ)", "ドアが 閉まります", "puerta-SUJ / se-cierra",
+             "un portón (門) con una tranca (才) cruzada: queda cerrado", "閉まる しまる cerrarse · 閉店 へいてん cerrar la tienda · 閉める しめる cerrar"),
+            ("自動", "automático", "—", "じどう", 17, "—", "自動ドアです", "automática-puerta-es",
+             "自 (uno mismo) + 動 (moverse): se mueve ella sola; 自動ドア, 自動販売機", "自動 じどう automático · 自動販売機 じどうはんばいき máquina expendedora"),
+            ("非常口", "salida de emergencia", "—", "ひじょうぐち", 22, "—", "非常口は あちらです", "salida-de-emergencia-TEMA / por-allí-es",
+             "非 (no) + 常 (normal) + 口 (boca): la salida para lo que no es normal", "非常口 ひじょうぐち salida de emergencia · 非常 ひじょう emergencia"),
+        ],
+    ),
+    (
+        "viaje_ciudad", "Kanjis de viaje — Ciudad y direcciones",
+        "orientarte por la ciudad: servicios, calles, mapas y sitios que quieres visitar",
+        [],
+        [
+            ("駐車場", "aparcamiento", "—", "ちゅうしゃじょう", 34, "—", "駐車場は ありますか", "aparcamiento-TEMA / ¿hay?",
+             "駐 (detenerse) + 車 (coche) + 場 (lugar): el lugar donde el coche se detiene", "駐車場 ちゅうしゃじょう aparcamiento · 会場 かいじょう recinto"),
+            ("案内所", "oficina de información", "—", "あんないじょ", 22, "—", "案内所で 地図を もらいます", "oficina-de-información-EN / mapa-OBJ / recibo",
+             "案 (plan) + 内 (dentro) + 所 (lugar): el sitio donde te guían por dentro de la ciudad", "案内所 あんないじょ información · 案内 あんない guía"),
+            ("観光", "turismo", "—", "かんこう", 24, "—", "観光に 来ました", "turismo-A / he-venido",
+             "観 (contemplar) + 光 (luz): ir a contemplar la luz, es decir las vistas", "観光 かんこう turismo · 観光地 かんこうち zona turística"),
+            ("交番", "puesto de policía", "—", "こうばん", 18, "—", "交番は どこですか", "puesto-de-policía-TEMA / ¿dónde-está?",
+             "交 (cruzar) + 番 (turno): la caseta donde se turnan los agentes en el cruce", "交番 こうばん puesto de policía · 交差点 こうさてん cruce"),
+            ("病院", "hospital", "—", "びょういん", 20, "—", "病院へ 行きたいです", "hospital-A / quiero-ir",
+             "病 (enfermedad) + 院 (institución): el centro de las enfermedades", "病院 びょういん hospital · 病気 びょうき enfermedad"),
+            ("薬局", "farmacia", "—", "やっきょく", 23, "—", "薬局は あそこです", "farmacia-TEMA / allí-es",
+             "薬 (medicina) + 局 (oficina): la oficina de las medicinas", "薬局 やっきょく farmacia · 薬 くすり medicina"),
+            ("郵便局", "oficina de correos", "—", "ゆうびんきょく", 27, "—", "郵便局は どこですか", "correos-TEMA / ¿dónde-está?",
+             "郵 (correo) + 便 (servicio) + 局 (oficina): la oficina del servicio de correo", "郵便局 ゆうびんきょく correos · 郵便 ゆうびん correo"),
+            ("信号", "semáforo", "—", "しんごう", 14, "—", "信号を 右に 曲がります", "semáforo-OBJ / derecha-A / giro",
+             "信 (fe) + 号 (señal): señal en la que se confía para cruzar", "信号 しんごう semáforo · 番号 ばんごう número"),
+            ("横断歩道", "paso de cebra", "—", "おうだんほどう", 46, "—", "横断歩道を わたります", "paso-de-cebra-OBJ / cruzo",
+             "横断 (atravesar) + 歩道 (acera): la acera que cruza la calzada", "横断 おうだん cruzar · 歩道 ほどう acera · 歩く あるく caminar"),
+            ("交差点", "cruce", "—", "こうさてん", 25, "—", "次の 交差点を 左へ", "siguiente / cruce-OBJ / izquierda-A",
+             "交 (cruzar) + 差 (diferencia) + 点 (punto): el punto donde dos calles se cruzan", "交差点 こうさてん cruce · 点 てん punto"),
+            ("一方通行", "dirección única", "—", "いっぽうつうこう", 21, "—", "この 道は 一方通行です", "esta / calle-TEMA / dirección-única-es",
+             "一方 (una dirección) + 通行 (circulación): el tráfico solo va en un sentido", "一方通行 いっぽうつうこう dirección única · 通行止め つうこうどめ cortado al tráfico"),
+            ("荷物", "equipaje", "—", "にもつ", 18, "—", "荷物を あずけたいです", "equipaje-OBJ / quiero-dejar",
+             "荷 (carga) + 物 (cosa): las cosas que cargas, tu maleta", "荷物 にもつ equipaje · 手荷物 てにもつ equipaje de mano · 荷物預かり所 にもつあずかりじょ consigna"),
+            ("温泉", "onsen (aguas termales)", "—", "おんせん", 21, "—", "温泉に 入りたいです", "onsen-A / quiero-entrar",
+             "温 (cálido) + 泉 (manantial): el manantial caliente", "温泉 おんせん onsen · 温かい あたたかい cálido"),
+            ("神社", "santuario sintoísta", "—", "じんじゃ", 16, "—", "神社へ お参りに 行きます", "santuario-A / visita-A / voy",
+             "神 (dios) + 社 (santuario): la casa del dios", "神社 じんじゃ santuario · 会社 かいしゃ empresa"),
+            ("寺", "templo budista", "ジ", "てら", 6, "寸 (すん)", "お寺に 行きましょう", "templo-A / vayamos",
+             "tierra (土) y una mano que mide (寸): el lugar de la tierra medida y recogida; lo ves en nombres como 清水寺", "お寺 おてら templo · 清水寺 きよみずでら templo Kiyomizu · 時 じ hora"),
+            ("公園", "parque", "—", "こうえん", 17, "—", "公園で 休みます", "parque-EN / descanso",
+             "公 (público) + 園 (jardín): el jardín de todos", "公園 こうえん parque · 動物園 どうぶつえん zoo"),
+            ("地図", "mapa", "—", "ちず", 13, "—", "地図を 見せて ください", "mapa-OBJ / enseña / por-favor",
+             "地 (tierra) + 図 (dibujo): el dibujo de la tierra", "地図 ちず mapa · 地下 ちか subterráneo"),
+            ("現在地", "usted está aquí", "—", "げんざいち", 23, "—", "現在地は ここです", "usted-está-aquí-TEMA / aquí-es",
+             "現在 (ahora) + 地 (lugar): el lugar en el que estás ahora, el punto del mapa", "現在地 げんざいち usted está aquí · 現在 げんざい ahora"),
+            ("受付", "recepción", "—", "うけつけ", 13, "—", "受付は 一階です", "recepción-TEMA / planta-1-es",
+             "受 (recibir) + 付 (pegar): donde te reciben y te apuntan; en hoteles, hospitales y museos", "受付 うけつけ recepción · 受付時間 horario de recepción"),
+            ("階", "planta / piso", "カイ・ガイ", "—", 12, "阝 (こざとへん)", "トイレは 二階です", "baño-TEMA / planta-2-es",
+             "una colina (阝) con escalones que suben todos (皆) a la vez: los pisos de un edificio", "一階 いっかい planta baja · 三階 さんがい 3.ª planta (¡がい!) · 地下一階 sótano 1"),
+        ],
+    ),
+]
+
+
 def _kata_a_hira(s):
     return "".join(chr(ord(c) - 0x60) if "ァ" <= c <= "ヶ" else c for c in s)
 
 
 # la on de 4 y 7 (し, しち) casi nunca se usa al contar: chocan con 死/一
-_READING_CARD = {"四": "よん", "七": "なな", "九": "きゅう"}
+_READING_CARD = {"四": "よん", "七": "なな", "九": "きゅう", "生ビール": "なまビール"}
 
 # kanji que en la card se reconocen por su ON aunque tengan kun: números, y los
 # que en la práctica solo viven en compuestos (時 じ, 語 ご, 社 しゃ...). El resto
@@ -409,8 +648,9 @@ def _item(t):
 
 KANJI_N5 = [
     dict(_item(t), categoria=uid, categoria_nombre=nombre)
-    for uid, nombre, _funcion, _frases, tuplas in _CATEGORIAS for t in tuplas
+    for uid, nombre, _funcion, _frases, tuplas in _CATEGORIAS + _CATEGORIAS_VIAJE for t in tuplas
 ]
+_N_N5 = sum(len(c[4]) for c in _CATEGORIAS)
 
 
 def unidades_kanji(ya_en_temario=frozenset(), prerequisito=None, umbral=0.75):
@@ -437,9 +677,9 @@ def unidades_kanji(ya_en_temario=frozenset(), prerequisito=None, umbral=0.75):
 
 if __name__ == "__main__":
     # 108 kanji sueltos + los 7 días de la semana como palabra (月曜日〜日曜日)
-    assert len(KANJI_N5) == 115, len(KANJI_N5)
-    assert len({k["jp"] for k in KANJI_N5}) == 115, "kanji repetido"
-    for k in KANJI_N5:
+    n5, viaje = KANJI_N5[:_N_N5], KANJI_N5[_N_N5:]
+    assert len(n5) == 115, len(n5)
+    for k in n5:
         assert 1 <= len(k["jp"]) <= 3 and all("一" <= c <= "鿿" for c in k["jp"]), k["jp"]
         assert k["reading"] and k["ejemplo"] and k["literal"] and k["mnemo"], k["jp"]
         assert 1 <= k["trazos"] <= 20 * len(k["jp"]), k
@@ -447,10 +687,15 @@ if __name__ == "__main__":
     us = unidades_kanji()
     assert len(us) == 11 and sum(len(u["items"]) for u in us) == 115
     assert us[0]["prerequisito"] is None
-    assert [u["prerequisito"] for u in us[1:]] == [u["id"] for u in us[:-1]], "cadena rota"
 
-    # con las fichas que ya existen filtradas, ningún carácter se duplica
-    filtradas = unidades_kanji({"一", "二", "三", "山"}, prerequisito="x")
-    assert sum(len(u["items"]) for u in filtradas) == 111
-    assert filtradas[0]["prerequisito"] == "x"
-    print("ok:", len(KANJI_N5), "kanji N5 en", len(us), "unidades")
+    # viaje: fuera del sensei, jp únicos en todo KANJI_N5, kana permitido
+    assert len(viaje) >= 60, len(viaje)
+    assert len({k["jp"] for k in KANJI_N5}) == len(KANJI_N5), "jp repetido"
+    en_sensei = {i["jp"] for u in us for i in u["items"]}
+    for k in viaje:
+        assert k["categoria"].startswith("viaje_") and k["jp"] not in en_sensei, k["jp"]
+        assert 1 <= len(k["jp"]) <= 6, k["jp"]
+        assert k["reading"] and k["reading_card"] and k["ejemplo"] and k["literal"] and k["mnemo"] and k["vocab_ejemplo"], k["jp"]
+        assert 1 <= k["trazos"] <= 20 * len(k["jp"]), k
+    assert not any(u["id"].startswith("viaje_") for u in us)
+    print("OK", len(n5), len(viaje))

@@ -1315,7 +1315,8 @@ def japones():
         "SELECT word FROM japanese_vocabulary WHERE type IS NULL OR type != 'kanji'")}
     vocab_corpus = len(_curr_vocab | _db_vocab) or 1
     _db_kanji = {r[0] for r in db.execute("SELECT kanji FROM japanese_kanji")}
-    kanji_corpus = len({k["jp"] for k in KANJI_N5} | _db_kanji) or 1
+    kanji_corpus = len({k["jp"] for k in KANJI_N5
+                        if not k.get("categoria", "").startswith("viaje_")} | _db_kanji) or 1
     _curr_gram = {str(e.get("jp") or "").strip()
                   for u in CURRICULUM for e in u.get("items", [])
                   if e.get("kind") == "gramatica" and str(e.get("jp") or "").strip()}
@@ -1694,6 +1695,7 @@ def japones_vocabulario_practicar():
     /japones/kanjis/practicar: autocalificación -> review(id, q, 'vocabulario'),
     siguiente ítem por get_due_items(kind='vocabulario') filtrado a la unidad."""
     uid = (request.values.get("unidad") or "").strip()
+    escribir = request.values.get("escribir") == "1"  # fuerza ES→JP + lienzo
     nombre, items = _vocab_items_unidad(uid)
     if nombre is None:
         return redirect(url_for("japones_vocabulario"))
@@ -1718,7 +1720,8 @@ def japones_vocabulario_practicar():
             if item_id is not None:
                 brain.jap_memory.review(item_id, quality, "vocabulario")
                 _yenes_practica(quality)  # yenes para Kaito según la nota
-        return redirect(url_for("japones_vocabulario_practicar", unidad=uid))
+        return redirect(url_for("japones_vocabulario_practicar", unidad=uid,
+                                escribir=1 if escribir else None))
 
     # GET: siguiente ítem de la unidad — vencidos primero, luego nunca practicado
     due = [d for d in brain.jap_memory.get_due_items(limit=500, kind="vocabulario")
@@ -1734,12 +1737,12 @@ def japones_vocabulario_practicar():
     else:
         return render_template("japones_vocab_practica.html", unidad=uid,
                                unidad_nombre=nombre, pendientes=0,
-                               al_dia=True, v=None)
+                               al_dia=True, v=None, escribir=escribir)
 
     it = por_jp[jp]
     # Alterna el sentido de forma estable por paridad de reps: par -> ES→JP
     # (muestra el significado, pide el japonés), impar -> JP→ES.
-    sentido = "es_jp" if reps % 2 == 0 else "jp_es"
+    sentido = "es_jp" if escribir or reps % 2 == 0 else "jp_es"
     reading = it["reading"] if it["reading"] and it["reading"] != jp else ""
     v = {
         "jp": jp,
@@ -1752,7 +1755,7 @@ def japones_vocabulario_practicar():
     }
     return render_template("japones_vocab_practica.html", unidad=uid,
                            unidad_nombre=nombre, pendientes=len(due),
-                           al_dia=False, v=v)
+                           al_dia=False, v=v, escribir=escribir)
 
 
 _GRAM_TILDE = "〜～"  # 〜 ～ : marcan "se engancha a una raíz", no forman parte del hueco

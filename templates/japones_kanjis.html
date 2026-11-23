@@ -96,6 +96,8 @@
         line-height: 1;
         margin-bottom: 8px;
       }
+      /* palabras de viaje (4-6 caracteres): que no desborden la tarjeta */
+      .kanji-char.largo { font-size: 1.5rem; white-space: nowrap; }
       .kanji-reading {
         display: block;
         font-size: 12px;
@@ -294,6 +296,7 @@
         font-weight: 700;
         color: var(--rosa-tinta);
       }
+      .ficha-hero-char.largo { flex: 1 1 auto; font-size: 2.2rem; overflow-wrap: anywhere; }
       .ficha-hero-reading {
         display: block;
         margin-top: 8px;
@@ -449,7 +452,7 @@
             data-cat="{{ item.categoria }}"
             href="/japones/kanjis?kanji={{ item.kanji | urlencode }}"
           >
-            <span class="kanji-char">{{ item.kanji }}</span>
+            <span class="kanji-char{% if item.kanji|length > 3 %} largo{% endif %}">{{ item.kanji }}</span>
             <span class="kanji-reading">{{ item.reading_card or '—' }}</span>
             <span class="kanji-meaning"
               >{{ item.meaning | replace(' (kanji)', '') }}</span
@@ -476,7 +479,7 @@
       <div class="ficha-body">
       <div class="ficha-hero">
         <div class="ficha-hero-title">
-          <span class="ficha-hero-char">{{ selected.kanji }}</span>
+          <span class="ficha-hero-char{% if selected.kanji|length > 2 %} largo{% endif %}">{{ selected.kanji }}</span>
           {% set _audio = audio_url(selected.reading_card or selected.reading) %}
           {% if _audio %}
           <button

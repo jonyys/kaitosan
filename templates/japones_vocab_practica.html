@@ -49,6 +49,7 @@
 
       <p class="kp-pend">
         {% if unidad_nombre %}{{ unidad_nombre }} · {% endif %}{{ pendientes }} ítems por repasar
+        · <a href="/japones/vocabulario/practicar?unidad={{ unidad|urlencode }}{% if not escribir %}&escribir=1{% endif %}">{% if escribir %}Alternar sentidos{% else %}Escribir siempre{% endif %}</a>
       </p>
 
       {% if al_dia %}
@@ -73,6 +74,15 @@
           español{% endif %}
         </p>
         <div class="vp-prompt">{{ v.pregunta }}</div>
+
+        {% if v.sentido == 'es_jp' %}
+        <div class="kp-canvas-wrap">
+          <canvas id="kp-canvas" width="600" height="600"></canvas>
+          <button type="button" class="btn btn-ghost" id="kp-clear">
+            <svg class="ico"><use href="#i-undo" /></svg> Borrar
+          </button>
+        </div>
+        {% endif %}
 
         <div class="kp-hints" id="kp-hints" hidden>
           <div class="kp-hint" id="hint-lectura" hidden>
@@ -121,12 +131,50 @@
         style="display: none"
       >
         <input type="hidden" name="unidad" value="{{ unidad }}" />
+        {% if escribir %}<input type="hidden" name="escribir" value="1" />{% endif %}
         <input type="hidden" name="word" value="{{ v.jp }}" />
         <input type="hidden" name="quality" id="grade-quality" value="1" />
       </form>
 
       <script>
         (function () {
+          // Lienzo de escritura (solo en ES->JP), igual que en kanji
+          var canvas = document.getElementById("kp-canvas");
+          if (canvas) {
+            var ctx = canvas.getContext("2d");
+            ctx.lineWidth = 14;
+            ctx.lineCap = "round";
+            ctx.lineJoin = "round";
+            ctx.strokeStyle = "#1a1a1a";
+            var drawing = false;
+            var pos = function (e) {
+              var r = canvas.getBoundingClientRect();
+              return {
+                x: ((e.clientX - r.left) / r.width) * canvas.width,
+                y: ((e.clientY - r.top) / r.height) * canvas.height,
+              };
+            };
+            canvas.addEventListener("pointerdown", function (e) {
+              drawing = true;
+              var p = pos(e);
+              ctx.beginPath();
+              ctx.moveTo(p.x, p.y);
+              canvas.setPointerCapture(e.pointerId);
+            });
+            canvas.addEventListener("pointermove", function (e) {
+              if (!drawing) return;
+              var p = pos(e);
+              ctx.lineTo(p.x, p.y);
+              ctx.stroke();
+            });
+            var stop = function () { drawing = false; };
+            canvas.addEventListener("pointerup", stop);
+            canvas.addEventListener("pointercancel", stop);
+            document.getElementById("kp-clear").addEventListener("click", function () {
+              ctx.clearRect(0, 0, canvas.width, canvas.height);
+            });
+          }
+
           var hintsBox = document.getElementById("kp-hints");
           document
             .getElementById("kp-hint-btn")
