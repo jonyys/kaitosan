@@ -77,6 +77,7 @@
           <button type="button" class="btn btn-ghost" id="cu-deshacer" title="Deshacer" aria-label="Deshacer"><svg class="ico"><use href="#i-undo" /></svg></button>
           <button type="button" class="btn btn-ghost cu-rehacer" id="cu-rehacer" title="Rehacer" aria-label="Rehacer"><svg class="ico"><use href="#i-undo" /></svg></button>
           <button type="button" class="btn btn-ghost" id="cu-limpiar" title="Borrar toda la página" aria-label="Borrar toda la página"><svg class="ico"><use href="#i-trash" /></svg></button>
+          <button type="button" class="btn btn-ghost" id="cu-pdf" title="Descargar en PDF para imprimir" style="font-size: 12px">PDF</button>
           <span class="cu-estado" id="cu-estado" aria-live="polite">Guardado</span>
         </div>
         <div class="cu-barra">
@@ -92,6 +93,8 @@
             <option value="liso">Liso</option>
             <option value="rayas">Rayas</option>
             <option value="cuadricula">Cuadrícula</option>
+            <option value="kanji">Cuadros de kanji</option>
+            <option value="puntos">Puntos</option>
           </select>
         </div>
 
@@ -171,6 +174,30 @@
           g.fillStyle = "#fff";
           g.fillRect(0, 0, lienzo.width, lienzo.height);
           if (fondo === "liso") return;
+          if (fondo === "puntos") {   // rejilla de puntos, cada 50
+            g.fillStyle = "#b8b8b8";
+            for (var py = 50; py < H; py += 50) for (var px = 50; px < W; px += 50) {
+              g.beginPath(); g.arc(px * esc, py * esc, Math.max(1.2, 2.5 * esc), 0, 6.2832); g.fill();
+            }
+            return;
+          }
+          if (fondo === "kanji") {    // cuadros de 120 con cruz discontinua, como el papel de práctica de kanji
+            var c = 120, y0 = 20;
+            g.strokeStyle = "#c4c4c4";
+            g.lineWidth = Math.max(1, 2 * esc);
+            g.beginPath();
+            for (var gx = 0; gx <= W; gx += c) { g.moveTo(gx * esc, y0 * esc); g.lineTo(gx * esc, (y0 + 13 * c) * esc); }
+            for (var gy = 0; gy <= 13; gy++) { g.moveTo(0, (y0 + gy * c) * esc); g.lineTo(lienzo.width, (y0 + gy * c) * esc); }
+            g.stroke();
+            g.strokeStyle = "#e0e0e0";
+            g.setLineDash([8 * esc, 8 * esc]);
+            g.beginPath();
+            for (var hx = c / 2; hx < W; hx += c) { g.moveTo(hx * esc, y0 * esc); g.lineTo(hx * esc, (y0 + 13 * c) * esc); }
+            for (var hy = 0; hy < 13; hy++) { g.moveTo(0, (y0 + hy * c + c / 2) * esc); g.lineTo(lienzo.width, (y0 + hy * c + c / 2) * esc); }
+            g.stroke();
+            g.setLineDash([]);
+            return;
+          }
           g.strokeStyle = "#d9d9d9";
           g.lineWidth = Math.max(1, 2 * esc);
           g.beginPath();
@@ -294,6 +321,45 @@
           clearTimeout(temporizador);
           temporizador = setTimeout(function () { guardar(false); }, 800);
         }
+        // PDF de una página A4 con la hoja a buen tamaño (JPEG dentro de un PDF mínimo, sin librerías).
+        function pdfDeJpeg(bytes, wpx, hpx) {
+          var enc = new TextEncoder(), partes = [], pos = 0, offs = [];
+          function add(x) { var b = typeof x === "string" ? enc.encode(x) : x; partes.push(b); pos += b.length; }
+          function obj(n, cuerpo) { offs[n] = pos; add(n + " 0 obj\n" + cuerpo + "\nendobj\n"); }
+          var W = 595, H = 842, h = Math.round(W * hpx / wpx), y = Math.round((H - h) / 2);
+          add("%PDF-1.4\n");
+          obj(1, "<< /Type /Catalog /Pages 2 0 R >>");
+          obj(2, "<< /Type /Pages /Kids [3 0 R] /Count 1 >>");
+          obj(3, "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>");
+          offs[4] = pos;
+          add("4 0 obj\n<< /Type /XObject /Subtype /Image /Width " + wpx + " /Height " + hpx +
+              " /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length " + bytes.length + " >>\nstream\n");
+          add(bytes); add("\nendstream\nendobj\n");
+          var c = "q " + W + " 0 0 " + h + " 0 " + y + " cm /Im0 Do Q";
+          obj(5, "<< /Length " + c.length + " >>\nstream\n" + c + "\nendstream");
+          var x = "xref\n0 6\n0000000000 65535 f \n";
+          for (var i = 1; i <= 5; i++) x += String(offs[i]).padStart(10, "0") + " 00000 n \n";
+          add(x + "trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n" + pos + "\n%%EOF");
+          return new Blob(partes, { type: "application/pdf" });
+        }
+        $("cu-pdf").addEventListener("click", function () {
+          var antes = lienzo.width;
+          lienzo.width = capa.width = 1800;          // más resolución que en pantalla
+          lienzo.height = capa.height = 2400;
+          esc = 1800 / W;
+          redibujar();
+          lienzo.toBlob(function (blob) {
+            ajustar();                                // vuelve al tamaño de pantalla
+            blob.arrayBuffer().then(function (buf) {
+              var pdf = pdfDeJpeg(new Uint8Array(buf), 1800, 2400);
+              var a = document.createElement("a");
+              a.href = URL.createObjectURL(pdf);
+              a.download = (($("cu-titulo").value || "cuaderno").replace(/[^\wÀ-ÿ　-鿿 -]+/g, "").trim() || "cuaderno") + ".pdf";
+              document.body.appendChild(a); a.click(); a.remove();
+              setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+            });
+          }, "image/jpeg", 0.92);
+        });
         function miniatura() {
           var m = document.createElement("canvas");
           m.width = 300;

@@ -33,7 +33,7 @@ def _ahora():
 
 
 def _fondo(f):
-    return f if f in ("liso", "rayas", "cuadricula") else "liso"
+    return f if f in ("liso", "rayas", "cuadricula", "kanji", "puntos") else "liso"
 
 
 def listar(jm):
