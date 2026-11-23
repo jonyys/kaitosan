@@ -1472,6 +1472,7 @@ def japones_kanjis():
             categorias.append({
                 "id": cat_id,
                 "nombre": item.get("categoria_nombre", cat_id).split("—")[-1].strip(),
+                "viaje": cat_id.startswith("viaje_"),
             })
         kanjis.append({
             "kanji": item.get("jp", ""),
@@ -1496,6 +1497,10 @@ def japones_kanjis():
         suyos = [k for k in kanjis if k["categoria"] == c["id"]]
         c["total"] = len(suyos)
         c["hechos"] = sum(1 for k in suyos if k["dominado"])
+    n5 = [k for k in kanjis if not k["categoria"].startswith("viaje_")]
+    viaje = [k for k in kanjis if k["categoria"].startswith("viaje_")]
+    totales = {"n5": len(n5), "n5_dom": sum(k["dominado"] for k in n5),
+               "viaje": len(viaje), "viaje_dom": sum(k["dominado"] for k in viaje)}
     total_dom = sum(1 for k in kanjis if k["dominado"])
     if selected:
         selected_item = next((k for k in kanjis if k["kanji"] == selected), kanjis[0] if kanjis else None)
@@ -1503,7 +1508,7 @@ def japones_kanjis():
         selected_item = kanjis[0] if kanjis else None
     return render_template("japones_kanjis.html", kanjis=kanjis,
                            categorias=categorias, selected=selected_item,
-                           total_dom=total_dom)
+                           total_dom=total_dom, totales=totales)
 
 
 _TEMARIO_TITULOS = {"vocabulario": "Vocabulario N5", "gramatica": "Gramática N5"}
@@ -1920,6 +1925,20 @@ def japones_gramatica_completar_unidad():
     return redirect(url_for("japones_gramatica"))
 
 
+def _es_viaje(k):
+    return k.get("categoria", "").startswith("viaje_")
+
+
+def _kanjis_de(cat):
+    """Kanji de un filtro: '' / 'all' = los del N5 (el extra de viaje va aparte),
+    'viaje' = todo el extra de viaje, otro = esa categoría."""
+    if cat in ("", "all"):
+        return [k for k in KANJI_N5 if not _es_viaje(k)]
+    if cat == "viaje":
+        return [k for k in KANJI_N5 if _es_viaje(k)]
+    return [k for k in KANJI_N5 if k.get("categoria") == cat]
+
+
 @app.route("/japones/kanjis/practicar", methods=["GET", "POST"])
 @login_requerido
 def japones_kanjis_practicar():
@@ -1927,12 +1946,17 @@ def japones_kanjis_practicar():
     Gemela de /japones/vocabulario/practicar (que filtra por unidad): sin categoría
     (o 'all') practica todo el N5, como antes."""
     cat = (request.values.get("categoria") or "").strip()
-    pool = [k for k in KANJI_N5 if cat in ("", "all") or k.get("categoria") == cat]
-    if cat not in ("", "all") and not pool:
+    pool = _kanjis_de(cat)
+    if not pool:
         return redirect(url_for("japones_kanjis"))
     jps_pool = {k.get("jp") for k in pool}
-    cat_nombre = (pool[0].get("categoria_nombre", cat).split("—")[-1].strip()
-                  if cat not in ("", "all") and pool else "")
+    if cat in ("", "all"):
+        cat_nombre = "N5"
+    elif cat == "viaje":
+        cat_nombre = "✈ Extra para el viaje"
+    else:
+        cat_nombre = (("✈ Viaje · " if cat.startswith("viaje_") else "N5 · ")
+                      + pool[0].get("categoria_nombre", cat).split("—")[-1].strip())
 
     if request.method == "POST":
         kanji = (request.form.get("kanji") or "").strip()
@@ -2014,8 +2038,7 @@ def japones_kanjis_completar():
 @login_requerido
 def japones_kanjis_completar_categoria():
     cat = (request.form.get("categoria") or "").strip()
-    objetivo = [k for k in KANJI_N5
-                if cat in ("all", "") or k.get("categoria") == cat]
+    objetivo = _kanjis_de(cat)
     for item in objetivo:
         brain.jap_memory.marcar_completo(
             item["jp"], "kanji",
