@@ -431,7 +431,8 @@ class ProfesorJapones:
         if pend:
             return pend[0], "pendiente"
         n = st.get("nuevos", 0)
-        if n and n % NUEVOS_POR_ANTIGUO == 0 and st.get("antiguo_en") != n:
+        # Al empezar (nada hecho aún) y sin pendientes, la clase abre repasando 1 dominado.
+        if (n and n % NUEVOS_POR_ANTIGUO == 0 and st.get("antiguo_en") != n) or not hechos:
             viejos = sorted(candidatos(orden[:idx + 1], ("dominado",)), key=por_fecha)
             if viejos:
                 st["antiguo_en"] = n
@@ -466,10 +467,27 @@ class ProfesorJapones:
                 print(f"⚠️ No se pudo guardar el can-do empezado: {e}")
             return presentar(cd)
         st["fase"] = "tarea"
+        retoma = "" if st.get("hechos") else self._retoma_errores()
         cuando = "Esto lo habéis practicado hace un rato" if cd["id"] in st.get("logros", []) else (
             "Esto ya lo trabajasteis otro día")
         return (f"{cuando} ({cd['texto']}): dile en media frase que vais a ver si lo recuerda y, "
-                "sin explicárselo, " + tarea_nueva(cd)[0].lower() + tarea_nueva(cd)[1:])
+                "sin explicárselo, " + tarea_nueva(cd)[0].lower() + tarea_nueva(cd)[1:] + retoma)
+
+    def _retoma_errores(self):
+        """Primer repaso de la clase: lo que quedó mal la última vez, SOLO si hay datos guardados
+        (sin_corregir / nota del profe). Nunca se inventa nada: sin datos, no añade nada."""
+        try:
+            perfil = self.jap_memory.resumen_perfil()
+            datos = [d.strip() for d in [perfil.get("sin_corregir"), *(perfil.get("notas_profe") or [])[:1]]
+                     if isinstance(d, str) and d.strip()]
+        except Exception as e:  # noqa: BLE001 — la memoria no debe romper el turno
+            print(f"⚠️ No se pudo leer lo pendiente de la última clase: {e}")
+            return ""
+        if not datos:
+            return ""
+        return (" Al retomarlo, en UNA frase corta, recuérdale lo que quedó mal la última vez usando SOLO "
+                f"esto, tal cual: «según tus notas de la última clase: {'; '.join(datos)[:300]}». "
+                "Si no tiene relación con esto, no lo menciones. No inventes ningún error.")
 
     def _cerrar_cd(self, cd, resultado):
         """Guarda el resultado del can-do y pasa al siguiente. Devuelve la
@@ -904,15 +922,8 @@ class ProfesorJapones:
 
         unidad = (self._foco_unidad if foco_unidad is None else foco_unidad) or {}
 
-        # Vocabulario: solo lo que Kaito dijo de verdad en la clase (sus bloques 【】), no «los
-        # 2 siguientes del can-do» como antes (registraba palabras que nunca se enseñaron).
-        for item in _vocab_dicho(mensajes):
-            try:
-                self.jap_memory.add_item(
-                    "vocabulario", item["jp"], reading=item.get("reading"),
-                    meaning=item.get("meaning"), tipo=item.get("tipo"), session_id=session_id)
-            except Exception as e:  # noqa: BLE001
-                print(f"⚠️ Error persistiendo ítem '{item['jp']}': {e}")
+        # Las clases NO crean ni tocan flashcards (decisión 23-nov: el audio falla y las palabras van
+        # por un lado y las clases por otro). Lo visto en clase queda en el resumen de la sesión.
 
         transcript = self._construir_transcript(mensajes)
 
@@ -967,20 +978,6 @@ class ProfesorJapones:
             print(f"⚠️ Extracción completa no disponible (sesión {session_id}).")
             self.jap_memory.guardar_resumen_sesion(session_id, summary=summary_basico)
             return
-
-        # Ítems nuevos que introdujo la sesión: se registran en la BD de vocab/gram
-        # (su progreso SRS ya no lo mueve el profesor — lo hará el juego web).
-        for item in data.get("new_items", [])[:10]:
-            jp = _CANONICO.get((item.get("jp") or "").strip(), (item.get("jp") or "").strip())
-            es = (item.get("es") or "").strip()
-            category = (item.get("category") or "vocabulario").lower()
-            if not jp or re.sub(r"(さん|ちゃん|くん)$", "", jp.lower()) in NOMBRES_PROPIOS:
-                continue  # los nombres propios no son vocabulario (ジョナサン entró el 12-nov)
-            kind = "gramatica" if "gram" in category else "vocabulario"
-            try:
-                self.jap_memory.add_item(kind, jp, meaning=es, session_id=session_id)
-            except Exception as e:
-                print(f"⚠️ Error añadiendo ítem '{jp}': {e}")
 
         self.jap_memory.guardar_resumen_sesion(
             session_id,

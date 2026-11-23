@@ -372,25 +372,30 @@ def test_el_juez_solo_ve_la_frase_de_kaito_en_las_tareas(monkeypatch):
     assert "PREGUNTA_DE_KAITO" not in Prov.prompts[0] and "PREGUNTA_DE_KAITO" in Prov.prompts[1]
 
 
-def test_vocabulario_solo_lo_que_kaito_dice_en_clase(tmp_path):
-    """12-nov: la sesión registraba «los 2 siguientes del can-do» (さようなら, おやすみなさい…)
-    aunque Kaito no los enseñara, y duplicaba お母さん / おかあさん."""
+def test_vocabulario_dicho_solo_para_el_resumen_y_sin_crear_tarjetas(tmp_path):
+    """12-nov: la sesión registraba «los 2 siguientes del can-do» y duplicaba お母さん / おかあさん.
+    Desde el 23-nov las clases no crean tarjetas: `_vocab_dicho` solo sirve para el resumen final
+    (lo que Kaito dijo de verdad en 【】, sin el saludo de apertura y con la forma canónica)."""
+    from ai.sensei.profesor import _vocab_dicho
     from core.japanese_memory import JapaneseMemory
+    mensajes = [
+        {"role": "assistant", "content": "Modo Sensei activado! 【やあ】, Laura. 【さようなら】"},  # apertura: no cuenta
+        {"role": "user", "content": "vamos"},
+        {"role": "assistant", "content": "【おはよう、おかあさん】 y de noche 【こんばんは】. 【きのう えいがを みました】"},
+        {"role": "assistant", "content": "【おかあさん】 otra vez"},
+    ]
+    palabras = {it["jp"] for it in _vocab_dicho(mensajes)}
+    assert {"お母さん", "こんばんは", "昨日", "映画"} <= palabras
+    assert "さようなら" not in palabras and "おかあさん" not in palabras and "今晩" not in palabras
+
     jm = JapaneseMemory(str(tmp_path / "j.db"))
     p = ProfesorJapones(jm, MagicMock(), MagicMock(), MagicMock())
     p.session_id = 7
     p._extraer_resumen_basico = lambda t: "resumen"
     p._llamar_extractor = lambda h, **k: (_ for _ in ()).throw(RuntimeError("sin API"))
     p._foco_unidad = next(u for u in CURRICULUM if u["id"] == "saludos_basicos")
-    p._ejecutar_extraccion(7, [
-        {"role": "assistant", "content": "Modo Sensei activado! 【やあ】, Laura. 【さようなら】"},  # apertura: no cuenta
-        {"role": "user", "content": "vamos"},
-        {"role": "assistant", "content": "【おはよう、おかあさん】 y de noche 【こんばんは】. 【きのう えいがを みました】"},
-        {"role": "assistant", "content": "【おかあさん】 otra vez"},
-    ])
-    palabras = set(jm.vocab_rows())
-    assert {"お母さん", "こんばんは", "昨日", "映画"} <= palabras
-    assert "さようなら" not in palabras and "おかあさん" not in palabras and "今晩" not in palabras
+    p._ejecutar_extraccion(7, mensajes)
+    assert jm.vocab_rows() == {}  # la clase no ha creado ninguna tarjeta
 
 
 def test_la_lista_de_palabras_vistas_tiene_tope_y_prioriza_las_usadas():
@@ -418,8 +423,9 @@ def test_paso_a_lo_siguiente_lo_escribe_whisper_con_o():
         assert not _RE_SIGUIENTE.search(s), s
 
 
-def test_los_nombres_propios_no_entran_al_vocabulario(tmp_path):
-    """12-nov: el extractor registró ジョナサン como vocabulario."""
+def test_las_clases_no_crean_tarjetas(tmp_path):
+    """12-nov: el extractor registró ジョナサン como vocabulario. Desde el 23-nov las clases no
+    crean ninguna tarjeta (ni las palabras de 【】 ni los new_items del extractor)."""
     import json
     from core.japanese_memory import JapaneseMemory
     jm = JapaneseMemory(str(tmp_path / "j.db"))
@@ -432,7 +438,9 @@ def test_los_nombres_propios_no_entran_al_vocabulario(tmp_path):
                        ("Ana", "Ana"), ("Troy", "Troy"), ("ソー", "Thor"), ("ありがとう", "gracias")]]})
     p._foco_unidad = next(u for u in CURRICULUM if u["id"] == "saludos_basicos")
     p._ejecutar_extraccion(7, [{"role": "user", "content": "x"}, {"role": "assistant", "content": "y"}])
-    assert set(jm.vocab_rows()) == {"ありがとう"}
+    assert jm.vocab_rows() == {}
+    with jm._conectar() as c:
+        assert c.execute("SELECT COUNT(*) FROM japanese_grammar").fetchone()[0] == 0
 
 
 def test_paso_a_lo_siguiente_con_los_textos_reales_de_la_pi():
