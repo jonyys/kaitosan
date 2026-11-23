@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cuaderno — Kaitosan</title>
+    {% include 'partials/admin/_estilos.html' %}
+    <style>
+      .nota-lista { display: flex; flex-direction: column; gap: 12px; margin-top: 14px; }
+      .nota-item {
+        display: block;
+        text-decoration: none;
+        color: var(--text);
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radio-sm);
+        padding: 14px 16px;
+        box-shadow: var(--sombra-sm);
+        transition: border-color 0.15s ease, transform 0.15s ease;
+      }
+      .nota-item:hover { border-color: var(--rosa-accion); transform: translateY(-2px); }
+      .nota-item strong { display: block; color: var(--rosa-tinta); overflow-wrap: anywhere; }
+      .nota-fecha { font-size: 11px; color: var(--text-soft); font-weight: 700; }
+      .nota-resumen {
+        margin: 6px 0 0;
+        font-size: 14px;
+        line-height: 1.4;
+        color: var(--text-soft);
+        white-space: pre-wrap; /* respeta los saltos de línea de la nota */
+        overflow-wrap: anywhere;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .nota-titulo, .nota-texto, .nota-cq {
+        width: 100%;
+        box-sizing: border-box;
+        font: inherit;
+        color: var(--text);
+        background: var(--surface-2);
+        border: 1px solid var(--border-fuerte);
+        border-radius: var(--radio-sm);
+        padding: 10px 12px;
+      }
+      .nota-titulo { font-size: 16px; font-weight: 700; margin-bottom: 10px; }
+      .nota-texto {
+        font-size: 16px;
+        line-height: 1.6;
+        min-height: 46vh;
+        resize: vertical;
+        white-space: pre-wrap;
+      }
+      .nota-titulo:focus, .nota-texto:focus, .nota-cq:focus { outline: none; border-color: var(--rosa-accion); }
+      .nota-acciones { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; }
+      .nota-cq-fila { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 14px; }
+      .nota-cq { flex: 1 1 180px; width: auto; }
+      .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+      .chip {
+        display: block;
+        text-decoration: none;
+        color: var(--text);
+        background: var(--surface-2);
+        border: 1px solid var(--border-fuerte);
+        border-radius: var(--radio-sm);
+        padding: 8px 12px;
+        max-width: 100%;
+        overflow-wrap: anywhere;
+      }
+      .chip:hover { border-color: var(--rosa-accion); }
+      .chip b { font-size: 18px; color: var(--rosa-tinta); }
+      .chip small { display: block; font-size: 12px; color: var(--text-soft); }
+      .chip .rd { color: var(--rosa-accion); font-weight: 700; margin-right: 4px; }
+    </style>
+  </head>
+  <body>
+    {% include 'partials/_iconos.html' %} {% include
+    'partials/_confirm_pop.html' %} {% include 'partials/_flash_pop.html' %}
+    <div class="jp-wrap">
+      <h1>
+        <span><svg class="ico"><use href="#i-book" /></svg> Cuaderno</span>
+        <div style="display: flex; gap: 8px; align-items: center">
+          {% set nav_extra %}
+          <a href="/japones/cuaderno?nueva=1"><button type="button" class="btn btn-yellow hdr-btn" style="font-size: 13px" title="Nueva nota" aria-label="Nueva nota"><svg class="ico"><use href="#i-plus" /></svg></button></a>
+          {% endset %}
+          {% include 'partials/_japones_nav.html' %}
+        </div>
+      </h1>
+
+      {% if editando %}
+      <div class="card full">
+        <form method="POST" action="/japones/cuaderno/guardar" id="nota-form">
+          <input type="hidden" name="id" value="{{ nota.id if nota else '' }}" />
+          <input type="text" class="nota-titulo" name="titulo" placeholder="Título (opcional)" autocomplete="off" value="{{ nota.titulo if nota else '' }}" />
+          <textarea class="nota-texto" name="texto" id="nota-texto" placeholder="Escribe lo que quieras: apuntes del libro, frases, dudas…" {% if not nota %}autofocus{% endif %}>{{ nota.texto if nota else '' }}</textarea>
+          <div class="nota-acciones">
+            <button type="submit" class="btn btn-yellow">Guardar</button>
+            <a href="/japones/cuaderno"><button type="button" class="btn btn-ghost">Volver</button></a>
+          </div>
+        </form>
+
+        <div class="nota-cq-fila">
+          <input type="text" class="nota-cq" id="nota-cq" placeholder="Texto japonés (o selecciónalo arriba)" autocomplete="off" />
+          <button type="button" class="btn btn-ghost" id="nota-cq-btn" style="font-size: 12px">Crear tarjeta</button>
+        </div>
+
+        {% if nota %}
+        <h2 style="margin-top: 22px">Tarjetas en esta nota</h2>
+        {% if tarjetas %}
+        <div class="chips">
+          {% for t in tarjetas %}
+          {% if t.kind == 'kanji' %}
+          <a class="chip js-ficha" href="/japones/kanjis?kanji={{ t.jp | urlencode }}">
+          {% else %}
+          <a class="chip" href="/japones/{{ 'gramatica' if t.kind == 'gramatica' else 'vocabulario' }}?abrir={{ t.jp | urlencode }}">
+          {% endif %}
+            <b>{{ t.jp }}</b>
+            <small>{% if t.reading %}<span class="rd">{{ t.reading }}</span>{% endif %}{{ t.meaning }}</small>
+          </a>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="empty">Ninguna tarjeta tuya aparece en esta nota todavía.</p>
+        {% endif %}
+
+        <form method="POST" action="/japones/cuaderno/borrar" class="js-borrar" style="margin-top: 22px">
+          <input type="hidden" name="id" value="{{ nota.id }}" />
+          <button type="submit" class="btn btn-ghost" style="font-size: 12px; color: var(--peligro-tinta)">Eliminar nota</button>
+        </form>
+        {% endif %}
+      </div>
+
+      {% else %}
+      <div class="card full">
+        <div class="section-header"><h2>Tus notas ({{ notas | length }})</h2></div>
+        {% if notas %}
+        <div class="nota-lista">
+          {% for n in notas %}
+          <a class="nota-item" href="/japones/cuaderno?nota={{ n.id }}">
+            <strong>{{ n.etiqueta }}</strong>
+            <span class="nota-fecha">{{ n.editada[:16] }}</span>
+            {% if n.titulo and n.texto %}<p class="nota-resumen">{{ n.texto }}</p>
+            {% elif n.texto.count('\n') %}<p class="nota-resumen">{{ n.texto.split('\n', 1)[1].strip() }}</p>{% endif %}
+          </a>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="empty">Todavía no hay notas. Toca + para escribir la primera.</p>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+
+    {% if editando %}
+    {% with kind='vocabulario' %}{% include 'partials/_card_form.html' %}{% endwith %}
+    {% endif %}
+    <script>
+      (function () {
+        // los kanji abren su ficha solo si venimos de pinchar uno (ver japones_kanjis.html)
+        document.querySelectorAll("a.js-ficha").forEach(function (a) {
+          a.addEventListener("click", function () {
+            try { sessionStorage.setItem("abrirFicha", "1"); } catch (e) {}
+          });
+        });
+
+        document.querySelectorAll("form.js-borrar").forEach(function (b) {
+          b.addEventListener("submit", function (e) {
+            if (b.dataset.ok === "1") return;
+            e.preventDefault();
+            var msg = "¿Eliminar esta nota?";
+            (window.confirmar ? window.confirmar(msg, { ok: "Sí, eliminar" }) : Promise.resolve(window.confirm(msg)))
+              .then(function (ok) { if (ok) { b.dataset.ok = "1"; b.submit(); } });
+          });
+        });
+
+        var f = document.getElementById("nota-form");
+        if (!f) return;
+        var ta = document.getElementById("nota-texto"), cq = document.getElementById("nota-cq");
+        var sel = "";
+        // guarda lo seleccionado ya al soltar el dedo: al tocar el botón el textarea pierde el foco
+        function recordar() { sel = ta.value.slice(ta.selectionStart, ta.selectionEnd).trim() || sel; }
+        ta.addEventListener("select", recordar);
+        ta.addEventListener("keyup", recordar);
+        ta.addEventListener("pointerup", recordar);
+        ta.addEventListener("input", function () { sel = ""; });
+        document.getElementById("nota-cq-btn").addEventListener("click", function () {
+          var jp = sel || cq.value.trim();
+          if (!jp) { cq.focus(); return; }
+          // guarda la nota primero para volver a ella (con lo escrito) tras crear la tarjeta
+          var datos = new FormData(f);
+          datos.append("ajax", "1");
+          fetch(f.action, { method: "POST", body: datos })
+            .then(function (r) { return r.json(); })
+            .then(function (r) {
+              if (r.id) f.elements.id.value = r.id;
+              cardForm.nueva({ jp: jp, volver: "/japones/cuaderno" + (r.id ? "?nota=" + r.id : "") });
+            })
+            .catch(function () { cardForm.nueva({ jp: jp }); });
+        });
+      })();
+    </script>
+  </body>
+</html>

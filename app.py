@@ -47,7 +47,7 @@ from core.emociones import es_solo_gracias, gesto_para_gracias
 from werkzeug.security import check_password_hash, generate_password_hash
 from core.settings_store import settings_get, settings_set
 from core import system_settings, tamagotchi
-from core import japanese_items, cards_propias
+from core import japanese_items, cards_propias, cuaderno
 from flask import flash, redirect, url_for, session, request
 from functools import wraps
 from datetime import timedelta, date
@@ -1453,9 +1453,48 @@ def japones_card_guardar(kind):
         abort(404)
     error = cards_propias.guardar(brain.jap_memory, kind, request.form)
     flash(f"❌ {error}" if error else "✅ Card guardada", "error" if error else "success")
+    volver = request.form.get("volver", "")      # p. ej. el cuaderno: solo rutas propias de japonés
+    if volver.startswith("/japones/") and "\\" not in volver:
+        return redirect(volver)
     destino = {"vocabulario": "japones_vocabulario", "gramatica": "japones_gramatica",
                "kanji": "japones_kanjis"}[kind]
     return redirect(url_for(destino))
+
+
+@app.route("/japones/cuaderno")
+@login_requerido
+def japones_cuaderno():
+    """Lista de notas; con ?nota=<id> (o ?nueva=1) abre el editor de una."""
+    nota = None
+    if request.args.get("nota", "").isdigit():
+        nota = cuaderno.obtener(brain.jap_memory, int(request.args["nota"]))
+        if not nota:
+            flash("❌ Esa nota ya no existe", "error")
+            return redirect(url_for("japones_cuaderno"))
+    editando = nota is not None or request.args.get("nueva") == "1"
+    return render_template("japones_cuaderno.html", notas=cuaderno.listar(brain.jap_memory),
+                           nota=nota, editando=editando,
+                           tarjetas=cuaderno.tarjetas_en(brain.jap_memory, nota["texto"]) if nota else [])
+
+
+@app.route("/japones/cuaderno/guardar", methods=["POST"])
+@login_requerido
+def japones_cuaderno_guardar():
+    nota_id = request.form.get("id", "")
+    nota_id = cuaderno.guardar(brain.jap_memory, int(nota_id) if nota_id.isdigit() else None,
+                               request.form.get("titulo"), request.form.get("texto"))
+    if request.form.get("ajax"):                 # «Crear tarjeta» guarda antes de salir de la página
+        return jsonify({"id": nota_id})
+    return redirect(url_for("japones_cuaderno", nota=nota_id) if nota_id else url_for("japones_cuaderno"))
+
+
+@app.route("/japones/cuaderno/borrar", methods=["POST"])
+@login_requerido
+def japones_cuaderno_borrar():
+    if request.form.get("id", "").isdigit():
+        cuaderno.borrar(brain.jap_memory, int(request.form["id"]))
+        flash("✅ Nota eliminada", "success")
+    return redirect(url_for("japones_cuaderno"))
 
 
 @app.route("/japones/kanjis")
@@ -1506,8 +1545,9 @@ def japones_kanjis():
         selected_item = next((k for k in kanjis if k["kanji"] == selected), kanjis[0] if kanjis else None)
     else:
         selected_item = kanjis[0] if kanjis else None
+    notas = cuaderno.notas_con(brain.jap_memory, selected_item["kanji"]) if selected_item else []
     return render_template("japones_kanjis.html", kanjis=kanjis,
-                           categorias=categorias, selected=selected_item,
+                           categorias=categorias, selected=selected_item, notas=notas,
                            total_dom=total_dom, totales=totales)
 
 
@@ -1953,9 +1993,9 @@ def japones_kanjis_practicar():
     if cat in ("", "all"):
         cat_nombre = "N5"
     elif cat == "viaje":
-        cat_nombre = "✈ Extra para el viaje"
+        cat_nombre = "Extra para el viaje"
     else:
-        cat_nombre = (("✈ Viaje · " if cat.startswith("viaje_") else "N5 · ")
+        cat_nombre = (("Viaje · " if cat.startswith("viaje_") else "N5 · ")
                       + pool[0].get("categoria_nombre", cat).split("—")[-1].strip())
 
     if request.method == "POST":

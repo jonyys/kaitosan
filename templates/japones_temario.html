@@ -553,6 +553,15 @@
           });
         });
 
+        // enlace desde el cuaderno: /japones/<kind>?abrir=<jp> abre esa card
+        var ab = new URLSearchParams(location.search).get("abrir");
+        var cardAb = ab && cards.filter(function (c) { return c.dataset.jp === ab; })[0];
+        if (cardAb) {
+          activeU = "all";
+          aplicar();
+          abrirCard(cardAb);
+        }
+
         // Deslizar de lado en el pop-up = ficha anterior / siguiente.
         var tX = 0,
           tY = 0;

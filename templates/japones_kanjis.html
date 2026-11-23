@@ -30,15 +30,6 @@
         font-weight: 700;
         color: var(--text-suave, var(--text));
       }
-      .kanji-card.viaje { position: relative; }
-      .kanji-card.viaje::before {
-        content: "✈";
-        position: absolute;
-        top: 6px;
-        right: 8px;
-        font-size: 11px;
-        opacity: 0.6;
-      }
       .kanji-cat {
         flex: none;
         white-space: nowrap;
@@ -448,7 +439,7 @@
           </button>
           {% endfor %}
         </div>
-        <div class="kanji-grupo">✈ Extra para el viaje</div>
+        <div class="kanji-grupo">Extra para el viaje</div>
         <div class="kanji-cats">
           <button
             type="button"
@@ -485,7 +476,7 @@
         <div class="kanji-grid">
           {% for item in kanjis %}
           <a
-            class="kanji-card {% if selected and selected.kanji == item.kanji %}active{% endif %} {% if item.dominado %}dominado{% endif %} {% if item.categoria.startswith('viaje_') %}viaje{% endif %}"
+            class="kanji-card {% if selected and selected.kanji == item.kanji %}active{% endif %} {% if item.dominado %}dominado{% endif %}"
             data-cat="{{ item.categoria }}"
             href="/japones/kanjis?kanji={{ item.kanji | urlencode }}"
           >
@@ -566,6 +557,14 @@
             </ul>
           </td>
         </tr>
+        {% if notas %}
+        <tr>
+          <th>En tu cuaderno</th>
+          <td>
+            {% for n in notas %}<a href="/japones/cuaderno?nota={{ n.id }}">{{ n.etiqueta }}</a>{% if not loop.last %} · {% endif %}{% endfor %}
+          </td>
+        </tr>
+        {% endif %}
       </table>
 
       <div class="ficha-mnemo">

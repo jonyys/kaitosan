@@ -1,5 +1,5 @@
 {# Formulario único para añadir / editar una card. Se incluye con
-   {% with kind='vocabulario'|'gramatica'|'kanji' %}. Uso: cardForm.nueva() y
+   {% with kind='vocabulario'|'gramatica'|'kanji' %}. Uso: cardForm.nueva({jp, volver}) y
    cardForm.editar({jp, reading, meaning, ...}). Guarda en /japones/card/<kind>/guardar. #}
 {%- if kind == 'kanji' -%}
   {%- set _campos = [('jp','Kanji',0),('meaning','Significado',0),('on','Lectura on',0),('kun','Lectura kun',0),('trazos','Trazos',0),('radical','Radical',0),('ejemplo','Ejemplo',1),('vocab_ejemplo','Vocabulario (ej: 日本 にほん Japón · 日曜日 にちようび domingo)',1)] -%}
@@ -24,6 +24,7 @@
 <dialog id="card-edit" class="flash-pop" tabindex="-1" autofocus>
   <form method="POST" action="/japones/card/{{ kind }}/guardar">
     <input type="hidden" name="nuevo" value="1" />
+    <input type="hidden" name="volver" value="" />{# ruta /japones/... a la que volver tras guardar (opcional) #}
     <h3 id="card-edit-titulo"></h3>
     <label id="card-edit-unidad">{{ 'Categoría' if kind == 'kanji' else 'Unidad' }}
       <select name="unidad">
@@ -78,7 +79,7 @@
           .then(function (ok) { if (ok) { b.dataset.ok = "1"; b.submit(); } });
       });
     });
-    window.cardForm = { nueva: function () { abrir(true); }, editar: function (x) { abrir(false, x); } };
+    window.cardForm = { nueva: function (x) { abrir(true, x); }, editar: function (x) { abrir(false, x); } };
     document.getElementById("card-edit-cancel").addEventListener("click", function () { d.close(); });
     d.addEventListener("click", function (e) { if (e.target === d) d.close(); });
   })();
