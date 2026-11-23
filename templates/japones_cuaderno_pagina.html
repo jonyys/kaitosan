@@ -9,8 +9,10 @@
       .cu-titulo { width: 100%; box-sizing: border-box; font-size: 16px; font-weight: 700; margin-bottom: 10px; }
       .cu-ref { display: flex; gap: 10px; overflow-x: auto; margin-bottom: 12px; }
       .cu-ref:empty { display: none; }
-      .cu-ref-item { flex: 0 0 auto; text-align: center; background: var(--surface-2); border: 1px solid var(--border-fuerte); border-radius: var(--radio-sm); padding: 8px 14px; }
+      .cu-ref-item { position: relative; flex: 0 0 auto; text-align: center; background: var(--surface-2); border: 1px solid var(--border-fuerte); border-radius: var(--radio-sm); padding: 8px 14px; }
       .cu-ref-item b { display: block; font-size: 40px; line-height: 1.15; color: var(--rosa-tinta); }
+      .cu-ref-item a { text-decoration: none; }
+      .cu-ref-item .cu-x { position: absolute; top: 2px; right: 4px; border: 0; background: none; color: var(--text-soft); font-size: 16px; line-height: 1; padding: 4px; cursor: pointer; }
       .cu-ref-item span { display: block; font-size: 13px; color: var(--text-soft); }
       .cu-ref-item .rd { color: var(--rosa-accion); font-weight: 700; }
 
@@ -24,6 +26,7 @@
       .cu-muestra { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--border-fuerte); padding: 0; cursor: pointer; }
       .cu-muestra.activo { box-shadow: 0 0 0 2px var(--rosa-accion); }
       .cu-ancho { width: 110px; }
+      .cu-select option { background: var(--bg); color: var(--text); }
       .cu-select { font: inherit; font-size: 12px; color: var(--text); background: var(--surface-2); border: 1px solid var(--border-fuerte); border-radius: var(--radio-sm); padding: 8px; }
       .cu-estado { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--text-soft); }
 
@@ -31,14 +34,6 @@
       .cu-papel { position: relative; width: 100%; max-width: 720px; margin: 0 auto; aspect-ratio: 3 / 4; background: #fff; border: 1px solid var(--border-fuerte); border-radius: 6px; box-shadow: var(--sombra-sm); overflow: hidden; }
       .cu-papel canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
 
-      .cu-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-      .cu-chip { display: flex; align-items: stretch; background: var(--surface-2); border: 1px solid var(--border-fuerte); border-radius: var(--radio-sm); max-width: 100%; }
-      .cu-chip a { text-decoration: none; color: var(--text); padding: 8px 12px; overflow-wrap: anywhere; }
-      .cu-chip a:hover { color: var(--rosa-accion); }
-      .cu-chip b { font-size: 18px; color: var(--rosa-tinta); }
-      .cu-chip small { display: block; font-size: 12px; color: var(--text-soft); }
-      .cu-chip .rd { color: var(--rosa-accion); font-weight: 700; margin-right: 4px; }
-      .cu-chip button { border: 0; border-left: 1px solid var(--border-fuerte); background: none; color: var(--text-soft); font-size: 18px; padding: 0 10px; cursor: pointer; border-radius: 0 var(--radio-sm) var(--radio-sm) 0; }
 
       #cu-vinc { position: fixed; box-sizing: border-box; text-align: left; max-width: 460px; width: calc(100vw - 24px); max-height: 88vh; overflow-y: auto; overflow-x: hidden; }
       #cu-vinc h3 { margin: 0 0 14px; color: var(--rosa-tinta); }
@@ -100,9 +95,7 @@
 
         <div class="cu-papel" id="cu-papel"><canvas id="cu-lienzo"></canvas></div>
 
-        <h2 style="margin-top: 22px">Tarjetas vinculadas</h2>
-        <div class="cu-chips" id="cu-chips"></div>
-        <p class="empty" id="cu-sin-tarjetas" hidden>Ninguna tarjeta vinculada todavía.</p>
+        <p class="empty" id="cu-sin-tarjetas" hidden>Vincula aquí las tarjetas que estás practicando: aparecerán arriba para copiarlas y su ficha mostrará esta página.</p>
         <button type="button" class="btn btn-ghost" id="cu-vincular" style="margin-top: 12px; font-size: 12px">Vincular tarjetas</button>
       </div>
     </div>
@@ -402,26 +395,21 @@
           return "/japones/" + (t.kind === "gramatica" ? "gramatica" : "vocabulario") + "?abrir=" + u;
         }
         function pintarTarjetas() {
-          var ref = $("cu-ref"), chips = $("cu-chips");
-          ref.textContent = chips.textContent = "";
+          var ref = $("cu-ref");
+          ref.textContent = "";
           tarjetas.forEach(function (t) {
             var r = hijo(ref, "div", "cu-ref-item");
-            hijo(r, "b", "", t.jp);
+            var a = hijo(r, "a");
+            a.href = enlace(t);
+            a.title = "Abrir la tarjeta";
+            hijo(a, "b", "", t.jp);
+            if (t.kind === "kanji") a.addEventListener("click", function () { try { sessionStorage.setItem("abrirFicha", "1"); } catch (e) {} });
+            var x = hijo(r, "button", "cu-x", "×");
+            x.type = "button";
+            x.title = x.ariaLabel = "Quitar tarjeta de esta página";
+            x.addEventListener("click", function () { desvincular(t); });
             if (t.reading) hijo(r, "span", "rd", t.reading);
             hijo(r, "span", "", t.meaning);
-
-            var c = hijo(chips, "div", "cu-chip");
-            var a = hijo(c, "a");
-            a.href = enlace(t);
-            hijo(a, "b", "", t.jp);
-            var s = hijo(a, "small");
-            if (t.reading) hijo(s, "span", "rd", t.reading);
-            s.appendChild(document.createTextNode(t.meaning));
-            if (t.kind === "kanji") a.addEventListener("click", function () { try { sessionStorage.setItem("abrirFicha", "1"); } catch (e) {} });
-            var x = hijo(c, "button", "", "×");
-            x.type = "button";
-            x.title = x.ariaLabel = "Quitar tarjeta";
-            x.addEventListener("click", function () { desvincular(t); });
           });
           $("cu-sin-tarjetas").hidden = tarjetas.length > 0;
         }
