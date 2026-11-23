@@ -566,11 +566,11 @@
             </ul>
           </td>
         </tr>
-        {% if notas %}
+        {% if paginas %}
         <tr>
-          <th>En tu cuaderno</th>
+          <th>Páginas del cuaderno</th>
           <td>
-            {% for n in notas %}<a href="/japones/cuaderno?nota={{ n.id }}">{{ n.etiqueta }}</a>{% if not loop.last %} · {% endif %}{% endfor %}
+            {% for p in paginas %}<a href="/japones/cuaderno/{{ p.id }}">{{ p.titulo or 'Sin título' }}</a>{% if not loop.last %} · {% endif %}{% endfor %}
           </td>
         </tr>
         {% endif %}
@@ -601,6 +601,7 @@
       <div style="margin-top: 14px; text-align: center">
         <button type="button" class="btn btn-ghost" style="font-size: 12px"
           onclick='document.getElementById("kanji-ficha-pop").close(); cardForm.editar({{ _ed | tojson }})'>Editar card</button>
+        <a href="/japones/cuaderno/nueva?kind=kanji&jp={{ selected.kanji | urlencode }}"><button type="button" class="btn btn-ghost" style="font-size: 12px">Escribir en el cuaderno</button></a>
         <form method="POST" action="/japones/card/kanji/borrar" class="js-borrar" style="display: inline">
           <input type="hidden" name="jp" value="{{ selected.kanji }}" />
           <button type="submit" class="btn" style="font-size: 12px; background: var(--peligro-fill); color: #fff; border: 0">Eliminar card</button>

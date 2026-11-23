@@ -1,77 +1,135 @@
-"""Cuaderno de Laura: notas libres (apuntes del libro, frases, dudas) ligadas a
-sus flashcards.
+"""Cuaderno de Laura: páginas escritas a mano (como las Notas de iOS), ligadas
+a sus flashcards.
 
-- Las notas viven en la tabla `cuaderno_notas` de la misma BD (mismo patrón que
-  cards_propias: `jm._conectar()`).
-- El enlace con las cards es por texto: `tarjetas_en(texto, jm)` busca en la nota
-  cualquier card conocida (kanji, vocabulario, gramática) y `notas_con(jm, jp)`
-  hace el camino inverso para la ficha del kanji.
+- `cuaderno_paginas`: una página de 1200x1600 lógicos; `trazos` es un JSON con la
+  lista de trazos {c, w, e, p:[[x,y]…]} y `miniatura` un PNG pequeño (data URL)
+  que genera el navegador para la lista.
+- `cuaderno_vinculos`: qué cards (kind, jp) están ligadas a cada página, a mano
+  (sin OCR). Mismo patrón que cards_propias: `jm._conectar()`.
+- La vieja tabla `cuaderno_notas` (cuaderno de texto) se deja intacta en la BD.
 """
-import re
+import json
+import unicodedata
 from datetime import datetime
 
 from ai.sensei.curriculum import CURRICULUM
 from ai.sensei.kanji_n5 import KANJI_N5
 
-_KANJI_KATA = re.compile("[一-鿿゠-ヿ]")   # kanji o katakana
-_HIRAGANA = re.compile("[぀-ゟ]+")
+KINDS = ("kanji", "vocabulario", "gramatica")
+MAX_TRAZOS_BYTES = 8_000_000   # tope de seguridad por página
+MAX_MINIATURA = 200_000
 
 
 def _tabla(c):
-    c.execute("CREATE TABLE IF NOT EXISTS cuaderno_notas ("
-              "id INTEGER PRIMARY KEY, titulo TEXT, texto TEXT, creada TEXT, editada TEXT)")
+    c.execute("CREATE TABLE IF NOT EXISTS cuaderno_paginas ("
+              "id INTEGER PRIMARY KEY, titulo TEXT, fondo TEXT, trazos TEXT, "
+              "miniatura TEXT, creada TEXT, editada TEXT)")
+    c.execute("CREATE TABLE IF NOT EXISTS cuaderno_vinculos ("
+              "pagina_id INTEGER, kind TEXT, jp TEXT, PRIMARY KEY (pagina_id, kind, jp))")
 
 
-def _fila(r):
-    nota = dict(zip(("id", "titulo", "texto", "creada", "editada"), r))
-    primera = next((l.strip() for l in nota["texto"].splitlines() if l.strip()), "")
-    nota["etiqueta"] = nota["titulo"] or (primera[:40] or "Sin título")
-    return nota
+def _ahora():
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+
+
+def _fondo(f):
+    return f if f in ("liso", "rayas", "cuadricula") else "liso"
 
 
 def listar(jm):
-    """Notas, la última editada primero."""
+    """Páginas (sin trazos), la última editada primero."""
     with jm._conectar() as c:
         _tabla(c)
-        filas = c.execute("SELECT id, titulo, COALESCE(texto, ''), creada, editada "
-                          "FROM cuaderno_notas ORDER BY editada DESC, id DESC").fetchall()
-    return [_fila(r) for r in filas]
+        filas = c.execute("SELECT id, titulo, fondo, COALESCE(miniatura, ''), creada, editada "
+                          "FROM cuaderno_paginas ORDER BY editada DESC, id DESC").fetchall()
+    return [dict(zip(("id", "titulo", "fondo", "miniatura", "creada", "editada"), r)) for r in filas]
 
 
-def obtener(jm, nota_id):
+def obtener(jm, pagina_id):
     with jm._conectar() as c:
         _tabla(c)
-        r = c.execute("SELECT id, titulo, COALESCE(texto, ''), creada, editada "
-                      "FROM cuaderno_notas WHERE id = ?", (nota_id,)).fetchone()
-    return _fila(r) if r else None
+        r = c.execute("SELECT id, titulo, fondo, COALESCE(trazos, '[]'), creada, editada "
+                      "FROM cuaderno_paginas WHERE id = ?", (pagina_id,)).fetchone()
+    if not r:
+        return None
+    p = dict(zip(("id", "titulo", "fondo", "trazos", "creada", "editada"), r))
+    p["trazos"] = json.loads(p["trazos"])
+    return p
 
 
-def guardar(jm, nota_id, titulo, texto):
-    """Crea (nota_id falsy) o actualiza. Devuelve el id, o None si no hay nada
-    que guardar (nota nueva y vacía) o la nota ya no existe."""
-    titulo, texto = (titulo or "").strip(), (texto or "").strip()
-    ahora = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+def crear(jm, titulo="", fondo="liso"):
+    ahora = _ahora()
     with jm._conectar() as c:
         _tabla(c)
-        if nota_id:
-            n = c.execute("UPDATE cuaderno_notas SET titulo = ?, texto = ?, editada = ? WHERE id = ?",
-                          (titulo, texto, ahora, nota_id)).rowcount
-            return int(nota_id) if n else None
-        if not (titulo or texto):
-            return None
-        return c.execute("INSERT INTO cuaderno_notas (titulo, texto, creada, editada) VALUES (?, ?, ?, ?)",
-                         (titulo, texto, ahora, ahora)).lastrowid
+        return c.execute("INSERT INTO cuaderno_paginas (titulo, fondo, trazos, miniatura, creada, editada) "
+                         "VALUES (?, ?, '[]', '', ?, ?)", (titulo or "", _fondo(fondo), ahora, ahora)).lastrowid
 
 
-def borrar(jm, nota_id):
+def guardar(jm, pagina_id, titulo, fondo, trazos, miniatura=None):
+    """Actualiza la página. `trazos` es la lista ya decodificada. Devuelve False
+    si la página no existe o los datos no valen."""
+    if not isinstance(trazos, list):
+        return False
+    datos = json.dumps(trazos, separators=(",", ":"))
+    if len(datos) > MAX_TRAZOS_BYTES:
+        return False
+    mini = (miniatura if isinstance(miniatura, str) and miniatura.startswith("data:image/png")
+            and len(miniatura) <= MAX_MINIATURA else None)
     with jm._conectar() as c:
         _tabla(c)
-        c.execute("DELETE FROM cuaderno_notas WHERE id = ?", (nota_id,))
+        n = c.execute("UPDATE cuaderno_paginas SET titulo = ?, fondo = ?, trazos = ?, editada = ?, "
+                      "miniatura = COALESCE(?, miniatura) WHERE id = ?",
+                      ((titulo or "").strip()[:80], _fondo(fondo), datos, _ahora(), mini, pagina_id)).rowcount
+    return bool(n)
 
 
-def notas_con(jm, jp):
-    """Notas cuyo texto contiene `jp` (para «En tu cuaderno» en la ficha)."""
-    return [n for n in listar(jm) if jp and jp in n["texto"]]
+def borrar(jm, pagina_id):
+    with jm._conectar() as c:
+        _tabla(c)
+        c.execute("DELETE FROM cuaderno_paginas WHERE id = ?", (pagina_id,))
+        c.execute("DELETE FROM cuaderno_vinculos WHERE pagina_id = ?", (pagina_id,))
+
+
+def vincular(jm, pagina_id, kind, jp):
+    jp = (jp or "").strip()
+    if kind not in KINDS or not jp:
+        return False
+    with jm._conectar() as c:
+        _tabla(c)
+        if not c.execute("SELECT 1 FROM cuaderno_paginas WHERE id = ?", (pagina_id,)).fetchone():
+            return False
+        c.execute("INSERT OR IGNORE INTO cuaderno_vinculos (pagina_id, kind, jp) VALUES (?, ?, ?)",
+                  (pagina_id, kind, jp))
+    return True
+
+
+def desvincular(jm, pagina_id, kind, jp):
+    with jm._conectar() as c:
+        _tabla(c)
+        c.execute("DELETE FROM cuaderno_vinculos WHERE pagina_id = ? AND kind = ? AND jp = ?",
+                  (pagina_id, kind, jp))
+
+
+def paginas_de(jm, kind, jp):
+    """[{id, titulo, editada}] de las páginas ligadas a esa card."""
+    with jm._conectar() as c:
+        _tabla(c)
+        filas = c.execute("SELECT p.id, p.titulo, p.editada FROM cuaderno_paginas p "
+                          "JOIN cuaderno_vinculos v ON v.pagina_id = p.id "
+                          "WHERE v.kind = ? AND v.jp = ? ORDER BY p.editada DESC", (kind, jp)).fetchall()
+    return [dict(zip(("id", "titulo", "editada"), r)) for r in filas]
+
+
+def tarjetas_de(jm, pagina_id):
+    """Cards ligadas a una página, con lectura y significado (los que conocemos)."""
+    with jm._conectar() as c:
+        _tabla(c)
+        filas = c.execute("SELECT kind, jp FROM cuaderno_vinculos WHERE pagina_id = ? "
+                          "ORDER BY rowid", (pagina_id,)).fetchall()
+    if not filas:
+        return []
+    conocidas = {(x["kind"], x["jp"]): x for x in cartas_conocidas(jm)}
+    return [conocidas.get((k, jp), {"kind": k, "jp": jp, "reading": "", "meaning": ""}) for k, jp in filas]
 
 
 def cartas_conocidas(jm):
@@ -100,40 +158,24 @@ def cartas_conocidas(jm):
     return list(cartas.values())
 
 
-def _clave(carta):
-    """Texto a buscar de una card, o None si dispararía falsos positivos: vale si
-    lleva algún kanji/katakana, o si es hiragana puro de 3+ caracteres."""
-    jp = carta["jp"].strip()
-    if carta["kind"] == "gramatica":
-        jp = jp.strip("〜～")
-        if len(jp) < 2:
-            return None
-    if _KANJI_KATA.search(jp) or (len(jp) >= 3 and _HIRAGANA.fullmatch(jp)):
-        return jp
-    return None
+def _plano(s):
+    """Minúsculas y sin acentos, para que «dia» encuentre «día»."""
+    return "".join(ch for ch in unicodedata.normalize("NFD", (s or "").lower())
+                   if not unicodedata.combining(ch))
 
 
-def encontrar(texto, cartas):
-    """Cards cuyo `jp` aparece en `texto`, por orden de aparición. Las más largas
-    primero y sin solaparse (出口 no deja también 口); una card no sale dos veces."""
-    usado = [False] * len(texto)
-    hallazgos = {}
-    claves = sorted(((_clave(c), c) for c in cartas), key=lambda kc: -len(kc[0] or ""))
-    for clave, carta in claves:
-        if not clave or carta["jp"] in hallazgos:
-            continue
-        i = texto.find(clave)
-        while i >= 0:
-            if not any(usado[i:i + len(clave)]):
-                usado[i:i + len(clave)] = [True] * len(clave)
-                hallazgos[carta["jp"]] = (i, carta)
-                break
-            i = texto.find(clave, i + 1)
-    return [c for _, c in sorted(hallazgos.values(), key=lambda h: h[0])]
-
-
-def tarjetas_en(jm, texto):
-    return encontrar(texto, cartas_conocidas(jm))
+def buscar_cartas(jm, q, limite=20):
+    """Cards cuyo jp, lectura o significado contienen `q` (primero las que empiezan por q)."""
+    q = _plano(q).strip()
+    if not q:
+        return []
+    hallados = []
+    for c in cartas_conocidas(jm):
+        campos = [_plano(c["jp"]), _plano(c["reading"]), _plano(c["meaning"])]
+        if any(q in f for f in campos):
+            hallados.append((not any(f.startswith(q) for f in campos), c))
+    hallados.sort(key=lambda h: h[0])   # estable: las que empiezan por q, delante
+    return [c for _, c in hallados[:limite]]
 
 
 if __name__ == "__main__":
@@ -141,26 +183,31 @@ if __name__ == "__main__":
     import tempfile
     from core.japanese_memory import JapaneseMemory
 
-    def c(jp, kind="vocabulario"):
-        return {"kind": kind, "jp": jp}
-    cs = [c("出口"), c("学生"), c("は"), c("です"), c("～です", "gramatica"), c("口"),
-          c("〜ます", "gramatica"), c("〜に行く", "gramatica"), c("わたし"), c("テレビ")]
-    r = [x["jp"] for x in encontrar("今日は出口で待つ。わたしは学生です", cs)]
-    assert r == ["出口", "わたし", "学生"], r          # sin は/です/～です; 口 no sale dentro de 出口
-    assert [x["jp"] for x in encontrar("テレビを見る。出口の口", cs)] == ["テレビ", "出口", "口"]
-    assert [x["jp"] for x in encontrar("駅に行く", cs)] == ["〜に行く"]    # la 〜 se ignora
-    assert encontrar("行く", cs) == [] and encontrar("ます", [c("〜ます", "gramatica")]) == []
-
     jm = JapaneseMemory(os.path.join(tempfile.mkdtemp(), "t.db"))
-    assert listar(jm) == [] and guardar(jm, None, "", "  ") is None
-    a = guardar(jm, None, "Lección 1", "出口はどこですか")
-    b = guardar(jm, None, "", "segunda nota")
-    assert listar(jm)[0]["id"] == b and obtener(jm, b)["etiqueta"] == "segunda nota"
-    assert guardar(jm, a, "Lección 1b", "出口と入口") == a
-    assert obtener(jm, a)["titulo"] == "Lección 1b" and listar(jm)[0]["id"] == a
-    assert [n["id"] for n in notas_con(jm, "入口")] == [a] and notas_con(jm, "駅") == []
-    assert guardar(jm, 999, "x", "y") is None
-    assert isinstance(tarjetas_en(jm, "出口"), list)
+    assert listar(jm) == []
+    a = crear(jm, "Lección 1")
+    b = crear(jm, "", "cuadricula")
+    assert obtener(jm, b)["fondo"] == "cuadricula" and obtener(jm, a)["trazos"] == []
+    tr = [{"c": "#000000", "w": 3, "e": 0, "p": [[1, 2], [3, 4]]}]
+    assert guardar(jm, a, "L1", "rayas", tr, "data:image/png;base64,AAAA")
+    assert listar(jm)[0]["id"] == a and listar(jm)[0]["miniatura"].startswith("data:image/png")
+    assert obtener(jm, a)["trazos"] == tr and obtener(jm, a)["fondo"] == "rayas"
+    assert guardar(jm, a, "L1", "rayas", tr) and listar(jm)[0]["miniatura"]   # sin miniatura nueva: se conserva
+    assert not guardar(jm, 999, "x", "liso", []) and not guardar(jm, a, "x", "liso", "no")
+    assert vincular(jm, a, "kanji", "日") and vincular(jm, a, "kanji", "日") and not vincular(jm, 999, "kanji", "日")
+    assert not vincular(jm, a, "otro", "日")
+    assert [p["id"] for p in paginas_de(jm, "kanji", "日")] == [a] and paginas_de(jm, "vocabulario", "日") == []
+    assert tarjetas_de(jm, a)[0]["jp"] == "日"
+    desvincular(jm, a, "kanji", "日")
+    assert paginas_de(jm, "kanji", "日") == []
+    vincular(jm, a, "kanji", "日")
     borrar(jm, a)
-    assert obtener(jm, a) is None and len(listar(jm)) == 1
+    assert obtener(jm, a) is None and paginas_de(jm, "kanji", "日") == [] and len(listar(jm)) == 1
+    k = next(x for x in KANJI_N5 if x["jp"] == "日")
+    assert any(x["jp"] == "日" for x in buscar_cartas(jm, "日"))
+    rd = (k.get("reading_card") or k.get("reading") or k.get("kun") or "").strip()
+    assert rd and any(x["jp"] == "日" for x in buscar_cartas(jm, rd, 500)), rd
+    es = k["meaning"].replace(" (kanji)", "").split(",")[0].split("/")[0].strip()
+    assert any(x["jp"] == "日" for x in buscar_cartas(jm, es, 500)), es
+    assert buscar_cartas(jm, "") == [] and len(buscar_cartas(jm, "a", 5)) <= 5
     print("ok")

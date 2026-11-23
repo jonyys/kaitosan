@@ -1466,40 +1466,84 @@ def japones_card_guardar(kind):
     return redirect(url_for(destino))
 
 
+def _pagina_o_404(pagina_id):
+    p = cuaderno.obtener(brain.jap_memory, pagina_id)
+    if not p:
+        abort(404)
+    return p
+
+
 @app.route("/japones/cuaderno")
 @login_requerido
 def japones_cuaderno():
-    """Lista de notas; con ?nota=<id> (o ?nueva=1) abre el editor de una."""
-    nota = None
-    if request.args.get("nota", "").isdigit():
-        nota = cuaderno.obtener(brain.jap_memory, int(request.args["nota"]))
-        if not nota:
-            flash("❌ Esa nota ya no existe", "error")
-            return redirect(url_for("japones_cuaderno"))
-    editando = nota is not None or request.args.get("nueva") == "1"
-    return render_template("japones_cuaderno.html", notas=cuaderno.listar(brain.jap_memory),
-                           nota=nota, editando=editando,
-                           tarjetas=cuaderno.tarjetas_en(brain.jap_memory, nota["texto"]) if nota else [])
+    """Lista de páginas escritas a mano, con su miniatura."""
+    return render_template("japones_cuaderno.html", paginas=cuaderno.listar(brain.jap_memory))
 
 
-@app.route("/japones/cuaderno/guardar", methods=["POST"])
+@app.route("/japones/cuaderno/nueva")
 @login_requerido
-def japones_cuaderno_guardar():
-    nota_id = request.form.get("id", "")
-    nota_id = cuaderno.guardar(brain.jap_memory, int(nota_id) if nota_id.isdigit() else None,
-                               request.form.get("titulo"), request.form.get("texto"))
-    if request.form.get("ajax"):                 # «Crear tarjeta» guarda antes de salir de la página
-        return jsonify({"id": nota_id})
-    return redirect(url_for("japones_cuaderno", nota=nota_id) if nota_id else url_for("japones_cuaderno"))
+def japones_cuaderno_nueva():
+    """Crea una página en blanco y abre su editor. Con ?kind=&jp= nace ya ligada a esa card."""
+    kind, jp = request.args.get("kind", ""), request.args.get("jp", "").strip()
+    pid = cuaderno.crear(brain.jap_memory, jp[:80])
+    if kind and jp:
+        cuaderno.vincular(brain.jap_memory, pid, kind, jp)
+    return redirect(url_for("japones_cuaderno_pagina", pagina_id=pid))
 
 
-@app.route("/japones/cuaderno/borrar", methods=["POST"])
+@app.route("/japones/cuaderno/<int:pagina_id>")
 @login_requerido
-def japones_cuaderno_borrar():
-    if request.form.get("id", "").isdigit():
-        cuaderno.borrar(brain.jap_memory, int(request.form["id"]))
-        flash("✅ Nota eliminada", "success")
+def japones_cuaderno_pagina(pagina_id):
+    return render_template("japones_cuaderno_pagina.html", pagina=_pagina_o_404(pagina_id),
+                           tarjetas=cuaderno.tarjetas_de(brain.jap_memory, pagina_id))
+
+
+@app.route("/japones/cuaderno/<int:pagina_id>/guardar", methods=["POST"])
+@login_requerido
+def japones_cuaderno_guardar(pagina_id):
+    """Autoguardado del editor: JSON {titulo, fondo, trazos, miniatura}."""
+    d = request.get_json(silent=True) or {}
+    ok = cuaderno.guardar(brain.jap_memory, pagina_id, d.get("titulo"), d.get("fondo"),
+                          d.get("trazos"), d.get("miniatura"))
+    return jsonify({"ok": ok}), (200 if ok else 400)
+
+
+@app.route("/japones/cuaderno/<int:pagina_id>/borrar", methods=["POST"])
+@login_requerido
+def japones_cuaderno_borrar(pagina_id):
+    cuaderno.borrar(brain.jap_memory, pagina_id)
+    flash("✅ Página eliminada", "success")
     return redirect(url_for("japones_cuaderno"))
+
+
+@app.route("/japones/cuaderno/<int:pagina_id>/vincular", methods=["POST"])
+@login_requerido
+def japones_cuaderno_vincular(pagina_id):
+    d = request.get_json(silent=True) or {}
+    ok = cuaderno.vincular(brain.jap_memory, pagina_id, d.get("kind"), d.get("jp"))
+    return jsonify({"ok": ok}), (200 if ok else 400)
+
+
+@app.route("/japones/cuaderno/<int:pagina_id>/desvincular", methods=["POST"])
+@login_requerido
+def japones_cuaderno_desvincular(pagina_id):
+    d = request.get_json(silent=True) or {}
+    cuaderno.desvincular(brain.jap_memory, pagina_id, d.get("kind"), d.get("jp"))
+    return jsonify({"ok": True})
+
+
+@app.route("/japones/cuaderno/buscar")
+@login_requerido
+def japones_cuaderno_buscar():
+    return jsonify(cuaderno.buscar_cartas(brain.jap_memory, request.args.get("q", "")))
+
+
+@app.route("/japones/cuaderno/de")
+@login_requerido
+def japones_cuaderno_de():
+    """Páginas ligadas a una card (para el pop-up de vocabulario/gramática)."""
+    return jsonify(cuaderno.paginas_de(brain.jap_memory, request.args.get("kind", ""),
+                                       request.args.get("jp", "")))
 
 
 @app.route("/japones/kanjis")
@@ -1550,9 +1594,9 @@ def japones_kanjis():
         selected_item = next((k for k in kanjis if k["kanji"] == selected), kanjis[0] if kanjis else None)
     else:
         selected_item = kanjis[0] if kanjis else None
-    notas = cuaderno.notas_con(brain.jap_memory, selected_item["kanji"]) if selected_item else []
+    paginas = cuaderno.paginas_de(brain.jap_memory, "kanji", selected_item["kanji"]) if selected_item else []
     return render_template("japones_kanjis.html", kanjis=kanjis,
-                           categorias=categorias, selected=selected_item, notas=notas,
+                           categorias=categorias, selected=selected_item, paginas=paginas,
                            total_dom=total_dom, totales=totales)
 
 

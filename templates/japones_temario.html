@@ -373,6 +373,7 @@
         <tr id="voc-row-uso"><th>Uso</th><td id="voc-pop-uso"></td></tr>
         <tr id="voc-row-unidad"><th>Unidad</th><td id="voc-pop-unidad"></td></tr>
         <tr><th>Estado</th><td id="voc-pop-estado"></td></tr>
+        <tr id="voc-row-cuad" hidden><th>Páginas del cuaderno</th><td id="voc-pop-cuad"></td></tr>
       </table>
 
       <form
@@ -388,6 +389,7 @@
       </form>
       <div style="margin-top: 14px; text-align: center">
         <button type="button" class="btn btn-ghost" id="voc-pop-edit" style="font-size: 12px">Editar card</button>
+        <a id="voc-pop-cuad-nueva" href="#"><button type="button" class="btn btn-ghost" style="font-size: 12px">Escribir en el cuaderno</button></a>
         <form method="POST" action="/japones/card/{{ kind }}/borrar" class="js-borrar" style="display: inline">
           <input type="hidden" name="jp" id="voc-pop-del-jp" />
           <button type="submit" class="btn" style="font-size: 12px; background: var(--peligro-fill); color: #fff; border: 0">Eliminar card</button>
@@ -502,6 +504,25 @@
           fila("voc-pop-unidad", d.unidad);
           document.getElementById("voc-pop-estado").textContent =
             ESTADO[d.estado] || d.estado;
+          // páginas del cuaderno ligadas a esta card (solo se consulta la que se abre)
+          var cuad = document.getElementById("voc-pop-cuad");
+          cuad.textContent = "";
+          document.getElementById("voc-row-cuad").hidden = true;
+          document.getElementById("voc-pop-cuad-nueva").href =
+            "/japones/cuaderno/nueva?kind={{ kind }}&jp=" + encodeURIComponent(d.jp);
+          fetch("/japones/cuaderno/de?kind={{ kind }}&jp=" + encodeURIComponent(d.jp))
+            .then(function (r) { return r.json(); })
+            .then(function (ps) {
+              if (actual !== card || !ps.length) return; // ya se abrió otra card
+              ps.forEach(function (p, i) {
+                if (i) cuad.appendChild(document.createTextNode(" · "));
+                var a = document.createElement("a");
+                a.href = "/japones/cuaderno/" + p.id;
+                a.textContent = p.titulo || "Sin título";
+                cuad.appendChild(a);
+              });
+              document.getElementById("voc-row-cuad").hidden = false;
+            }).catch(function () {});
           document.getElementById("voc-pop-word").value = d.jp;
           document.getElementById("voc-pop-del-jp").value = d.jp;
           var aprendida = d.estado === "aprendida";

@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Página — Cuaderno — Kaitosan</title>
+    {% include 'partials/admin/_estilos.html' %}
+    <style>
+      .cu-titulo { width: 100%; box-sizing: border-box; font-size: 16px; font-weight: 700; margin-bottom: 10px; }
+      .cu-ref { display: flex; gap: 10px; overflow-x: auto; margin-bottom: 12px; }
+      .cu-ref:empty { display: none; }
+      .cu-ref-item { flex: 0 0 auto; text-align: center; background: var(--surface-2); border: 1px solid var(--border-fuerte); border-radius: var(--radio-sm); padding: 8px 14px; }
+      .cu-ref-item b { display: block; font-size: 40px; line-height: 1.15; color: var(--rosa-tinta); }
+      .cu-ref-item span { display: block; font-size: 13px; color: var(--text-soft); }
+      .cu-ref-item .rd { color: var(--rosa-accion); font-weight: 700; }
+
+      .cu-barra { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+      .cu-barra .btn { font-size: 12px; padding: 8px 12px; }
+      .cu-barra .btn.activo { border-color: var(--rosa-accion); box-shadow: 0 0 0 2px var(--rosa-accion); }
+      .cu-barra .btn .ico { width: 16px; height: 16px; }
+      .cu-rehacer .ico { transform: scaleX(-1); }
+      .cu-sep { width: 1px; align-self: stretch; background: var(--border-fuerte); margin: 0 2px; }
+      .cu-color { width: 44px; height: 44px; padding: 0; border: 2px solid var(--border-fuerte); border-radius: 50%; background: none; cursor: pointer; }
+      .cu-muestra { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--border-fuerte); padding: 0; cursor: pointer; }
+      .cu-muestra.activo { box-shadow: 0 0 0 2px var(--rosa-accion); }
+      .cu-ancho { width: 110px; }
+      .cu-select { font: inherit; font-size: 12px; color: var(--text); background: var(--surface-2); border: 1px solid var(--border-fuerte); border-radius: var(--radio-sm); padding: 8px; }
+      .cu-estado { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--text-soft); }
+
+      /* el papel es siempre blanco, como el de verdad (también en los temas oscuros) */
+      .cu-papel { position: relative; width: 100%; max-width: 720px; margin: 0 auto; aspect-ratio: 3 / 4; background: #fff; border: 1px solid var(--border-fuerte); border-radius: 6px; box-shadow: var(--sombra-sm); overflow: hidden; }
+      .cu-papel canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
+
+      .cu-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+      .cu-chip { display: flex; align-items: stretch; background: var(--surface-2); border: 1px solid var(--border-fuerte); border-radius: var(--radio-sm); max-width: 100%; }
+      .cu-chip a { text-decoration: none; color: var(--text); padding: 8px 12px; overflow-wrap: anywhere; }
+      .cu-chip a:hover { color: var(--rosa-accion); }
+      .cu-chip b { font-size: 18px; color: var(--rosa-tinta); }
+      .cu-chip small { display: block; font-size: 12px; color: var(--text-soft); }
+      .cu-chip .rd { color: var(--rosa-accion); font-weight: 700; margin-right: 4px; }
+      .cu-chip button { border: 0; border-left: 1px solid var(--border-fuerte); background: none; color: var(--text-soft); font-size: 18px; padding: 0 10px; cursor: pointer; border-radius: 0 var(--radio-sm) var(--radio-sm) 0; }
+
+      #cu-vinc { position: fixed; box-sizing: border-box; text-align: left; max-width: 460px; width: calc(100vw - 24px); max-height: 88vh; overflow-y: auto; overflow-x: hidden; }
+      #cu-vinc h3 { margin: 0 0 14px; color: var(--rosa-tinta); }
+      #cu-vinc input { display: block; width: 100%; box-sizing: border-box; }
+      #cu-vinc:focus { outline: none; }
+      .cu-res { display: flex; flex-direction: column; gap: 6px; margin: 12px 0; }
+      .cu-res button { text-align: left; font: inherit; color: var(--text); background: var(--surface-2); border: 1px solid var(--border-fuerte); border-radius: var(--radio-sm); padding: 8px 12px; cursor: pointer; }
+      .cu-res button:disabled { opacity: 0.5; cursor: default; }
+      .cu-res b { font-size: 18px; color: var(--rosa-tinta); margin-right: 6px; }
+      .cu-res small { color: var(--text-soft); }
+    </style>
+  </head>
+  <body>
+    {% include 'partials/_iconos.html' %} {% include
+    'partials/_confirm_pop.html' %} {% include 'partials/_flash_pop.html' %}
+    <div class="jp-wrap">
+      <h1>
+        <span><svg class="ico"><use href="#i-book" /></svg> Página</span>
+        <div style="display: flex; gap: 8px; align-items: center">
+          {% set nav_extra %}
+          <a href="/japones/cuaderno"><button type="button" class="btn btn-yellow hdr-btn" style="font-size: 13px" title="Todas las páginas" aria-label="Todas las páginas"><svg class="ico"><use href="#i-arrow-left" /></svg></button></a>
+          {% endset %}
+          {% include 'partials/_japones_nav.html' %}
+        </div>
+      </h1>
+
+      <div class="card full">
+        <input type="text" class="cu-titulo" id="cu-titulo" maxlength="80" placeholder="Título (opcional)" autocomplete="off" value="{{ pagina.titulo }}" />
+
+        <div class="cu-ref" id="cu-ref" aria-label="Tarjetas para copiar"></div>
+
+        <div class="cu-barra">
+          <button type="button" class="btn btn-ghost activo" id="cu-pluma">Pluma</button>
+          <button type="button" class="btn btn-ghost" id="cu-goma">Goma</button>
+          <span class="cu-sep"></span>
+          <button type="button" class="btn btn-ghost" id="cu-deshacer" title="Deshacer" aria-label="Deshacer"><svg class="ico"><use href="#i-undo" /></svg></button>
+          <button type="button" class="btn btn-ghost cu-rehacer" id="cu-rehacer" title="Rehacer" aria-label="Rehacer"><svg class="ico"><use href="#i-undo" /></svg></button>
+          <button type="button" class="btn btn-ghost" id="cu-limpiar" title="Borrar toda la página" aria-label="Borrar toda la página"><svg class="ico"><use href="#i-trash" /></svg></button>
+          <span class="cu-estado" id="cu-estado" aria-live="polite">Guardado</span>
+        </div>
+        <div class="cu-barra">
+          <input type="color" class="cu-color" id="cu-color" value="#000000" title="Color" aria-label="Color" />
+          <button type="button" class="cu-muestra" data-c="#000000" style="background: #000000" aria-label="Negro"></button>
+          <button type="button" class="cu-muestra" data-c="#e53935" style="background: #e53935" aria-label="Rojo"></button>
+          <button type="button" class="cu-muestra" data-c="#1e66f5" style="background: #1e66f5" aria-label="Azul"></button>
+          <button type="button" class="cu-muestra" data-c="#2e9e4f" style="background: #2e9e4f" aria-label="Verde"></button>
+          <button type="button" class="cu-muestra" data-c="#f0a000" style="background: #f0a000" aria-label="Ámbar"></button>
+          <span class="cu-sep"></span>
+          <input type="range" class="cu-ancho" id="cu-ancho" min="1" max="14" step="0.5" value="3" aria-label="Grosor" />
+          <select class="cu-select" id="cu-fondo" aria-label="Fondo del papel">
+            <option value="liso">Liso</option>
+            <option value="rayas">Rayas</option>
+            <option value="cuadricula">Cuadrícula</option>
+          </select>
+        </div>
+
+        <div class="cu-papel" id="cu-papel"><canvas id="cu-lienzo"></canvas></div>
+
+        <h2 style="margin-top: 22px">Tarjetas vinculadas</h2>
+        <div class="cu-chips" id="cu-chips"></div>
+        <p class="empty" id="cu-sin-tarjetas" hidden>Ninguna tarjeta vinculada todavía.</p>
+        <button type="button" class="btn btn-ghost" id="cu-vincular" style="margin-top: 12px; font-size: 12px">Vincular tarjetas</button>
+      </div>
+    </div>
+
+    <dialog id="cu-vinc" class="flash-pop" tabindex="-1" autofocus>
+      <h3>Vincular tarjetas</h3>
+      <input type="search" id="cu-q" placeholder="Kanji, lectura o significado" autocomplete="off" />
+      <div class="cu-res" id="cu-res"></div>
+      <button type="button" class="btn btn-ghost" id="cu-vinc-cerrar">Cerrar</button>
+    </dialog>
+
+    <script>
+      (function () {
+        var PID = {{ pagina.id }};
+        var BASE = "/japones/cuaderno/" + PID;
+        var W = 1200, H = 1600; // coordenadas lógicas de la página (3:4)
+        var trazos = {{ pagina.trazos | tojson }};
+        var rehacer = [];
+        var tarjetas = {{ tarjetas | tojson }};
+        var fondo = {{ pagina.fondo | tojson }} || "liso";
+        var herramienta = "pluma", color = "#000000", ancho = 3;
+        var usaLapiz = false; // si se ve un lápiz, el dedo/palma no dibuja
+
+        var $ = function (id) { return document.getElementById(id); };
+        var papel = $("cu-papel"), lienzo = $("cu-lienzo"), ctx = lienzo.getContext("2d");
+        var capa = document.createElement("canvas"), cctx = capa.getContext("2d"); // trazos sobre transparente (la goma borra aquí, no el papel)
+        var esc = 1; // píxeles de canvas por unidad lógica
+
+        // ---------- dibujo ----------
+        function medio(a, b) { return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]; }
+        function grosor(t, p) { return t.w * (p[2] !== undefined ? 0.35 + 1.3 * p[2] : 1); }
+        function pincel(t) {
+          cctx.globalCompositeOperation = t.e ? "destination-out" : "source-over";
+          cctx.strokeStyle = t.c;
+          cctx.fillStyle = t.c;
+          cctx.lineCap = cctx.lineJoin = "round";
+        }
+        // Curva cuadrática entre puntos medios; seg(i) dibuja el tramo que cierra el punto i.
+        function seg(t, i) {
+          var p = t.p, a = i === 1 ? p[0] : medio(p[i - 2], p[i - 1]), b = medio(p[i - 1], p[i]);
+          cctx.lineWidth = grosor(t, p[i - 1]) * esc;
+          cctx.beginPath();
+          cctx.moveTo(a[0] * esc, a[1] * esc);
+          if (i === 1) cctx.lineTo(b[0] * esc, b[1] * esc);
+          else cctx.quadraticCurveTo(p[i - 1][0] * esc, p[i - 1][1] * esc, b[0] * esc, b[1] * esc);
+          cctx.stroke();
+        }
+        function cola(t) { // último medio tramo hasta el último punto
+          var p = t.p, n = p.length, a = n === 2 ? p[0] : medio(p[n - 2], p[n - 1]);
+          cctx.lineWidth = grosor(t, p[n - 1]) * esc;
+          cctx.beginPath();
+          cctx.moveTo(a[0] * esc, a[1] * esc);
+          cctx.lineTo(p[n - 1][0] * esc, p[n - 1][1] * esc);
+          cctx.stroke();
+        }
+        function punto(t) {
+          cctx.beginPath();
+          cctx.arc(t.p[0][0] * esc, t.p[0][1] * esc, grosor(t, t.p[0]) * esc / 2, 0, 6.2832);
+          cctx.fill();
+        }
+        function trazar(t) {
+          if (!t.p || !t.p.length) return;
+          pincel(t);
+          if (t.p.length === 1) return punto(t);
+          for (var i = 1; i < t.p.length; i++) seg(t, i);
+          cola(t);
+        }
+        function papelFondo(g) {
+          g.fillStyle = "#fff";
+          g.fillRect(0, 0, lienzo.width, lienzo.height);
+          if (fondo === "liso") return;
+          g.strokeStyle = "#d9d9d9";
+          g.lineWidth = Math.max(1, 2 * esc);
+          g.beginPath();
+          for (var y = 100; y < H; y += 50) { g.moveTo(0, y * esc); g.lineTo(lienzo.width, y * esc); }
+          if (fondo === "cuadricula") for (var x = 50; x < W; x += 50) { g.moveTo(x * esc, 0); g.lineTo(x * esc, lienzo.height); }
+          g.stroke();
+        }
+        function componer() {
+          papelFondo(ctx);
+          ctx.drawImage(capa, 0, 0);
+        }
+        function redibujar() {
+          cctx.clearRect(0, 0, capa.width, capa.height);
+          trazos.forEach(trazar);
+          if (actual) trazar(actual);
+          componer();
+        }
+        function ajustar() {
+          var dpr = window.devicePixelRatio || 1, w = Math.round(papel.clientWidth * dpr);
+          if (!w) return;
+          lienzo.width = capa.width = w;
+          lienzo.height = capa.height = Math.round(w * H / W);
+          esc = w / W;
+          redibujar();
+        }
+        new ResizeObserver(ajustar).observe(papel);
+
+        // ---------- entrada (ratón, dedo, lápiz) ----------
+        var actual = null, ultimo = null;
+        function logico(e, pen) {
+          var r = lienzo.getBoundingClientRect();
+          var p = [Math.round((e.clientX - r.left) / r.width * W * 10) / 10,
+                   Math.round((e.clientY - r.top) / r.height * H * 10) / 10];
+          if (pen && e.pressure > 0) p.push(Math.round(e.pressure * 100) / 100);
+          return p;
+        }
+        lienzo.addEventListener("pointerdown", function (e) {
+          if (e.pointerType === "pen") usaLapiz = true;
+          if (e.pointerType === "touch" && usaLapiz) return; // palma
+          if (e.pointerType === "mouse" && e.button !== 0) return;
+          e.preventDefault();
+          lienzo.setPointerCapture(e.pointerId);
+          var goma = herramienta === "goma";
+          actual = { c: color, w: goma ? ancho * 4 : ancho, e: goma ? 1 : 0, p: [logico(e, e.pointerType === "pen")], id: e.pointerId };
+          redibujar();
+        });
+        lienzo.addEventListener("pointermove", function (e) {
+          if (!actual || e.pointerId !== actual.id) return;
+          var pen = e.pointerType === "pen";
+          var evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [];
+          if (!evs.length) evs = [e];
+          pincel(actual);
+          evs.forEach(function (ev) {
+            var p = logico(ev, pen), q = actual.p[actual.p.length - 1];
+            if (Math.abs(p[0] - q[0]) + Math.abs(p[1] - q[1]) < 0.6) return; // punto repetido
+            actual.p.push(p);
+            seg(actual, actual.p.length - 1);
+          });
+          componer();
+        });
+        function soltar(e) {
+          if (!actual || e.pointerId !== actual.id) return;
+          var t = actual;
+          actual = null;
+          delete t.id;
+          trazos.push(t);
+          rehacer = [];
+          redibujar();
+          marcar();
+          botones();
+        }
+        lienzo.addEventListener("pointerup", soltar);
+        lienzo.addEventListener("pointercancel", soltar);
+        lienzo.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+
+        // ---------- barra de herramientas ----------
+        function botones() {
+          $("cu-deshacer").disabled = !trazos.length;
+          $("cu-rehacer").disabled = !rehacer.length;
+        }
+        function usar(h) {
+          herramienta = h;
+          $("cu-pluma").classList.toggle("activo", h === "pluma");
+          $("cu-goma").classList.toggle("activo", h === "goma");
+        }
+        $("cu-pluma").addEventListener("click", function () { usar("pluma"); });
+        $("cu-goma").addEventListener("click", function () { usar("goma"); });
+        $("cu-deshacer").addEventListener("click", function () {
+          if (trazos.length) { rehacer.push(trazos.pop()); redibujar(); marcar(); botones(); }
+        });
+        $("cu-rehacer").addEventListener("click", function () {
+          if (rehacer.length) { trazos.push(rehacer.pop()); redibujar(); marcar(); botones(); }
+        });
+        $("cu-limpiar").addEventListener("click", function () {
+          if (!trazos.length) return;
+          var msg = "¿Borrar todo lo escrito en esta página?";
+          (window.confirmar ? window.confirmar(msg, { ok: "Sí, borrar" }) : Promise.resolve(window.confirm(msg)))
+            .then(function (ok) { if (ok) { trazos = []; rehacer = []; redibujar(); marcar(); botones(); } });
+        });
+        $("cu-ancho").addEventListener("input", function () { ancho = parseFloat(this.value); });
+        $("cu-fondo").addEventListener("change", function () { fondo = this.value; componer(); marcar(); });
+
+        function ponerColor(c) {
+          color = c;
+          $("cu-color").value = c;
+          document.querySelectorAll(".cu-muestra").forEach(function (b) { b.classList.toggle("activo", b.dataset.c === c); });
+          try { localStorage.setItem("cuadernoColor", c); } catch (e) {}
+          usar("pluma");
+        }
+        document.querySelectorAll(".cu-muestra").forEach(function (b) {
+          b.addEventListener("click", function () { ponerColor(b.dataset.c); });
+        });
+        $("cu-color").addEventListener("input", function () { ponerColor(this.value); });
+
+        // ---------- autoguardado ----------
+        var sucio = false, enviando = false, temporizador = null;
+        function estado(t) { $("cu-estado").textContent = t; }
+        function marcar() {
+          sucio = true;
+          estado("Guardando…");
+          clearTimeout(temporizador);
+          temporizador = setTimeout(function () { guardar(false); }, 800);
+        }
+        function miniatura() {
+          var m = document.createElement("canvas");
+          m.width = 300;
+          m.height = 400;
+          var g = m.getContext("2d");
+          g.imageSmoothingQuality = "high";
+          g.drawImage(lienzo, 0, 0, 300, 400);
+          return m.toDataURL("image/png");
+        }
+        function guardar(saliendo) {
+          clearTimeout(temporizador);
+          if (!sucio || (enviando && !saliendo)) return;
+          sucio = false;
+          enviando = true;
+          var cuerpo = JSON.stringify({ titulo: $("cu-titulo").value, fondo: fondo, trazos: trazos, miniatura: miniatura() });
+          // fetch con keepalive admite ~64 KB; con más, se manda normal y se espera lo mejor
+          fetch(BASE + "/guardar", { method: "POST", headers: { "Content-Type": "application/json" }, body: cuerpo,
+                                     keepalive: !!saliendo && cuerpo.length < 60000 })
+            .then(function (r) { if (!r.ok) throw new Error(r.status); enviando = false; if (sucio) guardar(false); else estado("Guardado"); })
+            .catch(function () {
+              enviando = false; sucio = true; estado("Sin guardar");
+              if (!saliendo) temporizador = setTimeout(function () { guardar(false); }, 4000);
+            });
+        }
+        $("cu-titulo").addEventListener("input", marcar);
+        document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden") guardar(true); });
+        window.addEventListener("pagehide", function () { guardar(true); });
+
+        // ---------- tarjetas vinculadas ----------
+        function hijo(padre, tag, clase, texto) {
+          var el = document.createElement(tag);
+          if (clase) el.className = clase;
+          if (texto) el.textContent = texto;
+          padre.appendChild(el);
+          return el;
+        }
+        function enlace(t) {
+          var u = encodeURIComponent(t.jp);
+          if (t.kind === "kanji") return "/japones/kanjis?kanji=" + u;
+          return "/japones/" + (t.kind === "gramatica" ? "gramatica" : "vocabulario") + "?abrir=" + u;
+        }
+        function pintarTarjetas() {
+          var ref = $("cu-ref"), chips = $("cu-chips");
+          ref.textContent = chips.textContent = "";
+          tarjetas.forEach(function (t) {
+            var r = hijo(ref, "div", "cu-ref-item");
+            hijo(r, "b", "", t.jp);
+            if (t.reading) hijo(r, "span", "rd", t.reading);
+            hijo(r, "span", "", t.meaning);
+
+            var c = hijo(chips, "div", "cu-chip");
+            var a = hijo(c, "a");
+            a.href = enlace(t);
+            hijo(a, "b", "", t.jp);
+            var s = hijo(a, "small");
+            if (t.reading) hijo(s, "span", "rd", t.reading);
+            s.appendChild(document.createTextNode(t.meaning));
+            if (t.kind === "kanji") a.addEventListener("click", function () { try { sessionStorage.setItem("abrirFicha", "1"); } catch (e) {} });
+            var x = hijo(c, "button", "", "×");
+            x.type = "button";
+            x.title = x.ariaLabel = "Quitar tarjeta";
+            x.addEventListener("click", function () { desvincular(t); });
+          });
+          $("cu-sin-tarjetas").hidden = tarjetas.length > 0;
+        }
+        function enviar(ruta, t) {
+          return fetch(BASE + "/" + ruta, { method: "POST", headers: { "Content-Type": "application/json" },
+                                            body: JSON.stringify({ kind: t.kind, jp: t.jp }) })
+            .then(function (r) { if (!r.ok) throw new Error(r.status); });
+        }
+        function desvincular(t) {
+          enviar("desvincular", t).then(function () {
+            tarjetas = tarjetas.filter(function (x) { return !(x.kind === t.kind && x.jp === t.jp); });
+            pintarTarjetas();
+          }).catch(function () { estado("No se pudo quitar"); });
+        }
+        function vinculada(t) { return tarjetas.some(function (x) { return x.kind === t.kind && x.jp === t.jp; }); }
+
+        var dlg = $("cu-vinc"), q = $("cu-q"), res = $("cu-res"), busca = null;
+        function buscar() {
+          var texto = q.value.trim();
+          if (!texto) { res.textContent = ""; return; }
+          fetch("/japones/cuaderno/buscar?q=" + encodeURIComponent(texto))
+            .then(function (r) { return r.json(); })
+            .then(function (lista) {
+              if (q.value.trim() !== texto) return; // llegó tarde
+              res.textContent = "";
+              if (!lista.length) hijo(res, "small", "", "Sin resultados.");
+              lista.forEach(function (t) {
+                var b = hijo(res, "button");
+                b.type = "button";
+                b.disabled = vinculada(t);
+                hijo(b, "b", "", t.jp);
+                hijo(b, "small", "", (t.reading ? t.reading + " · " : "") + t.meaning + (b.disabled ? " ✓" : ""));
+                b.addEventListener("click", function () {
+                  enviar("vincular", t).then(function () {
+                    tarjetas.push(t);
+                    pintarTarjetas();
+                    b.disabled = true;
+                    b.lastChild.textContent += " ✓";
+                  }).catch(function () { estado("No se pudo vincular"); });
+                });
+              });
+            }).catch(function () {});
+        }
+        q.addEventListener("input", function () { clearTimeout(busca); busca = setTimeout(buscar, 250); });
+        $("cu-vincular").addEventListener("click", function () { q.value = ""; res.textContent = ""; dlg.showModal(); q.focus(); });
+        $("cu-vinc-cerrar").addEventListener("click", function () { dlg.close(); });
+        dlg.addEventListener("click", function (e) { if (e.target === dlg) dlg.close(); });
+
+        // ---------- arranque ----------
+        $("cu-fondo").value = fondo;
+        var guardado = null;
+        try { guardado = localStorage.getItem("cuadernoColor"); } catch (e) {}
+        ponerColor(/^#[0-9a-f]{6}$/i.test(guardado || "") ? guardado : "#000000");
+        pintarTarjetas();
+        botones();
+        ajustar();
+      })();
+    </script>
+  </body>
+</html>
