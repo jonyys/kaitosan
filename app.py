@@ -624,7 +624,9 @@ def login_requerido(f):
         # sin contraseña: no tiene teclado y es el aparato de Laura. Desde la
         # LAN sigue haciendo falta iniciar sesión.
         if not session.get("admin_logged_in") and not _solo_local():
-            return redirect(url_for("admin_login"))
+            # recuerda a dónde iba (solo GET) para volver ahí tras iniciar sesión
+            destino = request.full_path.rstrip("?") if request.method == "GET" else None
+            return redirect(url_for("admin_login", next=destino))
         return f(*args, **kwargs)
     return decorated
 
@@ -650,6 +652,9 @@ def admin_login():
                 and check_password_hash(pass_hash, pwd):
             session.permanent = True
             session["admin_logged_in"] = True
+            siguiente = request.args.get("next", "")   # solo rutas propias, nunca otro sitio
+            if siguiente.startswith("/") and not siguiente.startswith("//") and "\\" not in siguiente:
+                return redirect(siguiente)
             return redirect(url_for("admin"))
         return render_template("admin_login.html",
                                error="Usuario o contraseña incorrectos")
