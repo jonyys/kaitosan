@@ -48,3 +48,11 @@ if __name__ == "__main__":
     test_cada_bloque_es_un_solo_segmento()
     test_el_bloque_no_contamina_la_voz_espanola()
     print("OK")
+
+
+def test_silaba_suelta_japonesa_suena_y_el_no_entre_bloques_no_se_pierde():
+    """«es 【ほ】, no 【わ】»: la sílaba lleva «ー» (sola, la voz neural la dice casi muda) y el «no» se habla."""
+    seg = tts._dividir_texto("Es 【ほ】, no 【わ】.")
+    assert [t for t, _ in seg if t.startswith(("ほ", "わ"))] == ["ほー", "わー"]
+    assert any(v == tts.voice_es and "no" in t for t, v in seg)
+    assert tts._audible_ja("おしごと") == "おしごと" and tts._audible_ja("画") == "画"

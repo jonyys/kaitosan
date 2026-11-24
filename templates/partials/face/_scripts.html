@@ -1242,8 +1242,10 @@
     const tit = resumenEl.querySelector(".rc-tit");
     tit.textContent = r.titulo || "¡Buena clase!";
     if (logros.length) tit.append(Object.assign(document.createElement("b"), { textContent: "✓ " + logros.length }));
-    let caben = 12;
-    const enLinea = pals.filter((p) => (caben -= p.jp.length) >= 0);
+    // Cabe en píxeles, no en kana: 196 px útiles (220 − relleno y borde); cada kana 15 px + 1 de espaciado y
+    // cada palabra 10 px de margen. Con «≤ 12 kana» y tres palabras se salía por los lados (+30 px de márgenes).
+    let caben = 196;
+    const enLinea = pals.filter((p) => (caben -= p.jp.length * 16 + 10) >= 0);
     resumenEl.querySelector(".rc-pals").replaceChildren(...enLinea.map((p) =>
       Object.assign(document.createElement("span"), { textContent: p.jp })));
     clearTimeout(resumenTimer);

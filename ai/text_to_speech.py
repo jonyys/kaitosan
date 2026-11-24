@@ -150,7 +150,7 @@ class TextToSpeech:
                 contenido = parte[1:-1]  # quitar los corchetes
                 if contenido.strip():
                     print(f"🎌 Segmento japonés: '{contenido}'")
-                    segmentos.append((contenido, self.voice_ja))
+                    segmentos.append((self._audible_ja(contenido), self.voice_ja))
             else:
                 # Texto en español (puede contener restos de kana sueltos)
                 # Por si acaso, volvemos a dividir por kana/kanji sueltos
@@ -162,13 +162,24 @@ class TextToSpeech:
                         continue
                     if re.match(r'[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]+', sp):
                         print(f"🎌 Segmento japonés suelto: '{sp}'")
-                        segmentos.append((sp, self.voice_ja))
+                        segmentos.append((self._audible_ja(sp), self.voice_ja))
                     else:
                         limpio = self._limpiar_para_voz(sp)
-                        if limpio.strip() and len(limpio.strip()) > 2:
+                        # Con una letra basta: «no», «es», «y» entre dos bloques japoneses ("es 【ほ】, no 【わ】")
+                        # sí suenan; solo se descartan los restos sin letras (« » . ,)
+                        if re.search(r'[A-Za-zÁ-ÿ]', limpio):
                             print(f"🎙️ Segmento español: '{limpio}'")
                             segmentos.append((limpio, self.voice_es))
         return segmentos
+
+    @staticmethod
+    def _audible_ja(txt: str) -> str:
+        """Una sílaba suelta («お», «ほ», «わ») la voz neural la sintetiza casi muda (-39 dB, medido en la
+        Pi con edge-tts); con «ー» detrás suena a -3 dB. Las de dos kana o más suenan bien."""
+        solo = re.sub(r'[\s、。，．,.!?！？「」]', '', txt)
+        if len(solo) == 1 and re.match(r'[ぁ-ゖァ-ヺ]', solo):
+            return solo + 'ー'
+        return txt
 
     async def _generar_audio_segmento(self, texto: str, voz: str, tmp_path: str):
         """Genera un mp3 para un segmento con una voz específica."""
