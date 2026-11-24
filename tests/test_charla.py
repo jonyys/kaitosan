@@ -57,3 +57,12 @@ def test_en_charla_espera_japones_si_kaito_acaba_de_pedir_una_frase(monkeypatch)
     p.provider.completar.side_effect = ["Vale, cuéntame. ¿Qué tal el día?\nPIZARRA: -"]
     p.responder_turno("bien")
     assert not p.espera_japones                      # charla en español: Whisper normal
+
+
+def test_pizarra_sin_linea_une_los_bloques_de_la_ultima_frase(monkeypatch):
+    p, _ = _prof(monkeypatch, ["¡Eso es! Ahora dime tú: 【すしの】 【ほうが】 【すきです。】"])  # el modelo olvidó PIZARRA
+    p.responder_turno("hola")
+    assert p.ultima_frase_objetivo == [{"jp": "すしの ほうが すきです。"}]
+    p2, _ = _prof(monkeypatch, ["Solo español, nada japonés."])
+    p2.responder_turno("hola")
+    assert p2.ultima_frase_objetivo == []

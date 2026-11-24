@@ -219,6 +219,20 @@ _EXTRACCION_PROMPT = cargar_prompt("extraccion_sesion")
 _RE_FAMILIA_LAURA = re.compile(r"\b(jos[eé]|marisa|ana)\b|ホセ|マリサ|アナ", re.IGNORECASE)
 
 
+_RE_GRUPO_BLOQUES = re.compile(r"(?:【[^】]*】[\s,、]*)+")
+
+
+def _ultima_frase_jp(texto):
+    """La última frase japonesa de la respuesta, en kana, con los bloques seguidos unidos
+    («【すしの】 【ほうが】 【すきです。】» → «すしの ほうが すきです。»). Sin esto, si el modelo se olvidaba
+    de la línea PIZARRA, la pizarra enseñaba solo el último trozo («すきです»)."""
+    for grupo in reversed(_RE_GRUPO_BLOQUES.findall(normalizar_bloques_jp(texto or ""))):
+        frase = a_kana(" ".join(re.findall(r"【([^】]*)】", grupo)).strip())
+        if _RE_JP_CHAR.search(frase) and len(frase.replace(" ", "")) > 1:
+            return frase
+    return ""
+
+
 class ProfesorJapones:
 
     def __init__(self, jap_memory, provider, memory, socketio):
@@ -847,8 +861,9 @@ class ProfesorJapones:
         respuesta, pizarra = self._separar_pizarra(respuesta)
         respuesta = normalizar_bloques_jp(respuesta)  # japonés suelto → 【】
         if pizarra is None:  # se olvidó de la línea: la pizarra enseña lo último que dijo en japonés
-            pizarra = [{"jp": b} for b in bloques_japones(respuesta)[-1:]]
-            print("⚠️ El modelo no puso la línea PIZARRA")
+            ultima = _ultima_frase_jp(respuesta)
+            pizarra = [{"jp": ultima}] if ultima else []
+            print(f"⚠️ El modelo no puso la línea PIZARRA (final de su respuesta: «{respuesta[-70:]}»)")
         self.ultima_frase_objetivo = self.pizarra_actual = pizarra
         print(f"🧑‍🏫 Pizarra: {pizarra}")  # para revisar en los logs si cuadra con lo pedido
         if not respuesta:
