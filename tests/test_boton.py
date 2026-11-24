@@ -124,3 +124,25 @@ def test_el_boton_no_apaga_la_pi_si_se_habla():
         pb._on_pressed()
         pb._on_held()
         assert apagados
+
+
+def test_wakeword_espera_a_que_la_cara_este_lista_antes_de_escuchar():
+    import threading, time
+    vl = _listener(en_pausa=False)
+    vl.socketio = mock.MagicMock()
+    # sin pantalla: nadie contesta y no espera más de ~medio segundo
+    t0 = time.monotonic()
+    vl._esperar_pantalla()
+    assert time.monotonic() - t0 < 1.5
+    vl.socketio.emit.assert_called_with("despierta", {})
+    # con el reloj: contesta «voy» y luego «lista»; hasta entonces no termina
+    def pantalla():
+        time.sleep(0.1)  # contesta tras el «despierta», no antes
+        vl.pantalla_va()
+        time.sleep(0.8)
+        vl.pantalla_lista()
+    threading.Thread(target=pantalla).start()
+    t0 = time.monotonic()
+    vl._esperar_pantalla()
+    assert time.monotonic() - t0 >= 0.7
+    assert not vl._despertando

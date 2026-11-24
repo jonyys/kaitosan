@@ -100,10 +100,7 @@ def emitir_japones_sensei(respuesta: str):
 def index():
     if not _solo_local():
         return redirect(url_for("admin"))  # la cara es de la pantalla del robot
-    # Si llega estando ya activo (p. ej. desde el reloj con la wakeword), la cara nace en ese estado:
-    # sin pasar por reposo y dar el salto después.
-    ini = state.get()
-    return render_template("face.html", estado_inicial=ini if ini in ("listening", "thinking", "speaking") else "idle")
+    return render_template("face.html")
 
 @app.route("/chat", methods=["POST"])
 def chat():
@@ -330,6 +327,18 @@ def kiosko_volumen():
         abort(403)
     r = system_settings.volumen_set(request.form.get("v", ""))
     return jsonify(r), (200 if r.get("ok") else 400)
+
+
+@socketio.on("pantalla_va")
+def _pantalla_va():
+    """La pantalla (reloj u otra página) ha oído «despierta» y va hacia la cara."""
+    voice_listener.pantalla_va()
+
+
+@socketio.on("pantalla_lista")
+def _pantalla_lista():
+    """La cara está al frente y ya ha hecho su despertar: Kaito puede ponerse a escuchar."""
+    voice_listener.pantalla_lista()
 
 
 @app.route("/kiosko/callar", methods=["POST"])

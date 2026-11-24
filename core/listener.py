@@ -36,6 +36,10 @@ def _esperar_hasta(momento):
 
 
 class VoiceListener:
+    # Wakeword/botón con la pantalla en el reloj: la cara hace su transición y su despertar, y SOLO
+    # después Kaito se pone a escuchar (así la animación de escuchar y el aro salen como siempre).
+    _va, _lista, _despertando = threading.Event(), threading.Event(), False
+
     def __init__(self, recorder, stt, brain, tts, state, socketio):
         self.recorder = recorder
         self.stt = stt
@@ -49,6 +53,28 @@ class VoiceListener:
     def iniciar(self):
         self._red.iniciar()  # idempotente
         self._detector.iniciar()
+
+    def pantalla_va(self):
+        self._va.set()
+
+    def pantalla_lista(self):
+        self._va.set()
+        self._lista.set()
+
+    def _esperar_pantalla(self):
+        """Avisa a la pantalla («despierta») y espera a que la cara esté lista. Si en medio segundo nadie
+        contesta (sin pantalla), sigue sin esperar; si el reloj contesta que va, espera la cara (tope 6 s)."""
+        if getattr(self, "socketio", None) is None:
+            return
+        self._va.clear()
+        self._lista.clear()
+        self._despertando = True
+        try:
+            self.socketio.emit("despierta", {})
+            if self._va.wait(0.5):
+                self._lista.wait(6)
+        finally:
+            self._despertando = False
 
     def _emitir_nivel(self, n):
         """Volumen de la voz para el aro de la cara; nunca debe romper la grabación."""
@@ -87,7 +113,7 @@ class VoiceListener:
         Si ya está escuchando, la pulsación lo cancela.
         Con el detector escuchando, él tiene el micro USB abierto y la grabación fallaría
         (Device unavailable): hay que pedirle que lo suelte. En "no molestar" ya está suelto."""
-        if self.cancelar_escucha():
+        if self.cancelar_escucha() or self._despertando:
             return
         if self._detector.en_pausa():
             self._on_wakeword()
@@ -141,6 +167,8 @@ class VoiceListener:
         if self.state.get() != "idle":
             return False
 
+        if not timeout_inicio_seg and mantenido is None:  # primer turno por wakeword/botón, no la conversación seguida
+            self._esperar_pantalla()
         ev = getattr(self.recorder, "cancelar", None)
         if ev is not None:
             ev.clear()

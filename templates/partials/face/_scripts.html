@@ -519,6 +519,13 @@
       [1200, () => { m.bocaO.t = 0; parpadear(); }],
       [1600, () => parpadear()],
     ] },
+    // El mismo despertar al 60 %: con wakeword o botón desde el reloj (sigue la animación de escuchar)
+    despertandoRapido: { dur: 1440, peso: 0, pasos: [
+      [0, () => { m.parpado.x = m.parpado.t = 1; m.cabezaY.x = m.cabezaY.t = 6; m.bocaMini.x = m.bocaMini.t = 1; }],
+      [480, despertar],
+      [720, () => { m.bocaO.t = 0; parpadear(); }],
+      [960, () => parpadear()],
+    ] },
 
     // ── Los dos de tocar la pantalla (nunca salen solos: peso 0) ──
     // Caricia: deslizar el dedo por la cara. Ojos contentos y se arrima a la mano.
@@ -832,11 +839,6 @@
     }
   }
 
-  // Llegar desde el reloj tarda ~1,5 s (transición + carga): el "listening" ya se emitió y esta
-  // página no lo oyó. Al cargar se pregunta cuál es el estado real, salvo que ya haya llegado uno.
-  let estadoOido = document.documentElement.classList.contains("ojos-cerrados") && ["listening", "thinking", "speaking"].includes(window.__estadoInicial); // desde el reloj lo aplica el arranque
-  socket.on("estado", (data) => { estadoOido = true; aplicarEstado(data.estado); });
-  fetch("/estado").then((r) => r.json()).then((d) => { if (!estadoOido) aplicarEstado(d.estado); }).catch(() => {});
   socket.on("boca", (data) => {
     // Al empezar una frase suele enfatizar con las cejas
     if (data.hablado && !hablando && Math.random() < 0.6) prox.enfasis = ahora + azar(80, 300);
@@ -1314,20 +1316,27 @@
   prox.gesto = ahora + entre(CADA_GESTO);
   aplicarModo();
   // Si venimos del reloj (lo detecta face.html), abre los ojos despertándose.
-  // Después de aplicarModo, que devolvería los párpados al reposo.
-  // Con wakeword o botón desde el reloj Kaito ya está escuchando: en vez del despertar lento (2,4 s), arranca con
-  // los mismos párpados cerrados, cabeza gacha y boca pequeña (lo que enseña la transición) y los muelles lo llevan
-  // al estado real: ojos que se abren ya en «escuchando» y el aro que se funde, sin un cambio de cara a mitad.
-  const estadoCalido = ["listening", "thinking", "speaking"].includes(window.__estadoInicial) ? window.__estadoInicial : null;
+  // Si venimos del reloj (lo detecta face.html), abre los ojos despertándose; con wakeword o botón, el mismo
+  // despertar pero más rápido. Después de aplicarModo, que devolvería los párpados al reposo.
   const vieneDelReloj = document.documentElement.classList.contains("ojos-cerrados");
-  if (vieneDelReloj && !estadoCalido) hacerGesto("despertando");
-  else if (vieneDelReloj) { m.parpado.x = m.parpado.t = 1; m.cabezaY.x = m.cabezaY.t = 6; m.bocaMini.x = m.bocaMini.t = 1; }
+  // El reloj lo marca al oír «despierta» (wakeword o botón): entonces el despertar va más rápido
+  let rapido = false;
+  try { rapido = sessionStorage.getItem("kaitoRapido") === "1"; sessionStorage.removeItem("kaitoRapido"); } catch (e) { /* sin almacenamiento */ }
+  if (vieneDelReloj) hacerGesto(rapido ? "despertandoRapido" : "despertando");
   requestAnimationFrame((ms) => {
     cuadro(ms);
     // Ya están puestos los párpados del motor: el CSS de arranque deja de hacer falta
     document.documentElement.classList.remove("ojos-cerrados");
     if (window.KaitoTransicion) window.KaitoTransicion.quitar();
-    if (vieneDelReloj && estadoCalido) { aplicarEstado(estadoCalido); m.cabezaY.t = 0; }
+  });
+  // Kaito espera a que la cara esté lista antes de ponerse a escuchar (core/listener._esperar_pantalla): al
+  // llegar, cuando acaba el despertar (la animación de escuchar sale después, como en cualquier otro momento).
+  setTimeout(() => socket.emit("pantalla_lista"), vieneDelReloj ? (rapido ? 1440 : 2400) + 150 : 0);
+  // Ya estaba en la cara (aunque durmiéndose): contesta enseguida, o cuando se haya despertado
+  socket.on("despierta", () => {
+    const duerme = gesto && gesto.nombre === "dormirse";
+    if (duerme && window.kaitoCancelarDormirse) window.kaitoCancelarDormirse();
+    setTimeout(() => socket.emit("pantalla_lista"), duerme ? 1000 : 0);
   });
 
   // El backend puede pedir un gesto: socketio.emit("gesto", {"gesto": "corazones"})

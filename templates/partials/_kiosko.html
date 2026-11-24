@@ -223,6 +223,14 @@
     }
     conSocket(function (s) {
       s.on("estado", irACara);
+      // Wakeword o botón: Kaito espera a la cara. Desde el reloj (u otra página) va a ella con la transición
+      // rápida; la cara, al llegar y despertarse, avisa («pantalla_lista») y entonces empieza a escuchar.
+      s.on("despierta", function () {
+        if (!ES_KIOSKO || location.pathname === "/") return; // en la cara contesta ella misma
+        s.emit("pantalla_va");
+        try { sessionStorage.setItem("kaitoRapido", "1"); } catch (e) { /* sin almacenamiento */ }
+        pasarACara(2);
+      });
       s.on("red", function (d) { document.documentElement.classList.toggle("sin-red", d && d.internet === false); });
       s.on("no_molestar", function (d) { window.__noMolestar = !!d.activo; pintaNoMolestar(); });
       s.on("sonando", pintaSonando);
