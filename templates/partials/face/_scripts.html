@@ -55,9 +55,8 @@
     error: { parpado: 0.16, inferior: 0, ceja: 5, dif: 0, rot: 12, arco: -0.35, abre: 0.98, pupila: 0.9, boca: 0, radio: [3, 2], cadaMirada: [800, 1800], cadaParpadeo: [2000, 4000] },
   };
   const estados = Object.keys(MODOS);
-  // Nace en el estado real si ya estaba activo (llegada desde el reloj con wakeword/botón): sin salto después
-  let estado = estados.includes(window.__estadoInicial) ? window.__estadoInicial : "idle";
-  let modo = MODOS[estado];
+  let estado = "idle";
+  let modo = MODOS.idle;
   let hablando = false;
 
   const prox = { mirada: 0, micro: 0, parpadeo: 0, gesto: 0, finGesto: 0, finDedo: 0, sueno: 0, enfasis: 0 };
@@ -613,7 +612,6 @@
   // Una línea turquesa de radio 222 que se ondula con el volumen (llega a saltos, ~16/s, y se suaviza).
   // Repintar el trazo cuesta en la Pi: se hace cada 50 ms y solo si suena algo; en silencio es un círculo quieto.
   const aro = document.getElementById("aroEscucha");
-  aro.classList.toggle("activo", estado === "listening");
   const aroOnda = aro.firstElementChild;
   const ARO_R = 222, ARO_N = 96, ARO_AMP = 9; // cerca del borde: 222 + 9*1,4 (suma máxima de las tres ondas) = 234,6 < 240
   const ARO_SIN = Array.from({ length: ARO_N + 1 }, (_, i) => Math.sin(i / ARO_N * 2 * Math.PI));
@@ -836,7 +834,7 @@
 
   // Llegar desde el reloj tarda ~1,5 s (transición + carga): el "listening" ya se emitió y esta
   // página no lo oyó. Al cargar se pregunta cuál es el estado real, salvo que ya haya llegado uno.
-  let estadoOido = false;
+  let estadoOido = document.documentElement.classList.contains("ojos-cerrados") && ["listening", "thinking", "speaking"].includes(window.__estadoInicial); // desde el reloj lo aplica el arranque
   socket.on("estado", (data) => { estadoOido = true; aplicarEstado(data.estado); });
   fetch("/estado").then((r) => r.json()).then((d) => { if (!estadoOido) aplicarEstado(d.estado); }).catch(() => {});
   socket.on("boca", (data) => {
@@ -1317,12 +1315,19 @@
   aplicarModo();
   // Si venimos del reloj (lo detecta face.html), abre los ojos despertándose.
   // Después de aplicarModo, que devolvería los párpados al reposo.
-  if (document.documentElement.classList.contains("ojos-cerrados")) hacerGesto("despertando");
+  // Con wakeword o botón desde el reloj Kaito ya está escuchando: en vez del despertar lento (2,4 s), arranca con
+  // los mismos párpados cerrados, cabeza gacha y boca pequeña (lo que enseña la transición) y los muelles lo llevan
+  // al estado real: ojos que se abren ya en «escuchando» y el aro que se funde, sin un cambio de cara a mitad.
+  const estadoCalido = ["listening", "thinking", "speaking"].includes(window.__estadoInicial) ? window.__estadoInicial : null;
+  const vieneDelReloj = document.documentElement.classList.contains("ojos-cerrados");
+  if (vieneDelReloj && !estadoCalido) hacerGesto("despertando");
+  else if (vieneDelReloj) { m.parpado.x = m.parpado.t = 1; m.cabezaY.x = m.cabezaY.t = 6; m.bocaMini.x = m.bocaMini.t = 1; }
   requestAnimationFrame((ms) => {
     cuadro(ms);
     // Ya están puestos los párpados del motor: el CSS de arranque deja de hacer falta
     document.documentElement.classList.remove("ojos-cerrados");
     if (window.KaitoTransicion) window.KaitoTransicion.quitar();
+    if (vieneDelReloj && estadoCalido) { aplicarEstado(estadoCalido); m.cabezaY.t = 0; }
   });
 
   // El backend puede pedir un gesto: socketio.emit("gesto", {"gesto": "corazones"})
