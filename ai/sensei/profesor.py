@@ -844,9 +844,9 @@ class ProfesorJapones:
                        .replace("{RESUMEN}", self._resumen or "(todavía nada: acabáis de empezar)"))
             rep = _repetidas(self.mensajes[self._resumido:])
             if rep:
-                sistema += ("\n\n== YA REPETIDO EN ESTA CLASE ==\nHas dicho ya muchas veces: " + ", ".join(rep)
-                            + ". Sigue practicando lo mismo, pero con otras palabras y en otras situaciones; "
-                            "estas déjalas descansar.")
+                sistema += ("\n\n== YA REPETIDO EN ESTA CLASE ==\nLlevas mucho rato con estas palabras y frases: " + ", ".join(rep)
+                            + ". La gramática que estáis practicando puedes seguir usándola; lo que toca es cambiar el "
+                            "tema y las palabras de los ejemplos (otras situaciones, otro vocabulario).")
             usuario = mensaje
         else:
             sistema = cargar_prompt("sensei_clase").replace("{RECUERDAS_DE_LAURA}", self._recuerdas())
