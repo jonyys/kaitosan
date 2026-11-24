@@ -100,7 +100,10 @@ def emitir_japones_sensei(respuesta: str):
 def index():
     if not _solo_local():
         return redirect(url_for("admin"))  # la cara es de la pantalla del robot
-    return render_template("face.html")
+    # Si llega estando ya activo (p. ej. desde el reloj con la wakeword), la cara nace en ese estado:
+    # sin pasar por reposo y dar el salto después.
+    ini = state.get()
+    return render_template("face.html", estado_inicial=ini if ini in ("listening", "thinking", "speaking") else "idle")
 
 @app.route("/chat", methods=["POST"])
 def chat():
