@@ -61,6 +61,15 @@ from core.config import (
 
 MAX_PALABRAS_VISTAS = 60  # tope de la lista «palabras que Laura ya ha visto» que va en cada turno
 MAX_TURNOS = 8  # pares user/assistant conservados en el contexto del LLM
+# Modo charla (SENSEI_CHARLA=1): conversación libre con prompt corto, sin can-dos ni juez. El historial
+# va entero; al pasar de RESUMIR_A mensajes sin resumir, lo viejo (menos los últimos CONSERVAR) se resume.
+RESUMIR_A = 40
+CONSERVAR = 12
+_RESUMEN_PROMPT = (
+    "Resume esta conversación entre Kaito (compañero de japonés) y Laura para que Kaito pueda seguir "
+    "sin perder el hilo. Incluye: lo que Laura contó de sí misma, temas hablados, palabras y frases que "
+    "aprendió o le costaron, errores repetidos, su nivel y ánimo, y lo que Kaito dejó pendiente. "
+    "Máximo 150 palabras, en español. Quita la línea PIZARRA.")
 # Laura dice que no sabe / no se acuerda / pide ayuda (en español): hay que ayudarla.
 _RE_NO_SE = re.compile(
     r"\bno (lo )?s[eé]\b|no me acuerdo|no recuerdo|no entiendo|expl[ií]ca|ay[uú]da|"
@@ -240,6 +249,7 @@ class ProfesorJapones:
         self.pizarra_actual = []
         # {"cd": id, "fase": presentar|repaso|practicar|tarea|libre, "aciertos": n}
         self.clase = None
+        self._resumen, self._resumido, self._fut_resumen = "", 0, None  # modo charla
 
         # Unidad abierta e ítems nuevos, resueltos una vez por sesión en entrar()
         # y persistidos al cerrar (_ejecutar_extraccion).
@@ -251,6 +261,37 @@ class ProfesorJapones:
     # Un solo modo. Se mantiene el nombre por los call sites de STT
     # (transcribir_para_turno): False = evalúa pronunciación cuando toca.
     modo_conv = False
+
+    @property
+    def charla(self) -> bool:
+        """Interruptor: SENSEI_CHARLA=1 → charla libre con prompt mínimo (ver `sensei_charla.txt`)."""
+        return os.getenv("SENSEI_CHARLA", "0") == "1"
+
+    def _aplicar_resumen(self):
+        """Si el resumen que se pidió en segundo plano ya está, lo adopta (y con él, el corte)."""
+        f = self._fut_resumen
+        if f is None or not f.done():
+            return
+        self._fut_resumen = None
+        try:
+            self._resumen, self._resumido = f.result()
+        except Exception as e:  # noqa: BLE001 — sin resumen se sigue con el historial entero
+            print(f"⚠️ No se pudo resumir la charla: {e}")
+
+    def _resumir_si_toca(self):
+        """Pide en segundo plano el resumen de lo viejo cuando el historial sin resumir se llena."""
+        hasta = len(self.mensajes) - CONSERVAR
+        if self._fut_resumen is not None or len(self.mensajes) - self._resumido <= RESUMIR_A:
+            return
+        previo, desde, viejos = self._resumen, self._resumido, list(self.mensajes[self._resumido:hasta])
+        texto = "\n".join(("Laura: " if m["role"] == "user" else "Kaito: ") + _sin_pizarra(m["content"])
+                          for m in viejos)
+        pedido = _RESUMEN_PROMPT + (f"\n\nResumen anterior:\n{previo}" if previo else "") + f"\n\nConversación:\n{texto}"
+
+        def _tarea():
+            r = self.provider.completar([{"role": "user", "content": pedido}], max_tokens=400, temperature=0.2)
+            return r.strip(), hasta
+        self._fut_resumen = self._pool_juez.submit(_tarea)
     juez = staticmethod(juez_cumple)  # los tests lo cambian por None
     # Turno «en español» que puede ser japonés mal transcrito (ver _NOTA_ROMAJI).
     juez_romaji = staticmethod(lambda cd, m, fase, contexto=None:
@@ -308,6 +349,7 @@ class ProfesorJapones:
         """Activa el modo sensei y abre una sesión en la BD."""
         self.activo = True
         self.mensajes = []
+        self._resumen, self._resumido, self._fut_resumen = "", 0, None
         self._juez_previo = {}
         self.ultima_frase_objetivo = None
         self.pizarra_actual = []
@@ -526,6 +568,8 @@ class ProfesorJapones:
     def _empezar_clase(self):
         self.clase = {"cd": None, "fase": "libre", "aciertos": 0, "fallos": 0,
                       "nuevos": 0, "hechos": []}
+        if self.charla:
+            return  # sin can-dos: todo es charla libre
         cd, tipo = self._siguiente()
         if cd:
             # La fase real se pone al primer turno (_abrir): antes, Laura saluda.
@@ -605,7 +649,8 @@ class ProfesorJapones:
         """Los últimos turnos para el LLM. La línea PIZARRA solo en los dos últimos mensajes de Kaito
         (basta para que no pierda el formato; en los demás son tokens de más en cada turno)."""
         out, vistos = [], 0
-        for m in reversed(self.mensajes[-(MAX_TURNOS * 2):]):
+        base = self.mensajes[self._resumido:] if self.charla else self.mensajes[-(MAX_TURNOS * 2):]
+        for m in reversed(base):
             if m["role"] == "assistant":
                 vistos += 1
                 if vistos > 2:
@@ -763,10 +808,16 @@ class ProfesorJapones:
         self.ultima_frase_objetivo = None  # lo fija el LLM cada turno (línea PIZARRA)
         if self.clase is None:  # instancia sin entrar() (p. ej. tests)
             self._empezar_clase()
-        sistema = cargar_prompt("sensei_clase").replace("{RECUERDAS_DE_LAURA}", self._recuerdas())
-        instr = self._instruccion(mensaje)
-        print(f"🧭 Clase [{self.clase['cd']} · {self.clase['fase']} · {self.clase['aciertos']}]: {instr[:120]}")
-        usuario = f"{mensaje}\n\n[INSTRUCCIÓN: {instr}]"
+        if self.charla:
+            self._aplicar_resumen()
+            sistema = (cargar_prompt("sensei_charla").replace("{RECUERDAS_DE_LAURA}", self._recuerdas())
+                       .replace("{RESUMEN}", self._resumen or "(todavía nada: acabáis de empezar)"))
+            usuario = mensaje
+        else:
+            sistema = cargar_prompt("sensei_clase").replace("{RECUERDAS_DE_LAURA}", self._recuerdas())
+            instr = self._instruccion(mensaje)
+            print(f"🧭 Clase [{self.clase['cd']} · {self.clase['fase']} · {self.clase['aciertos']}]: {instr[:120]}")
+            usuario = f"{mensaje}\n\n[INSTRUCCIÓN: {instr}]"
         if pron_contexto:
             usuario += f"\n[Pronunciación (no la menciones como sistema): {pron_contexto}]"
         # Logs (12-nov noche): sin este recordatorio el modelo se olvidaba de la línea PIZARRA en
@@ -801,6 +852,8 @@ class ProfesorJapones:
         self.mensajes.append({"role": "user", "content": mensaje})
         self.mensajes.append({"role": "assistant",
                               "content": f"{respuesta}\nPIZARRA: {_texto_pizarra(pizarra) or '-'}"})
+        if self.charla:
+            self._resumir_si_toca()
         return respuesta
 
     # ── Memoria de Laura ──────────────────────────────────────────────────────
