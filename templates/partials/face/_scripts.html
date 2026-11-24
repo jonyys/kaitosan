@@ -839,6 +839,7 @@
     }
   }
 
+  socket.on("estado", (data) => aplicarEstado(data.estado));
   socket.on("boca", (data) => {
     // Al empezar una frase suele enfatizar con las cejas
     if (data.hablado && !hablando && Math.random() < 0.6) prox.enfasis = ahora + azar(80, 300);
