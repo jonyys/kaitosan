@@ -832,7 +832,11 @@
     }
   }
 
-  socket.on("estado", (data) => aplicarEstado(data.estado));
+  // Llegar desde el reloj tarda ~1,5 s (transición + carga): el "listening" ya se emitió y esta
+  // página no lo oyó. Al cargar se pregunta cuál es el estado real, salvo que ya haya llegado uno.
+  let estadoOido = false;
+  socket.on("estado", (data) => { estadoOido = true; aplicarEstado(data.estado); });
+  fetch("/estado").then((r) => r.json()).then((d) => { if (!estadoOido) aplicarEstado(d.estado); }).catch(() => {});
   socket.on("boca", (data) => {
     // Al empezar una frase suele enfatizar con las cejas
     if (data.hablado && !hablando && Math.random() < 0.6) prox.enfasis = ahora + azar(80, 300);
