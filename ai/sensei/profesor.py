@@ -233,6 +233,18 @@ def _ultima_frase_jp(texto):
     return ""
 
 
+def _repetidas(mensajes, minimo=3, tope=8):
+    """Lo japonés que Kaito ya ha dicho `minimo` o más veces (en mensajes distintos) en esta clase.
+    Se le devuelve en el prompt para que cambie los ejemplos: en la clase del 24-nov fueron ramen, sushi,
+    té, carne y verduras durante 12 minutos."""
+    cuenta = {}
+    for m in mensajes or []:
+        if m["role"] == "assistant":
+            for b in bloques_japones(_sin_pizarra(m["content"])):
+                cuenta[b] = cuenta.get(b, 0) + 1
+    return [b for b, n in sorted(cuenta.items(), key=lambda kv: -kv[1]) if n >= minimo][:tope]
+
+
 class ProfesorJapones:
 
     def __init__(self, jap_memory, provider, memory, socketio):
@@ -830,6 +842,11 @@ class ProfesorJapones:
             self._aplicar_resumen()
             sistema = (cargar_prompt("sensei_charla").replace("{RECUERDAS_DE_LAURA}", self._recuerdas())
                        .replace("{RESUMEN}", self._resumen or "(todavía nada: acabáis de empezar)"))
+            rep = _repetidas(self.mensajes[self._resumido:])
+            if rep:
+                sistema += ("\n\n== YA REPETIDO EN ESTA CLASE ==\nHas dicho ya muchas veces: " + ", ".join(rep)
+                            + ". Sigue practicando lo mismo, pero con otras palabras y en otras situaciones; "
+                            "estas déjalas descansar.")
             usuario = mensaje
         else:
             sistema = cargar_prompt("sensei_clase").replace("{RECUERDAS_DE_LAURA}", self._recuerdas())

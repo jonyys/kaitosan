@@ -66,3 +66,11 @@ def test_pizarra_sin_linea_une_los_bloques_de_la_ultima_frase(monkeypatch):
     p2, _ = _prof(monkeypatch, ["Solo español, nada japonés."])
     p2.responder_turno("hola")
     assert p2.ultima_frase_objetivo == []
+
+
+def test_repetidas_lista_lo_dicho_tres_veces_o_mas():
+    from ai.sensei.profesor import _repetidas
+    ms = []
+    for frase in ["【らーめん】 【すきです】", "【らーめん】 y más", "【らーめん】 【ふね】", "【おちゃ】"]:
+        ms += [{"role": "user", "content": "x"}, {"role": "assistant", "content": frase + "\nPIZARRA: -"}]
+    assert _repetidas(ms) == ["らーめん"]
