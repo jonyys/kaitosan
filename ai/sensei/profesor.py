@@ -342,7 +342,11 @@ class ProfesorJapones:
     @property
     def espera_japones(self) -> bool:
         """Lo lee el STT antes de grabar: en práctica y tarea Laura contesta en
-        japonés, así que su audio puede ir a Azure (pronunciación)."""
+        japonés, así que su audio puede ir a Azure (pronunciación). En charla no hay fases: se espera
+        japonés si Kaito acaba de dar una frase en 【】 (se la pide); sin esto Whisper, con el audio
+        suelto, lo oía como coreano o islandés (logs del 24-nov)."""
+        if self.charla:
+            return self.activo and "【" in (self._ultimo_kaito() or "")
         return self.activo and bool(self.clase) and self.clase["fase"] in ("practicar", "tarea")
 
     def entrar(self):

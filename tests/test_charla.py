@@ -47,3 +47,13 @@ def test_resume_lo_viejo_y_conserva_el_historial_entero(monkeypatch):
     assert "Miso" in msgs[0]["content"]                       # el resumen va en el sistema
     assert len(msgs) < 1 + len(p.mensajes)                    # el LLM ve menos que el historial...
     assert len(p.mensajes) == 10                              # ...pero el historial completo se guarda
+
+
+def test_en_charla_espera_japones_si_kaito_acaba_de_pedir_una_frase(monkeypatch):
+    p, _ = _prof(monkeypatch, ["Di 【すしが すきです。】\nPIZARRA: すしが すきです = me gusta el sushi"])
+    assert not p.espera_japones                      # aún no ha dicho nada
+    p.responder_turno("hola")
+    assert p.espera_japones                          # acaba de pedirle una frase: audio a la ruta de japonés
+    p.provider.completar.side_effect = ["Vale, cuéntame. ¿Qué tal el día?\nPIZARRA: -"]
+    p.responder_turno("bien")
+    assert not p.espera_japones                      # charla en español: Whisper normal
